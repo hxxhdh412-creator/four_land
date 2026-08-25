@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#102a25">
+  <meta name="description" content="Fourland Property Intelligence — Kho bất động sản chọn lọc">
+  <title>FOURLAND · Property Intelligence</title>
+  <link rel="stylesheet" href="/assets/app.css">
+</head>
+<body>
+  <main class="shell">
+    <nav class="topbar">
+      <a class="brand" href="/" aria-label="Fourland trang chủ">
+        <img class="brand-logo" src="/assets/brand/fourland-logo.png" alt="Four Land">
+        <span class="brand-caption">PROPERTY INTELLIGENCE</span>
+      </a>
+      <div class="top-actions"><span class="live-dot"><i></i>Dữ liệu trực tuyến</span><button class="profile" type="button" aria-label="Tài khoản">FL</button></div>
+    </nav>
+    <header class="hero">
+      <div class="hero-copy"><p class="eyebrow"><span></span>KHO BẤT ĐỘNG SẢN CHỌN LỌC</p><h1>Chạm đúng <em>giá trị.</em></h1><p>Nền tảng tra cứu bất động sản thông minh dành riêng cho đội ngũ Fourland.</p></div>
+      <div class="metrics"><div><strong id="total">—</strong><span>Hồ sơ phù hợp</span></div><div><strong id="withImages">—</strong><span>Có hình ảnh</span></div></div>
+    </header>
+
+    <form id="searchForm" class="filter-card">
+      <div class="quick"><div class="search-input"><span class="search-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg></span><input id="q" aria-label="Tìm kiếm bất động sản" autocomplete="off" placeholder="Địa chỉ, mã hồ sơ, số điện thoại…"><button class="filter-toggle" id="filterToggle" type="button" aria-expanded="false" aria-label="Mở bộ lọc" title="Bộ lọc"><svg class="filter-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none"><path d="M4 5h16l-6.25 7.1v5.15L10.25 19v-6.9L4 5Z"/></svg></button></div></div>
+      <div class="filters" id="filters">
+        <label>Quận / Huyện<select id="district"><option value="">Tất cả quận huyện</option></select></label>
+        <label>Phường / Xã<select id="ward"><option value="">Tất cả phường xã</option></select></label>
+        <label>Tên đường<select id="street"><option value="">Tất cả tuyến đường</option></select></label>
+        <label>Loại BĐS<select id="type"><option value="">Tất cả loại hình</option></select></label>
+        <label>Giá từ<input id="minPrice" inputmode="numeric" placeholder="0"></label>
+        <label>Giá đến<input id="maxPrice" inputmode="numeric" placeholder="Không giới hạn"></label>
+        <label>Diện tích từ<input id="minArea" inputmode="decimal" placeholder="0 m²"></label>
+        <label>Diện tích đến<input id="maxArea" inputmode="decimal" placeholder="Không giới hạn"></label>
+      </div>
+      <div class="actions"><button id="reset" type="button">Xóa toàn bộ bộ lọc</button></div>
+    </form>
+
+    <div class="result-head"><strong id="resultLabel">Đang tải dữ liệu…</strong><span id="pageLabel"></span></div>
+    <div id="error" class="error" hidden></div>
+    <section id="grid" class="grid" aria-live="polite"></section>
+    <nav class="pagination"><button id="prev" type="button">← Trước</button><span id="pageNumber">1</span><button id="next" type="button">Sau →</button></nav>
+  </main>
+
+  <dialog id="detail"><div class="detail-shell"><header><div><span class="detail-kicker">FOURLAND COLLECTION</span><strong>Chi tiết bất động sản</strong><small id="detailId"></small></div><button id="closeDetail" type="button" aria-label="Đóng" title="Đóng"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg></button></header><div id="detailBody" class="detail-body"></div></div></dialog>
+  <dialog id="adminAccess" class="access-dialog"><form id="adminAccessForm" method="dialog"><button class="access-close" id="closeAdminAccess" type="button" aria-label="Đóng">×</button><span class="access-kicker">FOUR LAND ADMIN</span><h2>Mở quyền quản trị</h2><p>Nhập mã truy cập để chỉnh sửa thông tin và bổ sung hình ảnh.</p><label for="adminCode">Mã truy cập</label><input id="adminCode" type="password" inputmode="text" autocomplete="current-password" placeholder="Nhập mã quản trị" required><button class="access-submit" type="submit">Mở quyền chỉnh sửa</button><div id="adminAccessStatus" class="access-status" role="status" aria-live="polite"></div></form></dialog>
+  <footer><span>© 2026 Fourland</span><span>Property data, refined.</span></footer>
+  <script src="/assets/app.js" defer></script>
+</body>
+</html>

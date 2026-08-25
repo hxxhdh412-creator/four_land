@@ -1,0 +1,10 @@
+{
+  "name": "zalo-sync-warehouse",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "sync:check": "node scripts/sync-sheet-to-supabase.js --dry-run",
+    "sync:sheet": "node scripts/sync-sheet-to-supabase.js"
+  },
+  "engines": { "node": "22.x" }
+}
