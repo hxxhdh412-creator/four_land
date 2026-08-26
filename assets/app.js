@@ -66,10 +66,8 @@ async function load(){
 }
 function formatCardPrice(row){
   if(row.status === 'archived') return `<span class="price-val price-archived">Đã ẩn</span>`;
-  const isRented = row.status === 'rented' || Boolean(row.is_rented);
-  const rentedTag = isRented ? '<span class="rented-pill">Đã thuê</span>' : '';
   let text = String(row.price_text || '').trim();
-  if(!text || text.toLowerCase() === 'liên hệ') return `<span class="price-val price-contact">Liên hệ</span>${rentedTag}`;
+  if(!text || text.toLowerCase() === 'liên hệ') return `<span class="price-val price-contact">Liên hệ</span>`;
   
   // 1. Loại bỏ hoa hồng, sđt hoặc ghi chú dài nằm trong trường giá
   text = text.replace(/\b(?:hh|hoa\s*hồng|phí|commission)[\s\d/.,:-]+.*$/i, '').trim();
@@ -84,9 +82,9 @@ function formatCardPrice(row){
   // 3. Tách chu kỳ thuê (VD: /tháng, /th)
   const match = text.match(/^(.*?)(\s*[\/\.]\s*(?:tháng|th|năm|m2|m²))$/i);
   if(match){
-    return `<span class="price-val" title="${escapeHtml(text)}">${escapeHtml(match[1].trim())}</span><span class="price-period">${escapeHtml(match[2].trim())}</span>${rentedTag}`;
+    return `<span class="price-val" title="${escapeHtml(text)}">${escapeHtml(match[1].trim())}</span><span class="price-period">${escapeHtml(match[2].trim())}</span>`;
   }
-  return `<span class="price-val" title="${escapeHtml(text)}">${escapeHtml(text)}</span>${rentedTag}`;
+  return `<span class="price-val" title="${escapeHtml(text)}">${escapeHtml(text)}</span>`;
 }
 
 function updateBulkBar(){
@@ -119,9 +117,7 @@ function render(){
     const image = driveImage(images[0]?.public_url);
     const badgeHtml = images.length > 0 ? `<span class="badge"><svg class="badge-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="13" r="4" stroke="currentColor" stroke-width="1.8"/></svg>${images.length}</span>` : '';
     let typeBadgeHtml = '';
-    if (isRented) {
-      typeBadgeHtml = `<span class="badge-type badge-rented"><svg class="badge-icon-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Đã cho thuê</span>`;
-    } else if (isFeatured) {
+    if (isFeatured) {
       typeBadgeHtml = `<span class="badge-type badge-featured"><svg class="star-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>${escapeHtml(row.property_type || 'Nổi bật')}</span>`;
     } else if (row.property_type) {
       typeBadgeHtml = `<span class="badge-type">${escapeHtml(row.property_type)}</span>`;
@@ -150,6 +146,8 @@ function render(){
       </label>
     ` : '';
 
+    const statusDotHtml = `<span class="status-indicator ${isRented ? 'is-rented' : 'is-available'}" title="${isRented ? 'Đã cho thuê' : 'Đang mở thuê (Còn phòng)'}"></span>`;
+
     return`<a class="card ${isFeatured?'is-featured':''} ${isRented?'is-rented':''} ${row.status==='archived'?'archived-card':''} ${state.selectedIds.has(row.property_id)?'is-selected':''}" href="${escapeHtml(propertyPath(row))}" data-id="${escapeHtml(row.property_id)}" aria-label="Xem ${escapeHtml(row.address||row.property_id)}">
       <div class="photo ${!image?'no-photo':''}">
         ${image?`<img loading="lazy" referrerpolicy="no-referrer" src="${escapeHtml(image)}" alt="${escapeHtml(imgAlt)}" title="${escapeHtml(imgAlt)}" onerror="handleCardImgError(this)">`:`
@@ -164,7 +162,7 @@ function render(){
       </div>
       <div class="card-body">
         <div class="price-row">
-          <div class="price">${formatCardPrice(row)}</div>
+          <div class="price">${statusDotHtml}${formatCardPrice(row)}</div>
           ${timeHtml}
         </div>
         <h2 class="card-title" title="${escapeHtml(row.address||row.property_id)}">${escapeHtml(row.address||String(row.raw_text||'').slice(0,75)||row.property_id)}</h2>
