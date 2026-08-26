@@ -220,7 +220,17 @@ input:focus,select:focus{border-color:var(--orange);box-shadow:0 0 0 3px rgba(23
 .phone-link-unlock{display:inline-flex;align-items:center;padding:0;border:0;background:transparent;color:var(--orange);font-weight:800;font-size:inherit;cursor:pointer;text-decoration:none}
 .phone-link-unlock:hover{color:#b8322a}
 
-.badge{position:absolute;z-index:1;right:8px;top:8px;display:inline-flex;align-items:center;padding:3px 8px;border-radius:4px;background:rgba(8,18,14,.48);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.22);color:#fff;font-size:10px;font-weight:600;letter-spacing:.02em;text-transform:none!important;pointer-events:none}
+.badge{position:absolute;z-index:2;right:8px;top:8px;display:inline-flex;align-items:center;gap:4.5px;padding:3.5px 8px;border-radius:5px;background:rgba(10,24,19,.58);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.24);color:#fff;font-size:10.5px;font-weight:700;letter-spacing:.02em;text-transform:none!important;pointer-events:none}
+.badge-icon{width:12px;height:12px;display:block;stroke:currentColor}
+.badge-type{position:absolute;z-index:2;left:8px;top:8px;display:inline-flex;align-items:center;padding:3px 7px;border-radius:4px;background:rgba(239,101,9,.92);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);color:#fff;font-size:9px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;pointer-events:none}
+
+.card-title{margin:0;font-size:14.5px;font-weight:700;line-height:1.32;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.card-location{display:flex;align-items:center;gap:5px;color:var(--muted);font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.icon-pin{width:13px;height:13px;flex:0 0 13px;stroke:var(--orange)}
+.card-specs{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-top:auto}
+.spec-tag{display:inline-flex;align-items:center;gap:4.5px;padding:3px 8px;border-radius:4px;background:#f3f6f3;border:1px solid rgba(24,43,36,.08);color:var(--forest);font-size:11px;font-weight:700;letter-spacing:-.01em}
+.spec-tag svg{width:12px;height:12px;stroke:var(--forest);flex:0 0 12px}
+
 .detail-views-subtle{display:inline-flex;align-items:center;gap:4px;color:var(--muted);font-weight:600;font-size:12px;margin-left:6px}
 .detail-views-subtle svg{width:12px;height:12px;fill:none;stroke:var(--orange);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 
@@ -337,18 +347,22 @@ label,.eyebrow,.detail-kicker,.result-head strong,.brand-caption{font-weight:700
 
 /* Equal-height mobile property cards */
 @media(max-width:480px){
-  .grid{grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:278px;gap:9px}
-  .card{display:grid;grid-template-columns:1fr;grid-template-rows:154px minmax(0,1fr);width:100%;height:278px;min-height:278px;max-height:278px;align-self:stretch}
-  .photo{width:100%;height:154px;min-height:0;aspect-ratio:auto}
+  .grid{grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:296px;gap:10px}
+  .card{display:grid;grid-template-columns:1fr;grid-template-rows:146px minmax(0,1fr);width:100%;height:296px;min-height:296px;max-height:296px;border-radius:10px;overflow:hidden;align-self:stretch;box-shadow:0 3px 14px rgba(24,43,36,.06)}
+  .photo{width:100%;height:146px;min-height:0;aspect-ratio:auto}
   .photo img{display:block;width:100%;height:100%;object-fit:cover}
-  .card-body{display:flex;flex-direction:column;width:100%;height:124px;min-height:0;padding:12px 10px 10px;overflow:hidden}
-  .card-body:before{left:11px}
-  .card .price{display:-webkit-box;max-height:38px;margin:0 0 3px;overflow:hidden;font-size:15px;line-height:1.25;-webkit-box-orient:vertical;-webkit-line-clamp:2}
-  .card h2{display:-webkit-box;max-height:48px;margin:0 0 6px;overflow:hidden;font-size:12px;line-height:1.32;overflow-wrap:anywhere;-webkit-box-orient:vertical;-webkit-line-clamp:3}
-  .card .meta{display:grid;gap:3px;margin-top:auto;overflow:hidden;font-size:8px;line-height:1.35}
-  .card .meta span{display:-webkit-box;max-height:22px;overflow:hidden;-webkit-box-orient:vertical;-webkit-line-clamp:2}
-  .badge{max-width:72px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
-  .skeleton{height:278px}
+  .card-body{display:flex;flex-direction:column;width:100%;height:150px;min-height:0;padding:10px 10px 11px;overflow:hidden;gap:3.5px}
+  .card-body:before{display:none}
+  .card .price{font-size:15.5px;font-weight:800;line-height:1.2;margin:0}
+  .card-title{font-size:12.5px;font-weight:700;line-height:1.28;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .card-location{font-size:10.5px;gap:3.5px;line-height:1.25}
+  .card-location .icon-pin{width:11px;height:11px;flex:0 0 11px}
+  .card-specs{gap:4.5px;margin-top:auto;padding-top:2px}
+  .spec-tag{padding:2.5px 6px;border-radius:4px;font-size:10px;gap:3.5px}
+  .spec-tag svg{width:10.5px;height:10.5px;flex:0 0 10.5px}
+  .badge{max-width:76px;font-size:9.5px;padding:3px 6.5px;gap:3.5px;right:6px;top:6px}
+  .badge-type{font-size:8px;padding:2px 5.5px;left:6px;top:6px}
+  .skeleton{height:296px}
 }
 
 /* Desktop property detail containment.
