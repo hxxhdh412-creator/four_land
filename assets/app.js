@@ -136,7 +136,7 @@ async function setPropertyArchived(propertyId,archived){
 async function logoutAdmin(){
   try{await api('/api/admin-login',{method:'DELETE'})}catch(_){}
   setAdminState(false);
-  showToast('🔒 Đã thoát chế độ Quản trị viên!');
+  showToast('🔒 Đã thoát quyền Quản trị');
 }
 function setAdminState(unlocked){
   state.adminUnlocked=Boolean(unlocked);
