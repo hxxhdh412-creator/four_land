@@ -264,20 +264,23 @@ input:focus,select:focus{border-color:var(--orange);box-shadow:0 0 0 3px rgba(23
 .phone-link-unlock{display:inline-flex;align-items:center;padding:0;border:0;background:transparent;color:var(--orange);font-weight:800;font-size:inherit;cursor:pointer;text-decoration:none}
 .phone-link-unlock:hover{color:#b8322a}
 
-.quick-tabs{display:flex;align-items:center;gap:8px;margin:16px 0 12px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch}
-.quick-tab{display:inline-flex;align-items:center;gap:6px;padding:0 14px;height:36px;border-radius:18px;border:1px solid var(--line);background:#fff;color:var(--forest);font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .18s ease;box-shadow:0 1px 3px rgba(0,0,0,.04)}
-.quick-tab:hover{border-color:var(--forest);background:#f6f8f6}
-.quick-tab.active{background:var(--forest);color:#fff;border-color:var(--forest);box-shadow:0 4px 12px rgba(24,43,36,.18)}
-.quick-tab svg{width:13px;height:13px;flex-shrink:0}
+.quick-tabs{display:inline-flex;align-items:center;gap:3px;margin:18px 0 14px;padding:3.5px;border-radius:999px;background:rgba(24,43,36,.06);border:1px solid rgba(24,43,36,.08);max-width:100%}
+.quick-tab{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:35px;padding:0 16px;border-radius:999px;border:1px solid transparent;background:transparent;color:var(--muted);font-family:var(--font-sans);font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .22s cubic-bezier(.4,0,.2,1)}
+.quick-tab:hover{color:var(--forest);background:rgba(255,255,255,.55)}
+.quick-tab.active{background:#fff;color:var(--forest);font-weight:800;border-color:rgba(24,43,36,.08);box-shadow:0 3px 10px rgba(24,43,36,.08),0 1px 3px rgba(0,0,0,.04)}
+.quick-tab.tab-featured .star-icon{width:12px;height:12px;color:#d97706;transition:transform .22s ease}
+.quick-tab.tab-featured:hover .star-icon{transform:rotate(15deg) scale(1.15)}
+.quick-tab.tab-featured.active{background:linear-gradient(135deg,#182b24 0%,#10201a 100%);color:#fce7bd;border-color:rgba(217,119,6,.4);box-shadow:0 4px 14px rgba(24,43,36,.22),0 0 0 1px rgba(217,119,6,.15)}
+.quick-tab.tab-featured.active .star-icon{color:#f59e0b;filter:drop-shadow(0 1px 4px rgba(245,158,11,.45))}
 
 .badge{position:absolute;z-index:2;right:8px;top:8px;display:inline-flex;align-items:center;gap:4.5px;padding:3.5px 8px;border-radius:5px;background:rgba(10,24,19,.58);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.24);color:#fff;font-size:10.5px;font-weight:700;letter-spacing:.02em;text-transform:none!important;pointer-events:none}
 .badge-icon{width:12px;height:12px;display:block;stroke:currentColor}
 .badge-type{position:absolute;z-index:2;left:8px;top:8px;display:inline-flex;align-items:center;padding:3px 7px;border-radius:4px;background:rgba(239,101,9,.92);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);color:#fff;font-size:9px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;pointer-events:none}
 
-.card.is-featured{border-color:rgba(239,101,9,.38);box-shadow:0 6px 20px rgba(239,101,9,.08);background:linear-gradient(180deg,rgba(239,101,9,.025) 0%,#fff 60%)}
-.card.is-featured:hover{border-color:var(--orange);box-shadow:0 12px 28px rgba(239,101,9,.16)}
-.badge-featured{position:absolute;z-index:3;left:8px;top:8px;display:inline-flex;align-items:center;gap:4px;padding:3.5px 8px;border-radius:4px;background:linear-gradient(135deg,#ef6509,#d94e00);color:#fff;font-size:9.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;box-shadow:0 2px 8px rgba(239,101,9,.38);pointer-events:none}
-.badge-featured svg{width:11px;height:11px;fill:currentColor}
+.card.is-featured{border-color:rgba(217,119,6,.38);box-shadow:0 6px 20px rgba(24,43,36,.06);background:linear-gradient(180deg,rgba(245,158,11,.02) 0%,#fff 55%)}
+.card.is-featured:hover{border-color:rgba(217,119,6,.65);box-shadow:0 12px 28px rgba(217,119,6,.14)}
+.badge-featured{position:absolute;z-index:3;left:8px;top:8px;display:inline-flex;align-items:center;gap:4.5px;padding:3.5px 8px;border-radius:4px;background:rgba(14,28,22,.88);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(245,158,11,.45);color:#fce7bd;font-size:9.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;box-shadow:0 4px 12px rgba(0,0,0,.25);pointer-events:none}
+.badge-featured svg{width:10.5px;height:10.5px;fill:#f59e0b}
 .card.is-featured .badge-type{left:auto;right:8px;top:auto;bottom:8px}
 
 .admin-featured-checkbox{display:flex;align-items:center;gap:8px;padding:12px 14px;border-radius:6px;background:rgba(239,101,9,.06);border:1px solid rgba(239,101,9,.2);cursor:pointer;margin-bottom:8px}
