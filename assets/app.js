@@ -518,26 +518,17 @@ function setAdminState(unlocked){
   if(!state.adminUnlocked){
     state.selectedIds.clear();
   }
-  const profile=document.querySelector('.profile'),toggle=$('archivedToggle'),logoutBtn=$('logoutAdminBtn');
+  const profile=document.querySelector('.profile'),toggle=$('archivedToggle');
   profile.classList.toggle('admin-active',state.adminUnlocked);
-  profile.setAttribute('aria-label',state.adminUnlocked?'Đang mở quyền Admin (Bấm để thoát)':'Mở quyền quản trị');
-  profile.title=state.adminUnlocked?'Đang mở quyền Admin (Bấm để thoát)':'Mở quyền quản trị';
+  profile.setAttribute('aria-label',state.adminUnlocked?'Đang là Quản trị viên (Bấm để thoát Admin)':'Mở quyền quản trị');
+  profile.title=state.adminUnlocked?'Đang là Quản trị viên (Bấm để thoát Admin)':'Mở quyền quản trị';
   toggle.hidden=!state.adminUnlocked;
-  if(logoutBtn)logoutBtn.hidden=!state.adminUnlocked;
   if(!state.adminUnlocked&&state.viewArchived){state.viewArchived=false;toggle.classList.remove('active');load()}
   if(state.currentPropertyId&&$('detail').open){openDetail(state.currentPropertyId)}
   render();
   updateBulkBar();
 }
 async function checkAdminSession(){try{const result=await api('/api/admin-login');setAdminState(result.authenticated)}catch{setAdminState(false)}}
-const logoutBtn=$('logoutAdminBtn');
-if(logoutBtn){
-  logoutBtn.onclick=()=>{
-    if(confirm('Bạn có muốn thoát chế độ Quản trị viên (Khóa quyền sửa và che lại SĐT)?')){
-      logoutAdmin();
-    }
-  };
-}
 
 const bulkSelectAllBtn=$('bulkSelectAll');
 if(bulkSelectAllBtn){

@@ -1308,4 +1308,50 @@ body.selection-mode-active .card-select-wrap,
   }
 }
 
+/* Minimalist Avatar Action with Live Admin Status Badge */
+.profile {
+  position: relative;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 1.5px solid rgba(24, 43, 36, 0.14);
+  border-radius: 50%;
+  background: var(--forest);
+  color: #fff;
+  font-weight: 750;
+  font-size: 12.5px;
+  letter-spacing: .04em;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all .2s cubic-bezier(.16, 1, 0.3, 1);
+  user-select: none;
+}
+.profile:hover {
+  transform: scale(1.05);
+  border-color: var(--orange);
+  box-shadow: 0 4px 14px rgba(24, 43, 36, 0.16);
+}
+.profile:active {
+  transform: scale(.95);
+}
+.profile.admin-active {
+  background: linear-gradient(135deg, #182b24 0%, #0d1a15 100%);
+  border-color: var(--orange);
+  box-shadow: 0 0 0 2.5px rgba(239, 101, 9, 0.35), 0 4px 14px rgba(0, 0, 0, 0.22);
+}
+.profile.admin-active:after {
+  content: "";
+  position: absolute;
+  top: -1px;
+  right: -1px;
+  width: 9.5px;
+  height: 9.5px;
+  border-radius: 50%;
+  background: #10b981;
+  border: 2px solid #fff;
+  box-shadow: 0 0 6px #10b981;
+}
+
 
