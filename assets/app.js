@@ -7,7 +7,20 @@ function params(input){const search=new URLSearchParams();Object.entries(input).
 async function api(path,options={}){const response=await fetch(path,options);const body=await response.json();if(!response.ok||body.ok===false)throw new Error(body.error||'Không tải được dữ liệu');return body}
 function setOptions(id,items,label){const select=$(id),current=select.value;select.innerHTML=`<option value="">${label}</option>`+(items||[]).map(item=>`<option value="${escapeHtml(item)}">${escapeHtml(item)}</option>`).join('');select.value=current}
 async function loadFacets(){try{const data=await api('/api/facets');state.facets=data;setOptions('district',data.districts,'Tất cả quận huyện');setOptions('ward',data.wards,'Tất cả phường xã');setOptions('street',data.streets,'Tất cả tuyến đường');setOptions('type',data.types,'Tất cả loại hình')}catch{}}
-function skeleton(){return Array.from({length:8},()=>'<div class="skeleton"></div>').join('')}
+function skeleton(){
+  return Array.from({length:8},()=>`
+    <div class="skeleton">
+      <div class="skeleton-photo">
+        <img src="/assets/brand/fourland-logo.png" alt="Fourland" class="skeleton-logo">
+      </div>
+      <div class="skeleton-body">
+        <div class="skeleton-line skeleton-price"></div>
+        <div class="skeleton-line skeleton-title"></div>
+        <div class="skeleton-line skeleton-meta"></div>
+      </div>
+    </div>
+  `).join('')
+}
 async function load(){
   const requestId=++state.requestId;$('error').hidden=true;$('grid').innerHTML=skeleton();
   try{const data=await api('/api/properties?'+params(values()));if(requestId!==state.requestId)return;state.rows=data.rows||[];state.total=data.total||0;$('total').textContent=state.total.toLocaleString('vi-VN');$('withImages').textContent=state.rows.filter(row=>Number(row.image_count)>0).length;$('resultLabel').textContent=state.viewArchived?`${state.total.toLocaleString('vi-VN')} hồ sơ đã ẩn`:`${state.total.toLocaleString('vi-VN')} hồ sơ phù hợp`;$('pageLabel').textContent=`Trang ${state.page} / ${Math.max(1,Math.ceil(state.total/state.pageSize))}`;$('pageNumber').textContent=state.page;$('prev').disabled=state.page<=1;$('next').disabled=state.page*state.pageSize>=state.total;render()}
@@ -90,7 +103,16 @@ function injectPropertySchema(p, images){
 }
 
 async function openDetail(id){
-  const dialog=$('detail');state.currentPropertyId=id;$('detailId').textContent=id;$('detailBody').innerHTML='<div class="empty">Đang tải chi tiết…</div>';if(!dialog.open)dialog.showModal();
+  const dialog=$('detail');state.currentPropertyId=id;$('detailId').textContent=id;
+  $('detailBody').innerHTML=`
+    <div class="detail-loader">
+      <div class="loader-brand-box">
+        <img src="/assets/brand/fourland-logo.png" alt="Fourland" class="loader-logo-pulse">
+      </div>
+      <div class="loader-dots"><span></span><span></span><span></span></div>
+    </div>
+  `;
+  if(!dialog.open)dialog.showModal();
   try{
     const shareUrl=new URL(window.location.href);shareUrl.searchParams.set('id',id);history.replaceState({id},'',shareUrl.toString());
     const {property:p}=await api('/api/property?id='+encodeURIComponent(id));
