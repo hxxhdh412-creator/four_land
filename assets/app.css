@@ -557,3 +557,255 @@ label,.eyebrow,.detail-kicker,.result-head strong,.brand-caption{font-weight:700
   .footer-grid{grid-template-columns:1fr;gap:20px;padding:14px 0 16px}
   .footer-meta-strip{flex-direction:column;align-items:flex-start;gap:4px;font-size:10px}
 }
+
+/* ==========================================================================
+   EXCLUSIVE DESKTOP ENHANCEMENTS (Screen width > 760px)
+   Mobile layout (<= 760px) remains 100% untouched and preserved.
+   ========================================================================== */
+@media (min-width: 761px) {
+  /* Shell & Global Alignment */
+  .shell {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 0 40px 60px;
+  }
+
+  /* Topbar Desktop Polish */
+  .topbar {
+    height: 92px;
+    border-bottom: 1px solid rgba(24, 43, 36, 0.08);
+  }
+  .brand-logo {
+    width: 74px;
+    height: 66px;
+    transition: transform 0.25s ease;
+  }
+  .brand:hover .brand-logo {
+    transform: scale(1.03);
+  }
+  .brand-caption {
+    font-size: 9.5px;
+    letter-spacing: 0.22em;
+    padding-left: 18px;
+  }
+
+  /* Hero Section Desktop */
+  .hero {
+    padding: 52px 0 44px;
+  }
+  .hero h1 {
+    font-size: clamp(48px, 4.6vw, 68px);
+    letter-spacing: -0.04em;
+    line-height: 1.05;
+    margin: 14px 0 16px;
+  }
+  .hero-copy > p:last-child {
+    font-size: 16px;
+    line-height: 1.6;
+    max-width: 580px;
+  }
+  .metrics {
+    gap: 14px;
+  }
+  .metrics div {
+    min-width: 155px;
+    padding: 20px 22px;
+    border-radius: 8px;
+    border: 1px solid rgba(24, 43, 36, 0.09);
+    background: #fff;
+    box-shadow: 0 10px 30px rgba(24, 43, 36, 0.05);
+    transition: all 0.25s ease;
+  }
+  .metrics div:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 16px 36px rgba(24, 43, 36, 0.09);
+  }
+  .metrics strong {
+    font-size: 32px;
+  }
+
+  /* Sticky Filter Card Desktop */
+  .filter-card {
+    top: 16px;
+    padding: 18px 24px;
+    border-radius: 10px;
+    border: 1px solid rgba(24, 43, 36, 0.1);
+    box-shadow: 0 16px 48px rgba(24, 43, 36, 0.08);
+  }
+  .quick input {
+    height: 52px;
+    font-size: 15px;
+    border-radius: 6px;
+    padding-left: 52px;
+  }
+  .search-input > .search-icon {
+    left: 18px;
+  }
+  .filters {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px 18px;
+    padding-top: 18px;
+  }
+  .filters input, .filters select {
+    height: 48px;
+    border-radius: 6px;
+    font-size: 14px;
+  }
+
+  /* Grid & Property Cards Desktop */
+  .grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 24px;
+  }
+  .card {
+    border-radius: 10px;
+    border: 1px solid rgba(24, 43, 36, 0.08);
+    box-shadow: 0 8px 24px rgba(24, 43, 36, 0.04);
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease;
+  }
+  .card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 22px 52px rgba(20, 42, 34, 0.14);
+    border-color: rgba(239, 101, 9, 0.4);
+  }
+  .card .photo {
+    aspect-ratio: 16/10;
+    border-radius: 9px 9px 0 0;
+  }
+  .card .card-body {
+    padding: 20px 20px 22px;
+  }
+  .card .price {
+    font-size: 21px;
+    letter-spacing: -0.02em;
+  }
+  .card h2 {
+    font-size: 16.5px;
+    margin: 7px 0 11px;
+    line-height: 1.35;
+    color: #12211c;
+  }
+  .card .meta {
+    font-size: 12.5px;
+  }
+
+  /* Detail Dialog Modal Desktop */
+  dialog#detail {
+    width: min(1280px, calc(100vw - 64px));
+    max-height: calc(100vh - 48px);
+    margin: auto;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: 0 36px 110px rgba(7, 20, 15, 0.45);
+  }
+  .detail-shell > header {
+    padding: 20px 32px;
+  }
+  .detail-body {
+    grid-template-columns: 1.35fr 1fr;
+    gap: 32px;
+    padding: 32px;
+    max-height: calc(100vh - 135px);
+    overflow-y: auto;
+  }
+  .gallery-main {
+    aspect-ratio: 16/10;
+    border-radius: 10px;
+  }
+  .gallery-share-badge {
+    top: 14px;
+    right: 14px;
+    height: 38px;
+    padding: 0 16px;
+    font-size: 12.5px;
+  }
+  .thumbs {
+    gap: 10px;
+    margin-top: 14px;
+  }
+  .thumbs img {
+    width: 96px;
+    height: 72px;
+    border-radius: 6px;
+    transition: transform 0.2s ease, border-color 0.2s ease;
+  }
+  .thumbs img:hover {
+    transform: scale(1.04);
+  }
+  .admin-thumb-add {
+    width: 96px;
+    height: 72px;
+    border-radius: 6px;
+  }
+  .content-panel {
+    padding: 22px 24px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+  }
+  .info-panel {
+    padding: 24px;
+    border-radius: 8px;
+  }
+  .info-panel .price {
+    font-size: 26px;
+    margin-bottom: 6px;
+  }
+  .info-panel h2 {
+    font-size: 22px;
+  }
+  .info-grid {
+    gap: 10px;
+    margin-top: 20px;
+  }
+  .info-grid div {
+    padding: 13px 15px;
+    border-radius: 6px;
+  }
+  .direct-contact {
+    padding: 18px 22px;
+    border-radius: 8px;
+    margin-top: 16px;
+  }
+  .direct-contact a {
+    height: 48px;
+    min-width: 140px;
+    font-size: 13.5px;
+    border-radius: 6px;
+  }
+
+  /* Desktop Footer */
+  .site-footer {
+    margin-top: 56px;
+  }
+  .footer-card {
+    padding: 38px 46px 24px;
+    border-radius: 12px;
+  }
+  .footer-header {
+    padding-bottom: 20px;
+  }
+  .footer-logo {
+    width: 52px;
+    height: 46px;
+  }
+  .footer-name {
+    font-size: 18px;
+  }
+  .footer-subtitle {
+    font-size: 9px;
+  }
+  .footer-intro {
+    font-size: 13.5px;
+    line-height: 1.65;
+    margin: 18px 0 22px;
+  }
+  .footer-grid {
+    grid-template-columns: 1.3fr 1fr;
+    gap: 36px;
+    padding: 22px 0 24px;
+  }
+  .footer-meta-strip {
+    margin-top: 20px;
+    font-size: 11.5px;
+  }
+}
