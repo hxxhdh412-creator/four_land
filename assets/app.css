@@ -273,8 +273,50 @@ input:focus,select:focus{border-color:var(--orange);box-shadow:0 0 0 3px rgba(23
 .quick-tab.tab-featured.active{background:linear-gradient(135deg,#182b24 0%,#0d1a15 100%);color:#fbbf24;border-color:#f59e0b;box-shadow:0 4px 14px rgba(24,43,36,.22)}
 .quick-tab.tab-featured .star-icon{width:13px;height:13px;fill:currentColor}
 
-.badge{position:absolute;z-index:2;right:8px;top:8px;display:inline-flex;align-items:center;gap:4.5px;padding:3.5px 8px;border-radius:5px;background:rgba(10,24,19,.58);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.24);color:#fff;font-size:10.5px;font-weight:700;letter-spacing:.02em;text-transform:none!important;pointer-events:none}
-.badge-icon{width:12px;height:12px;display:block;stroke:currentColor}
+/* Floating Pure Live Status Dot (Top-Right of Card Photo) */
+.photo-status-pill {
+  position: absolute;
+  top: 9px;
+  right: 9px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  width: auto;
+  height: auto;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.photo-status-dot {
+  display: block;
+  width: 8.5px;
+  height: 8.5px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.photo-status-pill.is-available .photo-status-dot {
+  background: #10b981;
+  box-shadow: 0 0 0 2px #fff, 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.photo-status-pill.is-rented .photo-status-dot {
+  background: #ef4444;
+  box-shadow: 0 0 0 2px #fff, 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+body.selection-mode-active .photo-status-pill,
+.card.is-selected .photo-status-pill {
+  opacity: 0 !important;
+  transform: scale(0.5) !important;
+  pointer-events: none !important;
+}
+
 .badge-type{position:absolute;z-index:2;left:8px;top:8px;display:inline-flex;align-items:center;gap:4px;padding:3px 7px;border-radius:4px;background:rgba(239,101,9,.92);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);color:#fff;font-size:9px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;pointer-events:none}
 .badge-type.badge-featured{background:linear-gradient(135deg,#182b24 0%,#0d1a15 100%);border:1px solid rgba(245,158,11,.6);color:#fef3c7;box-shadow:0 3px 10px rgba(0,0,0,.25)}
 .badge-type.badge-featured .star-icon{width:11px;height:11px;fill:#f59e0b;display:block}

@@ -147,7 +147,7 @@ function render(){
       </label>
     ` : '';
 
-    const statusDotHtml = `<span class="status-indicator ${isRented ? 'is-rented' : 'is-available'}" title="${isRented ? 'Đã cho thuê' : 'Đang mở thuê (Còn phòng)'}"></span>`;
+    const statusPillHtml = `<span class="photo-status-pill ${isRented ? 'is-rented' : 'is-available'}" title="${isRented ? 'Đã cho thuê' : 'Đang mở thuê (Còn phòng)'}"><i class="photo-status-dot"></i></span>`;
 
     return`<a class="card ${isFeatured?'is-featured':''} ${isRented?'is-rented':''} ${row.status==='archived'?'archived-card':''} ${state.selectedIds.has(row.property_id)?'is-selected':''}" href="${escapeHtml(propertyPath(row))}" data-id="${escapeHtml(row.property_id)}" aria-label="Xem ${escapeHtml(row.address||row.property_id)}">
       <div class="photo ${!image?'no-photo':''}">
@@ -158,11 +158,12 @@ function render(){
           </div>
         `}
         ${typeBadgeHtml}
+        ${statusPillHtml}
         ${selectCheckboxHtml}
       </div>
       <div class="card-body">
         <div class="price-row">
-          <div class="price">${statusDotHtml}${formatCardPrice(row)}</div>
+          <div class="price">${formatCardPrice(row)}</div>
         </div>
         <h2 class="card-title" title="${escapeHtml(row.address||row.property_id)}">${escapeHtml(row.address||String(row.raw_text||'').slice(0,75)||row.property_id)}</h2>
         <div class="card-location">
