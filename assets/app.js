@@ -15,9 +15,9 @@ function formatVietnamRelativeTime(isoString){
   const diffHours=Math.floor(diffMs/3600000);
   const diffDays=Math.floor(diffMs/86400000);
   const timeStr=date.toLocaleTimeString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',hour:'2-digit',minute:'2-digit',hour12:false});
-  const dateStr=date.toLocaleDateString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',day:'2-digit',month:'2-digit',year:'numeric'});
+  const dateStr=date.toLocaleDateString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',day:'2-digit',month:'2-digit'});
   if(diffMins<5)return'Vừa xong';
-  if(diffMins<60)return`${diffMins} phút trước`;
+  if(diffMins<60)return`${diffMins}p trước`;
   if(diffHours<24&&date.getDate()===now.getDate()&&date.getMonth()===now.getMonth()){
     return`Hôm nay ${timeStr}`;
   }
@@ -66,13 +66,25 @@ async function load(){
 }
 function formatCardPrice(row){
   if(row.status === 'archived') return `<span class="price-val price-archived">Đã ẩn</span>`;
-  const text = String(row.price_text || '').trim();
+  let text = String(row.price_text || '').trim();
   if(!text || text.toLowerCase() === 'liên hệ') return `<span class="price-val price-contact">Liên hệ</span>`;
+  
+  // 1. Loại bỏ hoa hồng, sđt hoặc ghi chú dài nằm trong trường giá (VD: 39tr hh1/2 052 3825888)
+  text = text.replace(/\b(?:hh|hoa\s*hồng|phí|commission)[\s\d/.,:-]+.*$/i, '').trim();
+  text = text.replace(/(?:\+?84|0)(?:3|5|7|8|9)[0-9\s.-]{7,10}.*$/i, '').trim();
+  text = text.replace(/^(?:chào\s*thuê|giá\s*thuê|giá\s*bán|giá)\s*[:：]?\s*/i, '').trim();
+  
+  // 2. Rút gọn đơn vị hiển thị trên thẻ: "triệu" -> "tr", "tỷ" -> "tỷ"
+  text = text.replace(/(\d+)\s*(?:triệu|trieu)\b/gi, '$1 tr');
+  text = text.replace(/(\d+)\s*(?:tỷ|ty)\b/gi, '$1 tỷ');
+  text = text.replace(/(\d+)\s*(?:nghìn|ngàn|k)\b/gi, '$1k');
+
+  // 3. Tách chu kỳ thuê (VD: /tháng, /th)
   const match = text.match(/^(.*?)(\s*[\/\.]\s*(?:tháng|th|năm|m2|m²))$/i);
   if(match){
-    return `<span class="price-val">${escapeHtml(match[1].trim())}</span><span class="price-period">${escapeHtml(match[2].trim())}</span>`;
+    return `<span class="price-val" title="${escapeHtml(text)}">${escapeHtml(match[1].trim())}</span><span class="price-period">${escapeHtml(match[2].trim())}</span>`;
   }
-  return `<span class="price-val">${escapeHtml(text)}</span>`;
+  return `<span class="price-val" title="${escapeHtml(text)}">${escapeHtml(text)}</span>`;
 }
 
 function render(){
