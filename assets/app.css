@@ -449,26 +449,6 @@ label,.eyebrow,.detail-kicker,.result-head strong,.brand-caption{font-weight:700
   color:var(--orange);
   letter-spacing:.18em;
 }
-.footer-badge{
-  display:inline-flex;
-  align-items:center;
-  gap:7px;
-  padding:5px 12px;
-  border-radius:18px;
-  background:rgba(124,163,31,.12);
-  border:1px solid rgba(124,163,31,.25);
-  color:#9fe06b;
-  font-size:11px;
-  font-weight:700;
-  white-space:nowrap;
-}
-.footer-pulse{
-  width:6px;
-  height:6px;
-  border-radius:50%;
-  background:#7ca31f;
-  box-shadow:0 0 0 3px rgba(124,163,31,.25);
-}
 .footer-intro{
   margin:14px 0 18px;
   color:rgba(255,255,255,.62);
