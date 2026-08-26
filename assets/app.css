@@ -1083,19 +1083,23 @@ label,.eyebrow,.detail-kicker,.result-head strong,.brand-caption{font-weight:700
    ========================================================= */
 .card-select-wrap {
   position: absolute;
-  top: 8px;
-  right: 8px;
+  top: 4px;
+  right: 4px;
   left: auto;
   z-index: 5;
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  padding: 3px;
+  padding: 4px;
+  min-width: 36px;
+  min-height: 36px;
   opacity: 0;
   transform: scale(0.85);
   pointer-events: none;
   transition: opacity 0.22s ease, transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 body.selection-mode-active .card-select-wrap,

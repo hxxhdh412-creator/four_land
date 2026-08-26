@@ -175,6 +175,8 @@ function render(){
     </a>`;
   }).join('');
 
+  let isTouchDevice = false;
+
   document.querySelectorAll('.card-select-wrap').forEach(wrap=>{
     wrap.onclick=event=>{
       event.preventDefault();
@@ -187,15 +189,19 @@ function render(){
     let pressTimer=null;
     let isLongPress=false;
     let startX=0,startY=0;
+    let isScrolling=false;
 
-    const startPress=(e)=>{
+    const onTouchStart=(e)=>{
+      isTouchDevice=true;
       if(!state.adminUnlocked)return;
       isLongPress=false;
+      isScrolling=false;
       if(e.touches&&e.touches[0]){
         startX=e.touches[0].clientX;
         startY=e.touches[0].clientY;
       }
       pressTimer=setTimeout(()=>{
+        if(isScrolling)return;
         isLongPress=true;
         const id=card.dataset.id;
         if(!state.selectedIds.has(id)){
@@ -203,26 +209,41 @@ function render(){
         }
         if(navigator.vibrate)navigator.vibrate(50);
         showToast('Đã bật chế độ chọn nhiều căn');
-      },650);
+      },550);
     };
 
-    const cancelPress=(e)=>{
-      if(e&&e.touches&&e.touches[0]){
+    const onTouchMove=(e)=>{
+      if(e.touches&&e.touches[0]){
         const dx=Math.abs(e.touches[0].clientX-startX);
         const dy=Math.abs(e.touches[0].clientY-startY);
-        if(dx>10||dy>10){
+        if(dx>8||dy>8){
+          isScrolling=true;
           if(pressTimer){clearTimeout(pressTimer);pressTimer=null;}
         }
-      }else{
-        if(pressTimer){clearTimeout(pressTimer);pressTimer=null;}
       }
     };
 
-    card.addEventListener('touchstart',startPress,{passive:true});
-    card.addEventListener('touchend',()=>{if(pressTimer){clearTimeout(pressTimer);pressTimer=null;}});
-    card.addEventListener('touchmove',cancelPress,{passive:true});
+    const onTouchEnd=()=>{
+      if(pressTimer){clearTimeout(pressTimer);pressTimer=null;}
+    };
 
-    card.addEventListener('mousedown',startPress);
+    card.addEventListener('touchstart',onTouchStart,{passive:true});
+    card.addEventListener('touchmove',onTouchMove,{passive:true});
+    card.addEventListener('touchend',onTouchEnd);
+
+    // Mouse events for desktop
+    card.addEventListener('mousedown',()=>{
+      if(isTouchDevice||!state.adminUnlocked)return;
+      isLongPress=false;
+      pressTimer=setTimeout(()=>{
+        isLongPress=true;
+        const id=card.dataset.id;
+        if(!state.selectedIds.has(id)){
+          toggleCardSelection(id);
+        }
+        showToast('Đã bật chế độ chọn nhiều căn');
+      },550);
+    });
     card.addEventListener('mouseup',()=>{if(pressTimer){clearTimeout(pressTimer);pressTimer=null;}});
     card.addEventListener('mouseleave',()=>{if(pressTimer){clearTimeout(pressTimer);pressTimer=null;}});
 
@@ -234,6 +255,8 @@ function render(){
         return;
       }
       if(event.target.closest('.card-select-wrap')){
+        event.preventDefault();
+        event.stopPropagation();
         return;
       }
       if(state.selectedIds.size>0&&state.adminUnlocked){
