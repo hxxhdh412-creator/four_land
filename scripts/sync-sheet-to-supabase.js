@@ -85,12 +85,25 @@ async function main() {
       images.push({ property_id: propertyId, position: Number(image.position || index + 1), storage_path: image.fileId ? `drive:${image.fileId}` : `external:${propertyId}:${index + 1}`, public_url: url || null, source_url: url || null });
     });
   }
-  const uniqueProperties = [...new Map(properties.map(item => [item.property_id, item])).values()];
+  let uniqueProperties = [...new Map(properties.map(item => [item.property_id, item])).values()];
   const seenSendIds = new Set();
   uniqueProperties.forEach(item => { if (item.send_id && seenSendIds.has(item.send_id)) item.send_id = null; else if (item.send_id) seenSendIds.add(item.send_id); });
-  const uniqueImages = [...new Map(images.map(item => [`${item.property_id}:${item.position}`, item])).values()];
+  let uniqueImages = [...new Map(images.map(item => [`${item.property_id}:${item.position}`, item])).values()];
   if (process.argv.includes("--dry-run")) return console.log(JSON.stringify({ ok: true, sheetRows: rows.length - 1, properties: uniqueProperties.length, duplicateProperties: properties.length - uniqueProperties.length, images: uniqueImages.length, duplicateImages: images.length - uniqueImages.length, mode: "dry-run" }));
   const config = { url: env.SUPABASE_URL.replace(/\/+$/, ""), key: env.SUPABASE_SECRET_KEY };
+  const archived = await request(config, "properties?select=property_id&status=eq.archived&limit=10000");
+  const archivedIds = new Set((archived || []).map(item => item.property_id));
+  uniqueProperties = uniqueProperties.map(item => archivedIds.has(item.property_id) ? { ...item, status: "archived" } : item);
+  const hiddenImages = await request(config, "property_images?select=property_id,position&storage_path=like.hidden:*&limit=10000");
+  const hiddenImageKeys = new Set((hiddenImages || []).map(item => `${item.property_id}:${item.position}`));
+  uniqueImages = uniqueImages.filter(item => !hiddenImageKeys.has(`${item.property_id}:${item.position}`));
+  const existingVisibleImages = await request(config, "property_images?select=property_id,position&public_url=not.is.null&limit=10000");
+  const visibleImageKeys = new Set((existingVisibleImages || []).map(item => `${item.property_id}:${item.position}`));
+  uniqueImages.forEach(item => { if (item.public_url) visibleImageKeys.add(`${item.property_id}:${item.position}`); });
+  hiddenImageKeys.forEach(key => visibleImageKeys.delete(key));
+  const visibleCounts = new Map();
+  visibleImageKeys.forEach(key => { const propertyId = key.slice(0, key.lastIndexOf(":")); visibleCounts.set(propertyId, (visibleCounts.get(propertyId) || 0) + 1); });
+  uniqueProperties = uniqueProperties.map(item => ({ ...item, image_count: visibleCounts.get(item.property_id) || 0 }));
   for (let offset = 0; offset < uniqueProperties.length; offset += 100) await request(config, "properties?on_conflict=property_id", { method: "POST", body: uniqueProperties.slice(offset, offset + 100), prefer: "resolution=merge-duplicates,return=minimal" });
   for (let offset = 0; offset < uniqueImages.length; offset += 100) await request(config, "property_images?on_conflict=property_id,position", { method: "POST", body: uniqueImages.slice(offset, offset + 100), prefer: "resolution=merge-duplicates,return=minimal" });
   console.log(JSON.stringify({ ok: true, synced: uniqueProperties.length, skippedDuplicateProperties: properties.length - uniqueProperties.length, images: uniqueImages.length }));

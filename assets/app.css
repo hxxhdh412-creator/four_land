@@ -262,6 +262,7 @@ label,.eyebrow,.detail-kicker,.result-head strong,.brand-caption{font-weight:700
 .profile{transition:box-shadow .2s,background .2s,transform .2s}
 .profile:hover{transform:translateY(-1px)}
 .profile.admin-active{background:var(--orange);box-shadow:0 0 0 4px rgba(239,101,9,.16)}
+.archived-toggle{width:auto;height:36px;padding:0 13px;border-color:rgba(239,101,9,.25);background:#fff8f2;color:var(--forest);font-size:11px}.archived-toggle.active{border-color:var(--orange);background:var(--orange);color:#fff}.archived-toggle[hidden]{display:none!important}.archived-card{border-color:rgba(239,101,9,.35);filter:saturate(.72)}
 .access-dialog{width:min(430px,calc(100% - 28px));height:auto;max-height:none;border-radius:14px;overflow:visible}
 .access-dialog form{position:relative;padding:30px;background:#fff;border-radius:14px}
 .access-close{position:absolute;right:14px;top:14px;width:38px;height:38px;padding:0;border:0;border-radius:50%;background:var(--sage);font-size:22px}
@@ -285,6 +286,7 @@ label,.eyebrow,.detail-kicker,.result-head strong,.brand-caption{font-weight:700
 .admin-upload>label:first-child{font-size:14px;color:var(--ink)}
 .admin-upload p{margin:4px 0 0;color:var(--muted);font-size:11px}
 .admin-upload input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.admin-thumb{position:relative;display:block;flex:0 0 auto}.admin-thumb img{display:block}.image-remove{position:absolute;right:-5px;top:-5px;z-index:2;display:grid;place-items:center;width:27px;height:27px;padding:0;border:2px solid #fff;border-radius:50%;background:#b8322a;color:#fff;box-shadow:0 3px 10px rgba(77,17,12,.28)}.image-remove svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.admin-archive,.admin-restore{width:calc(100% - 36px);height:46px;margin:0 18px 18px;border-radius:4px}.admin-archive{border-color:#d64a3f;background:#fff3f1;color:#a92d25}.admin-restore{border-color:#2f765e;background:#eaf5ef;color:#195a46}
 @media(max-width:760px){
   .content-panel{padding:16px;margin:12px 0}
   .content-panel h3{font-size:15px}
@@ -295,6 +297,7 @@ label,.eyebrow,.detail-kicker,.result-head strong,.brand-caption{font-weight:700
   .admin-fields .wide{grid-column:auto}
   .admin-panel summary{padding:15px}
   .admin-panel form,.admin-upload{padding:15px}
+  .archived-toggle{height:34px;padding:0 10px;font-size:10px}.admin-archive,.admin-restore{width:calc(100% - 30px);margin:0 15px 15px}
 }
 
 /* Equal-height mobile property cards */
