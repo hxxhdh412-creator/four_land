@@ -74,8 +74,8 @@ function formatCardPrice(row){
   text = text.replace(/(?:\+?84|0)(?:3|5|7|8|9)[0-9\s.-]{7,10}.*$/i, '').trim();
   text = text.replace(/^(?:chào\s*thuê|giá\s*thuê|giá\s*bán|giá)\s*[:：]?\s*/i, '').trim();
   
-  // 2. Rút gọn đơn vị hiển thị trên thẻ: "triệu" -> "tr", "tỷ" -> "tỷ"
-  text = text.replace(/(\d+)\s*(?:triệu|trieu)\b/gi, '$1 tr');
+  // 2. Định dạng chuẩn đơn vị: hiển thị đầy đủ "triệu", "tỷ"
+  text = text.replace(/(\d+)\s*(?:tr|triệu|trieu)\b/gi, '$1 triệu');
   text = text.replace(/(\d+)\s*(?:tỷ|ty)\b/gi, '$1 tỷ');
   text = text.replace(/(\d+)\s*(?:nghìn|ngàn|k)\b/gi, '$1k');
 
