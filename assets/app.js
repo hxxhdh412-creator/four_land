@@ -92,8 +92,10 @@ function updateBulkBar(){
   if(!bar)return;
   if(!state.adminUnlocked||state.selectedIds.size===0){
     bar.hidden=true;
+    document.body.classList.remove('selection-mode-active');
     return;
   }
+  document.body.classList.add('selection-mode-active');
   bar.hidden=false;
   $('bulkCount').textContent=state.selectedIds.size;
   const archiveBtn=$('bulkArchiveBtn');
@@ -189,12 +191,84 @@ function render(){
     };
   });
 
-  document.querySelectorAll('.card').forEach(card=>card.addEventListener('click',event=>{
-    if(event.target.closest('.card-select-wrap'))return;
-    if(event.ctrlKey||event.metaKey||event.shiftKey||event.altKey)return;
-    event.preventDefault();
-    openDetail(card.dataset.id,card.getAttribute('href'))
-  }));
+  document.querySelectorAll('.card').forEach(card=>{
+    let pressTimer=null;
+    let isLongPress=false;
+    let startX=0,startY=0;
+
+    const startPress=(e)=>{
+      if(!state.adminUnlocked)return;
+      if(e.target.closest('.card-select-wrap'))return;
+      isLongPress=false;
+      if(e.touches&&e.touches[0]){
+        startX=e.touches[0].clientX;
+        startY=e.touches[0].clientY;
+      }
+      pressTimer=setTimeout(()=>{
+        isLongPress=true;
+        const id=card.dataset.id;
+        if(!state.selectedIds.has(id)){
+          state.selectedIds.add(id);
+          card.classList.add('is-selected');
+          const cb=card.querySelector('.card-select-input');
+          if(cb)cb.checked=true;
+        }
+        if(navigator.vibrate)navigator.vibrate(50);
+        showToast('Đã bật chế độ chọn nhiều căn');
+        updateBulkBar();
+      },750);
+    };
+
+    const cancelPress=(e)=>{
+      if(e&&e.touches&&e.touches[0]){
+        const dx=Math.abs(e.touches[0].clientX-startX);
+        const dy=Math.abs(e.touches[0].clientY-startY);
+        if(dx>10||dy>10){
+          if(pressTimer){clearTimeout(pressTimer);pressTimer=null;}
+        }
+      }else{
+        if(pressTimer){clearTimeout(pressTimer);pressTimer=null;}
+      }
+    };
+
+    card.addEventListener('touchstart',startPress,{passive:true});
+    card.addEventListener('touchend',()=>{if(pressTimer){clearTimeout(pressTimer);pressTimer=null;}});
+    card.addEventListener('touchmove',cancelPress,{passive:true});
+
+    card.addEventListener('mousedown',startPress);
+    card.addEventListener('mouseup',()=>{if(pressTimer){clearTimeout(pressTimer);pressTimer=null;}});
+    card.addEventListener('mouseleave',()=>{if(pressTimer){clearTimeout(pressTimer);pressTimer=null;}});
+
+    card.addEventListener('click',event=>{
+      if(isLongPress){
+        event.preventDefault();
+        event.stopPropagation();
+        isLongPress=false;
+        return;
+      }
+      if(state.selectedIds.size>0&&state.adminUnlocked){
+        event.preventDefault();
+        event.stopPropagation();
+        const id=card.dataset.id;
+        const cb=card.querySelector('.card-select-input');
+        if(state.selectedIds.has(id)){
+          state.selectedIds.delete(id);
+          card.classList.remove('is-selected');
+          if(cb)cb.checked=false;
+        }else{
+          state.selectedIds.add(id);
+          card.classList.add('is-selected');
+          if(cb)cb.checked=true;
+        }
+        updateBulkBar();
+        return;
+      }
+      if(event.target.closest('.card-select-wrap'))return;
+      if(event.ctrlKey||event.metaKey||event.shiftKey||event.altKey)return;
+      event.preventDefault();
+      openDetail(card.dataset.id,card.getAttribute('href'))
+    });
+  });
   updateBulkBar();
 }
 
