@@ -29,6 +29,7 @@ const javascriptFiles = [
   "assets/app.js",
   "preview-server.js",
   "scripts/sync-sheet-to-supabase.js",
+  "scripts/generate-sitemap.js",
   "scripts/check-project.js"
 ];
 

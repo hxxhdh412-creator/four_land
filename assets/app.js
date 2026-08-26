@@ -18,7 +18,8 @@ function render(){
   $('grid').innerHTML=state.rows.map(row=>{
     const images=(row.property_images||[]).filter(item=>item.public_url).sort((a,b)=>a.position-b.position),image=driveImage(images[0]?.public_url);
     const badgeHtml = images.length > 0 ? `<span class="badge">${images.length} ảnh</span>` : '';
-    return`<article class="card ${row.status==='archived'?'archived-card':''}" data-id="${escapeHtml(row.property_id)}" tabindex="0" role="button" aria-label="Xem ${escapeHtml(row.address||row.property_id)}"><div class="photo">${image?`<img loading="lazy" src="${escapeHtml(image)}" alt="Ảnh bất động sản">`:''}${badgeHtml}</div><div class="card-body"><div class="price">${escapeHtml(row.status==='archived'?'Đã ẩn':row.price_text||'Liên hệ')}</div><h2>${escapeHtml(row.address||String(row.raw_text||'').slice(0,80)||row.property_id)}</h2><div class="meta"><span>${escapeHtml([row.street,row.ward,row.district].filter(Boolean).join(' · '))}</span><span>${escapeHtml([row.area_text,row.bedrooms&&row.bedrooms+' PN'].filter(Boolean).join(' · '))}</span></div></div></article>`
+    const imgAlt = `${row.property_type||'Bất động sản'} ${[row.address,row.district].filter(Boolean).join(', ')} - Fourland`;
+    return`<article class="card ${row.status==='archived'?'archived-card':''}" data-id="${escapeHtml(row.property_id)}" tabindex="0" role="button" aria-label="Xem ${escapeHtml(row.address||row.property_id)}"><div class="photo">${image?`<img loading="lazy" src="${escapeHtml(image)}" alt="${escapeHtml(imgAlt)}" title="${escapeHtml(imgAlt)}">`:''}${badgeHtml}</div><div class="card-body"><div class="price">${escapeHtml(row.status==='archived'?'Đã ẩn':row.price_text||'Liên hệ')}</div><h2>${escapeHtml(row.address||String(row.raw_text||'').slice(0,80)||row.property_id)}</h2><div class="meta"><span>${escapeHtml([row.street,row.ward,row.district].filter(Boolean).join(' · '))}</span><span>${escapeHtml([row.area_text,row.bedrooms&&row.bedrooms+' PN'].filter(Boolean).join(' · '))}</span></div></div></article>`
   }).join('');
   document.querySelectorAll('.card').forEach(card=>{card.addEventListener('click',()=>openDetail(card.dataset.id));card.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();openDetail(card.dataset.id)}})});
 }
@@ -28,6 +29,36 @@ function maskPhone(phone){if(!phone)return'Chưa có SĐT';const clean=String(ph
 function maskTextPhones(text){if(!text)return'';const phonePattern=/(?:\+?84|0)(?:3|5|7|8|9)(?:[.\s-]?\d){7,8}/g;return String(text).replace(phonePattern,match=>{const clean=match.replace(/[.\s-]/g,'');return clean.slice(0,4)+' ••• •••'})}
 
 const COMPANY_HOTLINE='0906 396 912';
+const DEFAULT_PAGE_TITLE='FOURLAND · Kho Bất Động Sản Chọn Lọc TP.HCM | Mua Bán & Cho Thuê Nhà Đất';
+
+function injectPropertySchema(p, images){
+  let script=$('propertyJsonLd');
+  if(!script){
+    script=document.createElement('script');
+    script.id='propertyJsonLd';
+    script.type='application/ld+json';
+    document.head.appendChild(script);
+  }
+  const schema={
+    "@context":"https://schema.org",
+    "@type":"SingleFamilyResidence",
+    "name":p.address||p.property_id,
+    "description":p.raw_text||p.notes||`${p.property_type||'Bất động sản'} tại ${p.address||''}, ${p.district||'TP.HCM'}`,
+    "url":window.location.href,
+    "image":images.length?images:['https://www.fourland.vn/assets/brand/fourland-logo.png'],
+    "address":{
+      "@type":"PostalAddress",
+      "streetAddress":p.address||p.street||'',
+      "addressLocality":p.district||'Thành phố Hồ Chí Minh',
+      "addressRegion":"Hồ Chí Minh",
+      "addressCountry":"VN"
+    },
+    "numberOfRooms":p.bedrooms||undefined,
+    "numberOfBathroomsTotal":p.bathrooms||undefined,
+    "floorSize":p.area_number?{"@type":"QuantitativeValue","value":p.area_number,"unitCode":"MTK"}:undefined
+  };
+  script.textContent=JSON.stringify(schema);
+}
 
 async function openDetail(id){
   const dialog=$('detail');state.currentPropertyId=id;$('detailId').textContent=id;$('detailBody').innerHTML='<div class="empty">Đang tải chi tiết…</div>';if(!dialog.open)dialog.showModal();
@@ -38,12 +69,19 @@ async function openDetail(id){
     const images=imageItems.map(i=>driveImage(i.public_url||i.source_url)).filter(Boolean);
     const customerPhone=p.phone||'';
     const views=Number(p.view_count)||1;
+    
+    // SEO: Dynamic Document Title & Schema
+    const propTitle=`${p.address||p.property_id} · ${p.price_text?p.price_text+' · ':''}FOURLAND`;
+    document.title=propTitle;
+    injectPropertySchema(p, images);
+
     $('detailId').innerHTML=`${escapeHtml(id)} · <span class="detail-views-subtle"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>${views} lượt xem</span>`;
     const phoneCellContent=state.adminUnlocked
       ?(customerPhone?`<a href="tel:${escapeHtml(phoneHref(customerPhone))}" class="phone-link-call" title="Bấm để gọi số khách / chủ nhà">${escapeHtml(customerPhone)}</a>`:'—')
       :(customerPhone?`<button type="button" class="phone-link-unlock" id="unlockPhoneInline" title="Bấm để nhập mã Admin xem SĐT">${escapeHtml(maskPhone(customerPhone))}</button>`:'—');
     const displayRawText=state.adminUnlocked?(p.raw_text||p.notes||'Chưa có nội dung mô tả.'):maskTextPhones(p.raw_text||p.notes||'Chưa có nội dung mô tả.');
-    const thumbsHtml=images.map((src,index)=>`<img class="${index===0?'active':''}" src="${escapeHtml(src)}" alt="Ảnh ${index+1}">`).join('')+
+    const propNameAlt=`${p.property_type||'Nhà'} ${p.address||p.property_id}`;
+    const thumbsHtml=images.map((src,index)=>`<img class="${index===0?'active':''}" src="${escapeHtml(src)}" alt="${escapeHtml(propNameAlt)} - Ảnh ${index+1}">`).join('')+
       (state.adminUnlocked?`<label class="admin-thumb-add" for="adminQuickUpload" title="Bổ sung hình ảnh"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></label><input id="adminQuickUpload" type="file" accept="image/jpeg,image/png,image/webp" multiple hidden style="display:none!important">`:'');
     const infoGridHtml=[
       ['Diện tích',p.area_text],
@@ -56,7 +94,7 @@ async function openDetail(id){
       ['Loại BĐS',p.property_type]
     ].map(([label,value,isRaw])=>`<div><small>${label}</small><strong>${isRaw?value:escapeHtml(value||'—')}</strong></div>`).join('');
 
-    $('detailBody').innerHTML=`<div><div class="gallery-main">${images[0]?`<img id="mainImage" src="${escapeHtml(images[0])}" alt="Ảnh nhà">`:''}<button type="button" class="gallery-share-badge" id="shareDetail" title="Chia sẻ căn nhà này"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg><span>Chia sẻ</span></button></div><div class="thumbs">${thumbsHtml}</div></div><div><section class="content-panel"><h3>Nội dung nhà</h3><p>${escapeHtml(displayRawText)}</p></section><section class="info-panel"><div class="price">${escapeHtml(p.price_text||'Liên hệ')}</div><h2>${escapeHtml(p.address||p.property_id)}</h2><div class="meta">${escapeHtml([p.street,p.ward,p.district].filter(Boolean).join(' · '))}</div><div class="info-grid">${infoGridHtml}</div></section>${state.adminUnlocked?adminToolsHtml(p):''}<section class="direct-contact"><div><span>Hotline hỗ trợ Fourland</span><strong>${escapeHtml(COMPANY_HOTLINE)}</strong></div><a href="tel:${escapeHtml(phoneHref(COMPANY_HOTLINE))}" aria-label="Gọi Hotline Fourland"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.2 3.5 9.6 7c.35.5.28 1.18-.16 1.62l-1.3 1.3a14.5 14.5 0 0 0 5.94 5.94l1.3-1.3c.44-.44 1.12-.51 1.62-.16l3.5 2.4c.55.38.72 1.11.39 1.69l-1 1.75c-.34.59-.98.95-1.66.93C10.1 20.95 3.05 13.9 2.83 5.77c-.02-.68.34-1.32.93-1.66l1.75-1c.58-.33 1.31-.16 1.69.39Z"/></svg>Gọi ngay</a></section></div>`;
+    $('detailBody').innerHTML=`<div><div class="gallery-main">${images[0]?`<img id="mainImage" src="${escapeHtml(images[0])}" alt="${escapeHtml(propNameAlt)}">`:''}<button type="button" class="gallery-share-badge" id="shareDetail" title="Chia sẻ căn nhà này"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg><span>Chia sẻ</span></button></div><div class="thumbs">${thumbsHtml}</div></div><div><section class="content-panel"><h3>Nội dung nhà</h3><p>${escapeHtml(displayRawText)}</p></section><section class="info-panel"><div class="price">${escapeHtml(p.price_text||'Liên hệ')}</div><h2>${escapeHtml(p.address||p.property_id)}</h2><div class="meta">${escapeHtml([p.street,p.ward,p.district].filter(Boolean).join(' · '))}</div><div class="info-grid">${infoGridHtml}</div></section>${state.adminUnlocked?adminToolsHtml(p):''}<section class="direct-contact"><div><span>Hotline hỗ trợ Fourland</span><strong>${escapeHtml(COMPANY_HOTLINE)}</strong></div><a href="tel:${escapeHtml(phoneHref(COMPANY_HOTLINE))}" aria-label="Gọi Hotline Fourland"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.2 3.5 9.6 7c.35.5.28 1.18-.16 1.62l-1.3 1.3a14.5 14.5 0 0 0 5.94 5.94l1.3-1.3c.44-.44 1.12-.51 1.62-.16l3.5 2.4c.55.38.72 1.11.39 1.69l-1 1.75c-.34.59-.98.95-1.66.93C10.1 20.95 3.05 13.9 2.83 5.77c-.02-.68.34-1.32.93-1.66l1.75-1c.58-.33 1.31-.16 1.69.39Z"/></svg>Gọi ngay</a></section></div>`;
     document.querySelectorAll('.thumbs img').forEach(img=>img.onclick=()=>{document.querySelectorAll('.thumbs img').forEach(i=>i.classList.remove('active'));img.classList.add('active');$('mainImage').src=img.src});
     const shareBtn=$('shareDetail');
     if(shareBtn){
@@ -186,6 +224,9 @@ let searchTimer;const scheduleLoad=(delay=250)=>{clearTimeout(searchTimer);state
 function closeDetailModal(){
   $('detail').close();
   state.currentPropertyId=null;
+  document.title=DEFAULT_PAGE_TITLE;
+  const script=$('propertyJsonLd');
+  if(script)script.remove();
   const cleanUrl=new URL(window.location.href);
   cleanUrl.searchParams.delete('id');
   history.replaceState({},'',cleanUrl.pathname+(cleanUrl.search?cleanUrl.search:''));

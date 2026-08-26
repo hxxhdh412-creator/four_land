@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "node preview-server.js",
     "check": "node scripts/check-project.js",
+    "sitemap": "node scripts/generate-sitemap.js",
     "sync:check": "node scripts/sync-sheet-to-supabase.js --dry-run",
     "sync:sheet": "node scripts/sync-sheet-to-supabase.js"
   },

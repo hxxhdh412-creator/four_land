@@ -1,0 +1,18 @@
+{
+  "name": "Fourland Property Intelligence",
+  "short_name": "Fourland",
+  "description": "Kho bất động sản chọn lọc TP.HCM - Nền tảng tra cứu bất động sản thông minh Fourland",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a1714",
+  "theme_color": "#102a25",
+  "lang": "vi",
+  "icons": [
+    {
+      "src": "/assets/brand/fourland-logo.png",
+      "sizes": "192x192 512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

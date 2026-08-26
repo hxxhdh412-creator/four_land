@@ -1,0 +1,18 @@
+# ==============================================================================
+# FOURLAND Property Intelligence - Robots.txt
+# https://www.fourland.vn/
+# ==============================================================================
+
+User-agent: *
+Allow: /
+Allow: /assets/
+Allow: /api/properties
+Allow: /api/property
+Allow: /api/facets
+
+# Disallow private admin routes
+Disallow: /api/admin-
+Disallow: /api/_*
+
+# Sitemaps
+Sitemap: https://www.fourland.vn/sitemap.xml

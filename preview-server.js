@@ -225,6 +225,7 @@ http.createServer(async (req,res)=>{
   const requestPath=url.pathname==="/"?"/index.html":url.pathname;
   const filePath=path.resolve(root,"."+requestPath);
   if(!filePath.startsWith(root)||!fs.existsSync(filePath)||fs.statSync(filePath).isDirectory()) return send(res,404,"Not Found","text/plain; charset=utf-8");
-  const ext=path.extname(filePath);const type=ext===".html"?"text/html; charset=utf-8":ext===".css"?"text/css; charset=utf-8":ext===".js"?"application/javascript; charset=utf-8":"application/octet-stream";
+  const ext=path.extname(filePath);
+  const type=ext===".html"?"text/html; charset=utf-8":ext===".css"?"text/css; charset=utf-8":ext===".js"?"application/javascript; charset=utf-8":ext===".xml"?"application/xml; charset=utf-8":ext===".txt"?"text/plain; charset=utf-8":ext===".json"?"application/json; charset=utf-8":"application/octet-stream";
   send(res,200,fs.readFileSync(filePath),type);
 }).listen(port,"127.0.0.1",()=>console.log(`Kho nhà preview: http://127.0.0.1:${port} · ${databaseEnabled?"Supabase":"dữ liệu mẫu"}`));
