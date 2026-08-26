@@ -115,7 +115,6 @@ function render(){
     const isRented = row.status === 'rented' || Boolean(row.is_rented);
     const images = (row.property_images || []).filter(item => item.public_url).sort((a, b) => a.position - b.position);
     const image = driveImage(images[0]?.public_url);
-    const badgeHtml = images.length > 0 ? `<span class="badge"><svg class="badge-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="13" r="4" stroke="currentColor" stroke-width="1.8"/></svg>${images.length}</span>` : '';
     let typeBadgeHtml = '';
     if (isFeatured) {
       typeBadgeHtml = `<span class="badge-type badge-featured"><svg class="star-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>${escapeHtml(row.property_type || 'Nổi bật')}</span>`;
@@ -156,7 +155,6 @@ function render(){
             <span class="watermark-text">Hình ảnh đang cập nhật</span>
           </div>
         `}
-        ${badgeHtml}
         ${typeBadgeHtml}
         ${selectCheckboxHtml}
       </div>
