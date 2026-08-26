@@ -34,9 +34,9 @@ function formatVietnamFullDateTime(isoString){
   if(!isoString)return'Đang cập nhật';
   const date=new Date(isoString);
   if(Number.isNaN(date.getTime()))return'Đang cập nhật';
-  const timeStr=date.toLocaleTimeString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
+  const timeStr=date.toLocaleTimeString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',hour:'2-digit',minute:'2-digit',hour12:false});
   const dateStr=date.toLocaleDateString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',day:'2-digit',month:'2-digit',year:'numeric'});
-  return`${timeStr} - ${dateStr} (Giờ VN)`;
+  return`${timeStr} - ${dateStr}`;
 }
 
 function driveImage(url){const value=String(url||'');const match=value.match(/\/d\/([\w-]+)/)||value.match(/[?&]id=([\w-]+)/);return match?`https://drive.google.com/thumbnail?id=${match[1]}&sz=w1400`:value}
