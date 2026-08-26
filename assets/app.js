@@ -168,8 +168,8 @@ function render(){
         <div class="card-location">
           <svg class="icon-pin" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 21s-7-5.5-7-11a7 7 0 1 1 14 0c0 5.5-7 11-7 11z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="10" r="2.5" stroke="currentColor" stroke-width="1.8"/></svg>
           <span class="card-loc-name">${escapeHtml(locationText)}</span>
-          ${timeRel ? `<span class="card-meta-sep">·</span><span class="card-loc-time" title="Cập nhật lúc: ${escapeHtml(timeFull)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>${escapeHtml(timeRel)}</span>` : ''}
         </div>
+        ${timeRel ? `<div class="card-time" title="Cập nhật lúc: ${escapeHtml(timeFull)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span>${escapeHtml(timeRel)}</span></div>` : ''}
         ${specsHtml}
       </div>
     </a>`;
