@@ -85,28 +85,128 @@ async function main() {
       images.push({ property_id: propertyId, position: Number(image.position || index + 1), storage_path: image.fileId ? `drive:${image.fileId}` : `external:${propertyId}:${index + 1}`, public_url: url || null, source_url: url || null });
     });
   }
-  let uniqueProperties = [...new Map(properties.map(item => [item.property_id, item])).values()];
+  const normAddress = addr => {
+    if (!addr) return '';
+    return String(addr).toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd')
+      .replace(/[^a-z0-9]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  };
+
+  // Group properties by normalized address to eliminate duplicates
+  const initialProperties = [...new Map(properties.map(item => [item.property_id, item])).values()];
+  const addressGroups = new Map();
+  const duplicateIdsToDelete = [];
+
+  initialProperties.forEach(prop => {
+    const key = normAddress(prop.address);
+    if (key && key.length >= 4) {
+      if (!addressGroups.has(key)) addressGroups.set(key, []);
+      addressGroups.get(key).push(prop);
+    }
+  });
+
+  const propertyIdRemap = new Map();
+  const finalPropertiesMap = new Map();
+
+  initialProperties.forEach(prop => {
+    const key = normAddress(prop.address);
+    if (!key || key.length < 4) {
+      finalPropertiesMap.set(prop.property_id, prop);
+      return;
+    }
+    const group = addressGroups.get(key);
+    if (group.length === 1) {
+      finalPropertiesMap.set(prop.property_id, prop);
+      return;
+    }
+    // Sort group: prioritize properties with images, then newest date
+    group.sort((a, b) => {
+      const imgDiff = Number(b.image_count || 0) - Number(a.image_count || 0);
+      if (imgDiff !== 0) return imgDiff;
+      return new Date(b.received_at).getTime() - new Date(a.received_at).getTime();
+    });
+    const winner = group[0];
+    finalPropertiesMap.set(winner.property_id, winner);
+    group.slice(1).forEach(loser => {
+      propertyIdRemap.set(loser.property_id, winner.property_id);
+      duplicateIdsToDelete.push(loser.property_id);
+    });
+  });
+
+  let uniqueProperties = [...finalPropertiesMap.values()];
   const seenSendIds = new Set();
   uniqueProperties.forEach(item => { if (item.send_id && seenSendIds.has(item.send_id)) item.send_id = null; else if (item.send_id) seenSendIds.add(item.send_id); });
-  let uniqueImages = [...new Map(images.map(item => [`${item.property_id}:${item.position}`, item])).values()];
-  if (process.argv.includes("--dry-run")) return console.log(JSON.stringify({ ok: true, sheetRows: rows.length - 1, properties: uniqueProperties.length, duplicateProperties: properties.length - uniqueProperties.length, images: uniqueImages.length, duplicateImages: images.length - uniqueImages.length, mode: "dry-run" }));
+
+  // Remap image property_ids from duplicates to the preserved property
+  const remappedImages = images.map(img => {
+    const targetId = propertyIdRemap.get(img.property_id) || img.property_id;
+    return { ...img, property_id: targetId };
+  });
+
+  // Re-index image positions per property
+  const imagesByProp = new Map();
+  remappedImages.forEach(img => {
+    if (!img.public_url && !img.source_url) return;
+    if (!imagesByProp.has(img.property_id)) imagesByProp.set(img.property_id, []);
+    const list = imagesByProp.get(img.property_id);
+    // Deduplicate identical URLs within the same property
+    if (!list.some(existing => (existing.public_url === img.public_url || existing.source_url === img.source_url))) {
+      list.push(img);
+    }
+  });
+
+  const uniqueImages = [];
+  imagesByProp.forEach((list, propId) => {
+    list.forEach((img, idx) => {
+      uniqueImages.push({
+        property_id: propId,
+        position: idx + 1,
+        storage_path: img.storage_path || `external:${propId}:${idx + 1}`,
+        public_url: img.public_url,
+        source_url: img.source_url
+      });
+    });
+  });
+
+  if (process.argv.includes("--dry-run")) return console.log(JSON.stringify({
+    ok: true,
+    sheetRows: rows.length - 1,
+    properties: uniqueProperties.length,
+    duplicatePropertiesRemoved: properties.length - uniqueProperties.length,
+    duplicateIds: duplicateIdsToDelete,
+    images: uniqueImages.length,
+    mode: "dry-run"
+  }));
+
   const config = { url: env.SUPABASE_URL.replace(/\/+$/, ""), key: env.SUPABASE_SECRET_KEY };
+
+  // Proactively delete duplicate property records from Supabase
+  if (duplicateIdsToDelete.length > 0) {
+    for (let offset = 0; offset < duplicateIdsToDelete.length; offset += 50) {
+      const batch = duplicateIdsToDelete.slice(offset, offset + 50);
+      await request(config, `properties?property_id=in.(${batch.map(encodeURIComponent).join(",")})`, { method: "DELETE" }).catch(() => null);
+      await request(config, `property_images?property_id=in.(${batch.map(encodeURIComponent).join(",")})`, { method: "DELETE" }).catch(() => null);
+    }
+  }
+
   const archived = await request(config, "properties?select=property_id&status=eq.archived&limit=10000");
   const archivedIds = new Set((archived || []).map(item => item.property_id));
   uniqueProperties = uniqueProperties.map(item => archivedIds.has(item.property_id) ? { ...item, status: "archived" } : item);
   const hiddenImages = await request(config, "property_images?select=property_id,position&storage_path=like.hidden:*&limit=10000");
   const hiddenImageKeys = new Set((hiddenImages || []).map(item => `${item.property_id}:${item.position}`));
-  uniqueImages = uniqueImages.filter(item => !hiddenImageKeys.has(`${item.property_id}:${item.position}`));
-  const existingVisibleImages = await request(config, "property_images?select=property_id,position&public_url=not.is.null&limit=10000");
-  const visibleImageKeys = new Set((existingVisibleImages || []).map(item => `${item.property_id}:${item.position}`));
-  uniqueImages.forEach(item => { if (item.public_url) visibleImageKeys.add(`${item.property_id}:${item.position}`); });
-  hiddenImageKeys.forEach(key => visibleImageKeys.delete(key));
+  const filteredImages = uniqueImages.filter(item => !hiddenImageKeys.has(`${item.property_id}:${item.position}`));
+  
   const visibleCounts = new Map();
-  visibleImageKeys.forEach(key => { const propertyId = key.slice(0, key.lastIndexOf(":")); visibleCounts.set(propertyId, (visibleCounts.get(propertyId) || 0) + 1); });
+  filteredImages.forEach(img => {
+    if (img.public_url) visibleCounts.set(img.property_id, (visibleCounts.get(img.property_id) || 0) + 1);
+  });
   uniqueProperties = uniqueProperties.map(item => ({ ...item, image_count: visibleCounts.get(item.property_id) || 0 }));
+
   for (let offset = 0; offset < uniqueProperties.length; offset += 100) await request(config, "properties?on_conflict=property_id", { method: "POST", body: uniqueProperties.slice(offset, offset + 100), prefer: "resolution=merge-duplicates,return=minimal" });
-  for (let offset = 0; offset < uniqueImages.length; offset += 100) await request(config, "property_images?on_conflict=property_id,position", { method: "POST", body: uniqueImages.slice(offset, offset + 100), prefer: "resolution=merge-duplicates,return=minimal" });
-  console.log(JSON.stringify({ ok: true, synced: uniqueProperties.length, skippedDuplicateProperties: properties.length - uniqueProperties.length, images: uniqueImages.length }));
+  for (let offset = 0; offset < filteredImages.length; offset += 100) await request(config, "property_images?on_conflict=property_id,position", { method: "POST", body: filteredImages.slice(offset, offset + 100), prefer: "resolution=merge-duplicates,return=minimal" });
+  console.log(JSON.stringify({ ok: true, synced: uniqueProperties.length, deletedDuplicates: duplicateIdsToDelete.length, images: filteredImages.length }));
 }
 
 main().catch(error => { console.error(error.message); process.exitCode = 1; });

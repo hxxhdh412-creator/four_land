@@ -1,9 +1,20 @@
 const fs = require('fs');
 const path = require('path');
+const root = path.resolve(__dirname, '..');
+const envFile = path.join(root, '.env.local');
+if (fs.existsSync(envFile)) {
+  fs.readFileSync(envFile, 'utf8').split(/\r?\n/).forEach(line => {
+    const sep = line.indexOf('=');
+    if (sep > 0 && !line.trim().startsWith('#')) {
+      const k = line.slice(0, sep).trim();
+      const v = line.slice(sep + 1).trim();
+      if (!process.env[k]) process.env[k] = v;
+    }
+  });
+}
 const { supabaseRequest } = require('../api/_supabase');
 
 async function generateSitemap() {
-  const root = path.resolve(__dirname, '..');
   const today = new Date().toISOString().split('T')[0];
   let properties = [];
 
