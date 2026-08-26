@@ -67,8 +67,20 @@ module.exports = async function handler(req, res) {
         return new Date(b.row.received_at || 0) - new Date(a.row.received_at || 0);
       });
 
-    const total = scoredRows.length;
-    const paginatedRows = scoredRows
+    // Lọc trùng địa chỉ: Chỉ giữ lại đúng 1 bản ghi tốt nhất / mới nhất cho mỗi căn nhà
+    const seenAddresses = new Set();
+    const uniqueScoredRows = [];
+    for (const item of scoredRows) {
+      const addrKey = item.row.address
+        ? String(item.row.address).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "")
+        : item.row.property_id;
+      if (seenAddresses.has(addrKey)) continue;
+      seenAddresses.add(addrKey);
+      uniqueScoredRows.push(item);
+    }
+
+    const total = uniqueScoredRows.length;
+    const paginatedRows = uniqueScoredRows
       .slice((page - 1) * pageSize, page * pageSize)
       .map(item => item.row);
 
