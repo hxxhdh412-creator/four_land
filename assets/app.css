@@ -215,10 +215,10 @@ input:focus,select:focus{border-color:var(--orange);box-shadow:0 0 0 3px rgba(23
 .direct-contact a:active{transform:scale(.96)}
 .direct-contact a svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 
-.btn-unlock-phone{display:flex;align-items:center;justify-content:center;gap:7px;flex:0 0 auto;min-width:130px;height:46px;padding:0 16px;border:1px solid rgba(239,101,9,.35);border-radius:4px;background:#fff8f2;color:var(--orange);font-size:13px;font-weight:800;cursor:pointer;transition:all .18s ease}
-.btn-unlock-phone:hover{background:var(--orange);color:#fff;border-color:var(--orange);box-shadow:0 6px 16px rgba(239,101,9,.25);transform:translateY(-1px)}
-.btn-unlock-phone:active{transform:scale(.96)}
-.btn-unlock-phone svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.phone-link-call{display:inline-flex;align-items:center;color:var(--forest);font-weight:800;text-decoration:none;transition:color .18s ease;cursor:pointer}
+.phone-link-call:hover{color:var(--orange);text-decoration:underline}
+.phone-link-unlock{display:inline-flex;align-items:center;padding:0;border:0;background:transparent;color:var(--orange);font-weight:800;font-size:inherit;cursor:pointer;text-decoration:underline dotted}
+.phone-link-unlock:hover{color:#b8322a}
 
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(24px);padding:11px 20px;border-radius:24px;background:rgba(20,32,25,.94);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);color:#fff;font-size:13px;font-weight:600;box-shadow:0 10px 30px rgba(0,0,0,.25);opacity:0;pointer-events:none;transition:all .22s cubic-bezier(.4,0,.2,1);z-index:99999}
 .toast.active{opacity:1;transform:translateX(-50%) translateY(0)}

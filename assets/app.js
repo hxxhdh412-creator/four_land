@@ -23,6 +23,8 @@ function showToast(message,duration=2400){const toast=$('toast');if(!toast)retur
 function maskPhone(phone){if(!phone)return'Chưa có SĐT';const clean=String(phone).trim();if(clean.length>=9)return clean.slice(0,4)+' ••• •••';return clean.slice(0,Math.max(3,clean.length-4))+' •••'}
 function maskTextPhones(text){if(!text)return'';const phonePattern=/(?:\+?84|0)(?:3|5|7|8|9)(?:[.\s-]?\d){7,8}/g;return String(text).replace(phonePattern,match=>{const clean=match.replace(/[.\s-]/g,'');return clean.slice(0,4)+' ••• •••'})}
 
+const COMPANY_HOTLINE='0906 396 912';
+
 async function openDetail(id){
   const dialog=$('detail');state.currentPropertyId=id;$('detailId').textContent=id;$('detailBody').innerHTML='<div class="empty">Đang tải chi tiết…</div>';if(!dialog.open)dialog.showModal();
   try{
@@ -30,14 +32,25 @@ async function openDetail(id){
     const {property:p}=await api('/api/property?id='+encodeURIComponent(id));
     const imageItems=(p.property_images||[]).filter(i=>i.public_url||i.source_url).sort((a,b)=>a.position-b.position);
     const images=imageItems.map(i=>driveImage(i.public_url||i.source_url)).filter(Boolean);
-    const displayPhone=state.adminUnlocked?(p.phone||'Chưa có số điện thoại'):(p.phone?maskPhone(p.phone):'Chưa có số điện thoại');
+    const customerPhone=p.phone||'';
+    const phoneCellContent=state.adminUnlocked
+      ?(customerPhone?`<a href="tel:${escapeHtml(phoneHref(customerPhone))}" class="phone-link-call" title="Bấm để gọi số khách / chủ nhà">${escapeHtml(customerPhone)}</a>`:'—')
+      :(customerPhone?`<button type="button" class="phone-link-unlock" id="unlockPhoneInline" title="Bấm để nhập mã Admin xem SĐT">${escapeHtml(maskPhone(customerPhone))}</button>`:'—');
     const displayRawText=state.adminUnlocked?(p.raw_text||p.notes||'Chưa có nội dung mô tả.'):maskTextPhones(p.raw_text||p.notes||'Chưa có nội dung mô tả.');
-    const contactActionHtml=state.adminUnlocked
-      ?(p.phone?`<a href="tel:${escapeHtml(phoneHref(p.phone))}" aria-label="Gọi ${escapeHtml(p.phone)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.2 3.5 9.6 7c.35.5.28 1.18-.16 1.62l-1.3 1.3a14.5 14.5 0 0 0 5.94 5.94l1.3-1.3c.44-.44 1.12-.51 1.62-.16l3.5 2.4c.55.38.72 1.11.39 1.69l-1 1.75c-.34.59-.98.95-1.66.93C10.1 20.95 3.05 13.9 2.83 5.77c-.02-.68.34-1.32.93-1.66l1.75-1c.58-.33 1.31-.16 1.69.39Z"/></svg>Gọi ngay</a>`:'')
-      :`<button type="button" class="btn-unlock-phone" id="unlockPhoneBtn" title="Nhập mã quản trị để xem SĐT"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><span>Mở số liên hệ</span></button>`;
     const thumbsHtml=images.map((src,index)=>`<img class="${index===0?'active':''}" src="${escapeHtml(src)}" alt="Ảnh ${index+1}">`).join('')+
       (state.adminUnlocked?`<label class="admin-thumb-add" for="adminQuickUpload" title="Bổ sung hình ảnh"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></label><input id="adminQuickUpload" type="file" accept="image/jpeg,image/png,image/webp" multiple hidden style="display:none!important">`:'');
-    $('detailBody').innerHTML=`<div><div class="gallery-main">${images[0]?`<img id="mainImage" src="${escapeHtml(images[0])}" alt="Ảnh nhà">`:''}<button type="button" class="gallery-share-badge" id="shareDetail" title="Chia sẻ căn nhà này"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg><span>Chia sẻ</span></button></div><div class="thumbs">${thumbsHtml}</div></div><div><section class="content-panel"><h3>Nội dung nhà</h3><p>${escapeHtml(displayRawText)}</p></section><section class="info-panel"><div class="price">${escapeHtml(p.price_text||'Liên hệ')}</div><h2>${escapeHtml(p.address||p.property_id)}</h2><div class="meta">${escapeHtml([p.street,p.ward,p.district].filter(Boolean).join(' · '))}</div><div class="info-grid">${[['Diện tích',p.area_text],['Kích thước',p.dimensions],['Phòng ngủ',p.bedrooms],['Phòng tắm',p.bathrooms],['Kết cấu',p.structure],['Pháp lý',p.legal],['Liên hệ',displayPhone],['Loại BĐS',p.property_type]].map(([label,value])=>`<div><small>${label}</small><strong>${escapeHtml(value||'—')}</strong></div>`).join('')}</div></section>${state.adminUnlocked?adminToolsHtml(p):''}<section class="direct-contact"><div><span>Liên hệ trực tiếp</span><strong>${escapeHtml(displayPhone)}</strong></div>${contactActionHtml}</section></div>`;
+    const infoGridHtml=[
+      ['Diện tích',p.area_text],
+      ['Kích thước',p.dimensions],
+      ['Phòng ngủ',p.bedrooms],
+      ['Phòng tắm',p.bathrooms],
+      ['Kết cấu',p.structure],
+      ['Pháp lý',p.legal],
+      ['Liên hệ',phoneCellContent,true],
+      ['Loại BĐS',p.property_type]
+    ].map(([label,value,isRaw])=>`<div><small>${label}</small><strong>${isRaw?value:escapeHtml(value||'—')}</strong></div>`).join('');
+
+    $('detailBody').innerHTML=`<div><div class="gallery-main">${images[0]?`<img id="mainImage" src="${escapeHtml(images[0])}" alt="Ảnh nhà">`:''}<button type="button" class="gallery-share-badge" id="shareDetail" title="Chia sẻ căn nhà này"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg><span>Chia sẻ</span></button></div><div class="thumbs">${thumbsHtml}</div></div><div><section class="content-panel"><h3>Nội dung nhà</h3><p>${escapeHtml(displayRawText)}</p></section><section class="info-panel"><div class="price">${escapeHtml(p.price_text||'Liên hệ')}</div><h2>${escapeHtml(p.address||p.property_id)}</h2><div class="meta">${escapeHtml([p.street,p.ward,p.district].filter(Boolean).join(' · '))}</div><div class="info-grid">${infoGridHtml}</div></section>${state.adminUnlocked?adminToolsHtml(p):''}<section class="direct-contact"><div><span>Hotline hỗ trợ Fourland</span><strong>${escapeHtml(COMPANY_HOTLINE)}</strong></div><a href="tel:${escapeHtml(phoneHref(COMPANY_HOTLINE))}" aria-label="Gọi Hotline Fourland"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.2 3.5 9.6 7c.35.5.28 1.18-.16 1.62l-1.3 1.3a14.5 14.5 0 0 0 5.94 5.94l1.3-1.3c.44-.44 1.12-.51 1.62-.16l3.5 2.4c.55.38.72 1.11.39 1.69l-1 1.75c-.34.59-.98.95-1.66.93C10.1 20.95 3.05 13.9 2.83 5.77c-.02-.68.34-1.32.93-1.66l1.75-1c.58-.33 1.31-.16 1.69.39Z"/></svg>Gọi ngay</a></section></div>`;
     document.querySelectorAll('.thumbs img').forEach(img=>img.onclick=()=>{document.querySelectorAll('.thumbs img').forEach(i=>i.classList.remove('active'));img.classList.add('active');$('mainImage').src=img.src});
     const shareBtn=$('shareDetail');
     if(shareBtn){
@@ -58,9 +71,9 @@ async function openDetail(id){
         }
       };
     }
-    const unlockBtn=$('unlockPhoneBtn');
-    if(unlockBtn){
-      unlockBtn.onclick=()=>{
+    const unlockInlineBtn=$('unlockPhoneInline');
+    if(unlockInlineBtn){
+      unlockInlineBtn.onclick=()=>{
         const dialog=$('adminAccess');
         $('adminAccessStatus').textContent='';
         $('adminCode').value='';
@@ -70,7 +83,6 @@ async function openDetail(id){
     }
     if(state.adminUnlocked){
       $('propertyEditForm').onsubmit=event=>saveProperty(event,p.property_id);
-      const mainUpload=$('adminImages');if(mainUpload)mainUpload.onchange=event=>uploadImages(event,p.property_id);
       const quickUpload=$('adminQuickUpload');if(quickUpload)quickUpload.onchange=event=>uploadImages(event,p.property_id);
       document.querySelectorAll('.thumbs img').forEach((img,index)=>{const wrap=document.createElement('span');wrap.className='admin-thumb';img.parentNode.insertBefore(wrap,img);wrap.appendChild(img);const remove=document.createElement('button');remove.type='button';remove.className='image-remove';remove.setAttribute('aria-label',`Xóa ảnh ${index+1}`);remove.title='Xóa ảnh này';remove.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18m-2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/></svg>';remove.onclick=event=>{event.stopPropagation();deleteImage(p.property_id,imageItems[index].position)};wrap.appendChild(remove)});
       const panel=document.querySelector('.admin-panel');if(panel){const archive=document.createElement('button');archive.type='button';archive.className=p.status==='archived'?'admin-restore':'admin-archive';archive.textContent=p.status==='archived'?'Khôi phục hồ sơ lên web':'Ẩn hồ sơ khỏi web';archive.onclick=()=>setPropertyArchived(p.property_id,p.status!=='archived');panel.appendChild(archive)}
