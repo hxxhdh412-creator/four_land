@@ -100,9 +100,44 @@ async function setPropertyArchived(propertyId,archived){
   const question=archived?'Ẩn hồ sơ này khỏi kho web? Bạn vẫn có thể khôi phục sau.':'Khôi phục hồ sơ này lên kho web?';if(!confirm(question))return;
   try{await api('/api/admin-archive',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({propertyId,archived})});closeDetailModal();await load()}catch(error){alert(error.message)}
 }
-function setAdminState(unlocked){state.adminUnlocked=Boolean(unlocked);const profile=document.querySelector('.profile'),toggle=$('archivedToggle');profile.classList.toggle('admin-active',state.adminUnlocked);profile.setAttribute('aria-label',state.adminUnlocked?'Quản trị viên đang mở quyền':'Mở quyền quản trị');profile.title=state.adminUnlocked?'Đã mở quyền quản trị':'Mở quyền quản trị';toggle.hidden=!state.adminUnlocked;if(!state.adminUnlocked&&state.viewArchived){state.viewArchived=false;toggle.classList.remove('active');load()}if(state.currentPropertyId&&$('detail').open){openDetail(state.currentPropertyId)}}
+async function logoutAdmin(){
+  try{await api('/api/admin-login',{method:'DELETE'})}catch(_){}
+  setAdminState(false);
+  showToast('🔒 Đã thoát chế độ Quản trị viên!');
+}
+function setAdminState(unlocked){
+  state.adminUnlocked=Boolean(unlocked);
+  const profile=document.querySelector('.profile'),toggle=$('archivedToggle'),logoutBtn=$('logoutAdminBtn');
+  profile.classList.toggle('admin-active',state.adminUnlocked);
+  profile.setAttribute('aria-label',state.adminUnlocked?'Đang mở quyền Admin (Bấm để thoát)':'Mở quyền quản trị');
+  profile.title=state.adminUnlocked?'Đang mở quyền Admin (Bấm để thoát)':'Mở quyền quản trị';
+  toggle.hidden=!state.adminUnlocked;
+  if(logoutBtn)logoutBtn.hidden=!state.adminUnlocked;
+  if(!state.adminUnlocked&&state.viewArchived){state.viewArchived=false;toggle.classList.remove('active');load()}
+  if(state.currentPropertyId&&$('detail').open){openDetail(state.currentPropertyId)}
+}
 async function checkAdminSession(){try{const result=await api('/api/admin-login');setAdminState(result.authenticated)}catch{setAdminState(false)}}
-document.querySelector('.profile').onclick=()=>{if(state.adminUnlocked){if(state.currentPropertyId&&$('detail').open)openDetail(state.currentPropertyId);return}const dialog=$('adminAccess');$('adminAccessStatus').textContent='';$('adminCode').value='';dialog.showModal();setTimeout(()=>$('adminCode').focus(),50)};
+const logoutBtn=$('logoutAdminBtn');
+if(logoutBtn){
+  logoutBtn.onclick=()=>{
+    if(confirm('Bạn có muốn thoát chế độ Quản trị viên (Khóa quyền sửa và che lại SĐT)?')){
+      logoutAdmin();
+    }
+  };
+}
+document.querySelector('.profile').onclick=()=>{
+  if(state.adminUnlocked){
+    if(confirm('Bạn đang ở chế độ Quản trị viên. Bạn có muốn THOÁT quyền quản trị không?')){
+      logoutAdmin();
+    }
+    return;
+  }
+  const dialog=$('adminAccess');
+  $('adminAccessStatus').textContent='';
+  $('adminCode').value='';
+  dialog.showModal();
+  setTimeout(()=>$('adminCode').focus(),50);
+};
 $('closeAdminAccess').onclick=()=>$('adminAccess').close();
 $('adminAccess').onclick=event=>{if(event.target===$('adminAccess'))$('adminAccess').close()};
 $('adminAccessForm').onsubmit=async event=>{event.preventDefault();const status=$('adminAccessStatus'),button=event.currentTarget.querySelector('.access-submit');button.disabled=true;button.textContent='Đang kiểm tra…';status.className='access-status';status.textContent='';try{await api('/api/admin-login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:$('adminCode').value.trim()})});setAdminState(true);status.className='access-status success-text';status.textContent='Đã mở quyền quản trị.';setTimeout(()=>{$('adminAccess').close();if(state.currentPropertyId&&$('detail').open)openDetail(state.currentPropertyId)},300)}catch(error){status.className='access-status error-text';status.textContent=error.message;$('adminCode').select()}finally{button.disabled=false;button.textContent='Mở quyền chỉnh sửa'}};

@@ -281,8 +281,8 @@ label,.eyebrow,.detail-kicker,.result-head strong,.brand-caption{font-weight:700
 .content-panel p{margin:0;white-space:pre-wrap;color:#4f5c56;font-size:13px;line-height:1.7;overflow-wrap:anywhere}
 .profile{transition:box-shadow .2s,background .2s,transform .2s}
 .profile:hover{transform:translateY(-1px)}
-.profile.admin-active{background:var(--orange);box-shadow:0 0 0 4px rgba(239,101,9,.16)}
 .archived-toggle{width:auto;height:36px;padding:0 13px;border-color:rgba(239,101,9,.25);background:#fff8f2;color:var(--forest);font-size:11px}.archived-toggle.active{border-color:var(--orange);background:var(--orange);color:#fff}.archived-toggle[hidden]{display:none!important}.archived-card{border-color:rgba(239,101,9,.35);filter:saturate(.72)}
+.logout-admin-btn{width:auto;height:36px;padding:0 13px;border:1px solid rgba(214,74,63,.35);border-radius:4px;background:#fff3f1;color:#b8322a;font-size:11px;font-weight:800;cursor:pointer;transition:all .18s ease}.logout-admin-btn:hover{background:#b8322a;color:#fff;border-color:#b8322a;transform:translateY(-1px);box-shadow:0 4px 12px rgba(184,50,42,.2)}.logout-admin-btn:active{transform:scale(.96)}.logout-admin-btn[hidden]{display:none!important}
 .access-dialog{width:min(430px,calc(100% - 28px));height:auto;max-height:none;border-radius:14px;overflow:visible}
 .access-dialog form{position:relative;padding:30px;background:#fff;border-radius:14px}
 .access-close{position:absolute;right:14px;top:14px;width:38px;height:38px;padding:0;border:0;border-radius:50%;background:var(--sage);font-size:22px}

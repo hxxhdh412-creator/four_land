@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#102a25">
   <meta name="description" content="Fourland Property Intelligence — Kho bất động sản chọn lọc">
   <title>FOURLAND · Property Intelligence</title>
-  <link rel="stylesheet" href="/assets/app.css?v=20260826-single-plus">
+  <link rel="stylesheet" href="/assets/app.css?v=20260826-logout-admin">
 </head>
 <body>
   <main class="shell">
@@ -15,7 +15,7 @@
         <img class="brand-logo" src="/assets/brand/fourland-logo.png" alt="Four Land">
         <span class="brand-caption">PROPERTY INTELLIGENCE</span>
       </a>
-      <div class="top-actions"><button id="archivedToggle" class="archived-toggle" type="button" hidden>Hồ sơ đã ẩn</button><span class="live-dot"><i></i>Dữ liệu trực tuyến</span><button class="profile" type="button" aria-label="Tài khoản">FL</button></div>
+      <div class="top-actions"><button id="archivedToggle" class="archived-toggle" type="button" hidden>Hồ sơ đã ẩn</button><button id="logoutAdminBtn" class="logout-admin-btn" type="button" title="Thoát quyền Quản trị" hidden>Thoát Admin</button><span class="live-dot"><i></i>Dữ liệu trực tuyến</span><button class="profile" type="button" aria-label="Tài khoản">FL</button></div>
     </nav>
     <header class="hero">
       <div class="hero-copy"><p class="eyebrow"><span></span>KHO BẤT ĐỘNG SẢN CHỌN LỌC</p><h1>Chạm đúng <em>giá trị.</em></h1><p>Nền tảng tra cứu bất động sản thông minh dành riêng cho đội ngũ Fourland.</p></div>
@@ -47,6 +47,6 @@
   <dialog id="adminAccess" class="access-dialog"><form id="adminAccessForm" method="dialog"><button class="access-close" id="closeAdminAccess" type="button" aria-label="Đóng">×</button><span class="access-kicker">FOUR LAND ADMIN</span><h2>Mở quyền quản trị</h2><p>Nhập mã truy cập để chỉnh sửa thông tin và bổ sung hình ảnh.</p><label for="adminCode">Mã truy cập</label><input id="adminCode" type="password" inputmode="text" autocomplete="current-password" placeholder="Nhập mã quản trị" required><button class="access-submit" type="submit">Mở quyền chỉnh sửa</button><div id="adminAccessStatus" class="access-status" role="status" aria-live="polite"></div></form></dialog>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <footer><span>© 2026 Fourland</span><span>Property data, refined.</span></footer>
-  <script src="/assets/app.js?v=20260826-single-plus" defer></script>
+  <script src="/assets/app.js?v=20260826-logout-admin" defer></script>
 </body>
 </html>
