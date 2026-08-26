@@ -298,8 +298,8 @@ async function openDetail(id,seoPath=''){
 
     const updatedRel = formatVietnamRelativeTime(p.received_at || p.updated_at || p.created_at);
     const updatedFull = formatVietnamFullDateTime(p.received_at || p.updated_at || p.created_at);
-    const updatedBadgeHtml = updatedRel ? `<span class="detail-views-subtle" title="Thời gian cập nhật: ${escapeHtml(updatedFull)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>${escapeHtml(updatedRel)}</span>` : '';
-    $('detailId').innerHTML=`${escapeHtml(id)} ${updatedBadgeHtml ? '· ' + updatedBadgeHtml : ''} · <span class="detail-views-subtle"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>${views} lượt xem</span>`;
+    const updatedBadgeHtml = updatedRel ? `<span class="detail-header-sep">·</span><span class="detail-header-time" title="Thời gian cập nhật: ${escapeHtml(updatedFull)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>${escapeHtml(updatedRel)}</span>` : '';
+    $('detailId').innerHTML=`<span class="detail-header-id">${escapeHtml(id)}</span>${updatedBadgeHtml}<span class="detail-header-sep">·</span><span class="detail-header-views" title="${views} lượt xem"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>${views}</span>`;
     const phoneCellContent=state.adminUnlocked
       ?(customerPhone?`<a href="tel:${escapeHtml(phoneHref(customerPhone))}" class="phone-link-call" title="Bấm để gọi số khách / chủ nhà">${escapeHtml(customerPhone)}</a>`:'—')
       :(customerPhone?`<button type="button" class="phone-link-unlock" id="unlockPhoneInline" title="Bấm để nhập mã Admin xem SĐT">${escapeHtml(maskPhone(customerPhone))}</button>`:'—');
