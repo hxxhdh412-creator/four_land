@@ -13,13 +13,22 @@ module.exports = async function handler(req, res) {
     const update = {};
     TEXT_FIELDS.forEach(field => { if (Object.prototype.hasOwnProperty.call(req.body || {}, field)) update[field] = text(req.body[field], field === "raw_text" || field === "notes" ? 5000 : 300); });
     NUMBER_FIELDS.forEach(field => { if (Object.prototype.hasOwnProperty.call(req.body || {}, field)) { const value = Number(req.body[field]); update[field] = Number.isFinite(value) && value >= 0 ? Math.round(value) : null; } });
-    if (Object.prototype.hasOwnProperty.call(req.body || {}, "archived")) update.status = req.body.archived ? "archived" : "partial";
+    if (Object.prototype.hasOwnProperty.call(req.body || {}, "is_featured")) {
+      update.status = req.body.is_featured ? "featured" : "ready";
+    } else if (Object.prototype.hasOwnProperty.call(req.body || {}, "archived")) {
+      update.status = req.body.archived ? "archived" : "partial";
+    }
     if (!Object.keys(update).length) return res.status(400).json({ ok: false, error: "Không có thông tin cần cập nhật" });
     update.updated_at = new Date().toISOString();
     const query = new URLSearchParams({ property_id: `eq.${propertyId}` });
     const result = await supabaseRequest(`properties?${query}`, { method: "PATCH", body: update, prefer: "return=representation" });
     if (!result.data[0]) return res.status(404).json({ ok: false, error: "Không tìm thấy bất động sản" });
-    const message = Object.prototype.hasOwnProperty.call(req.body || {}, "archived") ? (req.body.archived ? "Đã ẩn hồ sơ khỏi web" : "Đã khôi phục hồ sơ") : "Đã cập nhật thông tin nhà";
+    let message = "Đã cập nhật thông tin nhà";
+    if (Object.prototype.hasOwnProperty.call(req.body || {}, "is_featured")) {
+      message = req.body.is_featured ? "Đã ghim bất động sản lên mục Nổi Bật" : "Đã bỏ ghim nổi bật";
+    } else if (Object.prototype.hasOwnProperty.call(req.body || {}, "archived")) {
+      message = req.body.archived ? "Đã ẩn hồ sơ khỏi web" : "Đã khôi phục hồ sơ";
+    }
     res.status(200).json({ ok: true, property: result.data[0], message });
   } catch (error) { sendError(res, error); }
 };

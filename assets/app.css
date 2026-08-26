@@ -264,9 +264,25 @@ input:focus,select:focus{border-color:var(--orange);box-shadow:0 0 0 3px rgba(23
 .phone-link-unlock{display:inline-flex;align-items:center;padding:0;border:0;background:transparent;color:var(--orange);font-weight:800;font-size:inherit;cursor:pointer;text-decoration:none}
 .phone-link-unlock:hover{color:#b8322a}
 
+.quick-tabs{display:flex;align-items:center;gap:8px;margin:16px 0 12px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch}
+.quick-tab{display:inline-flex;align-items:center;gap:6px;padding:0 14px;height:36px;border-radius:18px;border:1px solid var(--line);background:#fff;color:var(--forest);font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .18s ease;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.quick-tab:hover{border-color:var(--forest);background:#f6f8f6}
+.quick-tab.active{background:var(--forest);color:#fff;border-color:var(--forest);box-shadow:0 4px 12px rgba(24,43,36,.18)}
+.quick-tab svg{width:13px;height:13px;flex-shrink:0}
+
 .badge{position:absolute;z-index:2;right:8px;top:8px;display:inline-flex;align-items:center;gap:4.5px;padding:3.5px 8px;border-radius:5px;background:rgba(10,24,19,.58);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.24);color:#fff;font-size:10.5px;font-weight:700;letter-spacing:.02em;text-transform:none!important;pointer-events:none}
 .badge-icon{width:12px;height:12px;display:block;stroke:currentColor}
 .badge-type{position:absolute;z-index:2;left:8px;top:8px;display:inline-flex;align-items:center;padding:3px 7px;border-radius:4px;background:rgba(239,101,9,.92);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);color:#fff;font-size:9px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;pointer-events:none}
+
+.card.is-featured{border-color:rgba(239,101,9,.38);box-shadow:0 6px 20px rgba(239,101,9,.08);background:linear-gradient(180deg,rgba(239,101,9,.025) 0%,#fff 60%)}
+.card.is-featured:hover{border-color:var(--orange);box-shadow:0 12px 28px rgba(239,101,9,.16)}
+.badge-featured{position:absolute;z-index:3;left:8px;top:8px;display:inline-flex;align-items:center;gap:4px;padding:3.5px 8px;border-radius:4px;background:linear-gradient(135deg,#ef6509,#d94e00);color:#fff;font-size:9.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;box-shadow:0 2px 8px rgba(239,101,9,.38);pointer-events:none}
+.badge-featured svg{width:11px;height:11px;fill:currentColor}
+.card.is-featured .badge-type{left:auto;right:8px;top:auto;bottom:8px}
+
+.admin-featured-checkbox{display:flex;align-items:center;gap:8px;padding:12px 14px;border-radius:6px;background:rgba(239,101,9,.06);border:1px solid rgba(239,101,9,.2);cursor:pointer;margin-bottom:8px}
+.admin-featured-checkbox input{width:18px;height:18px;cursor:pointer;accent-color:var(--orange)}
+.admin-featured-checkbox span{font-size:13px;color:var(--forest);font-weight:600}
 
 .price-row{display:flex;align-items:baseline;justify-content:space-between;min-height:22px}
 .price{display:inline-flex;align-items:baseline;gap:3px;line-height:1}

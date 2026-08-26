@@ -39,7 +39,7 @@
   <link rel="manifest" href="/manifest.json">
   <link rel="icon" type="image/png" href="/assets/brand/fourland-logo.png">
   <link rel="apple-touch-icon" href="/assets/brand/fourland-logo.png">
-  <link rel="stylesheet" href="/assets/app.css?v=20260826-fourland-navfix-v1">
+  <link rel="stylesheet" href="/assets/app.css?v=20260826-fourland-featured-v1">
 
   <!-- Schema.org JSON-LD Structured Data -->
   <script type="application/ld+json">
@@ -158,6 +158,12 @@
       <div class="actions"><button id="reset" type="button">Xóa toàn bộ bộ lọc</button></div>
     </form>
 
+    <div class="quick-tabs" id="quickTabs" role="tablist">
+      <button class="quick-tab active" data-filter="all" type="button">Tất cả hồ sơ</button>
+      <button class="quick-tab" data-filter="featured" type="button"><svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> BĐS Nổi Bật</button>
+      <button class="quick-tab" data-filter="photos" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg> Có hình ảnh</button>
+    </div>
+
     <div class="result-head"><strong id="resultLabel">Đang tải dữ liệu…</strong><span id="pageLabel"></span></div>
     <div id="error" class="error" hidden></div>
     <section id="grid" class="grid" aria-live="polite"></section>
@@ -259,7 +265,7 @@
     </form>
   </dialog>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script src="/assets/app.js?v=20260826-fourland-seo-v1" defer></script>
+  <script src="/assets/app.js?v=20260826-fourland-featured-v1" defer></script>
 </body>
 
 </html>

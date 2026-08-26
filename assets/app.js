@@ -1,10 +1,10 @@
-const state={page:1,pageSize:24,total:0,rows:[],facets:null,requestId:0,adminUnlocked:false,currentPropertyId:null};const $=id=>document.getElementById(id);const escapeHtml=value=>String(value||'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+const state={page:1,pageSize:24,total:0,rows:[],facets:null,requestId:0,adminUnlocked:false,currentPropertyId:null,filterTab:'all'};const $=id=>document.getElementById(id);const escapeHtml=value=>String(value||'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const phoneHref=value=>String(value||'').replace(/[^\d+]/g,'');
 const slugify=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/gi,'d').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,90)||'ho-so-bat-dong-san';
 const propertyPath=row=>`/bat-dong-san/${slugify(row.address||row.street||row.property_type)}--${encodeURIComponent(row.property_id)}`;
 state.viewArchived=false;
 function driveImage(url){const value=String(url||'');const match=value.match(/\/d\/([\w-]+)/)||value.match(/[?&]id=([\w-]+)/);return match?`https://drive.google.com/thumbnail?id=${match[1]}&sz=w1400`:value}
-function values(){return{q:$('q').value,district:$('district').value,ward:$('ward').value,street:$('street').value,type:$('type').value,minPrice:$('minPrice').value,maxPrice:$('maxPrice').value,minArea:$('minArea').value,maxArea:$('maxArea').value,page:state.page,pageSize:state.pageSize,archived:state.viewArchived?'only':''}}
+function values(){return{q:$('q').value,district:$('district').value,ward:$('ward').value,street:$('street').value,type:$('type').value,minPrice:$('minPrice').value,maxPrice:$('maxPrice').value,minArea:$('minArea').value,maxArea:$('maxArea').value,page:state.page,pageSize:state.pageSize,archived:state.viewArchived?'only':'',featured:state.filterTab==='featured'?'1':''}}
 function params(input){const search=new URLSearchParams();Object.entries(input).forEach(([key,value])=>{if(value!==''&&value!=null)search.set(key,value)});return search}
 async function api(path,options={}){const response=await fetch(path,options);const body=await response.json();if(!response.ok||body.ok===false)throw new Error(body.error||'Không tải được dữ liệu');return body}
 function setOptions(id,items,label){const select=$(id),current=select.value;select.innerHTML=`<option value="">${label}</option>`+(items||[]).map(item=>`<option value="${escapeHtml(item)}">${escapeHtml(item)}</option>`).join('');select.value=current}
@@ -42,8 +42,10 @@ function formatCardPrice(row){
 function render(){
   if(!state.rows.length){$('grid').innerHTML='<div class="empty">Không tìm thấy hồ sơ phù hợp.</div>';return}
   $('grid').innerHTML=state.rows.map(row=>{
+    const isFeatured = row.status === 'featured' || Boolean(row.is_featured);
     const images=(row.property_images||[]).filter(item=>item.public_url).sort((a,b)=>a.position-b.position),image=driveImage(images[0]?.public_url);
     const badgeHtml = images.length > 0 ? `<span class="badge"><svg class="badge-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="13" r="4" stroke="currentColor" stroke-width="1.8"/></svg>${images.length}</span>` : '';
+    const featuredBadgeHtml = isFeatured ? `<span class="badge-featured"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>Nổi bật</span>` : '';
     const typeBadgeHtml = row.property_type ? `<span class="badge-type">${escapeHtml(row.property_type)}</span>` : '';
     const imgAlt = `${row.property_type||'Bất động sản'} ${[row.address,row.district].filter(Boolean).join(', ')} - Fourland`;
     const locationParts = [row.ward, row.district].filter(Boolean);
@@ -59,9 +61,10 @@ function render(){
     }
     const specsHtml = specs.length ? `<div class="card-specs">${specs.join('')}</div>` : '';
 
-    return`<a class="card ${row.status==='archived'?'archived-card':''}" href="${escapeHtml(propertyPath(row))}" data-id="${escapeHtml(row.property_id)}" aria-label="Xem ${escapeHtml(row.address||row.property_id)}">
+    return`<a class="card ${isFeatured?'is-featured':''} ${row.status==='archived'?'archived-card':''}" href="${escapeHtml(propertyPath(row))}" data-id="${escapeHtml(row.property_id)}" aria-label="Xem ${escapeHtml(row.address||row.property_id)}">
       <div class="photo">
         ${image?`<img loading="lazy" referrerpolicy="no-referrer" src="${escapeHtml(image)}" alt="${escapeHtml(imgAlt)}" title="${escapeHtml(imgAlt)}" onerror="this.style.display='none';this.parentElement.classList.add('no-photo');">`:''}
+        ${featuredBadgeHtml}
         ${badgeHtml}
         ${typeBadgeHtml}
       </div>
@@ -80,7 +83,7 @@ function render(){
   }).join('');
   document.querySelectorAll('.card').forEach(card=>card.addEventListener('click',event=>{if(event.ctrlKey||event.metaKey||event.shiftKey||event.altKey)return;event.preventDefault();openDetail(card.dataset.id,card.getAttribute('href'))}));
 }
-function adminToolsHtml(p){return`<details class="admin-panel"><summary><span>Quản trị hồ sơ</span><small>Sửa thông tin nhà</small></summary><form id="propertyEditForm"><div class="admin-fields"><label class="wide">Nội dung nhà<textarea name="raw_text" rows="5">${escapeHtml(p.raw_text||'')}</textarea></label><label class="wide">Địa chỉ<input name="address" value="${escapeHtml(p.address||'')}"></label><label>Quận/Huyện<input name="district" value="${escapeHtml(p.district||'')}"></label><label>Phường/Xã<input name="ward" value="${escapeHtml(p.ward||'')}"></label><label>Tên đường<input name="street" value="${escapeHtml(p.street||'')}"></label><label>Giá<input name="price_text" value="${escapeHtml(p.price_text||'')}"></label><label>Diện tích<input name="area_text" value="${escapeHtml(p.area_text||'')}"></label><label>Kích thước<input name="dimensions" value="${escapeHtml(p.dimensions||'')}"></label><label>Phòng ngủ<input name="bedrooms" type="number" min="0" value="${escapeHtml(p.bedrooms??'')}"></label><label>Phòng tắm<input name="bathrooms" type="number" min="0" value="${escapeHtml(p.bathrooms??'')}"></label><label>Kết cấu<input name="structure" value="${escapeHtml(p.structure||'')}"></label><label>Pháp lý<input name="legal" value="${escapeHtml(p.legal||'')}"></label><label>Số liên hệ<input name="phone" inputmode="tel" value="${escapeHtml(p.phone||'')}"></label><label>Loại BĐS<input name="property_type" value="${escapeHtml(p.property_type||'')}"></label></div><div class="admin-actions"><button class="admin-save" type="submit">Lưu thay đổi</button><button type="button" class="${p.status==='archived'?'admin-restore':'admin-archive'}" id="adminArchiveBtn">${p.status==='archived'?'Khôi phục hồ sơ lên web':'Ẩn hồ sơ khỏi web'}</button></div><div id="adminEditStatus" class="admin-status" role="status"></div></form></details>`}
+function adminToolsHtml(p){return`<details class="admin-panel"><summary><span>Quản trị hồ sơ</span><small>Sửa thông tin nhà</small></summary><form id="propertyEditForm"><label class="wide admin-featured-checkbox"><input type="checkbox" name="is_featured" id="adminFeaturedInput" ${p.status==='featured'?'checked':''}><span>⭐ <b>Ghim Bất Động Sản Nổi Bật</b> (Ưu tiên hiện lên đầu trang)</span></label><div class="admin-fields"><label class="wide">Nội dung nhà<textarea name="raw_text" rows="5">${escapeHtml(p.raw_text||'')}</textarea></label><label class="wide">Địa chỉ<input name="address" value="${escapeHtml(p.address||'')}"></label><label>Quận/Huyện<input name="district" value="${escapeHtml(p.district||'')}"></label><label>Phường/Xã<input name="ward" value="${escapeHtml(p.ward||'')}"></label><label>Tên đường<input name="street" value="${escapeHtml(p.street||'')}"></label><label>Giá<input name="price_text" value="${escapeHtml(p.price_text||'')}"></label><label>Diện tích<input name="area_text" value="${escapeHtml(p.area_text||'')}"></label><label>Kích thước<input name="dimensions" value="${escapeHtml(p.dimensions||'')}"></label><label>Phòng ngủ<input name="bedrooms" type="number" min="0" value="${escapeHtml(p.bedrooms??'')}"></label><label>Phòng tắm<input name="bathrooms" type="number" min="0" value="${escapeHtml(p.bathrooms??'')}"></label><label>Kết cấu<input name="structure" value="${escapeHtml(p.structure||'')}"></label><label>Pháp lý<input name="legal" value="${escapeHtml(p.legal||'')}"></label><label>Số liên hệ<input name="phone" inputmode="tel" value="${escapeHtml(p.phone||'')}"></label><label>Loại BĐS<input name="property_type" value="${escapeHtml(p.property_type||'')}"></label></div><div class="admin-actions"><button class="admin-save" type="submit">Lưu thay đổi</button><button type="button" class="${p.status==='archived'?'admin-restore':'admin-archive'}" id="adminArchiveBtn">${p.status==='archived'?'Khôi phục hồ sơ lên web':'Ẩn hồ sơ khỏi web'}</button></div><div id="adminEditStatus" class="admin-status" role="status"></div></form></details>`}
 function showToast(message,duration=2400){const toast=$('toast');if(!toast)return;toast.textContent=message;toast.classList.add('active');clearTimeout(toast._timer);toast._timer=setTimeout(()=>toast.classList.remove('active'),duration)}
 function maskPhone(phone){if(!phone)return'Chưa có SĐT';const clean=String(phone).trim();if(clean.length>=9)return clean.slice(0,4)+' ••• •••';return clean.slice(0,Math.max(3,clean.length-4))+' •••'}
 function maskTextPhones(text){if(!text)return'';const phonePattern=/(?:\+?84|0)(?:3|5|7|8|9)(?:[.\s-]?\d){7,8}/g;return String(text).replace(phonePattern,match=>{const clean=match.replace(/[.\s-]/g,'');return clean.slice(0,4)+' ••• •••'})}
@@ -232,6 +235,7 @@ async function openDetail(id,seoPath=''){
 async function saveProperty(event,propertyId){
   event.preventDefault();const form=event.currentTarget,status=$('adminEditStatus'),button=form.querySelector('.admin-save');
   const payload={propertyId};new FormData(form).forEach((value,key)=>payload[key]=value);
+  payload.is_featured=Boolean(form.querySelector('[name="is_featured"]')?.checked);
   button.disabled=true;button.textContent='Đang lưu…';status.className='admin-status';status.textContent='';
   try{const result=await api('/api/admin-property',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});status.className='admin-status success-text';status.textContent=result.message||'Đã cập nhật hồ sơ.';await load();setTimeout(()=>openDetail(propertyId),350)}
   catch(error){status.className='admin-status error-text';status.textContent=error.message;button.disabled=false;button.textContent='Lưu thay đổi'}
@@ -340,6 +344,16 @@ function handleSearchFromHash(){
 }
 window.addEventListener('hashchange',handleSearchFromHash);
 window.addEventListener('popstate',()=>{if($('detail').open){$('detail').close();state.currentPropertyId=null;document.title=DEFAULT_PAGE_TITLE}});
+
+document.querySelectorAll('.quick-tab').forEach(tab=>{
+  tab.onclick=()=>{
+    document.querySelectorAll('.quick-tab').forEach(t=>t.classList.remove('active'));
+    tab.classList.add('active');
+    state.filterTab=tab.dataset.filter||'all';
+    state.page=1;
+    load();
+  };
+});
 
 loadFacets();
 load();

@@ -13,6 +13,7 @@ module.exports = async function handler(req, res) {
     // 1. Phân tích ngữ nghĩa tự nhiên tiếng Việt (AI NLP Parser)
     const rawQ = String(req.query.q || "").trim();
     const nlp = parseNaturalQuery(rawQ);
+    const featuredOnly = req.query.featured === "1" || req.query.featured === "true";
 
     const explicitFilters = {
       district: text(req.query.district),
@@ -37,18 +38,32 @@ module.exports = async function handler(req, res) {
     const result = await supabaseRequest(`properties?${params}`);
     const allRows = result.data || [];
 
-    // 2. Chấm điểm liên quan và lọc đa tầng
+    // 2. Chấm điểm liên quan, lọc đa tầng và ghim nhà nổi bật lên đầu
     const scoredRows = allRows
-      .map(row => ({
-        row: {
-          ...row,
-          view_count: Number(row.data_json?.view_count) || 0
-        },
-        score: matchAndScoreProperty(row, nlp, explicitFilters)
-      }))
-      .filter(item => item.score > 0)
+      .map(row => {
+        const isFeatured = row.status === "featured" || Boolean(row.data_json?.is_featured);
+        return {
+          row: {
+            ...row,
+            is_featured: isFeatured,
+            view_count: Number(row.data_json?.view_count) || 0
+          },
+          score: matchAndScoreProperty(row, nlp, explicitFilters),
+          isFeatured
+        };
+      })
+      .filter(item => {
+        if (item.score <= 0) return false;
+        if (featuredOnly && !item.isFeatured) return false;
+        return true;
+      })
       .sort((a, b) => {
+        // Ưu tiên nhà nổi bật lên đầu trang khi duyệt danh sách
+        if (!rawQ && a.isFeatured !== b.isFeatured) {
+          return b.isFeatured ? 1 : -1;
+        }
         if (b.score !== a.score) return b.score - a.score;
+        if (a.isFeatured !== b.isFeatured) return b.isFeatured ? 1 : -1;
         return new Date(b.row.received_at || 0) - new Date(a.row.received_at || 0);
       });
 
