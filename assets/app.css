@@ -395,3 +395,41 @@ label,.eyebrow,.detail-kicker,.result-head strong,.brand-caption{font-weight:700
   }
   #detail .gallery-main img{display:block}
 }
+
+/* Luxury Fourland Footer */
+.site-footer{margin-top:64px;border:1px solid rgba(255,255,255,.08);background:#13251f;color:#cdd7d2;border-radius:12px;overflow:hidden;box-shadow:0 16px 50px rgba(16,32,28,.14)}
+.footer-inner{display:grid;grid-template-columns:1.5fr 1.2fr 1fr;gap:44px;padding:48px 44px 38px}
+.footer-brand{display:flex;flex-direction:column;gap:14px}
+.footer-logo-wrap{display:flex;align-items:center;gap:14px}
+.footer-logo{width:56px;height:52px;object-fit:contain}
+.footer-brand-text strong{display:block;font-size:19px;font-weight:900;letter-spacing:.12em;color:#fff;font-family:"Manrope",sans-serif}
+.footer-brand-text span{display:block;font-size:8px;font-weight:800;letter-spacing:.22em;color:var(--orange)}
+.footer-tagline{margin:0;font-size:13px;line-height:1.65;color:rgba(255,255,255,.68);max-width:440px}
+.footer-live-badge{display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:700;color:#7ee0a2;background:rgba(126,224,162,.1);padding:6px 12px;border-radius:20px;width:fit-content;border:1px solid rgba(126,224,162,.2)}
+.live-dot-icon{width:7px;height:7px;border-radius:50%;background:#4e9f74;box-shadow:0 0 0 4px rgba(78,159,116,.25);animation:pulseDot 2s infinite}
+@keyframes pulseDot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.6;transform:scale(.85)}}
+
+.footer-col h3{margin:0 0 16px;font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.12em;color:#fff}
+.footer-list{list-style:none;padding:0;margin:0;display:grid;gap:12px}
+.footer-list li{display:flex;align-items:flex-start;gap:10px;font-size:13px;color:rgba(255,255,255,.75);line-height:1.5}
+.footer-list li svg{width:16px;height:16px;flex:0 0 16px;margin-top:2px;fill:none;stroke:var(--orange);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.footer-list li strong{color:#fff;font-weight:700}
+.footer-list a{color:#fff;text-decoration:none;font-weight:700;transition:color .18s ease}
+.footer-list a:hover{color:var(--orange)}
+
+.footer-links{list-style:none;padding:0;margin:0;display:grid;gap:10px}
+.footer-links a{color:rgba(255,255,255,.72);text-decoration:none;font-size:13px;transition:all .18s ease;display:inline-block}
+.footer-links a:hover{color:var(--orange);transform:translateX(3px)}
+
+.footer-bottom{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:20px 44px;border-top:1px solid rgba(255,255,255,.08);background:#0d1c17;color:rgba(255,255,255,.5);font-size:11px;letter-spacing:.04em}
+
+@media(max-width:900px){
+  .footer-inner{grid-template-columns:1fr 1fr;gap:32px;padding:36px 26px 28px}
+  .footer-brand{grid-column:1/-1}
+  .footer-bottom{flex-direction:column;align-items:flex-start;gap:8px;padding:16px 26px}
+}
+@media(max-width:600px){
+  .site-footer{margin-top:40px;border-radius:8px}
+  .footer-inner{grid-template-columns:1fr;gap:28px;padding:28px 18px 24px}
+  .footer-bottom{padding:16px 18px;font-size:10px}
+}
