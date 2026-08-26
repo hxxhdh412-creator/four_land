@@ -15,7 +15,11 @@ async function load(){
 }
 function render(){
   if(!state.rows.length){$('grid').innerHTML='<div class="empty">Không tìm thấy hồ sơ phù hợp.</div>';return}
-  $('grid').innerHTML=state.rows.map(row=>{const images=(row.property_images||[]).filter(item=>item.public_url).sort((a,b)=>a.position-b.position),image=driveImage(images[0]?.public_url);return`<article class="card ${row.status==='archived'?'archived-card':''}" data-id="${escapeHtml(row.property_id)}" tabindex="0" role="button" aria-label="Xem ${escapeHtml(row.address||row.property_id)}"><div class="photo">${image?`<img loading="lazy" src="${escapeHtml(image)}" alt="Ảnh bất động sản">`:''}<span class="badge">${images.length} ảnh</span></div><div class="card-body"><div class="price">${escapeHtml(row.status==='archived'?'Đã ẩn':row.price_text||'Liên hệ')}</div><h2>${escapeHtml(row.address||String(row.raw_text||'').slice(0,80)||row.property_id)}</h2><div class="meta"><span>${escapeHtml([row.street,row.ward,row.district].filter(Boolean).join(' · '))}</span><span>${escapeHtml([row.area_text,row.bedrooms&&row.bedrooms+' PN'].filter(Boolean).join(' · '))}</span></div></div></article>`}).join('');
+  $('grid').innerHTML=state.rows.map(row=>{
+    const images=(row.property_images||[]).filter(item=>item.public_url).sort((a,b)=>a.position-b.position),image=driveImage(images[0]?.public_url);
+    const views=Number(row.view_count)||0;
+    return`<article class="card ${row.status==='archived'?'archived-card':''}" data-id="${escapeHtml(row.property_id)}" tabindex="0" role="button" aria-label="Xem ${escapeHtml(row.address||row.property_id)}"><div class="photo">${image?`<img loading="lazy" src="${escapeHtml(image)}" alt="Ảnh bất động sản">`:''}<span class="badge">${images.length} ảnh</span>${views>0?`<span class="badge-views"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>${views}</span>`:''}</div><div class="card-body"><div class="price">${escapeHtml(row.status==='archived'?'Đã ẩn':row.price_text||'Liên hệ')}</div><h2>${escapeHtml(row.address||String(row.raw_text||'').slice(0,80)||row.property_id)}</h2><div class="meta"><span>${escapeHtml([row.street,row.ward,row.district].filter(Boolean).join(' · '))}</span><span>${escapeHtml([row.area_text,row.bedrooms&&row.bedrooms+' PN'].filter(Boolean).join(' · '))}</span></div></div></article>`
+  }).join('');
   document.querySelectorAll('.card').forEach(card=>{card.addEventListener('click',()=>openDetail(card.dataset.id));card.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();openDetail(card.dataset.id)}})});
 }
 function adminToolsHtml(p){return`<details class="admin-panel"><summary><span>Quản trị hồ sơ</span><small>Sửa thông tin nhà</small></summary><form id="propertyEditForm"><div class="admin-fields"><label class="wide">Nội dung nhà<textarea name="raw_text" rows="5">${escapeHtml(p.raw_text||'')}</textarea></label><label class="wide">Địa chỉ<input name="address" value="${escapeHtml(p.address||'')}"></label><label>Quận/Huyện<input name="district" value="${escapeHtml(p.district||'')}"></label><label>Phường/Xã<input name="ward" value="${escapeHtml(p.ward||'')}"></label><label>Tên đường<input name="street" value="${escapeHtml(p.street||'')}"></label><label>Giá<input name="price_text" value="${escapeHtml(p.price_text||'')}"></label><label>Diện tích<input name="area_text" value="${escapeHtml(p.area_text||'')}"></label><label>Kích thước<input name="dimensions" value="${escapeHtml(p.dimensions||'')}"></label><label>Phòng ngủ<input name="bedrooms" type="number" min="0" value="${escapeHtml(p.bedrooms??'')}"></label><label>Phòng tắm<input name="bathrooms" type="number" min="0" value="${escapeHtml(p.bathrooms??'')}"></label><label>Kết cấu<input name="structure" value="${escapeHtml(p.structure||'')}"></label><label>Pháp lý<input name="legal" value="${escapeHtml(p.legal||'')}"></label><label>Số liên hệ<input name="phone" inputmode="tel" value="${escapeHtml(p.phone||'')}"></label><label>Loại BĐS<input name="property_type" value="${escapeHtml(p.property_type||'')}"></label></div><button class="admin-save" type="submit">Lưu thay đổi</button><div id="adminEditStatus" class="admin-status" role="status"></div></form></details>`}
@@ -33,6 +37,8 @@ async function openDetail(id){
     const imageItems=(p.property_images||[]).filter(i=>i.public_url||i.source_url).sort((a,b)=>a.position-b.position);
     const images=imageItems.map(i=>driveImage(i.public_url||i.source_url)).filter(Boolean);
     const customerPhone=p.phone||'';
+    const views=Number(p.view_count)||1;
+    $('detailId').innerHTML=`${escapeHtml(id)} · <span class="detail-views-count"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>${views} lượt xem</span>`;
     const phoneCellContent=state.adminUnlocked
       ?(customerPhone?`<a href="tel:${escapeHtml(phoneHref(customerPhone))}" class="phone-link-call" title="Bấm để gọi số khách / chủ nhà">${escapeHtml(customerPhone)}</a>`:'—')
       :(customerPhone?`<button type="button" class="phone-link-unlock" id="unlockPhoneInline" title="Bấm để nhập mã Admin xem SĐT">${escapeHtml(maskPhone(customerPhone))}</button>`:'—');
@@ -47,6 +53,7 @@ async function openDetail(id){
       ['Kết cấu',p.structure],
       ['Pháp lý',p.legal],
       ['Liên hệ',phoneCellContent,true],
+      ['Lượt xem',`<span class="text-views-pill"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>${views} lượt quan tâm</span>`,true],
       ['Loại BĐS',p.property_type]
     ].map(([label,value,isRaw])=>`<div><small>${label}</small><strong>${isRaw?value:escapeHtml(value||'—')}</strong></div>`).join('');
 

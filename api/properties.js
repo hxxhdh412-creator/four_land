@@ -10,7 +10,7 @@ module.exports = async function handler(req, res) {
     const archivedOnly = req.query.archived === "only";
     if (archivedOnly && !isAdmin(req)) return res.status(401).json({ ok: false, error: "Cần mở quyền quản trị" });
     const params = new URLSearchParams({
-      select: "property_id,status,phone,property_type,address,district,ward,street,area_text,area_number,dimensions,bedrooms,bathrooms,structure,price_text,price_number,legal,notes,raw_text,image_count,received_at,property_images(position,public_url)",
+      select: "property_id,status,phone,property_type,address,district,ward,street,area_text,area_number,dimensions,bedrooms,bathrooms,structure,price_text,price_number,legal,notes,raw_text,image_count,received_at,data_json,property_images(position,public_url)",
       order: "received_at.desc",
       limit: String(pageSize),
       offset: String((page - 1) * pageSize)
@@ -24,7 +24,11 @@ module.exports = async function handler(req, res) {
     if (req.query.maxArea) params.append("area_number", `lte.${Number(req.query.maxArea) || 0}`);
     if (query) params.set("or", `(property_id.ilike.*${query}*,address.ilike.*${query}*,phone.ilike.*${query}*,raw_text.ilike.*${query}*,normalized_text.ilike.*${query}*)`);
     const result = await supabaseRequest(`properties?${params}`, { count: true });
+    const rows = (result.data || []).map(row => ({
+      ...row,
+      view_count: Number(row.data_json?.view_count) || 0
+    }));
     res.setHeader("Cache-Control", "public, s-maxage=15, stale-while-revalidate=60");
-    res.status(200).json({ ok: true, rows: result.data, total: result.count, page, pageSize });
+    res.status(200).json({ ok: true, rows, total: result.count, page, pageSize });
   } catch (error) { sendError(res, error); }
 };

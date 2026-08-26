@@ -69,13 +69,73 @@ http.createServer(async (req,res)=>{
     let raw="";req.on("data",chunk=>raw+=chunk);req.on("end",()=>{try{const body=JSON.parse(raw||"{}"),row=rows.find(item=>item.property_id===body.propertyId);if(!row)return send(res,404,{ok:false,error:"Không tìm thấy bất động sản"});["address","district","ward","street","price_text","area_text","dimensions","structure","legal","phone","property_type","raw_text","notes","bedrooms","bathrooms"].forEach(key=>{if(Object.prototype.hasOwnProperty.call(body,key))row[key]=body[key]});return send(res,200,{ok:true,property:row,message:"Đã cập nhật thông tin nhà"})}catch{return send(res,400,{ok:false,error:"Dữ liệu không hợp lệ"})}});return;
   }
   if(url.pathname==="/api/admin-image"&&req.method==="DELETE") {
-    if(!isAdmin(req))return send(res,401,{ok:false,error:"Phiên quản trị chưa được mở"});
-    try{const body=await readBody(req),propertyId=String(body.propertyId||""),position=Number(body.position);if(!propertyId||!Number.isInteger(position))return send(res,400,{ok:false,error:"Thiếu thông tin hình ảnh"});if(databaseEnabled){const found=await dbRequest(`property_images?select=storage_path&property_id=eq.${encodeURIComponent(propertyId)}&position=eq.${position}&limit=1`),image=found.data[0];if(!image)return send(res,404,{ok:false,error:"Không tìm thấy hình ảnh"});const storagePath=String(image.storage_path||"");if(storagePath&&!/^(?:drive|external|hidden):/i.test(storagePath)){await fetch(`${database.url}/storage/v1/object/property-images/${storagePath.split("/").map(encodeURIComponent).join("/")}`,{method:"DELETE",headers:{apikey:database.key,"User-Agent":"fourland-local-server/1.0"}})}await dbRequest(`property_images?property_id=eq.${encodeURIComponent(propertyId)}&position=eq.${position}`,{method:"PATCH",body:{storage_path:`hidden:${storagePath||`${propertyId}:${position}`}`,public_url:null,source_url:null}});const visible=await dbRequest(`property_images?select=position&property_id=eq.${encodeURIComponent(propertyId)}&public_url=not.is.null`);await dbRequest(`properties?property_id=eq.${encodeURIComponent(propertyId)}`,{method:"PATCH",body:{image_count:visible.data.length,updated_at:new Date().toISOString()}});return send(res,200,{ok:true,message:"Đã xóa hình ảnh khỏi web"})}const row=rows.find(item=>item.property_id===propertyId);if(!row)return send(res,404,{ok:false,error:"Không tìm thấy hồ sơ"});row.property_images=row.property_images.filter(item=>Number(item.position)!==position);row.image_count=row.property_images.length;return send(res,200,{ok:true,message:"Đã xóa hình ảnh khỏi web"})}catch(error){return send(res,500,{ok:false,error:error.message})}
+    if(!isAdmin(req)) return send(res,401,{ok:false,error:"Cần quyền quản trị"});
+    if(req.method!=="PATCH") return send(res,405,{ok:false,error:"Method Not Allowed"});
+    try{
+      const body=await readBody(req),propertyId=String(body.propertyId||"").slice(0,100);
+      if(!propertyId) return send(res,400,{ok:false,error:"Thiếu propertyId"});
+      const payload={};
+      ["address","district","ward","street","property_type","price_text","area_text","dimensions","structure","legal","phone","raw_text"].forEach(key=>{if(body[key]!==undefined)payload[key]=String(body[key]||"").trim()});
+      if(body.bedrooms!==undefined)payload.bedrooms=body.bedrooms===""?null:Number(body.bedrooms);
+      if(body.bathrooms!==undefined)payload.bathrooms=body.bathrooms===""?null:Number(body.bathrooms);
+      payload.updated_at=new Date().toISOString();
+      if(databaseEnabled){await dbRequest(`properties?property_id=eq.${encodeURIComponent(propertyId)}`,{method:"PATCH",body:payload});return send(res,200,{ok:true,message:"Đã cập nhật hồ sơ thành công"})}
+      const row=rows.find(item=>item.property_id===propertyId);if(!row)return send(res,404,{ok:false,error:"Không tìm thấy hồ sơ"});
+      Object.assign(row,payload);return send(res,200,{ok:true,message:"Đã cập nhật hồ sơ (preview mode)"});
+    }catch(error){return send(res,500,{ok:false,error:error.message})}
   }
   if(url.pathname==="/api/admin-image") {
-    if(req.method!=="POST") return send(res,405,{ok:false,error:"Method Not Allowed"});if(!isAdmin(req))return send(res,401,{ok:false,error:"Phiên quản trị chưa được mở"});
-    if(databaseEnabled){try{const body=await readBody(req),propertyId=String(body.propertyId||""),match=String(body.dataUrl||"").match(/^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/);if(!propertyId||!match)return send(res,400,{ok:false,error:"Ảnh tải lên không hợp lệ"});const buffer=Buffer.from(match[2],"base64");if(buffer.length>3*1024*1024)return send(res,413,{ok:false,error:"Ảnh phải nhỏ hơn 3 MB"});const current=await dbRequest(`property_images?select=position&property_id=eq.${encodeURIComponent(propertyId)}&order=position.desc&limit=1`),position=Number(current.data[0]?.position||0)+1,extension=match[1].split("/")[1].replace("jpeg","jpg"),storagePath=`${propertyId}/${Date.now()}-${crypto.randomBytes(5).toString("hex")}.${extension}`;const upload=await fetch(`${database.url}/storage/v1/object/property-images/${storagePath.split("/").map(encodeURIComponent).join("/")}`,{method:"POST",headers:{apikey:database.key,"User-Agent":"fourland-local-server/1.0","Content-Type":match[1],"x-upsert":"false"},body:buffer});if(!upload.ok)throw new Error(`Không tải được ảnh (${upload.status})`);const publicUrl=`${database.url}/storage/v1/object/public/property-images/${storagePath.split("/").map(encodeURIComponent).join("/")}`;await dbRequest("property_images",{method:"POST",body:{property_id:propertyId,position,storage_path:storagePath,public_url:publicUrl},prefer:"return=minimal"});await dbRequest(`properties?property_id=eq.${encodeURIComponent(propertyId)}`,{method:"PATCH",body:{image_count:position,updated_at:new Date().toISOString()}});return send(res,201,{ok:true,image:{position,public_url:publicUrl},message:"Đã thêm hình ảnh"})}catch(error){return send(res,500,{ok:false,error:error.message})}}
-    let raw="";req.on("data",chunk=>{raw+=chunk;if(raw.length>5*1024*1024)req.destroy()});req.on("end",()=>{try{const body=JSON.parse(raw||"{}"),row=rows.find(item=>item.property_id===body.propertyId);if(!row||!/^data:image\/(?:jpeg|png|webp);base64,/.test(String(body.dataUrl||"")))return send(res,400,{ok:false,error:"Ảnh tải lên không hợp lệ"});const image={position:row.property_images.length+1,public_url:body.dataUrl};row.property_images.push(image);row.image_count=row.property_images.length;return send(res,201,{ok:true,image,message:"Đã thêm hình ảnh"})}catch{return send(res,400,{ok:false,error:"Dữ liệu không hợp lệ"})}});return;
+    if(!isAdmin(req)) return send(res,401,{ok:false,error:"Cần quyền quản trị"});
+    if(req.method==="DELETE") {
+      try{
+        const body=await readBody(req),propertyId=String(body.propertyId||"").slice(0,100),position=Number(body.position);
+        if(!propertyId||!Number.isInteger(position)) return send(res,400,{ok:false,error:"Thiếu propertyId hoặc position"});
+        if(databaseEnabled){
+          await dbRequest(`property_images?property_id=eq.${encodeURIComponent(propertyId)}&position=eq.${position}`,{method:"DELETE"});
+          const remain=await dbRequest(`property_images?select=*&property_id=eq.${encodeURIComponent(propertyId)}&order=position.asc`);
+          await dbRequest(`properties?property_id=eq.${encodeURIComponent(propertyId)}`,{method:"PATCH",body:{image_count:remain.data.length,updated_at:new Date().toISOString()}});
+          return send(res,200,{ok:true,message:"Đã xóa ảnh thành công"});
+        }
+        const row=rows.find(item=>item.property_id===propertyId);if(!row)return send(res,404,{ok:false,error:"Không tìm thấy hồ sơ"});
+        row.property_images=(row.property_images||[]).filter(item=>item.position!==position);
+        row.image_count=row.property_images.length;
+        return send(res,200,{ok:true,message:"Đã xóa ảnh (preview mode)"});
+      }catch(error){return send(res,500,{ok:false,error:error.message})}
+    }
+    if(req.method!=="POST") return send(res,405,{ok:false,error:"Method Not Allowed"});
+    try{
+      const body=await readBody(req),propertyId=String(body.propertyId||"").slice(0,100),dataUrl=String(body.dataUrl||"");
+      if(!propertyId||!dataUrl.startsWith("data:image/")) return send(res,400,{ok:false,error:"Dữ liệu ảnh không hợp lệ"});
+      if(databaseEnabled){
+        const exist=await dbRequest(`property_images?select=position&property_id=eq.${encodeURIComponent(propertyId)}&order=position.desc&limit=1`);
+        const nextPos=exist.data[0]?(Number(exist.data[0].position)||0)+1:1;
+        await dbRequest("property_images",{method:"POST",body:{property_id:propertyId,position:nextPos,source_url:dataUrl,public_url:dataUrl,created_at:new Date().toISOString()}});
+        const countRes=await dbRequest(`property_images?select=position&property_id=eq.${encodeURIComponent(propertyId)}`);
+        await dbRequest(`properties?property_id=eq.${encodeURIComponent(propertyId)}`,{method:"PATCH",body:{image_count:countRes.data.length,updated_at:new Date().toISOString()}});
+        return send(res,200,{ok:true,message:"Đã thêm ảnh vào hồ sơ"});
+      }
+      const row=rows.find(item=>item.property_id===propertyId);if(!row)return send(res,404,{ok:false,error:"Không tìm thấy hồ sơ"});
+      if(!Array.isArray(row.property_images))row.property_images=[];
+      const nextPos=row.property_images.length?Math.max(...row.property_images.map(i=>i.position||0))+1:1;
+      row.property_images.push({position:nextPos,public_url:dataUrl,source_url:dataUrl});
+      row.image_count=row.property_images.length;
+      return send(res,200,{ok:true,message:"Đã thêm ảnh (preview mode)"});
+    }catch(error){return send(res,500,{ok:false,error:error.message})}
+  }
+  if(url.pathname==="/api/admin-archive") {
+    if(!isAdmin(req)) return send(res,401,{ok:false,error:"Cần quyền quản trị"});
+    if(req.method!=="PATCH") return send(res,405,{ok:false,error:"Method Not Allowed"});
+    try{
+      const body=await readBody(req),propertyId=String(body.propertyId||"").slice(0,100),archived=Boolean(body.archived);
+      const nextStatus=archived?"archived":"complete";
+      if(databaseEnabled){
+        await dbRequest(`properties?property_id=eq.${encodeURIComponent(propertyId)}`,{method:"PATCH",body:{status:nextStatus,updated_at:new Date().toISOString()}});
+        return send(res,200,{ok:true,message:archived?"Đã ẩn hồ sơ khỏi kho web":"Đã khôi phục hồ sơ lên kho web"});
+      }
+      const row=rows.find(item=>item.property_id===propertyId);if(!row)return send(res,404,{ok:false,error:"Không tìm thấy hồ sơ"});
+      row.status=nextStatus;
+      return send(res,200,{ok:true,message:archived?"Đã ẩn hồ sơ (preview mode)":"Đã khôi phục hồ sơ (preview mode)"});
+    }catch(error){return send(res,500,{ok:false,error:error.message})}
   }
   if(url.pathname==="/api/inquiries") {
     if(req.method!=="POST") return send(res,405,{ok:false,error:"Method Not Allowed"});
@@ -100,7 +160,26 @@ http.createServer(async (req,res)=>{
     const archivedOnly=url.searchParams.get("archived")==="only";const filtered=rows.filter(row=>(archivedOnly?row.status==="archived":row.status!=="archived")&&(!q||JSON.stringify(row).toLowerCase().includes(q))&&["district","ward","street"].every(key=>!url.searchParams.get(key)||row[key]===url.searchParams.get(key))&&(!url.searchParams.get("type")||row.property_type===url.searchParams.get("type")));
     return send(res,200,{ok:true,rows:filtered,total:filtered.length,page:1,pageSize:24});
   }
-  if(url.pathname==="/api/property") {if(databaseEnabled){try{const result=await dbRequest(`properties?select=*,property_images(*)&property_id=eq.${encodeURIComponent(url.searchParams.get("id")||"")}&limit=1`),property=result.data[0];if(property?.status==="archived"&&!isAdmin(req))return send(res,404,{ok:false,error:"Không tìm thấy hồ sơ"});return send(res,property?200:404,property?{ok:true,property}:{ok:false,error:"Không tìm thấy hồ sơ"})}catch(error){return send(res,500,{ok:false,error:error.message})}}const row=rows.find(item=>item.property_id===url.searchParams.get("id"));if(row?.status==="archived"&&!isAdmin(req))return send(res,404,{ok:false,error:"Không tìm thấy hồ sơ"});return send(res,row?200:404,row?{ok:true,property:row}:{ok:false,error:"Không tìm thấy hồ sơ"});}
+  if(url.pathname==="/api/property") {
+    if(databaseEnabled){
+      try{
+        const id=url.searchParams.get("id")||"";
+        const result=await dbRequest(`properties?select=*,property_images(*)&property_id=eq.${encodeURIComponent(id)}&limit=1`),property=result.data[0];
+        if(!property)return send(res,404,{ok:false,error:"Không tìm thấy hồ sơ"});
+        if(property.status==="archived"&&!isAdmin(req))return send(res,404,{ok:false,error:"Không tìm thấy hồ sơ"});
+        const views=(Number(property.data_json?.view_count)||0)+1;
+        property.view_count=views;
+        const updatedDataJson={...(property.data_json||{}),view_count:views};
+        dbRequest(`properties?property_id=eq.${encodeURIComponent(id)}`,{method:"PATCH",body:{data_json:updatedDataJson}}).catch(()=>{});
+        return send(res,200,{ok:true,property});
+      }catch(error){return send(res,500,{ok:false,error:error.message})}
+    }
+    const row=rows.find(item=>item.property_id===url.searchParams.get("id"));
+    if(!row)return send(res,404,{ok:false,error:"Không tìm thấy hồ sơ"});
+    if(row.status==="archived"&&!isAdmin(req))return send(res,404,{ok:false,error:"Không tìm thấy hồ sơ"});
+    row.view_count=(Number(row.view_count)||0)+1;
+    return send(res,200,{ok:true,property:row});
+  }
   const requestPath=url.pathname==="/"?"/index.html":url.pathname;
   const filePath=path.resolve(root,"."+requestPath);
   if(!filePath.startsWith(root)||!fs.existsSync(filePath)||fs.statSync(filePath).isDirectory()) return send(res,404,"Not Found","text/plain; charset=utf-8");
