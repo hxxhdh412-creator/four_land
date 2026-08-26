@@ -78,6 +78,8 @@ Chỉ viết hoa toàn bộ cho eyebrow/label ngắn. Không viết hoa đoạn 
 
 - Full `100vw × 100dvh`.
 - Header cố định trong popup; phần body tự cuộn dọc.
+- Trên desktop, popup chi tiết rộng tối đa `1180px`, dùng hai cột `minmax(0, ...)`, chỉ cuộn dọc bên trong và tuyệt đối không tạo thanh cuộn ngang.
+- Breakpoint desktop bắt đầu từ `761px`; mọi sửa đổi desktop phải nằm trong `@media (min-width: 761px)` để không làm thay đổi trải nghiệm điện thoại đã ổn định.
 - Không được có thanh cuộn ngang.
 - Nút đóng tròn, ít nhất 46 × 46 px.
 
@@ -96,4 +98,3 @@ Chỉ viết hoa toàn bộ cho eyebrow/label ngắn. Không viết hoa đoạn 
 - Card cùng chiều cao, text đã clamp?
 - Loading/empty/error rõ ràng?
 - Popup cuộn được và nút đóng luôn dễ thấy?
-

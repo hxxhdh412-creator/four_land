@@ -316,3 +316,61 @@ label,.eyebrow,.detail-kicker,.result-head strong,.brand-caption{font-weight:700
   .badge{max-width:72px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
   .skeleton{height:278px}
 }
+
+/* Desktop property detail containment.
+   Keep this isolated from the proven full-screen phone layout above. */
+@media(min-width:761px){
+  dialog#detail{
+    width:min(1180px,calc(100vw - 48px));
+    max-width:calc(100vw - 48px);
+    height:min(900px,calc(100dvh - 32px));
+    max-height:calc(100dvh - 32px);
+    overflow:hidden;
+  }
+  #detail .detail-shell{
+    display:flex;
+    flex-direction:column;
+    width:100%;
+    height:100%;
+    min-width:0;
+    min-height:0;
+    overflow:hidden;
+  }
+  #detail .detail-shell>header{
+    position:relative;
+    flex:0 0 auto;
+    width:100%;
+    min-width:0;
+  }
+  #detail .detail-body{
+    display:grid;
+    grid-template-columns:minmax(0,1.25fr) minmax(320px,.75fr);
+    flex:1 1 auto;
+    width:100%;
+    min-width:0;
+    min-height:0;
+    overflow-x:hidden;
+    overflow-y:auto;
+    overscroll-behavior:contain;
+  }
+  #detail .detail-body>div{
+    width:100%;
+    min-width:0;
+  }
+  #detail .gallery-main,
+  #detail .gallery-main img,
+  #detail .thumbs,
+  #detail .content-panel,
+  #detail .info-panel,
+  #detail .admin-panel,
+  #detail .direct-contact{
+    max-width:100%;
+    min-width:0;
+  }
+  #detail .gallery-main,
+  #detail .gallery-main img,
+  #detail .thumbs{
+    width:100%;
+  }
+  #detail .gallery-main img{display:block}
+}
