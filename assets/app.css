@@ -216,8 +216,8 @@ input:focus,select:focus{border-color:var(--orange);box-shadow:0 0 0 3px rgba(23
 .direct-contact a svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 
 .phone-link-call{display:inline-flex;align-items:center;color:var(--forest);font-weight:800;text-decoration:none;transition:color .18s ease;cursor:pointer}
-.phone-link-call:hover{color:var(--orange);text-decoration:underline}
-.phone-link-unlock{display:inline-flex;align-items:center;padding:0;border:0;background:transparent;color:var(--orange);font-weight:800;font-size:inherit;cursor:pointer;text-decoration:underline dotted}
+.phone-link-call:hover{color:var(--orange)}
+.phone-link-unlock{display:inline-flex;align-items:center;padding:0;border:0;background:transparent;color:var(--orange);font-weight:800;font-size:inherit;cursor:pointer;text-decoration:none}
 .phone-link-unlock:hover{color:#b8322a}
 
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(24px);padding:11px 20px;border-radius:24px;background:rgba(20,32,25,.94);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);color:#fff;font-size:13px;font-weight:600;box-shadow:0 10px 30px rgba(0,0,0,.25);opacity:0;pointer-events:none;transition:all .22s cubic-bezier(.4,0,.2,1);z-index:99999}
