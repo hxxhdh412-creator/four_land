@@ -26,6 +26,17 @@ async function load(){
   try{const data=await api('/api/properties?'+params(values()));if(requestId!==state.requestId)return;state.rows=data.rows||[];state.total=data.total||0;$('total').textContent=state.total.toLocaleString('vi-VN');$('withImages').textContent=state.rows.filter(row=>Number(row.image_count)>0).length;$('resultLabel').textContent=state.viewArchived?`${state.total.toLocaleString('vi-VN')} hồ sơ đã ẩn`:`${state.total.toLocaleString('vi-VN')} hồ sơ phù hợp`;$('pageLabel').textContent=`Trang ${state.page} / ${Math.max(1,Math.ceil(state.total/state.pageSize))}`;$('pageNumber').textContent=state.page;$('prev').disabled=state.page<=1;$('next').disabled=state.page*state.pageSize>=state.total;render()}
   catch(error){if(requestId!==state.requestId)return;$('grid').innerHTML='<div class="empty">Chưa có dữ liệu để hiển thị.</div>';$('resultLabel').textContent='Không tải được kho dữ liệu';$('error').textContent=error.message;$('error').hidden=false}
 }
+function formatCardPrice(row){
+  if(row.status === 'archived') return `<span class="price-val price-archived">Đã ẩn</span>`;
+  const text = String(row.price_text || '').trim();
+  if(!text || text.toLowerCase() === 'liên hệ') return `<span class="price-val price-contact">Liên hệ</span>`;
+  const match = text.match(/^(.*?)(\s*[\/\.]\s*(?:tháng|th|năm|m2|m²))$/i);
+  if(match){
+    return `<span class="price-val">${escapeHtml(match[1].trim())}</span><span class="price-period">${escapeHtml(match[2].trim())}</span>`;
+  }
+  return `<span class="price-val">${escapeHtml(text)}</span>`;
+}
+
 function render(){
   if(!state.rows.length){$('grid').innerHTML='<div class="empty">Không tìm thấy hồ sơ phù hợp.</div>';return}
   $('grid').innerHTML=state.rows.map(row=>{
@@ -48,13 +59,15 @@ function render(){
 
     return`<article class="card ${row.status==='archived'?'archived-card':''}" data-id="${escapeHtml(row.property_id)}" tabindex="0" role="button" aria-label="Xem ${escapeHtml(row.address||row.property_id)}">
       <div class="photo">
-        ${image?`<img loading="lazy" src="${escapeHtml(image)}" alt="${escapeHtml(imgAlt)}" title="${escapeHtml(imgAlt)}" onerror="this.style.display='none';this.parentElement.classList.add('no-photo');">`:''}
+        ${image?`<img loading="lazy" referrerpolicy="no-referrer" src="${escapeHtml(image)}" alt="${escapeHtml(imgAlt)}" title="${escapeHtml(imgAlt)}" onerror="this.style.display='none';this.parentElement.classList.add('no-photo');">`:''}
         ${badgeHtml}
         ${typeBadgeHtml}
       </div>
       <div class="card-body">
-        <div class="price">${escapeHtml(row.status==='archived'?'Đã ẩn':row.price_text||'Liên hệ')}</div>
-        <h2 class="card-title">${escapeHtml(row.address||String(row.raw_text||'').slice(0,75)||row.property_id)}</h2>
+        <div class="price-row">
+          <div class="price">${formatCardPrice(row)}</div>
+        </div>
+        <h2 class="card-title" title="${escapeHtml(row.address||row.property_id)}">${escapeHtml(row.address||String(row.raw_text||'').slice(0,75)||row.property_id)}</h2>
         <div class="card-location">
           <svg class="icon-pin" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 21s-7-5.5-7-11a7 7 0 1 1 14 0c0 5.5-7 11-7 11z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="10" r="2.5" stroke="currentColor" stroke-width="1.8"/></svg>
           <span>${escapeHtml(locationText)}</span>
