@@ -35,7 +35,7 @@ function render(){
 
     return`<article class="card ${row.status==='archived'?'archived-card':''}" data-id="${escapeHtml(row.property_id)}" tabindex="0" role="button" aria-label="Xem ${escapeHtml(row.address||row.property_id)}">
       <div class="photo">
-        ${image?`<img loading="lazy" src="${escapeHtml(image)}" alt="${escapeHtml(imgAlt)}" title="${escapeHtml(imgAlt)}">`:''}
+        ${image?`<img loading="lazy" src="${escapeHtml(image)}" alt="${escapeHtml(imgAlt)}" title="${escapeHtml(imgAlt)}" onerror="this.style.display='none';this.parentElement.classList.add('no-photo');">`:''}
         ${badgeHtml}
         ${typeBadgeHtml}
       </div>
