@@ -141,8 +141,28 @@ http.createServer(async (req,res)=>{
     let raw="";req.on("data",chunk=>raw+=chunk);req.on("end",()=>{try{const body=JSON.parse(raw||"{}");if(String(body.code||"").trim()!==adminCode)return send(res,401,{ok:false,error:"Mã truy cập không đúng"});res.setHeader("Set-Cookie",`fourland_admin=${previewAdminToken}; Path=/; HttpOnly; SameSite=Strict; Max-Age=28800`);return send(res,200,{ok:true,authenticated:true})}catch{return send(res,400,{ok:false,error:"Dữ liệu không hợp lệ"})}});return;
   }
   if(url.pathname==="/api/admin-archive") {
-    if(req.method!=="PATCH")return send(res,405,{ok:false,error:"Method Not Allowed"});if(!isAdmin(req))return send(res,401,{ok:false,error:"Phiên quản trị chưa được mở"});
-    try{const body=await readBody(req),propertyId=String(body.propertyId||""),status=body.archived?"archived":"partial";if(!propertyId)return send(res,400,{ok:false,error:"Thiếu mã bất động sản"});if(databaseEnabled){const result=await dbRequest(`properties?property_id=eq.${encodeURIComponent(propertyId)}`,{method:"PATCH",body:{status,updated_at:new Date().toISOString()},prefer:"return=representation"});return send(res,result.data[0]?200:404,result.data[0]?{ok:true,property:result.data[0],message:body.archived?"Đã ẩn hồ sơ khỏi web":"Đã khôi phục hồ sơ"}:{ok:false,error:"Không tìm thấy bất động sản"})}const row=rows.find(item=>item.property_id===propertyId);if(!row)return send(res,404,{ok:false,error:"Không tìm thấy bất động sản"});row.status=status;return send(res,200,{ok:true,property:row,message:body.archived?"Đã ẩn hồ sơ khỏi web":"Đã khôi phục hồ sơ"})}catch(error){return send(res,500,{ok:false,error:error.message})}
+    if(req.method!=="PATCH") return send(res,405,{ok:false,error:"Method Not Allowed"});
+    if(!isAdmin(req)) return send(res,401,{ok:false,error:"Phiên quản trị chưa được mở"});
+    try{
+      const body=await readBody(req);
+      const archived=Boolean(body.archived);
+      let propertyIds=[];
+      if(Array.isArray(body.propertyIds)){
+        propertyIds=body.propertyIds.map(id=>String(id||"").slice(0,100)).filter(Boolean);
+      }else if(body.propertyId){
+        const single=String(body.propertyId||"").slice(0,100);
+        if(single) propertyIds=[single];
+      }
+      if(!propertyIds.length) return send(res,400,{ok:false,error:"Thiếu mã bất động sản"});
+      const nextStatus=archived?"archived":"partial";
+      if(databaseEnabled){
+        await dbRequest(`properties?property_id=in.(${propertyIds.map(encodeURIComponent).join(",")})`,{method:"PATCH",body:{status:nextStatus,updated_at:new Date().toISOString()}});
+        return send(res,200,{ok:true,updatedCount:propertyIds.length,message:archived?`Đã ẩn ${propertyIds.length} hồ sơ khỏi kho web`:`Đã khôi phục ${propertyIds.length} hồ sơ lên kho web`});
+      }
+      const matched=rows.filter(item=>propertyIds.includes(item.property_id));
+      matched.forEach(row=>row.status=nextStatus);
+      return send(res,200,{ok:true,updatedCount:matched.length,message:archived?`Đã ẩn ${matched.length} hồ sơ (preview mode)`:`Đã khôi phục ${matched.length} hồ sơ (preview mode)`});
+    }catch(error){return send(res,500,{ok:false,error:error.message})}
   }
   if(url.pathname==="/api/admin-property") {
     if(req.method!=="PATCH") return send(res,405,{ok:false,error:"Method Not Allowed"});if(!isAdmin(req))return send(res,401,{ok:false,error:"Phiên quản trị chưa được mở"});
@@ -201,30 +221,6 @@ http.createServer(async (req,res)=>{
       row.property_images.push({position:nextPos,public_url:dataUrl,source_url:dataUrl});
       row.image_count=row.property_images.length;
       return send(res,200,{ok:true,message:"Đã thêm ảnh (preview mode)"});
-    }catch(error){return send(res,500,{ok:false,error:error.message})}
-  }
-  if(url.pathname==="/api/admin-archive") {
-    if(!isAdmin(req)) return send(res,401,{ok:false,error:"Cần quyền quản trị"});
-    if(req.method!=="PATCH") return send(res,405,{ok:false,error:"Method Not Allowed"});
-    try{
-      const body=await readBody(req);
-      const archived=Boolean(body.archived);
-      let propertyIds=[];
-      if(Array.isArray(body.propertyIds)){
-        propertyIds=body.propertyIds.map(id=>String(id||"").slice(0,100)).filter(Boolean);
-      }else if(body.propertyId){
-        const single=String(body.propertyId||"").slice(0,100);
-        if(single) propertyIds=[single];
-      }
-      if(!propertyIds.length) return send(res,400,{ok:false,error:"Thiếu propertyId hoặc propertyIds"});
-      const nextStatus=archived?"archived":"partial";
-      if(databaseEnabled){
-        await dbRequest(`properties?property_id=in.(${propertyIds.map(encodeURIComponent).join(",")})`,{method:"PATCH",body:{status:nextStatus,updated_at:new Date().toISOString()}});
-        return send(res,200,{ok:true,updatedCount:propertyIds.length,message:archived?`Đã ẩn ${propertyIds.length} hồ sơ khỏi kho web`:`Đã khôi phục ${propertyIds.length} hồ sơ lên kho web`});
-      }
-      const matched=rows.filter(item=>propertyIds.includes(item.property_id));
-      matched.forEach(row=>row.status=nextStatus);
-      return send(res,200,{ok:true,updatedCount:matched.length,message:archived?`Đã ẩn ${matched.length} hồ sơ (preview mode)`:`Đã khôi phục ${matched.length} hồ sơ (preview mode)`});
     }catch(error){return send(res,500,{ok:false,error:error.message})}
   }
   if(url.pathname==="/api/inquiries") {
