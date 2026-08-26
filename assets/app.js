@@ -35,7 +35,9 @@ async function openDetail(id){
     const contactActionHtml=state.adminUnlocked
       ?(p.phone?`<a href="tel:${escapeHtml(phoneHref(p.phone))}" aria-label="Gọi ${escapeHtml(p.phone)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.2 3.5 9.6 7c.35.5.28 1.18-.16 1.62l-1.3 1.3a14.5 14.5 0 0 0 5.94 5.94l1.3-1.3c.44-.44 1.12-.51 1.62-.16l3.5 2.4c.55.38.72 1.11.39 1.69l-1 1.75c-.34.59-.98.95-1.66.93C10.1 20.95 3.05 13.9 2.83 5.77c-.02-.68.34-1.32.93-1.66l1.75-1c.58-.33 1.31-.16 1.69.39Z"/></svg>Gọi ngay</a>`:'')
       :`<button type="button" class="btn-unlock-phone" id="unlockPhoneBtn" title="Nhập mã quản trị để xem SĐT"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><span>Mở số liên hệ</span></button>`;
-    $('detailBody').innerHTML=`<div><div class="gallery-main">${images[0]?`<img id="mainImage" src="${escapeHtml(images[0])}" alt="Ảnh nhà">`:''}<button type="button" class="gallery-share-badge" id="shareDetail" title="Chia sẻ căn nhà này"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg><span>Chia sẻ</span></button></div><div class="thumbs">${images.map((src,index)=>`<img class="${index===0?'active':''}" src="${escapeHtml(src)}" alt="Ảnh ${index+1}">`).join('')}</div></div><div><section class="content-panel"><h3>Nội dung nhà</h3><p>${escapeHtml(displayRawText)}</p></section><section class="info-panel"><div class="price">${escapeHtml(p.price_text||'Liên hệ')}</div><h2>${escapeHtml(p.address||p.property_id)}</h2><div class="meta">${escapeHtml([p.street,p.ward,p.district].filter(Boolean).join(' · '))}</div><div class="info-grid">${[['Diện tích',p.area_text],['Kích thước',p.dimensions],['Phòng ngủ',p.bedrooms],['Phòng tắm',p.bathrooms],['Kết cấu',p.structure],['Pháp lý',p.legal],['Liên hệ',displayPhone],['Loại BĐS',p.property_type]].map(([label,value])=>`<div><small>${label}</small><strong>${escapeHtml(value||'—')}</strong></div>`).join('')}</div></section>${state.adminUnlocked?adminToolsHtml(p):''}<section class="direct-contact"><div><span>Liên hệ trực tiếp</span><strong>${escapeHtml(displayPhone)}</strong></div>${contactActionHtml}</section></div>`;
+    const thumbsHtml=images.map((src,index)=>`<img class="${index===0?'active':''}" src="${escapeHtml(src)}" alt="Ảnh ${index+1}">`).join('')+
+      (state.adminUnlocked?`<label class="admin-thumb-add" for="adminQuickUpload" title="Thêm hình ảnh vào hồ sơ"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>+ Thêm ảnh</span></label><input id="adminQuickUpload" type="file" accept="image/jpeg,image/png,image/webp" multiple hidden style="display:none!important">`:'');
+    $('detailBody').innerHTML=`<div><div class="gallery-main">${images[0]?`<img id="mainImage" src="${escapeHtml(images[0])}" alt="Ảnh nhà">`:''}<button type="button" class="gallery-share-badge" id="shareDetail" title="Chia sẻ căn nhà này"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg><span>Chia sẻ</span></button></div><div class="thumbs">${thumbsHtml}</div></div><div><section class="content-panel"><h3>Nội dung nhà</h3><p>${escapeHtml(displayRawText)}</p></section><section class="info-panel"><div class="price">${escapeHtml(p.price_text||'Liên hệ')}</div><h2>${escapeHtml(p.address||p.property_id)}</h2><div class="meta">${escapeHtml([p.street,p.ward,p.district].filter(Boolean).join(' · '))}</div><div class="info-grid">${[['Diện tích',p.area_text],['Kích thước',p.dimensions],['Phòng ngủ',p.bedrooms],['Phòng tắm',p.bathrooms],['Kết cấu',p.structure],['Pháp lý',p.legal],['Liên hệ',displayPhone],['Loại BĐS',p.property_type]].map(([label,value])=>`<div><small>${label}</small><strong>${escapeHtml(value||'—')}</strong></div>`).join('')}</div></section>${state.adminUnlocked?adminToolsHtml(p):''}<section class="direct-contact"><div><span>Liên hệ trực tiếp</span><strong>${escapeHtml(displayPhone)}</strong></div>${contactActionHtml}</section></div>`;
     document.querySelectorAll('.thumbs img').forEach(img=>img.onclick=()=>{document.querySelectorAll('.thumbs img').forEach(i=>i.classList.remove('active'));img.classList.add('active');$('mainImage').src=img.src});
     const shareBtn=$('shareDetail');
     if(shareBtn){
@@ -67,9 +69,11 @@ async function openDetail(id){
       };
     }
     if(state.adminUnlocked){
-      $('propertyEditForm').onsubmit=event=>saveProperty(event,p.property_id);$('adminImages').onchange=event=>uploadImages(event,p.property_id);
+      $('propertyEditForm').onsubmit=event=>saveProperty(event,p.property_id);
+      const mainUpload=$('adminImages');if(mainUpload)mainUpload.onchange=event=>uploadImages(event,p.property_id);
+      const quickUpload=$('adminQuickUpload');if(quickUpload)quickUpload.onchange=event=>uploadImages(event,p.property_id);
       document.querySelectorAll('.thumbs img').forEach((img,index)=>{const wrap=document.createElement('span');wrap.className='admin-thumb';img.parentNode.insertBefore(wrap,img);wrap.appendChild(img);const remove=document.createElement('button');remove.type='button';remove.className='image-remove';remove.setAttribute('aria-label',`Xóa ảnh ${index+1}`);remove.title='Xóa ảnh này';remove.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18m-2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/></svg>';remove.onclick=event=>{event.stopPropagation();deleteImage(p.property_id,imageItems[index].position)};wrap.appendChild(remove)});
-      const panel=document.querySelector('.admin-panel');const archive=document.createElement('button');archive.type='button';archive.className=p.status==='archived'?'admin-restore':'admin-archive';archive.textContent=p.status==='archived'?'Khôi phục hồ sơ lên web':'Ẩn hồ sơ khỏi web';archive.onclick=()=>setPropertyArchived(p.property_id,p.status!=='archived');panel.appendChild(archive)
+      const panel=document.querySelector('.admin-panel');if(panel){const archive=document.createElement('button');archive.type='button';archive.className=p.status==='archived'?'admin-restore':'admin-archive';archive.textContent=p.status==='archived'?'Khôi phục hồ sơ lên web':'Ẩn hồ sơ khỏi web';archive.onclick=()=>setPropertyArchived(p.property_id,p.status!=='archived');panel.appendChild(archive)}
     }
   }catch(error){$('detailBody').innerHTML=`<div class="error">${escapeHtml(error.message)}</div>`}
 }
@@ -88,9 +92,26 @@ async function compressImage(file){
   let quality=.84,dataUrl=canvas.toDataURL('image/jpeg',quality);while(dataUrl.length>3.7*1024*1024&&quality>.52){quality-=.08;dataUrl=canvas.toDataURL('image/jpeg',quality)}return dataUrl
 }
 async function uploadImages(event,propertyId){
-  const input=event.currentTarget,files=[...input.files],status=$('adminUploadStatus');if(!files.length)return;input.disabled=true;status.className='admin-status';
-  try{for(let index=0;index<files.length;index++){status.textContent=`Đang xử lý ảnh ${index+1}/${files.length}…`;const dataUrl=await compressImage(files[index]);await api('/api/admin-image',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({propertyId,dataUrl})})}status.className='admin-status success-text';status.textContent=`Đã thêm ${files.length} hình ảnh.`;await load();setTimeout(()=>openDetail(propertyId),350)}
-  catch(error){status.className='admin-status error-text';status.textContent=error.message;input.disabled=false}
+  const input=event.currentTarget,files=[...input.files],status=$('adminUploadStatus');if(!files.length)return;
+  input.disabled=true;
+  showToast(`Đang nén và tải lên ${files.length} ảnh…`,4000);
+  if(status)status.className='admin-status';
+  try{
+    for(let index=0;index<files.length;index++){
+      if(status)status.textContent=`Đang xử lý ảnh ${index+1}/${files.length}…`;
+      showToast(`Đang tải ảnh ${index+1}/${files.length}…`,3000);
+      const dataUrl=await compressImage(files[index]);
+      await api('/api/admin-image',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({propertyId,dataUrl})});
+    }
+    if(status){status.className='admin-status success-text';status.textContent=`Đã thêm ${files.length} hình ảnh.`}
+    showToast(`✅ Đã thêm ${files.length} hình ảnh thành công!`);
+    await load();
+    setTimeout(()=>openDetail(propertyId),350);
+  }catch(error){
+    if(status){status.className='admin-status error-text';status.textContent=error.message}
+    showToast('❌ Lỗi tải ảnh: '+error.message,4000);
+    input.disabled=false;
+  }
 }
 async function deleteImage(propertyId,position){
   if(!confirm('Xóa ảnh này khỏi hồ sơ? Ảnh sẽ không còn hiển thị trên web.'))return;
