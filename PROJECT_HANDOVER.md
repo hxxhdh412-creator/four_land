@@ -1,74 +1,53 @@
 # 📋 BÁO CÁO TỔNG KẾT & BÀN GIAO DỰ ÁN FOURLAND
-**Ngày thực hiện:** 26/08/2026  
+**Ngày thực hiện:** 26 - 27/08/2026  
 **Dự án:** Kho Bất Động Sản Chọn Lọc FOURLAND (`warehouse-web` & `Zalo Bot`)  
 **Môi trường:** Local Preview `http://127.0.0.1:4175` | Production `https://fourland.vn`
 
 ---
 
-## 1. ✨ CÁC TÍNH NĂNG & TỐI ƯU ĐÃ HOÀN THÀNH HÔM NAY
+## 1. ✨ CÁC TÍNH NĂNG & TỐI ƯU ĐÃ HOÀN THÀNH
 
-### 🎯 1. Chấm trạng thái Live (🟢 Còn trống / 🔴 Đã cho thuê)
-- **Vị trí**: Đặt tinh tế ngay phía trước con số Giá trong dòng đầu tiên của thẻ nhà (`[🟢/🔴] 35 tr · 🕒 Hôm nay 15:38`).
-- **Màu sắc & Hiệu ứng**:
-  - 🟢 **Xanh Emerald**: Bất động sản đang mở thuê (còn trống), kèm quầng sáng nhẹ phát sáng.
-  - 🔴 **Đỏ Ruby**: Bất động sản đã cho thuê, giá tiền tự động chuyển sắc thái dịu nhẹ để người xem phân biệt ngay.
-- **Xử lý hiển thị**: Thêm khoảng đệm an toàn `padding: 1px 0 1px 3px` giúp chấm tròn hiển thị tròn xoe 100%, không bao giờ bị cắt mép trái trên mọi dòng điện thoại.
+### 🎯 1. Cảm ứng Di động Siêu Mượt cho Thao tác Chọn Nhiều Căn (`v34`)
+- **Tách luồng Touch/Click**: Loại bỏ xung đột sự kiện click 300ms trên điện thoại di động.
+- **Cử chỉ Nhấn giữ (Long-press 0.5s)**: Rung phản hồi xúc giác nhẹ và kích hoạt chế độ chọn nhiều căn.
+- **Vùng chạm ngón tay rộng rãi (`36px x 36px`)**: Bấm vào bất kỳ đâu trên thẻ hoặc ô chọn góc phải đều tích chọn / bỏ chọn ngay tức thì.
+- **Thanh tác vụ Bulk Bar**: Ẩn / Khôi phục hàng loạt BĐS cực nhanh.
 
-### 🎯 2. Bộ đôi Công tắc Quản trị (Admin Toggle Switches)
-- Thiết kế lại hoàn toàn theo phong cách tối giản cao cấp (Premium Luxury):
-  - **`⭐ Ghim Nổi Bật`**: Ánh vàng Champagne Gold sang trọng khi bật.
-  - **`🔒 Đã Cho Thuê`**: Ánh đỏ Ruby nổi bật khi chuyển trạng thái.
-- Lược bỏ mọi câu chữ rườm rà, chuyển động gạt mượt mà.
+### 🎯 2. Tối Giản Hóa Thanh Header & Avatar FL
+- **Loại bỏ nút chữ "Thoát Admin"** ở thanh điều hướng trên cùng, giữ giao diện sạch đẹp.
+- **Tích hợp Đăng xuất vào Avatar FL**: Khi đang là Admin, bấm vào Avatar `FL` (có viền cam sang trọng) để xác nhận và thoát quyền Quản trị ngay lập tức.
+- **Xóa chấm xanh trên Avatar**: Giữ cho Avatar thuần khiết và thanh lịch.
 
-### 🎯 3. Bộ lọc Tình trạng BĐS trên thanh tìm kiếm
-- Bổ sung tùy chọn lọc:
-  - `Tất cả tình trạng`
-  - `🟢 Đang mở thuê`
-  - `🔒 Đã cho thuê`
-- Tích hợp vào AI NLP Parser và bộ lọc thuộc tính đồng bộ từ backend Supabase.
+### 🎯 3. Phân Cấp Thẻ Nhà Chuẩn Quốc Tế (Luxury Hierarchy)
+- **Hàng 1 - Giá tiền To Rõ 100%**: Khôi phục đầy đủ chữ **`triệu`** (`18 triệu`, `77 triệu`, `150 triệu`), không bị co ép thành `tr`.
+- **Chấm Live Trạng Thái Nổi Bật**: Chuyển lên **góc trên bên phải ảnh**, dạng chấm tròn ngọc phát sáng viền trắng tinh khiết (🟢 Còn phòng / 🔴 Đã thuê).
+- **Hàng 2 - Địa chỉ Vừa Vặn**: Font chữ `11.5px` (desktop) và `10.8px` (mobile), hiển thị trọn vẹn tên đường dài không bị cắt đuôi `...`.
+- **Hàng 3 - Vị trí Phường/Quận**: Đứng riêng 1 dòng rộng rãi.
+- **Hàng 4 - Thời gian cập nhật**: Đứng riêng 1 dòng thanh lịch chuẩn giờ VN (`15:36 - 26/08/2026`).
 
-### 🎯 4. Khóa cứng 1 dòng & Rút gọn Lượt xem trong bảng Chi tiết nhà (Modal)
-- Dòng tiêu đề mã nhà: `Mã BĐS · 🕒 Hôm nay HH:MM · 👁️ Số lượt xem` luôn nằm gọn trên **1 dòng duy nhất**, tuyệt đối không bị nhảy dòng trên mobile.
-- Lược bỏ chữ `"lượt xem"`, chỉ giữ lại icon con mắt tinh tế và số (ví dụ: `👁️ 3`), font chữ thu nhỏ thanh lịch (`9.5px - 10px`).
-
-### 🎯 5. Thanh công cụ Admin Bulk Bar (Tác vụ hàng loạt)
-- Chọn nhiều căn cùng lúc trên web để **Ẩn hàng loạt / Khôi phục hàng loạt**.
-- Thanh công cụ nổi bo cong phong cách Glassmorphism khóa cứng 3 nút trên cùng 1 hàng ngang duy nhất: `[Đã chọn: X căn]` — `[Chọn tất cả]` — `[Bỏ chọn]`.
-
-### 🎯 6. Làm sạch chuỗi giá & Logo Watermark mini
-- Loại bỏ triệt để các chuỗi hoa hồng (`hh1/2 052 3825888`), số điện thoại, câu chào dính trong trường giá.
-- Xóa bỏ đường gạch cam đè chữ, chống va chạm giữa `/tháng` và thời gian cập nhật.
-- Logo Fourland Watermark mini thanh lịch, chuẩn giờ Việt Nam (`Hôm nay HH:MM`, `51p trước`).
+### 🎯 4. Làm Sạch Toàn Diện Cơ Sở Dữ Liệu Supabase
+- **Xóa vĩnh viễn 14 tin rác/tin test**: Các tin nhắn "Thử nghiệm kết nối", ký tự "1", "||||||||||||", tin chat vụn vặt và bản ghi lỗi parse.
+- **Xóa 11 căn nhà ở trạng thái ẩn**: Giữ lại đúng **54 căn nhà thực tế** chất lượng cao với **340 hình ảnh sắc nét**.
+- **Nâng cấp `sync-sheet-to-supabase.js`**: Tự động lọc chặn mọi tin rác/tin test trong tương lai.
 
 ---
 
 ## 2. 📦 TRẠNG THÁI MÃ NGUỒN & GIT COMMITS
-
-Toàn bộ mã nguồn đã được kiểm tra cú pháp (`npm run check`) và chạy qua bộ kiểm thử (`npm test`) đạt **100% PASS**:
-
 - **Repository:** `https://github.com/hxxhdh412-creator/four_land.git`
-- **Nhánh chính:** `main`
+- **Nhánh chính:** `main` (Trạng thái: `working tree clean`, `PASS 100% unit tests`)
 - **Các commit mới nhất đã lên GitHub:**
-  1. `543822c` — *fix(ui): sửa lỗi chấm trạng thái bị cắt mép trái và căn chỉnh padding*
-  2. `1939aea` — *fix(ui): căn thẳng 1 hàng và rút gọn lượt xem dạng icon mắt + số trong modal chi tiết*
-  3. `6e82be5` — *feat(ui): thêm chấm trạng thái Xanh (còn phòng) / Đỏ (đã thuê) trước giá thẻ nhà*
-  4. `f442a92` — *feat: bổ sung cơ chế bật tắt trạng thái Đã Cho Thuê và bộ lọc tình trạng*
-  5. `7a5aa49` — *feat(ui): thiết kế lại công tắc Ghim BĐS Nổi Bật dạng toggle switch sang trọng, tinh gọn*
-  6. `c47729e` — *fix(ui): tối ưu 3 ô chọn trên thanh bulk bar luôn thẳng hàng trên 1 dòng*
+  1. `a63e31f` — *fix(mobile): tối ưu hóa toàn diện cảm ứng touch/click trên điện thoại di động giúp chọn nhiều căn nhạy 100%*
+  2. `42a545a` — *fix(ui): xóa chấm xanh trên avatar FL giúp giao diện tinh gọn, thuần khiết*
+  3. `5514bf1` — *fix(ui): sửa lỗi xung đột sự kiện click khi chọn nhiều căn nhà, tối ưu thao tác chọn mượt mà*
+  4. `719d47b` — *feat(ui): loại bỏ nút Thoát Admin ở header, tích hợp thao tác đăng xuất trực tiếp qua nút Avatar FL*
+  5. `5bb6228` — *fix(sync): thêm bộ lọc tự động loại trừ tin rác và tin test thiếu dữ liệu sang Supabase*
+  6. `12acb4f` — *feat(ui): khôi phục hiển thị đơn vị 'triệu' đầy đủ và trang trọng trên thẻ giá*
+  7. `0d7f7e8` — *fix(ui): tinh chỉnh kích thước font chữ tiêu đề địa chỉ giúp các tên đường dài hiển thị trọn vẹn*
 
 ---
 
-## 3. 🌐 LƯU Ý VỀ VERCEL DEPLOYMENT (NGÀY MAI TIẾP TỤC)
-
-1. **Giới hạn 24h của Vercel Hobby Team**:
-   - Vercel Team `fourland` đạt ngưỡng 100 lượt deploy miễn phí trong ngày hôm nay (`api-deployments-young-hobby-team-24h`).
-2. **Kế hoạch cập nhật ngày mai**:
-   - **Cách 1**: Sáng mai khi Vercel reset hạn mức 24h, hệ thống sẽ tự động deploy commit `543822c` lên `https://fourland.vn`.
-   - **Cách 2**: Hoặc chỉ cần Import repo `four_land` vào **Tài khoản Cá nhân (Personal Account)** trên Vercel (hoàn toàn miễn phí, có sẵn 100 lượt deploy độc lập) và gắn tên miền `fourland.vn`.
-
----
-
-## 4. 🚀 KẾ HOẠCH CÔNG VIỆC TIẾP THEO (TO-DO LIST NGÀY MAI)
-- [ ] Kiểm tra Vercel Production sau khi reset hạn mức để xác nhận `https://fourland.vn` nhận bản mới nhất.
-- [ ] Test thực tế chức năng Bật/Tắt "Đã Cho Thuê" và Ghim Nổi Bật trên điện thoại di động thực tế.
-- [ ] Thu thập phản hồi từ người dùng/môi giới để tiếp tục tối ưu hóa trải nghiệm.
+## 3. ⏰ LỊCH HẸN TỰ ĐỘNG SÁNG MAI (08:00 AM)
+- **Timer ID:** `task-1370` (28,400 giây ➔ 08:00 AM 27/08/2026).
+- **Nhiệm vụ:**
+  - Tự động chạy lệnh deploy `npx vercel --prod --yes` bản `v34` lên Vercel Production `https://fourland.vn`.
+  - Kiểm tra tính ổn định của toàn bộ website và báo cáo kết quả cho người dùng.
