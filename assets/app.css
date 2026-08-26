@@ -200,7 +200,24 @@ input:focus,select:focus{border-color:var(--orange);box-shadow:0 0 0 3px rgba(23
 .gallery-main{position:relative;aspect-ratio:4/3;border-radius:6px;overflow:hidden;background:#eaedea;display:flex;align-items:center;justify-content:center}
 .gallery-main.no-photo::before,.gallery-main:empty::before{content:"";position:absolute;width:64px;height:64px;background:url('/assets/brand/fourland-logo.png') center/contain no-repeat;opacity:.38}
 .gallery-main img{width:100%;height:100%;object-fit:contain;background:#eaedea;font-size:0!important;color:transparent!important;overflow:hidden}
-.thumbs img{width:90px;height:66px;object-fit:cover;border-radius:3px;border:2px solid transparent;cursor:pointer;background:#eaedea;font-size:0!important;color:transparent!important;overflow:hidden}
+.thumbs{display:flex;align-items:center;gap:9px;overflow-x:auto;-webkit-overflow-scrolling:touch;scroll-snap-type:x mandatory;padding:4px 2px 8px;margin-top:10px;width:100%;max-width:100%;scrollbar-width:thin;scrollbar-color:rgba(24,43,36,.2) transparent}
+.thumbs::-webkit-scrollbar{height:4px}
+.thumbs::-webkit-scrollbar-track{background:transparent}
+.thumbs::-webkit-scrollbar-thumb{background:rgba(24,43,36,.18);border-radius:4px}
+.thumbs img{flex:0 0 76px;width:76px;min-width:76px;max-width:76px;height:56px;object-fit:cover;border-radius:6px;border:2px solid transparent;cursor:pointer;background:#eaedea;font-size:0!important;color:transparent!important;overflow:hidden;scroll-snap-align:start;transition:border-color .18s,transform .18s,box-shadow .18s}
+.thumbs img:hover{transform:translateY(-2px);border-color:rgba(239,101,9,.4)}
+.thumbs img.active{border-color:var(--orange);box-shadow:0 0 0 2px rgba(239,101,9,.25);transform:scale(1.02)}
+.admin-thumb-add{flex:0 0 76px;width:76px;min-width:76px;height:56px;display:grid;place-items:center;border-radius:6px;border:1.5px dashed var(--orange);background:rgba(239,101,9,.06);color:var(--orange);cursor:pointer;transition:background .18s}
+.admin-thumb-add:hover{background:rgba(239,101,9,.12)}
+.admin-thumb-add svg{width:18px;height:18px;stroke:currentColor;stroke-width:2.2}
+
+.gallery-nav{position:absolute;top:50%;transform:translateY(-50%);z-index:4;width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.92);border:1px solid rgba(255,255,255,.8);color:var(--forest);display:grid;place-items:center;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.2);backdrop-filter:blur(8px);transition:all .18s ease}
+.gallery-nav:hover{background:#fff;color:var(--orange);transform:translateY(-50%) scale(1.08);box-shadow:0 6px 20px rgba(0,0,0,.28)}
+.gallery-nav:active{transform:translateY(-50%) scale(.92)}
+.gallery-nav svg{width:16px;height:16px}
+.gallery-prev{left:12px}
+.gallery-next{right:12px}
+.gallery-counter{position:absolute;bottom:12px;left:12px;z-index:4;padding:4px 10px;border-radius:12px;background:rgba(10,24,19,.62);color:#fff;font-size:11px;font-weight:700;letter-spacing:.03em;backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.2);pointer-events:none}
 
 /* Luxury branded loader for modal */
 .detail-loader{grid-column:1/-1;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:380px;gap:16px}
