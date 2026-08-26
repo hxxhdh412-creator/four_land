@@ -53,7 +53,7 @@ http.createServer(async (req,res)=>{
   if(url.pathname==="/api/admin-login") {
     if(req.method==="GET") return send(res,200,{ok:true,authenticated:isAdmin(req)});
     if(req.method!=="POST") return send(res,405,{ok:false,error:"Method Not Allowed"});
-    let raw="";req.on("data",chunk=>raw+=chunk);req.on("end",()=>{try{const body=JSON.parse(raw||"{}");if(String(body.code||"")!==adminCode)return send(res,401,{ok:false,error:"Mã truy cập không đúng"});res.setHeader("Set-Cookie",`fourland_admin=${previewAdminToken}; Path=/; HttpOnly; SameSite=Strict; Max-Age=28800`);return send(res,200,{ok:true,authenticated:true})}catch{return send(res,400,{ok:false,error:"Dữ liệu không hợp lệ"})}});return;
+    let raw="";req.on("data",chunk=>raw+=chunk);req.on("end",()=>{try{const body=JSON.parse(raw||"{}");if(String(body.code||"").trim()!==adminCode)return send(res,401,{ok:false,error:"Mã truy cập không đúng"});res.setHeader("Set-Cookie",`fourland_admin=${previewAdminToken}; Path=/; HttpOnly; SameSite=Strict; Max-Age=28800`);return send(res,200,{ok:true,authenticated:true})}catch{return send(res,400,{ok:false,error:"Dữ liệu không hợp lệ"})}});return;
   }
   if(url.pathname==="/api/admin-archive") {
     if(req.method!=="PATCH")return send(res,405,{ok:false,error:"Method Not Allowed"});if(!isAdmin(req))return send(res,401,{ok:false,error:"Phiên quản trị chưa được mở"});
