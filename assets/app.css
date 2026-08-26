@@ -1144,13 +1144,15 @@ body.selection-mode-active .card-select-wrap,
   transform: scale(1.08);
 }
 
-.card-select-input:checked + .card-select-box {
+.card-select-wrap.is-checked .card-select-box,
+.card.is-selected .card-select-box {
   background: #dc2626;
   border-color: #dc2626;
   box-shadow: 0 2px 10px rgba(220, 38, 38, 0.45);
 }
 
-.card-select-input:checked + .card-select-box svg {
+.card-select-wrap.is-checked .card-select-box svg,
+.card.is-selected .card-select-box svg {
   opacity: 1;
   transform: scale(1);
 }

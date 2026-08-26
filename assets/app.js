@@ -141,10 +141,9 @@ function render(){
     const specsHtml = specs.length ? `<div class="card-specs">${specs.join('')}</div>` : '';
 
     const selectCheckboxHtml = state.adminUnlocked ? `
-      <label class="card-select-wrap" onclick="event.stopPropagation();" title="Chọn căn này">
-        <input type="checkbox" class="card-select-input" data-id="${escapeHtml(row.property_id)}" ${state.selectedIds.has(row.property_id)?'checked':''}>
+      <div class="card-select-wrap ${state.selectedIds.has(row.property_id)?'is-checked':''}" data-id="${escapeHtml(row.property_id)}" title="Chọn căn này" role="checkbox" aria-checked="${state.selectedIds.has(row.property_id)}">
         <span class="card-select-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg></span>
-      </label>
+      </div>
     ` : '';
 
     const statusPillHtml = `<span class="photo-status-pill ${isRented ? 'is-rented' : 'is-available'}" title="${isRented ? 'Đã cho thuê' : 'Đang mở thuê (Còn phòng)'}"><i class="photo-status-dot"></i></span>`;
@@ -176,19 +175,11 @@ function render(){
     </a>`;
   }).join('');
 
-  document.querySelectorAll('.card-select-input').forEach(cb=>{
-    cb.onchange=event=>{
+  document.querySelectorAll('.card-select-wrap').forEach(wrap=>{
+    wrap.onclick=event=>{
+      event.preventDefault();
       event.stopPropagation();
-      const id=cb.dataset.id;
-      const card=cb.closest('.card');
-      if(cb.checked){
-        state.selectedIds.add(id);
-        if(card)card.classList.add('is-selected');
-      }else{
-        state.selectedIds.delete(id);
-        if(card)card.classList.remove('is-selected');
-      }
-      updateBulkBar();
+      toggleCardSelection(wrap.dataset.id);
     };
   });
 
@@ -199,7 +190,6 @@ function render(){
 
     const startPress=(e)=>{
       if(!state.adminUnlocked)return;
-      if(e.target.closest('.card-select-wrap'))return;
       isLongPress=false;
       if(e.touches&&e.touches[0]){
         startX=e.touches[0].clientX;
@@ -209,15 +199,11 @@ function render(){
         isLongPress=true;
         const id=card.dataset.id;
         if(!state.selectedIds.has(id)){
-          state.selectedIds.add(id);
-          card.classList.add('is-selected');
-          const cb=card.querySelector('.card-select-input');
-          if(cb)cb.checked=true;
+          toggleCardSelection(id);
         }
         if(navigator.vibrate)navigator.vibrate(50);
         showToast('Đã bật chế độ chọn nhiều căn');
-        updateBulkBar();
-      },750);
+      },650);
     };
 
     const cancelPress=(e)=>{
@@ -247,29 +233,42 @@ function render(){
         isLongPress=false;
         return;
       }
+      if(event.target.closest('.card-select-wrap')){
+        return;
+      }
       if(state.selectedIds.size>0&&state.adminUnlocked){
         event.preventDefault();
         event.stopPropagation();
-        const id=card.dataset.id;
-        const cb=card.querySelector('.card-select-input');
-        if(state.selectedIds.has(id)){
-          state.selectedIds.delete(id);
-          card.classList.remove('is-selected');
-          if(cb)cb.checked=false;
-        }else{
-          state.selectedIds.add(id);
-          card.classList.add('is-selected');
-          if(cb)cb.checked=true;
-        }
-        updateBulkBar();
+        toggleCardSelection(card.dataset.id);
         return;
       }
-      if(event.target.closest('.card-select-wrap'))return;
       if(event.ctrlKey||event.metaKey||event.shiftKey||event.altKey)return;
       event.preventDefault();
       openDetail(card.dataset.id,card.getAttribute('href'))
     });
   });
+  updateBulkBar();
+}
+
+function toggleCardSelection(id){
+  if(!state.adminUnlocked||!id)return;
+  const card=document.querySelector(`.card[data-id="${id}"]`);
+  const wrap=card?card.querySelector('.card-select-wrap'):null;
+  if(state.selectedIds.has(id)){
+    state.selectedIds.delete(id);
+    if(card)card.classList.remove('is-selected');
+    if(wrap){
+      wrap.classList.remove('is-checked');
+      wrap.setAttribute('aria-checked','false');
+    }
+  }else{
+    state.selectedIds.add(id);
+    if(card)card.classList.add('is-selected');
+    if(wrap){
+      wrap.classList.add('is-checked');
+      wrap.setAttribute('aria-checked','true');
+    }
+  }
   updateBulkBar();
 }
 
