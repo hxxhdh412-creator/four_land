@@ -367,7 +367,7 @@ body.selection-mode-active .photo-status-pill,
 .price-contact{color:var(--orange);font-weight:800;font-size:14.5px}
 .price-archived{color:#a12b22;font-size:14.5px;font-weight:700}
 
-.card-title{margin:2px 0 3px;font-family:var(--font-sans);font-size:13.5px;font-weight:700;line-height:1.32;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.card-title{margin:2px 0 3px;font-family:var(--font-sans);font-size:12.5px;font-weight:650;line-height:1.3;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .card-location{display:flex;align-items:center;gap:4px;color:var(--muted);font-family:var(--font-sans);font-size:11.5px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.25}
 .card-loc-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .icon-pin{width:11.5px;height:11.5px;flex:0 0 11.5px;stroke:var(--orange)}
@@ -518,7 +518,7 @@ label,.eyebrow,.detail-kicker,.result-head strong,.brand-caption{font-weight:700
   .price-row{min-height:20px}
   .price-val{font-size:15.5px;font-weight:800;line-height:1}
   .price-period{font-size:11px;font-weight:500}
-  .card-title{font-size:12.5px;font-weight:700;line-height:1.28;margin:2px 0 1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .card-title{font-size:11.8px;font-weight:650;line-height:1.26;margin:1.5px 0 1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .card-location{font-size:10.5px;gap:3.5px;line-height:1.2}
   .card-location .icon-pin{width:11px;height:11px;flex:0 0 11px}
   .card-specs{gap:4.5px;margin-top:auto;padding-top:2px}
