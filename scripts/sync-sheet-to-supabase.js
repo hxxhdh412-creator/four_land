@@ -64,6 +64,11 @@ async function main() {
   const properties = [], images = [];
   for (const row of rows.slice(1)) {
     const propertyId = get(row, "PropertyId"); if (!propertyId) continue;
+    const raw = String(get(row, "RawText") || "").trim();
+    const addressVal = String(get(row, "Address") || "").trim();
+    if (raw.startsWith("Tin nhắn thử nghiệm") || raw === "||||||||||||" || raw === "1") continue;
+    if (!addressVal && raw.length < 15) continue;
+    if (addressVal === "2026 trống" || addressVal === "2PN view sông" || addressVal === "1 ngày" || addressVal === "2 phòng ngủ 2 wc") continue;
     const record = parseJson(get(row, "Data JSON")), property = record.property || {}, source = record.source || {};
     properties.push({
       property_id: propertyId, send_id: emptyToNull(get(row, "SendId")), status: get(row, "Status") || "raw",
