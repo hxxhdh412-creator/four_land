@@ -106,10 +106,12 @@ async function openDetail(id){
   const dialog=$('detail');state.currentPropertyId=id;$('detailId').textContent=id;
   $('detailBody').innerHTML=`
     <div class="detail-loader">
-      <div class="loader-brand-box">
-        <img src="/assets/brand/fourland-logo.png" alt="Fourland" class="loader-logo-pulse">
+      <div class="luxury-spinner-wrap">
+        <div class="spinner-ring"></div>
+        <div class="spinner-brand">
+          <img src="/assets/brand/fourland-logo.png" alt="Fourland" class="spinner-logo">
+        </div>
       </div>
-      <div class="loader-dots"><span></span><span></span><span></span></div>
     </div>
   `;
   if(!dialog.open)dialog.showModal();

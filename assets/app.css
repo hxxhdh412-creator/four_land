@@ -203,15 +203,13 @@ input:focus,select:focus{border-color:var(--orange);box-shadow:0 0 0 3px rgba(23
 .thumbs img{width:90px;height:66px;object-fit:cover;border-radius:3px;border:2px solid transparent;cursor:pointer;background:#eaedea;font-size:0!important;color:transparent!important;overflow:hidden}
 
 /* Luxury branded loader for modal */
-.detail-loader{grid-column:1/-1;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:360px;gap:16px}
-.loader-brand-box{position:relative;width:68px;height:68px;display:flex;align-items:center;justify-content:center;background:#fff;border-radius:16px;box-shadow:0 10px 30px rgba(24,43,36,.08);border:1px solid rgba(24,43,36,.07)}
-.loader-logo-pulse{width:42px;height:42px;object-fit:contain;animation:logoPulse 1.4s ease-in-out infinite}
-@keyframes logoPulse{0%,100%{transform:scale(.92);opacity:.75}50%{transform:scale(1.06);opacity:1;filter:drop-shadow(0 4px 12px rgba(239,101,9,.25))}}
-.loader-dots{display:flex;gap:6px}
-.loader-dots span{width:6px;height:6px;border-radius:50%;background:var(--forest);opacity:.35;animation:dotPulse 1.2s infinite ease-in-out}
-.loader-dots span:nth-child(2){animation-delay:.2s}
-.loader-dots span:nth-child(3){animation-delay:.4s}
-@keyframes dotPulse{0%,100%{transform:translateY(0);opacity:.3}50%{transform:translateY(-4px);opacity:1;background:var(--orange)}}
+.detail-loader{grid-column:1/-1;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:380px;gap:16px}
+.luxury-spinner-wrap{position:relative;width:76px;height:76px;display:flex;align-items:center;justify-content:center}
+.spinner-ring{position:absolute;inset:0;border-radius:50%;border:2.5px solid rgba(24,43,36,.09);border-top-color:var(--orange);border-right-color:var(--forest);animation:spinFast .72s cubic-bezier(.4,0,.2,1) infinite}
+@keyframes spinFast{to{transform:rotate(360deg)}}
+.spinner-brand{position:relative;width:56px;height:56px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(24,43,36,.1);border:1px solid rgba(24,43,36,.06)}
+.spinner-logo{width:36px;height:36px;object-fit:contain;animation:logoPulseSnappy .72s ease-in-out infinite alternate}
+@keyframes logoPulseSnappy{0%{transform:scale(.92);opacity:.8}100%{transform:scale(1.05);opacity:1;filter:drop-shadow(0 2px 8px rgba(239,101,9,.3))}}
 
 /* Luxury skeleton card with logo */
 .skeleton{position:relative;display:flex;flex-direction:column;border-radius:6px;background:#fff;border:1px solid var(--line);overflow:hidden;height:340px}
