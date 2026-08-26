@@ -193,6 +193,19 @@ function closeDetailModal(){
 $('closeDetail').onclick=closeDetailModal;
 $('detail').onclick=event=>{if(event.target===$('detail'))closeDetailModal()};
 
+function handleSearchFromHash(){
+  const hash=window.location.hash;
+  if(hash&&hash.startsWith('#q=')){
+    const qValue=decodeURIComponent(hash.slice(3).replace(/\+/g,' '));
+    $('q').value=qValue;
+    state.page=1;
+    load();
+    const grid=$('grid');
+    if(grid)grid.scrollIntoView({behavior:'smooth'});
+  }
+}
+window.addEventListener('hashchange',handleSearchFromHash);
+
 loadFacets();
 load();
 checkAdminSession();
@@ -200,4 +213,6 @@ checkAdminSession();
 const initUrlId=new URLSearchParams(window.location.search).get('id')||(window.location.hash?window.location.hash.replace(/^#/,''):'');
 if(initUrlId&&/^BDS-/i.test(initUrlId)){
   setTimeout(()=>openDetail(initUrlId),200);
+}else{
+  handleSearchFromHash();
 }

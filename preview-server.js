@@ -2,6 +2,7 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
+const { parseNaturalQuery, matchAndScoreProperty, removeVietnameseTones } = require("./api/_smartSearch");
 
 const root = __dirname;
 const port = Number(process.env.PORT || 4175);
@@ -39,13 +40,54 @@ async function dbRequest(route,{method="GET",body,prefer="",contentType="applica
 function readBody(req,max=5*1024*1024){return new Promise((resolve,reject)=>{let raw="";req.on("data",chunk=>{raw+=chunk;if(raw.length>max){reject(new Error("Dữ liệu quá lớn"));req.destroy()}});req.on("end",()=>{try{resolve(JSON.parse(raw||"{}"))}catch{reject(new Error("Dữ liệu không hợp lệ"))}});req.on("error",reject)})}
 
 async function listDatabaseProperties(url){
-  const page=Math.max(1,Number(url.searchParams.get("page")||1)),pageSize=Math.min(60,Math.max(1,Number(url.searchParams.get("pageSize")||24))),query=new URLSearchParams({select:"*,property_images(position,public_url,source_url)",order:"received_at.desc",limit:String(pageSize),offset:String((page-1)*pageSize)});
-  query.set("status",url.searchParams.get("archived")==="only"?"eq.archived":"neq.archived");
-  [["district","district"],["ward","ward"],["street","street"],["type","property_type"]].forEach(([input,column])=>{const value=url.searchParams.get(input);if(value)query.set(column,`eq.${value}`)});
-  const q=String(url.searchParams.get("q")||"").replace(/[,*()"']/g," ").replace(/\s+/g," ").trim();if(q)query.set("or",`(address.ilike.*${q}*,raw_text.ilike.*${q}*,phone.ilike.*${q}*,property_id.ilike.*${q}*)`);
-  const minPrice=Number(url.searchParams.get("minPrice")),maxPrice=Number(url.searchParams.get("maxPrice")),minArea=Number(url.searchParams.get("minArea")),maxArea=Number(url.searchParams.get("maxArea"));
-  if(Number.isFinite(minPrice)&&minPrice>0)query.set("price_number",`gte.${minPrice}`);if(Number.isFinite(maxPrice)&&maxPrice>0)query.append("price_number",`lte.${maxPrice}`);if(Number.isFinite(minArea)&&minArea>0)query.set("area_number",`gte.${minArea}`);if(Number.isFinite(maxArea)&&maxArea>0)query.append("area_number",`lte.${maxArea}`);
-  const result=await dbRequest(`properties?${query}`,{prefer:"count=exact"});return{ok:true,rows:result.data,total:result.count,page,pageSize};
+  const page = Math.max(1, Number(url.searchParams.get("page") || 1));
+  const pageSize = Math.min(60, Math.max(1, Number(url.searchParams.get("pageSize") || 24)));
+  
+  const rawQ = String(url.searchParams.get("q") || "").trim();
+  const nlp = parseNaturalQuery(rawQ);
+
+  const explicitFilters = {
+    district: url.searchParams.get("district"),
+    ward: url.searchParams.get("ward"),
+    street: url.searchParams.get("street"),
+    property_type: url.searchParams.get("type"),
+    minPrice: url.searchParams.get("minPrice") ? Number(url.searchParams.get("minPrice")) : null,
+    maxPrice: url.searchParams.get("maxPrice") ? Number(url.searchParams.get("maxPrice")) : null,
+    minArea: url.searchParams.get("minArea") ? Number(url.searchParams.get("minArea")) : null,
+    maxArea: url.searchParams.get("maxArea") ? Number(url.searchParams.get("maxArea")) : null,
+    bedrooms: url.searchParams.get("bedrooms") ? Number(url.searchParams.get("bedrooms")) : null
+  };
+
+  const query = new URLSearchParams({
+    select: "*,property_images(position,public_url,source_url)",
+    order: "received_at.desc",
+    limit: "5000"
+  });
+  query.set("status", url.searchParams.get("archived") === "only" ? "eq.archived" : "neq.archived");
+
+  const result = await dbRequest(`properties?${query}`);
+  const allRows = result.data || [];
+
+  const scoredRows = allRows
+    .map(row => ({
+      row: {
+        ...row,
+        view_count: Number(row.data_json?.view_count) || 0
+      },
+      score: matchAndScoreProperty(row, nlp, explicitFilters)
+    }))
+    .filter(item => item.score > 0)
+    .sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      return new Date(b.row.received_at || 0) - new Date(a.row.received_at || 0);
+    });
+
+  const total = scoredRows.length;
+  const paginatedRows = scoredRows
+    .slice((page - 1) * pageSize, page * pageSize)
+    .map(item => item.row);
+
+  return { ok: true, rows: paginatedRows, total, page, pageSize, parsedNlp: nlp.filters };
 }
 
 http.createServer(async (req,res)=>{
