@@ -1343,17 +1343,5 @@ body.selection-mode-active .card-select-wrap,
   border-color: var(--orange);
   box-shadow: 0 0 0 2.5px rgba(239, 101, 9, 0.35), 0 4px 14px rgba(0, 0, 0, 0.22);
 }
-.profile.admin-active:after {
-  content: "";
-  position: absolute;
-  top: -1px;
-  right: -1px;
-  width: 9.5px;
-  height: 9.5px;
-  border-radius: 50%;
-  background: #10b981;
-  border: 2px solid #fff;
-  box-shadow: 0 0 6px #10b981;
-}
 
 
