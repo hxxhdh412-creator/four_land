@@ -14,12 +14,14 @@ module.exports = async function handler(req, res) {
     const rawQ = String(req.query.q || "").trim();
     const nlp = parseNaturalQuery(rawQ);
     const featuredOnly = req.query.featured === "1" || req.query.featured === "true";
+    const sortBy = text(req.query.sortBy) || "newest";
 
     const explicitFilters = {
       district: text(req.query.district),
       ward: text(req.query.ward),
       street: text(req.query.street),
       property_type: text(req.query.type),
+      timeRange: text(req.query.timeRange),
       minPrice: req.query.minPrice ? Number(req.query.minPrice) : null,
       maxPrice: req.query.maxPrice ? Number(req.query.maxPrice) : null,
       minArea: req.query.minArea ? Number(req.query.minArea) : null,
@@ -58,7 +60,25 @@ module.exports = async function handler(req, res) {
         return true;
       })
       .sort((a, b) => {
-        // Ưu tiên nhà nổi bật lên đầu trang khi duyệt danh sách
+        if (sortBy === "price_asc") {
+          const pa = a.row.price_number || 999999999999;
+          const pb = b.row.price_number || 999999999999;
+          return pa - pb;
+        }
+        if (sortBy === "price_desc") {
+          const pa = a.row.price_number || 0;
+          const pb = b.row.price_number || 0;
+          return pb - pa;
+        }
+        if (sortBy === "area_desc") {
+          const aa = a.row.area_number || 0;
+          const ab = b.row.area_number || 0;
+          return ab - aa;
+        }
+        if (sortBy === "oldest") {
+          return new Date(a.row.received_at || 0) - new Date(b.row.received_at || 0);
+        }
+        // Mặc định: Ưu tiên nhà nổi bật lên đầu trang khi duyệt danh sách
         if (!rawQ && a.isFeatured !== b.isFeatured) {
           return b.isFeatured ? 1 : -1;
         }

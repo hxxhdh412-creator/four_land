@@ -277,6 +277,27 @@ function matchAndScoreProperty(property, parsedNlp, explicitFilters = {}) {
     if (property.area_number && property.area_number > Number(maxArea)) return -1;
   }
 
+  // 1.5 Lọc theo khoảng thời gian đăng / cập nhật
+  if (explicitFilters.timeRange) {
+    const rawTime = property.received_at || property.updated_at || property.created_at;
+    const received = rawTime ? new Date(rawTime).getTime() : 0;
+    if (!received || Number.isNaN(received)) return -1;
+    const now = Date.now();
+    if (explicitFilters.timeRange === 'today') {
+      if (now - received > 24 * 3600 * 1000) return -1;
+    } else if (explicitFilters.timeRange === '3days') {
+      if (now - received > 3 * 24 * 3600 * 1000) return -1;
+    } else if (explicitFilters.timeRange === '7days') {
+      if (now - received > 7 * 24 * 3600 * 1000) return -1;
+    } else if (explicitFilters.timeRange === '30days') {
+      if (now - received > 30 * 24 * 3600 * 1000) return -1;
+    } else if (explicitFilters.timeRange === 'this_month') {
+      const nowD = new Date();
+      const startOfMonth = new Date(nowD.getFullYear(), nowD.getMonth(), 1).getTime();
+      if (received < startOfMonth) return -1;
+    }
+  }
+
   // 2. So khớp Tokens từ khóa không dấu (AND logic across all fields)
   let score = 100;
   if (parsedNlp.tokens.length > 0) {

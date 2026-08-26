@@ -39,7 +39,7 @@
   <link rel="manifest" href="/manifest.json">
   <link rel="icon" type="image/png" href="/assets/brand/fourland-logo.png">
   <link rel="apple-touch-icon" href="/assets/brand/fourland-logo.png">
-  <link rel="stylesheet" href="/assets/app.css?v=20260826-fourland-watermark-v7">
+  <link rel="stylesheet" href="/assets/app.css?v=20260826-fourland-mini-logo-v12">
 
   <!-- Schema.org JSON-LD Structured Data -->
   <script type="application/ld+json">
@@ -149,6 +149,21 @@
           </select></label>
         <label>Loại BĐS<select id="type">
             <option value="">Tất cả loại hình</option>
+          </select></label>
+        <label>Thời gian đăng<select id="timeRange">
+            <option value="">Tất cả thời gian</option>
+            <option value="today">Hôm nay (24 giờ qua)</option>
+            <option value="3days">3 ngày gần nhất</option>
+            <option value="7days">7 ngày gần nhất</option>
+            <option value="30days">30 ngày gần nhất</option>
+            <option value="this_month">Tháng này</option>
+          </select></label>
+        <label>Sắp xếp<select id="sortBy">
+            <option value="newest">Mới cập nhật nhất</option>
+            <option value="price_asc">Giá: Thấp đến cao</option>
+            <option value="price_desc">Giá: Cao đến thấp</option>
+            <option value="area_desc">Diện tích: Lớn nhất</option>
+            <option value="oldest">Cũ nhất trước</option>
           </select></label>
         <label>Giá từ<input id="minPrice" inputmode="numeric" placeholder="0"></label>
         <label>Giá đến<input id="maxPrice" inputmode="numeric" placeholder="Không giới hạn"></label>
@@ -264,7 +279,7 @@
     </form>
   </dialog>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script src="/assets/app.js?v=20260826-fourland-watermark-v7" defer></script>
+  <script src="/assets/app.js?v=20260826-fourland-mini-logo-v12" defer></script>
 </body>
 
 </html>

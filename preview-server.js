@@ -47,11 +47,13 @@ async function listDatabaseProperties(url){
   const rawQ = String(url.searchParams.get("q") || "").trim();
   const nlp = parseNaturalQuery(rawQ);
 
+  const sortBy = url.searchParams.get("sortBy") || "newest";
   const explicitFilters = {
     district: url.searchParams.get("district"),
     ward: url.searchParams.get("ward"),
     street: url.searchParams.get("street"),
     property_type: url.searchParams.get("type"),
+    timeRange: url.searchParams.get("timeRange"),
     minPrice: url.searchParams.get("minPrice") ? Number(url.searchParams.get("minPrice")) : null,
     maxPrice: url.searchParams.get("maxPrice") ? Number(url.searchParams.get("maxPrice")) : null,
     minArea: url.searchParams.get("minArea") ? Number(url.searchParams.get("minArea")) : null,
@@ -92,6 +94,25 @@ async function listDatabaseProperties(url){
       return true;
     })
     .sort((a, b) => {
+      if (sortBy === "price_asc") {
+        const pa = a.row.price_number || 999999999999;
+        const pb = b.row.price_number || 999999999999;
+        return pa - pb;
+      }
+      if (sortBy === "price_desc") {
+        const pa = a.row.price_number || 0;
+        const pb = b.row.price_number || 0;
+        return pb - pa;
+      }
+      if (sortBy === "area_desc") {
+        const aa = a.row.area_number || 0;
+        const ab = b.row.area_number || 0;
+        return ab - aa;
+      }
+      if (sortBy === "oldest") {
+        return new Date(a.row.received_at || 0) - new Date(b.row.received_at || 0);
+      }
+      // Mặc định: Ưu tiên nhà nổi bật lên đầu khi duyệt danh sách
       if (!rawQ && a.isFeatured !== b.isFeatured) {
         return b.isFeatured ? 1 : -1;
       }
