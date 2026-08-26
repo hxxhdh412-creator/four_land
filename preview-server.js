@@ -207,15 +207,24 @@ http.createServer(async (req,res)=>{
     if(!isAdmin(req)) return send(res,401,{ok:false,error:"Cần quyền quản trị"});
     if(req.method!=="PATCH") return send(res,405,{ok:false,error:"Method Not Allowed"});
     try{
-      const body=await readBody(req),propertyId=String(body.propertyId||"").slice(0,100),archived=Boolean(body.archived);
-      const nextStatus=archived?"archived":"complete";
-      if(databaseEnabled){
-        await dbRequest(`properties?property_id=eq.${encodeURIComponent(propertyId)}`,{method:"PATCH",body:{status:nextStatus,updated_at:new Date().toISOString()}});
-        return send(res,200,{ok:true,message:archived?"Đã ẩn hồ sơ khỏi kho web":"Đã khôi phục hồ sơ lên kho web"});
+      const body=await readBody(req);
+      const archived=Boolean(body.archived);
+      let propertyIds=[];
+      if(Array.isArray(body.propertyIds)){
+        propertyIds=body.propertyIds.map(id=>String(id||"").slice(0,100)).filter(Boolean);
+      }else if(body.propertyId){
+        const single=String(body.propertyId||"").slice(0,100);
+        if(single) propertyIds=[single];
       }
-      const row=rows.find(item=>item.property_id===propertyId);if(!row)return send(res,404,{ok:false,error:"Không tìm thấy hồ sơ"});
-      row.status=nextStatus;
-      return send(res,200,{ok:true,message:archived?"Đã ẩn hồ sơ (preview mode)":"Đã khôi phục hồ sơ (preview mode)"});
+      if(!propertyIds.length) return send(res,400,{ok:false,error:"Thiếu propertyId hoặc propertyIds"});
+      const nextStatus=archived?"archived":"partial";
+      if(databaseEnabled){
+        await dbRequest(`properties?property_id=in.(${propertyIds.map(encodeURIComponent).join(",")})`,{method:"PATCH",body:{status:nextStatus,updated_at:new Date().toISOString()}});
+        return send(res,200,{ok:true,updatedCount:propertyIds.length,message:archived?`Đã ẩn ${propertyIds.length} hồ sơ khỏi kho web`:`Đã khôi phục ${propertyIds.length} hồ sơ lên kho web`});
+      }
+      const matched=rows.filter(item=>propertyIds.includes(item.property_id));
+      matched.forEach(row=>row.status=nextStatus);
+      return send(res,200,{ok:true,updatedCount:matched.length,message:archived?`Đã ẩn ${matched.length} hồ sơ (preview mode)`:`Đã khôi phục ${matched.length} hồ sơ (preview mode)`});
     }catch(error){return send(res,500,{ok:false,error:error.message})}
   }
   if(url.pathname==="/api/inquiries") {

@@ -1,4 +1,4 @@
-const state={page:1,pageSize:24,total:0,rows:[],facets:null,requestId:0,adminUnlocked:false,currentPropertyId:null,filterTab:'all'};const $=id=>document.getElementById(id);const escapeHtml=value=>String(value||'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+const state={page:1,pageSize:24,total:0,rows:[],facets:null,requestId:0,adminUnlocked:false,currentPropertyId:null,filterTab:'all',selectedIds:new Set()};const $=id=>document.getElementById(id);const escapeHtml=value=>String(value||'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const phoneHref=value=>String(value||'').replace(/[^\d+]/g,'');
 const slugify=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/gi,'d').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,90)||'ho-so-bat-dong-san';
 const propertyPath=row=>`/bat-dong-san/${slugify(row.address||row.street||row.property_type)}--${encodeURIComponent(row.property_id)}`;
@@ -87,8 +87,29 @@ function formatCardPrice(row){
   return `<span class="price-val" title="${escapeHtml(text)}">${escapeHtml(text)}</span>`;
 }
 
+function updateBulkBar(){
+  const bar=$('bulkBar');
+  if(!bar)return;
+  if(!state.adminUnlocked||state.selectedIds.size===0){
+    bar.hidden=true;
+    return;
+  }
+  bar.hidden=false;
+  $('bulkCount').textContent=state.selectedIds.size;
+  const archiveBtn=$('bulkArchiveBtn');
+  if(archiveBtn){
+    if(state.viewArchived){
+      archiveBtn.textContent=`Khôi phục ${state.selectedIds.size} căn đã chọn lên web`;
+      archiveBtn.className='bulk-btn bulk-btn-success';
+    }else{
+      archiveBtn.textContent=`Ẩn ${state.selectedIds.size} căn đã chọn khỏi web`;
+      archiveBtn.className='bulk-btn bulk-btn-danger';
+    }
+  }
+}
+
 function render(){
-  if(!state.rows.length){$('grid').innerHTML='<div class="empty">Không tìm thấy hồ sơ phù hợp.</div>';return}
+  if(!state.rows.length){$('grid').innerHTML='<div class="empty">Không tìm thấy hồ sơ phù hợp.</div>';updateBulkBar();return}
   $('grid').innerHTML=state.rows.map(row=>{
     const isFeatured = row.status === 'featured' || Boolean(row.is_featured);
     const images = (row.property_images || []).filter(item => item.public_url).sort((a, b) => a.position - b.position);
@@ -117,7 +138,14 @@ function render(){
     }
     const specsHtml = specs.length ? `<div class="card-specs">${specs.join('')}</div>` : '';
 
-    return`<a class="card ${isFeatured?'is-featured':''} ${row.status==='archived'?'archived-card':''}" href="${escapeHtml(propertyPath(row))}" data-id="${escapeHtml(row.property_id)}" aria-label="Xem ${escapeHtml(row.address||row.property_id)}">
+    const selectCheckboxHtml = state.adminUnlocked ? `
+      <label class="card-select-wrap" onclick="event.stopPropagation();" title="Chọn căn này">
+        <input type="checkbox" class="card-select-input" data-id="${escapeHtml(row.property_id)}" ${state.selectedIds.has(row.property_id)?'checked':''}>
+        <span class="card-select-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg></span>
+      </label>
+    ` : '';
+
+    return`<a class="card ${isFeatured?'is-featured':''} ${row.status==='archived'?'archived-card':''} ${state.selectedIds.has(row.property_id)?'is-selected':''}" href="${escapeHtml(propertyPath(row))}" data-id="${escapeHtml(row.property_id)}" aria-label="Xem ${escapeHtml(row.address||row.property_id)}">
       <div class="photo ${!image?'no-photo':''}">
         ${image?`<img loading="lazy" referrerpolicy="no-referrer" src="${escapeHtml(image)}" alt="${escapeHtml(imgAlt)}" title="${escapeHtml(imgAlt)}" onerror="handleCardImgError(this)">`:`
           <div class="placeholder-watermark">
@@ -127,6 +155,7 @@ function render(){
         `}
         ${badgeHtml}
         ${typeBadgeHtml}
+        ${selectCheckboxHtml}
       </div>
       <div class="card-body">
         <div class="price-row">
@@ -142,7 +171,30 @@ function render(){
       </div>
     </a>`;
   }).join('');
-  document.querySelectorAll('.card').forEach(card=>card.addEventListener('click',event=>{if(event.ctrlKey||event.metaKey||event.shiftKey||event.altKey)return;event.preventDefault();openDetail(card.dataset.id,card.getAttribute('href'))}));
+
+  document.querySelectorAll('.card-select-input').forEach(cb=>{
+    cb.onchange=event=>{
+      event.stopPropagation();
+      const id=cb.dataset.id;
+      const card=cb.closest('.card');
+      if(cb.checked){
+        state.selectedIds.add(id);
+        if(card)card.classList.add('is-selected');
+      }else{
+        state.selectedIds.delete(id);
+        if(card)card.classList.remove('is-selected');
+      }
+      updateBulkBar();
+    };
+  });
+
+  document.querySelectorAll('.card').forEach(card=>card.addEventListener('click',event=>{
+    if(event.target.closest('.card-select-wrap'))return;
+    if(event.ctrlKey||event.metaKey||event.shiftKey||event.altKey)return;
+    event.preventDefault();
+    openDetail(card.dataset.id,card.getAttribute('href'))
+  }));
+  updateBulkBar();
 }
 
 function handleCardImgError(img){
@@ -381,6 +433,9 @@ async function logoutAdmin(){
 }
 function setAdminState(unlocked){
   state.adminUnlocked=Boolean(unlocked);
+  if(!state.adminUnlocked){
+    state.selectedIds.clear();
+  }
   const profile=document.querySelector('.profile'),toggle=$('archivedToggle'),logoutBtn=$('logoutAdminBtn');
   profile.classList.toggle('admin-active',state.adminUnlocked);
   profile.setAttribute('aria-label',state.adminUnlocked?'Đang mở quyền Admin (Bấm để thoát)':'Mở quyền quản trị');
@@ -389,6 +444,8 @@ function setAdminState(unlocked){
   if(logoutBtn)logoutBtn.hidden=!state.adminUnlocked;
   if(!state.adminUnlocked&&state.viewArchived){state.viewArchived=false;toggle.classList.remove('active');load()}
   if(state.currentPropertyId&&$('detail').open){openDetail(state.currentPropertyId)}
+  render();
+  updateBulkBar();
 }
 async function checkAdminSession(){try{const result=await api('/api/admin-login');setAdminState(result.authenticated)}catch{setAdminState(false)}}
 const logoutBtn=$('logoutAdminBtn');
@@ -399,6 +456,52 @@ if(logoutBtn){
     }
   };
 }
+
+const bulkSelectAllBtn=$('bulkSelectAll');
+if(bulkSelectAllBtn){
+  bulkSelectAllBtn.onclick=()=>{
+    state.rows.forEach(row=>state.selectedIds.add(row.property_id));
+    render();
+  };
+}
+const bulkDeselectBtn=$('bulkDeselect');
+if(bulkDeselectBtn){
+  bulkDeselectBtn.onclick=()=>{
+    state.selectedIds.clear();
+    render();
+  };
+}
+const bulkArchiveBtn=$('bulkArchiveBtn');
+if(bulkArchiveBtn){
+  bulkArchiveBtn.onclick=async()=>{
+    if(!state.selectedIds.size)return;
+    const isRestoring=state.viewArchived;
+    const actionName=isRestoring?'KHÔI PHỤC lên website':'ẨN khỏi website';
+    if(!confirm(`Bạn có chắc chắn muốn ${actionName} ${state.selectedIds.size} căn bất động sản đã chọn không?`))return;
+    bulkArchiveBtn.disabled=true;
+    bulkArchiveBtn.textContent='Đang xử lý…';
+    try{
+      const result=await api('/api/admin-archive',{
+        method:'PATCH',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          propertyIds:Array.from(state.selectedIds),
+          archived:!isRestoring
+        })
+      });
+      showToast(result.message||'Thao tác thành công!');
+      state.selectedIds.clear();
+      updateBulkBar();
+      await load();
+    }catch(error){
+      showToast('❌ Lỗi: '+error.message,4000);
+    }finally{
+      bulkArchiveBtn.disabled=false;
+      updateBulkBar();
+    }
+  };
+}
+
 document.querySelector('.profile').onclick=()=>{
   if(state.adminUnlocked){
     if(confirm('Bạn đang ở chế độ Quản trị viên. Bạn có muốn THOÁT quyền quản trị không?')){
@@ -415,7 +518,7 @@ document.querySelector('.profile').onclick=()=>{
 $('closeAdminAccess').onclick=()=>$('adminAccess').close();
 $('adminAccess').onclick=event=>{if(event.target===$('adminAccess'))$('adminAccess').close()};
 $('adminAccessForm').onsubmit=async event=>{event.preventDefault();const status=$('adminAccessStatus'),button=event.currentTarget.querySelector('.access-submit');button.disabled=true;button.textContent='Đang kiểm tra…';status.className='access-status';status.textContent='';try{await api('/api/admin-login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:$('adminCode').value.trim()})});setAdminState(true);status.className='access-status success-text';status.textContent='Đã mở quyền quản trị.';setTimeout(()=>{$('adminAccess').close();if(state.currentPropertyId&&$('detail').open)openDetail(state.currentPropertyId)},300)}catch(error){status.className='access-status error-text';status.textContent=error.message;$('adminCode').select()}finally{button.disabled=false;button.textContent='Mở quyền chỉnh sửa'}};
-$('archivedToggle').onclick=()=>{state.viewArchived=!state.viewArchived;state.page=1;$('archivedToggle').classList.toggle('active',state.viewArchived);$('archivedToggle').textContent=state.viewArchived?'Quay lại kho nhà':'Hồ sơ đã ẩn';load()};
+$('archivedToggle').onclick=()=>{state.viewArchived=!state.viewArchived;state.page=1;state.selectedIds.clear();$('archivedToggle').classList.toggle('active',state.viewArchived);$('archivedToggle').textContent=state.viewArchived?'Quay lại kho nhà':'Hồ sơ đã ẩn';load();updateBulkBar()};
 let searchTimer;const scheduleLoad=(delay=250)=>{clearTimeout(searchTimer);state.page=1;searchTimer=setTimeout(load,delay)};$('q').addEventListener('input',()=>scheduleLoad(320));['district','ward','street','type','timeRange','sortBy','minPrice','maxPrice','minArea','maxArea'].forEach(id=>{const el=$(id);if(el)el.addEventListener('change',()=>scheduleLoad(0))});$('searchForm').onsubmit=event=>{event.preventDefault();scheduleLoad(0)};$('reset').onclick=()=>{$('searchForm').reset();scheduleLoad(0)};$('prev').onclick=()=>{if(state.page>1){state.page--;load();scrollTo({top:0,behavior:'smooth'})}};$('next').onclick=()=>{if(state.page*state.pageSize<state.total){state.page++;load();scrollTo({top:0,behavior:'smooth'})}};$('filterToggle').onclick=()=>{const open=$('filters').classList.toggle('open');$('searchForm').classList.toggle('filter-open',open);$('filterToggle').setAttribute('aria-expanded',open)};
 
 function closeDetailModal(){

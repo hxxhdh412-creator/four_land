@@ -987,3 +987,194 @@ label,.eyebrow,.detail-kicker,.result-head strong,.brand-caption{font-weight:700
   color: #798780;
 }
 
+/* =========================================================
+   ADMIN BULK SELECTION & FLOATING ACTIONS BAR
+   ========================================================= */
+.card-select-wrap {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 3px;
+}
+
+.card-select-input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  margin: 0;
+  pointer-events: none;
+}
+
+.card-select-box {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1.5px solid rgba(40, 61, 52, 0.4);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  backdrop-filter: blur(4px);
+}
+
+.card-select-box svg {
+  width: 14px;
+  height: 14px;
+  stroke: #fff;
+  opacity: 0;
+  transform: scale(0.6);
+  transition: all 0.15s ease;
+}
+
+.card-select-wrap:hover .card-select-box {
+  border-color: var(--orange, #ef6509);
+  background: #fff;
+  transform: scale(1.06);
+}
+
+.card-select-input:checked + .card-select-box {
+  background: #dc2626;
+  border-color: #dc2626;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.4);
+}
+
+.card-select-input:checked + .card-select-box svg {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.card.is-selected {
+  border-color: rgba(220, 38, 38, 0.6) !important;
+  box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.25), 0 8px 24px rgba(220, 38, 38, 0.12) !important;
+}
+
+/* Floating Action Bar */
+.bulk-bar {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  width: min(640px, calc(100vw - 28px));
+  animation: slideUpBar 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes slideUpBar {
+  from { opacity: 0; transform: translate(-50%, 20px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+.bulk-bar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 12px 8px 16px;
+  background: rgba(18, 32, 26, 0.94);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 40px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35), 0 2px 6px rgba(0, 0, 0, 0.12);
+  color: #fff;
+}
+
+.bulk-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.bulk-count-badge {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.bulk-count-badge b {
+  color: #fbbf24;
+  font-weight: 800;
+  font-size: 15px;
+}
+
+.bulk-btn {
+  font-family: var(--font-sans);
+  font-size: 12.5px;
+  font-weight: 700;
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 20px;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.16s ease;
+  white-space: nowrap;
+}
+
+.bulk-btn-text {
+  background: rgba(255, 255, 255, 0.1);
+  color: #e2e8f0;
+  height: 28px;
+  padding: 0 11px;
+  font-size: 11.5px;
+  border-radius: 14px;
+}
+
+.bulk-btn-text:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.bulk-btn-danger {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(220, 38, 38, 0.35);
+}
+
+.bulk-btn-danger:hover {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  transform: translateY(-1px);
+}
+
+.bulk-btn-success {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+}
+
+.bulk-btn-success:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  transform: translateY(-1px);
+}
+
+@media(max-width: 600px) {
+  .bulk-bar-inner {
+    flex-direction: column;
+    align-items: stretch;
+    border-radius: 18px;
+    padding: 12px 14px;
+    gap: 8px;
+  }
+  .bulk-info {
+    justify-content: space-between;
+  }
+  .bulk-btn-danger, .bulk-btn-success {
+    width: 100%;
+    height: 38px;
+  }
+}
+
+

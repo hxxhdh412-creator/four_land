@@ -39,7 +39,7 @@
   <link rel="manifest" href="/manifest.json">
   <link rel="icon" type="image/png" href="/assets/brand/fourland-logo.png">
   <link rel="apple-touch-icon" href="/assets/brand/fourland-logo.png">
-  <link rel="stylesheet" href="/assets/app.css?v=20260826-fourland-layout-fix-v13">
+  <link rel="stylesheet" href="/assets/app.css?v=20260826-fourland-bulk-admin-v14">
 
   <!-- Schema.org JSON-LD Structured Data -->
   <script type="application/ld+json">
@@ -184,6 +184,20 @@
     <nav class="pagination"><button id="prev" type="button">← Trước</button><span id="pageNumber">1</span><button
         id="next" type="button">Sau →</button></nav>
 
+    <!-- Admin Bulk Actions Floating Bar -->
+    <div id="bulkBar" class="bulk-bar" hidden>
+      <div class="bulk-bar-inner">
+        <div class="bulk-info">
+          <span class="bulk-count-badge">Đã chọn <b id="bulkCount">0</b> căn</span>
+          <button type="button" class="bulk-btn bulk-btn-text" id="bulkSelectAll">Chọn tất cả trang này</button>
+          <button type="button" class="bulk-btn bulk-btn-text" id="bulkDeselect">Bỏ chọn</button>
+        </div>
+        <div class="bulk-actions">
+          <button type="button" class="bulk-btn bulk-btn-danger" id="bulkArchiveBtn">Ẩn các căn đã chọn</button>
+        </div>
+      </div>
+    </div>
+
     <footer class="site-footer">
       <div class="footer-card">
         <div class="footer-header">
@@ -279,7 +293,7 @@
     </form>
   </dialog>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script src="/assets/app.js?v=20260826-fourland-layout-fix-v13" defer></script>
+  <script src="/assets/app.js?v=20260826-fourland-bulk-admin-v14" defer></script>
 </body>
 
 </html>
