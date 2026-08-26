@@ -197,8 +197,10 @@ input:focus,select:focus{border-color:var(--orange);box-shadow:0 0 0 3px rgba(23
 @media(max-width:420px){.inquiry-panel{padding:17px 15px 20px}.inquiry-row{grid-template-columns:1fr}.inquiry-row button{width:100%}}
 
 /* Gallery image and floating share action */
-.gallery-main{position:relative;aspect-ratio:4/3;border-radius:6px;overflow:hidden;background:#0b1713}
-.gallery-main img{width:100%;height:100%;object-fit:contain;background:#0b1713}
+.gallery-main{position:relative;aspect-ratio:4/3;border-radius:6px;overflow:hidden;background:linear-gradient(135deg,#132820 0%,#091712 100%);display:flex;align-items:center;justify-content:center}
+.gallery-main.no-photo::before,.gallery-main:empty::before{content:"";position:absolute;width:56px;height:56px;background:url('/assets/brand/fourland-logo.png') center/contain no-repeat;opacity:.35;filter:brightness(2)}
+.gallery-main img{width:100%;height:100%;object-fit:contain;background:#0b1713;font-size:0!important;color:transparent!important;overflow:hidden}
+.thumbs img{width:90px;height:66px;object-fit:cover;border-radius:3px;border:2px solid transparent;cursor:pointer;background:#142820;font-size:0!important;color:transparent!important;overflow:hidden}
 .gallery-share-badge{position:absolute;top:12px;right:12px;z-index:4;display:flex;align-items:center;gap:6px;height:34px;padding:0 13px;border:1px solid rgba(255,255,255,.8);border-radius:17px;background:rgba(255,255,255,.92);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);color:var(--forest);font-size:12px;font-weight:750;letter-spacing:-.01em;box-shadow:0 4px 14px rgba(0,0,0,.22);cursor:pointer;transition:all .2s cubic-bezier(.4,0,.2,1)}
 .gallery-share-badge svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;transition:transform .18s ease}
 .gallery-share-badge:hover{background:#fff;color:var(--orange);border-color:#fff;box-shadow:0 6px 20px rgba(0,0,0,.3);transform:translateY(-1px)}
