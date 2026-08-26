@@ -1,5 +1,7 @@
 const state={page:1,pageSize:24,total:0,rows:[],facets:null,requestId:0,adminUnlocked:false,currentPropertyId:null};const $=id=>document.getElementById(id);const escapeHtml=value=>String(value||'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const phoneHref=value=>String(value||'').replace(/[^\d+]/g,'');
+const slugify=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/gi,'d').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,90)||'ho-so-bat-dong-san';
+const propertyPath=row=>`/bat-dong-san/${slugify(row.address||row.street||row.property_type)}--${encodeURIComponent(row.property_id)}`;
 state.viewArchived=false;
 function driveImage(url){const value=String(url||'');const match=value.match(/\/d\/([\w-]+)/)||value.match(/[?&]id=([\w-]+)/);return match?`https://drive.google.com/thumbnail?id=${match[1]}&sz=w1400`:value}
 function values(){return{q:$('q').value,district:$('district').value,ward:$('ward').value,street:$('street').value,type:$('type').value,minPrice:$('minPrice').value,maxPrice:$('maxPrice').value,minArea:$('minArea').value,maxArea:$('maxArea').value,page:state.page,pageSize:state.pageSize,archived:state.viewArchived?'only':''}}
@@ -57,7 +59,7 @@ function render(){
     }
     const specsHtml = specs.length ? `<div class="card-specs">${specs.join('')}</div>` : '';
 
-    return`<article class="card ${row.status==='archived'?'archived-card':''}" data-id="${escapeHtml(row.property_id)}" tabindex="0" role="button" aria-label="Xem ${escapeHtml(row.address||row.property_id)}">
+    return`<a class="card ${row.status==='archived'?'archived-card':''}" href="${escapeHtml(propertyPath(row))}" data-id="${escapeHtml(row.property_id)}" aria-label="Xem ${escapeHtml(row.address||row.property_id)}">
       <div class="photo">
         ${image?`<img loading="lazy" referrerpolicy="no-referrer" src="${escapeHtml(image)}" alt="${escapeHtml(imgAlt)}" title="${escapeHtml(imgAlt)}" onerror="this.style.display='none';this.parentElement.classList.add('no-photo');">`:''}
         ${badgeHtml}
@@ -74,9 +76,9 @@ function render(){
         </div>
         ${specsHtml}
       </div>
-    </article>`;
+    </a>`;
   }).join('');
-  document.querySelectorAll('.card').forEach(card=>{card.addEventListener('click',()=>openDetail(card.dataset.id));card.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();openDetail(card.dataset.id)}})});
+  document.querySelectorAll('.card').forEach(card=>card.addEventListener('click',event=>{if(event.ctrlKey||event.metaKey||event.shiftKey||event.altKey)return;event.preventDefault();openDetail(card.dataset.id,card.getAttribute('href'))}));
 }
 function adminToolsHtml(p){return`<details class="admin-panel"><summary><span>Quản trị hồ sơ</span><small>Sửa thông tin nhà</small></summary><form id="propertyEditForm"><div class="admin-fields"><label class="wide">Nội dung nhà<textarea name="raw_text" rows="5">${escapeHtml(p.raw_text||'')}</textarea></label><label class="wide">Địa chỉ<input name="address" value="${escapeHtml(p.address||'')}"></label><label>Quận/Huyện<input name="district" value="${escapeHtml(p.district||'')}"></label><label>Phường/Xã<input name="ward" value="${escapeHtml(p.ward||'')}"></label><label>Tên đường<input name="street" value="${escapeHtml(p.street||'')}"></label><label>Giá<input name="price_text" value="${escapeHtml(p.price_text||'')}"></label><label>Diện tích<input name="area_text" value="${escapeHtml(p.area_text||'')}"></label><label>Kích thước<input name="dimensions" value="${escapeHtml(p.dimensions||'')}"></label><label>Phòng ngủ<input name="bedrooms" type="number" min="0" value="${escapeHtml(p.bedrooms??'')}"></label><label>Phòng tắm<input name="bathrooms" type="number" min="0" value="${escapeHtml(p.bathrooms??'')}"></label><label>Kết cấu<input name="structure" value="${escapeHtml(p.structure||'')}"></label><label>Pháp lý<input name="legal" value="${escapeHtml(p.legal||'')}"></label><label>Số liên hệ<input name="phone" inputmode="tel" value="${escapeHtml(p.phone||'')}"></label><label>Loại BĐS<input name="property_type" value="${escapeHtml(p.property_type||'')}"></label></div><div class="admin-actions"><button class="admin-save" type="submit">Lưu thay đổi</button><button type="button" class="${p.status==='archived'?'admin-restore':'admin-archive'}" id="adminArchiveBtn">${p.status==='archived'?'Khôi phục hồ sơ lên web':'Ẩn hồ sơ khỏi web'}</button></div><div id="adminEditStatus" class="admin-status" role="status"></div></form></details>`}
 function showToast(message,duration=2400){const toast=$('toast');if(!toast)return;toast.textContent=message;toast.classList.add('active');clearTimeout(toast._timer);toast._timer=setTimeout(()=>toast.classList.remove('active'),duration)}
@@ -115,7 +117,7 @@ function injectPropertySchema(p, images){
   script.textContent=JSON.stringify(schema);
 }
 
-async function openDetail(id){
+async function openDetail(id,seoPath=''){
   const dialog=$('detail');state.currentPropertyId=id;$('detailId').textContent=id;
   $('detailBody').innerHTML=`
     <div class="detail-loader">
@@ -129,8 +131,8 @@ async function openDetail(id){
   `;
   if(!dialog.open)dialog.showModal();
   try{
-    const shareUrl=new URL(window.location.href);shareUrl.searchParams.set('id',id);history.replaceState({id},'',shareUrl.toString());
     const {property:p}=await api('/api/property?id='+encodeURIComponent(id));
+    const nextPath=seoPath||propertyPath(p);history.pushState({id},'',nextPath);
     const imageItems=(p.property_images||[]).filter(i=>i.public_url||i.source_url).sort((a,b)=>a.position-b.position);
     const images=imageItems.map(i=>driveImage(i.public_url||i.source_url)).filter(Boolean);
     const customerPhone=p.phone||'';
@@ -320,9 +322,7 @@ function closeDetailModal(){
   document.title=DEFAULT_PAGE_TITLE;
   const script=$('propertyJsonLd');
   if(script)script.remove();
-  const cleanUrl=new URL(window.location.href);
-  cleanUrl.searchParams.delete('id');
-  history.replaceState({},'',cleanUrl.pathname+(cleanUrl.search?cleanUrl.search:''));
+  history.pushState({},'','/');
 }
 $('closeDetail').onclick=closeDetailModal;
 $('detail').onclick=event=>{if(event.target===$('detail'))closeDetailModal()};
@@ -339,6 +339,7 @@ function handleSearchFromHash(){
   }
 }
 window.addEventListener('hashchange',handleSearchFromHash);
+window.addEventListener('popstate',()=>{if($('detail').open){$('detail').close();state.currentPropertyId=null;document.title=DEFAULT_PAGE_TITLE}});
 
 loadFacets();
 load();

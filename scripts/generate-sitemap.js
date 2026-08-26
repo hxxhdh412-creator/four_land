@@ -13,30 +13,26 @@ if (fs.existsSync(envFile)) {
   });
 }
 const { supabaseRequest } = require('../api/_supabase');
+const { SITE_ORIGIN, propertyPath } = require('../server/seo');
 
 async function generateSitemap() {
   const today = new Date().toISOString().split('T')[0];
   let properties = [];
 
   try {
-    const result = await supabaseRequest('properties?select=property_id,received_at&status=neq.archived&order=received_at.desc&limit=2000');
+    const result = await supabaseRequest('properties?select=property_id,address,street,property_type,received_at,updated_at&status=neq.archived&order=received_at.desc&limit=2000');
     properties = result.data || [];
   } catch (err) {
     console.warn('Could not fetch properties for sitemap, using fallback list:', err.message);
   }
 
   const staticUrls = [
-    { loc: 'https://www.fourland.vn/', priority: '1.0', changefreq: 'daily' },
-    { loc: 'https://www.fourland.vn/#q=Nhà+phố', priority: '0.8', changefreq: 'daily' },
-    { loc: 'https://www.fourland.vn/#q=Biệt+thự', priority: '0.8', changefreq: 'daily' },
-    { loc: 'https://www.fourland.vn/#q=Mặt+tiền', priority: '0.8', changefreq: 'daily' },
-    { loc: 'https://www.fourland.vn/#q=Căn+hộ', priority: '0.8', changefreq: 'daily' },
-    { loc: 'https://www.fourland.vn/#q=Thuê', priority: '0.8', changefreq: 'daily' }
+    { loc: `${SITE_ORIGIN}/`, priority: '1.0', changefreq: 'daily' }
   ];
 
   const propUrls = properties.map((p) => ({
-    loc: `https://www.fourland.vn/?id=${encodeURIComponent(p.property_id)}`,
-    lastmod: p.received_at ? new Date(p.received_at).toISOString().split('T')[0] : today,
+    loc: SITE_ORIGIN + propertyPath(p),
+    lastmod: (p.updated_at || p.received_at) ? new Date(p.updated_at || p.received_at).toISOString().split('T')[0] : today,
     priority: '0.7',
     changefreq: 'weekly'
   }));

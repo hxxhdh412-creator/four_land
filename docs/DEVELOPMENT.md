@@ -18,6 +18,7 @@ Tạo `.env.local` từ `.env.example`. Không commit `.env.local`.
 ```powershell
 npm run dev          # local preview tại 127.0.0.1:4175
 npm run check        # kiểm tra cú pháp và file bắt buộc
+npm test             # kiểm tra URL, HTML SEO và sitemap
 npm run sync:check   # đọc Sheet, không ghi Supabase
 npm run sync:sheet   # ghi thật, chỉ chạy có chủ đích
 ```
@@ -29,15 +30,16 @@ npm run sync:sheet   # ghi thật, chỉ chạy có chủ đích
 3. `npm run sync:check` thành công nếu đụng data mapping.
 4. Kiểm tra tìm kiếm, mở popup và card ở desktop.
 5. Kiểm tra 393 × 852: lưới 2 cột, không overflow, popup cuộn được.
-6. Nếu đụng admin: login, sửa, thêm/xóa ảnh, archive/restore.
-7. Không có secret hay dữ liệu cá nhân mới trong diff.
+6. Mở một card trong tab mới: URL `/bat-dong-san/...`, nội dung hiện ngay và canonical đúng.
+7. Nếu đụng admin: login, sửa, thêm/xóa ảnh, archive/restore.
+8. Không có secret hay dữ liệu cá nhân mới trong diff.
 
 ## Triển khai
 
 - Nhánh production: `main`.
 - Push GitHub sẽ kích hoạt Vercel nếu project đã kết nối repo.
 - Static assets đang dùng cache dài; mỗi lần thay CSS/JS phải đổi query version trong `index.html`.
-- Sau deploy kiểm tra route `/api/properties?page=1&pageSize=1` và trang chính.
+- Sau deploy kiểm tra route `/api/properties?page=1&pageSize=1`, trang chính, một URL hồ sơ và `sitemap.xml`.
 
 ## Quy ước commit
 
@@ -48,4 +50,3 @@ npm run sync:sheet   # ghi thật, chỉ chạy có chủ đích
 - `chore:` cấu hình/công cụ.
 
 Commit phải mô tả một thay đổi logic; tránh gom chỉnh giao diện, schema và sync không liên quan vào cùng commit.
-

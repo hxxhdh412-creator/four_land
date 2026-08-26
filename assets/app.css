@@ -885,3 +885,5 @@ label,.eyebrow,.detail-kicker,.result-head strong,.brand-caption{font-weight:700
     font-size: 11.5px;
   }
 }
+/* Crawlable property cards keep the existing visual treatment. */
+.card{color:inherit;text-decoration:none}

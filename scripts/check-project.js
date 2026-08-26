@@ -13,8 +13,11 @@ const required = [
   "index.html",
   "assets/app.css",
   "assets/app.js",
+  "assets/property.css",
   "api/_admin.js",
   "api/_supabase.js",
+  "api/seo-property.js",
+  "server/seo.js",
   "preview-server.js"
 ];
 
@@ -30,7 +33,8 @@ const javascriptFiles = [
   "preview-server.js",
   "scripts/sync-sheet-to-supabase.js",
   "scripts/generate-sitemap.js",
-  "scripts/check-project.js"
+  "scripts/check-project.js",
+  "server/seo.js"
 ];
 
 for (const file of javascriptFiles) {
@@ -48,4 +52,3 @@ if (!css.includes("Be Vietnam Pro")) {
 }
 
 console.log(JSON.stringify({ ok: true, checkedJavaScript: javascriptFiles.length, requiredFiles: required.length }));
-

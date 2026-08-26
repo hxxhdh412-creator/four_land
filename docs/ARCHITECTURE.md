@@ -23,6 +23,14 @@
 3. Card tải ảnh lazy; chi tiết chỉ được gọi khi người dùng mở hồ sơ.
 4. `/api/property` trả một hồ sơ và danh sách ảnh.
 
+### Luồng SEO hồ sơ
+
+- Mỗi hồ sơ công khai có URL chuẩn `/bat-dong-san/<dia-chi>--<property_id>`.
+- Vercel rewrite URL này sang `api/seo-property.js`; hàm đọc Supabase và trả HTML hoàn chỉnh, không bắt crawler chờ JavaScript.
+- HTML ban đầu có title, description, canonical, Open Graph, Twitter Card, JSON-LD và nội dung bất động sản nhìn thấy được.
+- Card là liên kết `<a href>` thật. Click thường vẫn mở popup để giữ trải nghiệm hiện tại; mở tab mới và crawler nhận trang SEO độc lập.
+- `server/seo.js` là nguồn dùng chung cho URL, HTML phía server và sitemap.
+
 ## 4. Luồng ghi quản trị
 
 1. Người quản trị bấm avatar và đăng nhập bằng mã.
@@ -65,4 +73,3 @@ Không tách module chỉ để tăng số file; tách khi một trách nhiệm 
 - Quyền mới: mở rộng role/session ở server; không ẩn nút UI để thay cho authorization.
 - Tác vụ nền nặng: chuyển sang queue/cron; không giữ request Vercel quá giới hạn.
 - Tìm kiếm vài chục nghìn hồ sơ: dùng generated search document + PostgreSQL FTS/trigram thay cho nhiều `ilike`.
-

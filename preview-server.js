@@ -3,6 +3,7 @@ const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
 const { parseNaturalQuery, matchAndScoreProperty, removeVietnameseTones } = require("./api/_smartSearch");
+const { propertyIdFromSlug, renderPropertyPage } = require("./server/seo");
 
 const root = __dirname;
 const port = Number(process.env.PORT || 4175);
@@ -221,6 +222,16 @@ http.createServer(async (req,res)=>{
     if(row.status==="archived"&&!isAdmin(req))return send(res,404,{ok:false,error:"Không tìm thấy hồ sơ"});
     row.view_count=(Number(row.view_count)||0)+1;
     return send(res,200,{ok:true,property:row});
+  }
+  if(url.pathname.startsWith("/bat-dong-san/")) {
+    try {
+      const id=propertyIdFromSlug(url.pathname.slice("/bat-dong-san/".length));
+      let property;
+      if(databaseEnabled){const result=await dbRequest(`properties?select=*,property_images(*)&property_id=eq.${encodeURIComponent(id)}&status=neq.archived&limit=1`);property=result.data[0]}
+      else property=rows.find(item=>item.property_id===id&&item.status!=="archived");
+      if(!property)return send(res,404,"Không tìm thấy hồ sơ","text/plain; charset=utf-8");
+      res.writeHead(200,{"Content-Type":"text/html; charset=utf-8","Cache-Control":"no-cache"});res.end(renderPropertyPage(property));return;
+    } catch(error) { return send(res,500,error.message,"text/plain; charset=utf-8") }
   }
   const requestPath=url.pathname==="/"?"/index.html":url.pathname;
   const filePath=path.resolve(root,"."+requestPath);

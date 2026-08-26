@@ -5,6 +5,12 @@
   "functions": {
     "api/*.js": { "maxDuration": 10 }
   },
+  "redirects": [
+    { "source": "/:path*", "has": [{ "type": "host", "value": "fourland.vn" }], "destination": "https://www.fourland.vn/:path*", "permanent": true }
+  ],
+  "rewrites": [
+    { "source": "/bat-dong-san/:slug", "destination": "/api/seo-property?slug=:slug" }
+  ],
   "headers": [
     {
       "source": "/(.*)",
