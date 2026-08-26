@@ -299,16 +299,16 @@ label,.eyebrow,.detail-kicker,.result-head strong,.brand-caption{font-weight:700
 
 /* Equal-height mobile property cards */
 @media(max-width:480px){
-  .grid{grid-auto-rows:184px}
-  .card{display:grid;grid-template-columns:43% minmax(0,57%);width:100%;height:184px;min-height:184px;max-height:184px;align-self:stretch}
-  .photo{width:100%;height:184px;min-height:0;aspect-ratio:auto}
+  .grid{grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:278px;gap:9px}
+  .card{display:grid;grid-template-columns:1fr;grid-template-rows:154px minmax(0,1fr);width:100%;height:278px;min-height:278px;max-height:278px;align-self:stretch}
+  .photo{width:100%;height:154px;min-height:0;aspect-ratio:auto}
   .photo img{display:block;width:100%;height:100%;object-fit:cover}
-  .card-body{display:flex;flex-direction:column;width:100%;height:184px;min-height:0;padding:14px 11px 12px;overflow:hidden}
+  .card-body{display:flex;flex-direction:column;width:100%;height:124px;min-height:0;padding:12px 10px 10px;overflow:hidden}
   .card-body:before{left:11px}
-  .card .price{display:-webkit-box;max-height:42px;margin:0 0 4px;overflow:hidden;font-size:16px;line-height:1.28;-webkit-box-orient:vertical;-webkit-line-clamp:2}
-  .card h2{display:-webkit-box;max-height:54px;margin:0 0 8px;overflow:hidden;font-size:13px;line-height:1.36;overflow-wrap:anywhere;-webkit-box-orient:vertical;-webkit-line-clamp:3}
-  .card .meta{display:grid;gap:4px;margin-top:auto;overflow:hidden;font-size:9px;line-height:1.4}
-  .card .meta span{display:-webkit-box;max-height:26px;overflow:hidden;-webkit-box-orient:vertical;-webkit-line-clamp:2}
+  .card .price{display:-webkit-box;max-height:38px;margin:0 0 3px;overflow:hidden;font-size:15px;line-height:1.25;-webkit-box-orient:vertical;-webkit-line-clamp:2}
+  .card h2{display:-webkit-box;max-height:48px;margin:0 0 6px;overflow:hidden;font-size:12px;line-height:1.32;overflow-wrap:anywhere;-webkit-box-orient:vertical;-webkit-line-clamp:3}
+  .card .meta{display:grid;gap:3px;margin-top:auto;overflow:hidden;font-size:8px;line-height:1.35}
+  .card .meta span{display:-webkit-box;max-height:22px;overflow:hidden;-webkit-box-orient:vertical;-webkit-line-clamp:2}
   .badge{max-width:72px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
-  .skeleton{height:184px}
+  .skeleton{height:278px}
 }
