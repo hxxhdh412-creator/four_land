@@ -54,6 +54,7 @@ async function listDatabaseProperties(url){
     street: url.searchParams.get("street"),
     property_type: url.searchParams.get("type"),
     timeRange: url.searchParams.get("timeRange"),
+    rentalStatus: url.searchParams.get("rentalStatus") || url.searchParams.get("status"),
     minPrice: url.searchParams.get("minPrice") ? Number(url.searchParams.get("minPrice")) : null,
     maxPrice: url.searchParams.get("maxPrice") ? Number(url.searchParams.get("maxPrice")) : null,
     minArea: url.searchParams.get("minArea") ? Number(url.searchParams.get("minArea")) : null,
@@ -77,14 +78,17 @@ async function listDatabaseProperties(url){
   const scoredRows = allRows
     .map(row => {
       const isFeatured = row.status === "featured" || Boolean(row.data_json?.is_featured);
+      const isRented = row.status === "rented" || Boolean(row.data_json?.is_rented);
       return {
         row: {
           ...row,
           is_featured: isFeatured,
+          is_rented: isRented,
           view_count: Number(row.data_json?.view_count) || 0
         },
         score: matchAndScoreProperty(row, nlp, explicitFilters),
-        isFeatured
+        isFeatured,
+        isRented
       };
     })
     .filter(item => {
@@ -165,9 +169,28 @@ http.createServer(async (req,res)=>{
     }catch(error){return send(res,500,{ok:false,error:error.message})}
   }
   if(url.pathname==="/api/admin-property") {
-    if(req.method!=="PATCH") return send(res,405,{ok:false,error:"Method Not Allowed"});if(!isAdmin(req))return send(res,401,{ok:false,error:"Phiên quản trị chưa được mở"});
-    if(databaseEnabled){try{const body=await readBody(req),propertyId=String(body.propertyId||"");if(!propertyId)return send(res,400,{ok:false,error:"Thiếu mã bất động sản"});const update={};["address","district","ward","street","price_text","area_text","dimensions","structure","legal","phone","property_type","raw_text","notes","bedrooms","bathrooms"].forEach(key=>{if(Object.prototype.hasOwnProperty.call(body,key))update[key]=body[key]===""?null:body[key]});if(Object.prototype.hasOwnProperty.call(body,"is_featured"))update.status=body.is_featured?"featured":"ready";update.updated_at=new Date().toISOString();const result=await dbRequest(`properties?property_id=eq.${encodeURIComponent(propertyId)}`,{method:"PATCH",body:update,prefer:"return=representation"});return send(res,200,{ok:true,property:result.data[0],message:body.is_featured!==undefined?(body.is_featured?"Đã ghim bất động sản lên mục Nổi Bật":"Đã bỏ ghim nổi bật"):"Đã cập nhật thông tin nhà"})}catch(error){return send(res,500,{ok:false,error:error.message})}}
-    let raw="";req.on("data",chunk=>raw+=chunk);req.on("end",()=>{try{const body=JSON.parse(raw||"{}"),row=rows.find(item=>item.property_id===body.propertyId);if(!row)return send(res,404,{ok:false,error:"Không tìm thấy bất động sản"});["address","district","ward","street","price_text","area_text","dimensions","structure","legal","phone","property_type","raw_text","notes","bedrooms","bathrooms"].forEach(key=>{if(Object.prototype.hasOwnProperty.call(body,key))row[key]=body[key]});return send(res,200,{ok:true,property:row,message:"Đã cập nhật thông tin nhà"})}catch{return send(res,400,{ok:false,error:"Dữ liệu không hợp lệ"})}});return;
+    if(req.method!=="PATCH") return send(res,405,{ok:false,error:"Method Not Allowed"});
+    if(!isAdmin(req)) return send(res,401,{ok:false,error:"Phiên quản trị chưa được mở"});
+    try{
+      const body=await readBody(req),propertyId=String(body.propertyId||"");
+      if(!propertyId)return send(res,400,{ok:false,error:"Thiếu mã bất động sản"});
+      const update={};
+      ["address","district","ward","street","price_text","area_text","dimensions","structure","legal","phone","property_type","raw_text","notes","bedrooms","bathrooms"].forEach(key=>{if(Object.prototype.hasOwnProperty.call(body,key))update[key]=body[key]===""?null:body[key]});
+      if(Object.prototype.hasOwnProperty.call(body,"is_rented")){
+        update.status=body.is_rented?"rented":(body.is_featured?"featured":"ready");
+      }else if(Object.prototype.hasOwnProperty.call(body,"is_featured")){
+        update.status=body.is_featured?"featured":"ready";
+      }
+      update.updated_at=new Date().toISOString();
+      if(databaseEnabled){
+        const result=await dbRequest(`properties?property_id=eq.${encodeURIComponent(propertyId)}`,{method:"PATCH",body:update,prefer:"return=representation"});
+        return send(res,200,{ok:true,property:result.data[0],message:"Đã cập nhật thông tin nhà"});
+      }
+      const row=rows.find(item=>item.property_id===propertyId);
+      if(!row)return send(res,404,{ok:false,error:"Không tìm thấy bất động sản"});
+      Object.assign(row,update);
+      return send(res,200,{ok:true,property:row,message:"Đã cập nhật thông tin nhà"});
+    }catch(error){return send(res,500,{ok:false,error:error.message})}
   }
   if(url.pathname==="/api/admin-image"&&req.method==="DELETE") {
     if(!isAdmin(req)) return send(res,401,{ok:false,error:"Cần quyền quản trị"});

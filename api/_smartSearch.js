@@ -298,6 +298,13 @@ function matchAndScoreProperty(property, parsedNlp, explicitFilters = {}) {
     }
   }
 
+  // 1.6 Lọc theo tình trạng cho thuê (Đã thuê / Đang mở thuê)
+  if (explicitFilters.rentalStatus) {
+    const isRented = property.status === 'rented' || Boolean(property.data_json?.is_rented);
+    if (explicitFilters.rentalStatus === 'rented' && !isRented) return -1;
+    if (explicitFilters.rentalStatus === 'available' && isRented) return -1;
+  }
+
   // 2. So khớp Tokens từ khóa không dấu (AND logic across all fields)
   let score = 100;
   if (parsedNlp.tokens.length > 0) {

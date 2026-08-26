@@ -22,6 +22,7 @@ module.exports = async function handler(req, res) {
       street: text(req.query.street),
       property_type: text(req.query.type),
       timeRange: text(req.query.timeRange),
+      rentalStatus: text(req.query.rentalStatus || req.query.status),
       minPrice: req.query.minPrice ? Number(req.query.minPrice) : null,
       maxPrice: req.query.maxPrice ? Number(req.query.maxPrice) : null,
       minArea: req.query.minArea ? Number(req.query.minArea) : null,
@@ -44,14 +45,17 @@ module.exports = async function handler(req, res) {
     const scoredRows = allRows
       .map(row => {
         const isFeatured = row.status === "featured" || Boolean(row.data_json?.is_featured);
+        const isRented = row.status === "rented" || Boolean(row.data_json?.is_rented);
         return {
           row: {
             ...row,
             is_featured: isFeatured,
+            is_rented: isRented,
             view_count: Number(row.data_json?.view_count) || 0
           },
           score: matchAndScoreProperty(row, nlp, explicitFilters),
-          isFeatured
+          isFeatured,
+          isRented
         };
       })
       .filter(item => {
