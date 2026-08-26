@@ -18,7 +18,7 @@ function render(){
   $('grid').innerHTML=state.rows.map(row=>{
     const images=(row.property_images||[]).filter(item=>item.public_url).sort((a,b)=>a.position-b.position),image=driveImage(images[0]?.public_url);
     const views=Number(row.view_count)||0;
-    return`<article class="card ${row.status==='archived'?'archived-card':''}" data-id="${escapeHtml(row.property_id)}" tabindex="0" role="button" aria-label="Xem ${escapeHtml(row.address||row.property_id)}"><div class="photo">${image?`<img loading="lazy" src="${escapeHtml(image)}" alt="Ảnh bất động sản">`:''}<span class="badge">${images.length} ảnh</span>${views>0?`<span class="badge-views"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>${views}</span>`:''}</div><div class="card-body"><div class="price">${escapeHtml(row.status==='archived'?'Đã ẩn':row.price_text||'Liên hệ')}</div><h2>${escapeHtml(row.address||String(row.raw_text||'').slice(0,80)||row.property_id)}</h2><div class="meta"><span>${escapeHtml([row.street,row.ward,row.district].filter(Boolean).join(' · '))}</span><span>${escapeHtml([row.area_text,row.bedrooms&&row.bedrooms+' PN'].filter(Boolean).join(' · '))}</span></div></div></article>`
+    return`<article class="card ${row.status==='archived'?'archived-card':''}" data-id="${escapeHtml(row.property_id)}" tabindex="0" role="button" aria-label="Xem ${escapeHtml(row.address||row.property_id)}"><div class="photo">${image?`<img loading="lazy" src="${escapeHtml(image)}" alt="Ảnh bất động sản">`:''}<span class="badge"><svg class="badge-eye-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg><span>${views||1}</span><span class="badge-dot">•</span><span>${images.length} ảnh</span></span></div><div class="card-body"><div class="price">${escapeHtml(row.status==='archived'?'Đã ẩn':row.price_text||'Liên hệ')}</div><h2>${escapeHtml(row.address||String(row.raw_text||'').slice(0,80)||row.property_id)}</h2><div class="meta"><span>${escapeHtml([row.street,row.ward,row.district].filter(Boolean).join(' · '))}</span><span>${escapeHtml([row.area_text,row.bedrooms&&row.bedrooms+' PN'].filter(Boolean).join(' · '))}</span></div></div></article>`
   }).join('');
   document.querySelectorAll('.card').forEach(card=>{card.addEventListener('click',()=>openDetail(card.dataset.id));card.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();openDetail(card.dataset.id)}})});
 }
@@ -38,7 +38,7 @@ async function openDetail(id){
     const images=imageItems.map(i=>driveImage(i.public_url||i.source_url)).filter(Boolean);
     const customerPhone=p.phone||'';
     const views=Number(p.view_count)||1;
-    $('detailId').innerHTML=`${escapeHtml(id)} · <span class="detail-views-count"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>${views} lượt xem</span>`;
+    $('detailId').innerHTML=`${escapeHtml(id)} · <span class="detail-views-subtle"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>${views} lượt xem</span>`;
     const phoneCellContent=state.adminUnlocked
       ?(customerPhone?`<a href="tel:${escapeHtml(phoneHref(customerPhone))}" class="phone-link-call" title="Bấm để gọi số khách / chủ nhà">${escapeHtml(customerPhone)}</a>`:'—')
       :(customerPhone?`<button type="button" class="phone-link-unlock" id="unlockPhoneInline" title="Bấm để nhập mã Admin xem SĐT">${escapeHtml(maskPhone(customerPhone))}</button>`:'—');
@@ -53,7 +53,6 @@ async function openDetail(id){
       ['Kết cấu',p.structure],
       ['Pháp lý',p.legal],
       ['Liên hệ',phoneCellContent,true],
-      ['Lượt xem',`<span class="text-views-pill"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>${views} lượt quan tâm</span>`,true],
       ['Loại BĐS',p.property_type]
     ].map(([label,value,isRaw])=>`<div><small>${label}</small><strong>${isRaw?value:escapeHtml(value||'—')}</strong></div>`).join('');
 
