@@ -46,8 +46,12 @@ function render(){
     const images = (row.property_images || []).filter(item => item.public_url).sort((a, b) => a.position - b.position);
     const image = driveImage(images[0]?.public_url);
     const badgeHtml = images.length > 0 ? `<span class="badge"><svg class="badge-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="13" r="4" stroke="currentColor" stroke-width="1.8"/></svg>${images.length}</span>` : '';
-    const featuredBadgeHtml = isFeatured ? `<span class="badge-featured" title="Bất động sản nổi bật"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l2.6 6.9L22 10.2l-5.5 4.8 1.8 7.3L12 18.4 5.7 22.3l1.8-7.3L2 10.2l7.4-1.3L12 2z"/></svg></span>` : '';
-    const typeBadgeHtml = row.property_type ? `<span class="badge-type">${escapeHtml(row.property_type)}</span>` : '';
+    let typeBadgeHtml = '';
+    if (isFeatured) {
+      typeBadgeHtml = `<span class="badge-type badge-featured"><svg class="star-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>${escapeHtml(row.property_type || 'Nổi bật')}</span>`;
+    } else if (row.property_type) {
+      typeBadgeHtml = `<span class="badge-type">${escapeHtml(row.property_type)}</span>`;
+    }
     const imgAlt = `${row.property_type||'Bất động sản'} ${[row.address,row.district].filter(Boolean).join(', ')} - Fourland`;
     const locationParts = [row.ward, row.district].filter(Boolean);
     const locationText = locationParts.length ? locationParts.join(', ') : (row.district || 'TP. Hồ Chí Minh');
@@ -65,7 +69,6 @@ function render(){
     return`<a class="card ${isFeatured?'is-featured':''} ${row.status==='archived'?'archived-card':''}" href="${escapeHtml(propertyPath(row))}" data-id="${escapeHtml(row.property_id)}" aria-label="Xem ${escapeHtml(row.address||row.property_id)}">
       <div class="photo">
         ${image?`<img loading="lazy" referrerpolicy="no-referrer" src="${escapeHtml(image)}" alt="${escapeHtml(imgAlt)}" title="${escapeHtml(imgAlt)}" onerror="this.style.display='none';this.parentElement.classList.add('no-photo');">`:''}
-        ${featuredBadgeHtml}
         ${badgeHtml}
         ${typeBadgeHtml}
       </div>
