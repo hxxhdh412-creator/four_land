@@ -16,12 +16,14 @@ module.exports = async function handler(req, res) {
     const newViews = currentViews + 1;
     property.view_count = newViews;
 
-    // Increment view count asynchronously in Supabase
+    // Increment view count in Supabase
     const updatedDataJson = { ...(property.data_json || {}), view_count: newViews };
-    supabaseRequest(`properties?property_id=eq.${encodeURIComponent(id)}`, {
-      method: "PATCH",
-      body: { data_json: updatedDataJson }
-    }).catch(err => console.error("Error updating view_count:", err.message));
+    try {
+      await supabaseRequest(`properties?property_id=eq.${encodeURIComponent(id)}`, {
+        method: "PATCH",
+        body: { data_json: updatedDataJson }
+      });
+    } catch (_) {}
 
     res.setHeader("Cache-Control", "no-cache");
     res.status(200).json({ ok: true, property });
