@@ -314,21 +314,23 @@ input:focus,select:focus{border-color:var(--orange);box-shadow:0 0 0 3px rgba(23
 .status-rented-pill{color:#dc2626;font-weight:700}
 .status-available-pill{color:#059669;font-weight:700}
 
-.price-row{display:flex;align-items:center;justify-content:space-between;gap:6px;min-width:0;min-height:22px;overflow:hidden}
-.price{display:inline-flex;align-items:center;gap:3.5px;min-width:0;flex:1 1 auto;overflow:hidden;white-space:nowrap;padding:1px 0 1px 3px}
-.status-indicator{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:2px;flex-shrink:0;vertical-align:middle;transition:all .2s ease}
+.price-row{display:flex;align-items:center;gap:4px;min-width:0;width:100%;margin-bottom:2px}
+.price{display:inline-flex;align-items:baseline;gap:4px;min-width:0;white-space:nowrap;padding:1px 0}
+.status-indicator{display:inline-block;width:6.5px;height:6.5px;border-radius:50%;margin-right:2px;flex-shrink:0;align-self:center;transition:all .2s ease}
 .status-indicator.is-available{background:#10b981;box-shadow:0 0 0 2px rgba(16,185,129,.25)}
 .status-indicator.is-rented{background:#ef4444;box-shadow:0 0 0 2px rgba(239,68,68,.25)}
-.price-val{font-family:var(--font-sans);font-size:15.5px;font-weight:800;color:var(--forest);letter-spacing:-.02em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.price-val{font-family:var(--font-sans);font-size:16px;font-weight:800;color:var(--forest);letter-spacing:-.025em;white-space:nowrap;flex-shrink:0}
 .card.is-rented .price-val{color:#78867e}
-.price-period{font-family:var(--font-sans);font-size:11px;font-weight:500;color:var(--muted);letter-spacing:0;flex-shrink:0;white-space:nowrap}
-.price-contact{color:var(--orange);font-weight:800;font-size:14px}
-.price-archived{color:#a12b22;font-size:14px;font-weight:700}
-.card-time{display:inline-flex;align-items:center;gap:3px;color:#8c9891;font-family:var(--font-sans);font-size:10.5px;font-weight:600;letter-spacing:-.01em;white-space:nowrap;flex-shrink:0;margin-left:auto}
-.card-time svg{width:11px;height:11px;stroke:#8c9891;flex:0 0 11px}
+.price-period{font-family:var(--font-sans);font-size:11.5px;font-weight:600;color:var(--muted);letter-spacing:-.01em;flex-shrink:0;white-space:nowrap;margin-left:1px}
+.price-contact{color:var(--orange);font-weight:800;font-size:14.5px}
+.price-archived{color:#a12b22;font-size:14.5px;font-weight:700}
 
-.card-title{margin:0;font-family:var(--font-sans);font-size:13px;font-weight:700;line-height:1.32;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.card-location{display:flex;align-items:center;gap:4px;color:var(--muted);font-family:var(--font-sans);font-size:11px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.25}
+.card-title{margin:2px 0 4px;font-family:var(--font-sans);font-size:13.5px;font-weight:700;line-height:1.32;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.card-location{display:flex;align-items:center;gap:4px;color:var(--muted);font-family:var(--font-sans);font-size:11px;font-weight:500;overflow:hidden;white-space:nowrap;line-height:1.25}
+.card-loc-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:1}
+.card-meta-sep{color:#cbd5e1;font-weight:400;flex-shrink:0}
+.card-loc-time{display:inline-flex;align-items:center;gap:2.5px;color:#8c9891;font-size:10px;font-weight:600;flex-shrink:0}
+.card-loc-time svg{width:10px;height:10px;stroke:currentColor;flex-shrink:0}
 .icon-pin{width:11.5px;height:11.5px;flex:0 0 11.5px;stroke:var(--orange)}
 .card-specs{display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin-top:auto;padding-top:3px}
 .spec-tag{display:inline-flex;align-items:center;gap:3.5px;padding:2.5px 6px;border-radius:3px;background:#f3f6f3;border:1px solid rgba(24,43,36,.08);color:var(--forest);font-family:var(--font-sans);font-size:10.5px;font-weight:700;letter-spacing:-.01em}
