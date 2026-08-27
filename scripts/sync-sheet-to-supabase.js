@@ -78,7 +78,7 @@ async function main() {
       property_id: propertyId, send_id: emptyToNull(get(row, "SendId")), status: get(row, "Status") || "raw",
       account_id: emptyToNull(source.accountId), group_id: emptyToNull(get(row, "GroupId")), group_name: emptyToNull(get(row, "GroupName")),
       sender_id: emptyToNull(get(row, "SenderId")), sender_name: emptyToNull(get(row, "SenderName")), phone: emptyToNull(get(row, "Phone")),
-      property_type: emptyToNull(get(row, "PropertyType")), address: emptyToNull(get(row, "Address")), district: emptyToNull(get(row, "District")),
+      property_type: emptyToNull(get(row, "PropertyType")) || "Nhà thuê", address: emptyToNull(get(row, "Address")), district: emptyToNull(get(row, "District")),
       ward: emptyToNull(get(row, "Ward")), street: emptyToNull(get(row, "Street")), area_text: emptyToNull(get(row, "Area")),
       area_number: numberOrNull(get(row, "AreaNumber")), dimensions: emptyToNull(property.dimensions), bedrooms: integerOrNull(get(row, "Bedrooms")),
       bathrooms: integerOrNull(get(row, "Bathrooms")), structure: emptyToNull(get(row, "Structure")), price_text: emptyToNull(get(row, "Price")),

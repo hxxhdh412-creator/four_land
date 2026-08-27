@@ -128,12 +128,13 @@ function render(){
     const images = (row.property_images || []).filter(item => item.public_url).sort((a, b) => a.position - b.position);
     const image = driveImage(images[0]?.public_url);
     let typeBadgeHtml = '';
+    const displayType = row.property_type || 'Nhà thuê';
     if (isFeatured) {
-      typeBadgeHtml = `<span class="badge-type badge-featured"><svg class="star-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>${escapeHtml(row.property_type || 'Nổi bật')}</span>`;
-    } else if (row.property_type) {
-      typeBadgeHtml = `<span class="badge-type">${escapeHtml(row.property_type)}</span>`;
+      typeBadgeHtml = `<span class="badge-type badge-featured"><svg class="star-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>${escapeHtml(displayType)}</span>`;
+    } else {
+      typeBadgeHtml = `<span class="badge-type">${escapeHtml(displayType)}</span>`;
     }
-    const imgAlt = `${row.property_type||'Bất động sản'} ${[row.address,row.district].filter(Boolean).join(', ')} - Fourland`;
+    const imgAlt = `${displayType} ${[row.address,row.district].filter(Boolean).join(', ')} - Fourland`;
     const locationParts = [row.ward, row.district].filter(Boolean);
     const locationText = locationParts.length ? locationParts.join(', ') : (row.district || 'TP. Hồ Chí Minh');
     const timeRel = formatVietnamRelativeTime(row.received_at || row.updated_at || row.created_at);
@@ -423,7 +424,7 @@ async function openDetail(id,seoPath=''){
       ['Kết cấu',p.structure],
       ['Pháp lý',p.legal],
       ['Liên hệ',phoneCellContent,true],
-      ['Loại BĐS',p.property_type]
+      ['Loại BĐS',p.property_type||'Nhà thuê']
     ].map(([label,value,isRaw])=>`<div><small>${label}</small><strong>${isRaw?value:escapeHtml(value||'—')}</strong></div>`).join('');
 
     const galleryNavHtml = images.length > 1 ? `
