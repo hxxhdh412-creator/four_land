@@ -25,7 +25,7 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({
         ok: true,
         deletedCount: propertyIds.length,
-        message: `Đã xóa vĩnh viễn ${propertyIds.length} hồ sơ và toàn bộ ảnh khỏi Database!`
+        message: propertyIds.length === 1 ? "Đã xóa vĩnh viễn hồ sơ thành công!" : `Đã xóa vĩnh viễn ${propertyIds.length} hồ sơ!`
       });
     }
 
@@ -41,7 +41,9 @@ module.exports = async function handler(req, res) {
     res.status(200).json({
       ok: true,
       updatedCount,
-      message: archived ? `Đã ẩn ${updatedCount} hồ sơ khỏi website` : `Đã khôi phục ${updatedCount} hồ sơ lên website`
+      message: archived
+        ? (updatedCount === 1 ? "Đã ẩn hồ sơ khỏi website" : `Đã ẩn ${updatedCount} hồ sơ khỏi website`)
+        : (updatedCount === 1 ? "Đã khôi phục hồ sơ lên website" : `Đã khôi phục ${updatedCount} hồ sơ lên website`)
     });
   } catch (error) { sendError(res, error); }
 };
