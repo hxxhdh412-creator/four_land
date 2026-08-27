@@ -116,9 +116,10 @@ async function listDatabaseProperties(url){
       if (sortBy === "oldest") {
         return new Date(a.row.received_at || 0) - new Date(b.row.received_at || 0);
       }
-      // Mặc định: Ưu tiên nhà nổi bật lên đầu khi duyệt danh sách
-      if (!rawQ && a.isFeatured !== b.isFeatured) {
-        return b.isFeatured ? 1 : -1;
+      // Mặc định khi không có từ khóa tìm kiếm: Luôn ưu tiên tin MỚI NHẤT lên đầu trang!
+      if (!rawQ) {
+        if (a.isFeatured !== b.isFeatured) return b.isFeatured ? 1 : -1;
+        return new Date(b.row.received_at || 0) - new Date(a.row.received_at || 0);
       }
       if (b.score !== a.score) return b.score - a.score;
       if (a.isFeatured !== b.isFeatured) return b.isFeatured ? 1 : -1;
