@@ -421,11 +421,13 @@ async function openDetail(id,seoPath=''){
     const displayArea = p.area_text || p.data_json?.property?.area || p.dimensions || null;
     const displayLegal = p.legal || p.data_json?.property?.legal || null;
     const displayStructure = p.structure || p.data_json?.property?.structure || null;
+    const displayCommission = p.commission || p.data_json?.property?.commission || null;
 
     const infoGridHtml=[
       ['Tình trạng', isRented ? '<span class="status-rented-pill">🔒 Đã cho thuê</span>' : '<span class="status-available-pill">🟢 Đang mở thuê</span>', true],
       ['Giá niêm yết',p.price_text||'Liên hệ'],
       ['Cập nhật lúc',formatVietnamFullDateTime(p.received_at||p.updated_at||p.created_at)],
+      ['Hoa hồng',displayCommission],
       ['Diện tích',displayArea],
       ['Kích thước',p.dimensions],
       ['Phòng ngủ',displayBedrooms],
