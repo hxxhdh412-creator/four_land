@@ -1280,6 +1280,36 @@ body.selection-mode-active .card-select-wrap,
   transform: translateY(-1px);
 }
 
+.bulk-btn-trash-icon {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  padding: 0;
+  border-radius: 8px;
+  background: rgba(239, 68, 68, 0.16);
+  border: 1px solid rgba(239, 68, 68, 0.38);
+  color: #f87171;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  margin-left: 2px;
+  transition: all 0.16s ease;
+}
+
+.bulk-btn-trash-icon:hover {
+  background: #dc2626;
+  border-color: #dc2626;
+  color: #fff;
+  transform: scale(1.08);
+  box-shadow: 0 3px 10px rgba(220, 38, 38, 0.35);
+}
+
+.bulk-btn-trash-icon:active {
+  transform: scale(0.94);
+}
+
 @media(max-width: 600px) {
   .bulk-bar {
     bottom: 16px;
