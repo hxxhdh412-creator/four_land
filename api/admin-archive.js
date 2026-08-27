@@ -2,10 +2,11 @@ const { requireAdmin } = require("./_admin");
 const { sendError, supabaseRequest, text } = require("./_supabase");
 
 module.exports = async function handler(req, res) {
-  if (req.method !== "PATCH") return res.status(405).json({ ok: false, error: "Method Not Allowed" });
+  if (!["PATCH", "DELETE"].includes(req.method)) {
+    return res.status(405).json({ ok: false, error: "Method Not Allowed" });
+  }
   if (!requireAdmin(req, res)) return;
   try {
-    const archived = Boolean(req.body?.archived);
     let propertyIds = [];
     if (Array.isArray(req.body?.propertyIds)) {
       propertyIds = req.body.propertyIds.map(id => text(id, 100)).filter(Boolean);
@@ -15,8 +16,23 @@ module.exports = async function handler(req, res) {
     }
     if (!propertyIds.length) return res.status(400).json({ ok: false, error: "Thiếu mã bất động sản" });
 
+    const inList = propertyIds.map(id => encodeURIComponent(id)).join(",");
+
+    // XÓA VĨNH VIỄN (HARD DELETE)
+    if (req.method === "DELETE") {
+      await supabaseRequest(`property_images?property_id=in.(${inList})`, { method: "DELETE" }).catch(() => {});
+      await supabaseRequest(`properties?property_id=in.(${inList})`, { method: "DELETE" });
+      return res.status(200).json({
+        ok: true,
+        deletedCount: propertyIds.length,
+        message: `Đã xóa vĩnh viễn ${propertyIds.length} hồ sơ và toàn bộ ảnh khỏi Database!`
+      });
+    }
+
+    // ẨN / KHÔI PHỤC (SOFT DELETE / RESTORE)
+    const archived = Boolean(req.body?.archived);
     const nextStatus = archived ? "archived" : "partial";
-    const result = await supabaseRequest(`properties?property_id=in.(${propertyIds.map(id => encodeURIComponent(id)).join(",")})`, {
+    const result = await supabaseRequest(`properties?property_id=in.(${inList})`, {
       method: "PATCH",
       body: { status: nextStatus, updated_at: new Date().toISOString() },
       prefer: "return=representation"
@@ -29,3 +45,4 @@ module.exports = async function handler(req, res) {
     });
   } catch (error) { sendError(res, error); }
 };
+

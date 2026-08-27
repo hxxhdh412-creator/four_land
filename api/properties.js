@@ -108,7 +108,11 @@ module.exports = async function handler(req, res) {
       .slice((page - 1) * pageSize, page * pageSize)
       .map(item => item.row);
 
-    res.setHeader("Cache-Control", "public, s-maxage=15, stale-while-revalidate=60");
+    if (isAdmin(req) || req.query._t || req.query.archived) {
+      res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0");
+    } else {
+      res.setHeader("Cache-Control", "public, s-maxage=2, stale-while-revalidate=5");
+    }
     res.status(200).json({ ok: true, rows: paginatedRows, total, page, pageSize, parsedNlp: nlp.filters });
   } catch (error) { sendError(res, error); }
 };

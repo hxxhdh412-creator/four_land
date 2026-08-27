@@ -40,7 +40,7 @@ function formatVietnamFullDateTime(isoString){
 }
 
 function driveImage(url){const value=String(url||'');const match=value.match(/\/d\/([\w-]+)/)||value.match(/[?&]id=([\w-]+)/);return match?`https://drive.google.com/thumbnail?id=${match[1]}&sz=w1400`:value}
-function values(){return{q:$('q').value,district:$('district').value,ward:$('ward').value,street:$('street').value,type:$('type').value,timeRange:$('timeRange')?$('timeRange').value:'',sortBy:$('sortBy')?$('sortBy').value:'',rentalStatus:$('rentalStatus')?$('rentalStatus').value:'',minPrice:$('minPrice').value,maxPrice:$('maxPrice').value,minArea:$('minArea').value,maxArea:$('maxArea').value,page:state.page,pageSize:state.pageSize,archived:state.viewArchived?'only':'',featured:state.filterTab==='featured'?'1':''}}
+function values(){return{q:$('q').value,district:$('district').value,ward:$('ward').value,street:$('street').value,type:$('type').value,timeRange:$('timeRange')?$('timeRange').value:'',sortBy:$('sortBy')?$('sortBy').value:'',rentalStatus:$('rentalStatus')?$('rentalStatus').value:'',minPrice:$('minPrice').value,maxPrice:$('maxPrice').value,minArea:$('minArea').value,maxArea:$('maxArea').value,page:state.page,pageSize:state.pageSize,archived:state.viewArchived?'only':'',featured:state.filterTab==='featured'?'1':'',_t:Date.now()}}
 function params(input){const search=new URLSearchParams();Object.entries(input).forEach(([key,value])=>{if(value!==''&&value!=null)search.set(key,value)});return search}
 async function api(path,options={}){const response=await fetch(path,options);const body=await response.json();if(!response.ok||body.ok===false)throw new Error(body.error||'Không tải được dữ liệu');return body}
 function setOptions(id,items,label){const select=$(id);if(!select)return;const current=select.value;select.innerHTML=`<option value="">${label}</option>`+(items||[]).map(item=>`<option value="${escapeHtml(item)}">${escapeHtml(item)}</option>`).join('');select.value=current}
@@ -336,7 +336,7 @@ function handleDetailImgError(img){
 function adminToolsHtml(p){
   const isFeatured = p.status === 'featured' || Boolean(p.is_featured);
   const isRented = p.status === 'rented' || Boolean(p.is_rented);
-  return`<details class="admin-panel"><summary><span>Quản trị hồ sơ</span><small>Sửa thông tin nhà</small></summary><form id="propertyEditForm"><div class="admin-toggles-grid"><label class="admin-featured-toggle"><div class="toggle-content"><svg class="star-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg><strong>Ghim Nổi Bật</strong></div><input type="checkbox" name="is_featured" id="adminFeaturedInput" ${isFeatured?'checked':''}><span class="toggle-switch"></span></label><label class="admin-featured-toggle admin-rented-toggle"><div class="toggle-content"><svg class="lock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><strong>Đã Cho Thuê</strong></div><input type="checkbox" name="is_rented" id="adminRentedInput" ${isRented?'checked':''}><span class="toggle-switch toggle-switch-rented"></span></label></div><div class="admin-fields"><label class="wide">Nội dung nhà<textarea name="raw_text" rows="5">${escapeHtml(p.raw_text||'')}</textarea></label><label class="wide">Địa chỉ<input name="address" value="${escapeHtml(p.address||'')}"></label><label>Quận/Huyện<input name="district" value="${escapeHtml(p.district||'')}"></label><label>Phường/Xã<input name="ward" value="${escapeHtml(p.ward||'')}"></label><label>Tên đường<input name="street" value="${escapeHtml(p.street||'')}"></label><label>Giá<input name="price_text" value="${escapeHtml(p.price_text||'')}"></label><label>Diện tích<input name="area_text" value="${escapeHtml(p.area_text||'')}"></label><label>Kích thước<input name="dimensions" value="${escapeHtml(p.dimensions||'')}"></label><label>Phòng ngủ<input name="bedrooms" type="number" min="0" value="${escapeHtml(p.bedrooms??'')}"></label><label>Phòng tắm<input name="bathrooms" type="number" min="0" value="${escapeHtml(p.bathrooms??'')}"></label><label>Kết cấu<input name="structure" value="${escapeHtml(p.structure||'')}"></label><label>Pháp lý<input name="legal" value="${escapeHtml(p.legal||'')}"></label><label>Số liên hệ<input name="phone" inputmode="tel" value="${escapeHtml(p.phone||'')}"></label><label>Loại BĐS<input name="property_type" value="${escapeHtml(p.property_type||'')}"></label></div><div class="admin-actions"><button class="admin-save" type="submit">Lưu thay đổi</button><button type="button" class="${p.status==='archived'?'admin-restore':'admin-archive'}" id="adminArchiveBtn">${p.status==='archived'?'Khôi phục hồ sơ lên web':'Ẩn hồ sơ khỏi web'}</button></div><div id="adminEditStatus" class="admin-status" role="status"></div></form></details>`
+  return`<details class="admin-panel"><summary><span>Quản trị hồ sơ</span><small>Sửa thông tin nhà</small></summary><form id="propertyEditForm"><div class="admin-toggles-grid"><label class="admin-featured-toggle"><div class="toggle-content"><svg class="star-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg><strong>Ghim Nổi Bật</strong></div><input type="checkbox" name="is_featured" id="adminFeaturedInput" ${isFeatured?'checked':''}><span class="toggle-switch"></span></label><label class="admin-featured-toggle admin-rented-toggle"><div class="toggle-content"><svg class="lock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><strong>Đã Cho Thuê</strong></div><input type="checkbox" name="is_rented" id="adminRentedInput" ${isRented?'checked':''}><span class="toggle-switch toggle-switch-rented"></span></label></div><div class="admin-fields"><label class="wide">Nội dung nhà<textarea name="raw_text" rows="5">${escapeHtml(p.raw_text||'')}</textarea></label><label class="wide">Địa chỉ<input name="address" value="${escapeHtml(p.address||'')}"></label><label>Quận/Huyện<input name="district" value="${escapeHtml(p.district||'')}"></label><label>Phường/Xã<input name="ward" value="${escapeHtml(p.ward||'')}"></label><label>Tên đường<input name="street" value="${escapeHtml(p.street||'')}"></label><label>Giá<input name="price_text" value="${escapeHtml(p.price_text||'')}"></label><label>Diện tích<input name="area_text" value="${escapeHtml(p.area_text||'')}"></label><label>Kích thước<input name="dimensions" value="${escapeHtml(p.dimensions||'')}"></label><label>Phòng ngủ<input name="bedrooms" type="number" min="0" value="${escapeHtml(p.bedrooms??'')}"></label><label>Phòng tắm<input name="bathrooms" type="number" min="0" value="${escapeHtml(p.bathrooms??'')}"></label><label>Kết cấu<input name="structure" value="${escapeHtml(p.structure||'')}"></label><label>Pháp lý<input name="legal" value="${escapeHtml(p.legal||'')}"></label><label>Số liên hệ<input name="phone" inputmode="tel" value="${escapeHtml(p.phone||'')}"></label><label>Loại BĐS<input name="property_type" value="${escapeHtml(p.property_type||'')}"></label></div><div class="admin-actions"><button class="admin-save" type="submit">Lưu thay đổi</button><button type="button" class="${p.status==='archived'?'admin-restore':'admin-archive'}" id="adminArchiveBtn">${p.status==='archived'?'Khôi phục hồ sơ lên web':'Ẩn hồ sơ khỏi web'}</button><button type="button" class="admin-hard-delete" id="adminHardDeleteBtn" title="Xóa hoàn toàn khỏi cơ sở dữ liệu">🗑️ Xóa vĩnh viễn</button></div><div id="adminEditStatus" class="admin-status" role="status"></div></form></details>`
 }
 function showToast(message,duration=2400){const toast=$('toast');if(!toast)return;toast.textContent=message;toast.classList.add('active');clearTimeout(toast._timer);toast._timer=setTimeout(()=>toast.classList.remove('active'),duration)}
 function maskPhone(phone){if(!phone)return'Chưa có SĐT';const clean=String(phone).trim();if(clean.length>=9)return clean.slice(0,4)+' ••• •••';return clean.slice(0,Math.max(3,clean.length-4))+' •••'}
@@ -491,6 +491,7 @@ async function openDetail(id,seoPath=''){
       const quickUpload=$('adminQuickUpload');if(quickUpload)quickUpload.onchange=event=>uploadImages(event,p.property_id);
       document.querySelectorAll('.thumbs img').forEach((img,index)=>{const wrap=document.createElement('span');wrap.className='admin-thumb';img.parentNode.insertBefore(wrap,img);wrap.appendChild(img);const remove=document.createElement('button');remove.type='button';remove.className='image-remove';remove.setAttribute('aria-label',`Xóa ảnh ${index+1}`);remove.title='Xóa ảnh này';remove.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18m-2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/></svg>';remove.onclick=event=>{event.stopPropagation();deleteImage(p.property_id,imageItems[index].position)};wrap.appendChild(remove)});
       const archiveBtn=document.getElementById('adminArchiveBtn');if(archiveBtn){archiveBtn.onclick=()=>setPropertyArchived(p.property_id,p.status!=='archived')}
+      const hardDeleteBtn=document.getElementById('adminHardDeleteBtn');if(hardDeleteBtn){hardDeleteBtn.onclick=()=>deletePropertyPermanent(p.property_id)}
     }
   }catch(error){$('detailBody').innerHTML=`<div class="error">${escapeHtml(error.message)}</div>`}
 }
@@ -538,7 +539,37 @@ async function deleteImage(propertyId,position){
 }
 async function setPropertyArchived(propertyId,archived){
   const question=archived?'Ẩn hồ sơ này khỏi kho web? Bạn vẫn có thể khôi phục sau.':'Khôi phục hồ sơ này lên kho web?';if(!confirm(question))return;
-  try{await api('/api/admin-archive',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({propertyId,archived})});closeDetailModal();await load()}catch(error){alert(error.message)}
+  state.rows=state.rows.filter(r=>r.property_id!==propertyId);
+  state.total=Math.max(0,state.total-1);
+  $('total').textContent=state.total.toLocaleString('vi-VN');
+  render();
+  closeDetailModal();
+  showToast(archived?'✅ Đã ẩn hồ sơ khỏi web!':'✅ Đã khôi phục hồ sơ lên web!');
+  try{
+    await api('/api/admin-archive',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({propertyId,archived})});
+    await load();
+  }catch(error){
+    alert('Lỗi: '+error.message);
+    await load();
+  }
+}
+
+async function deletePropertyPermanent(propertyId){
+  if(!confirm('⚠️ CẢNH BÁO NGUY HIỂM:\nHành động này sẽ XÓA VĨNH VIỄN căn nhà này và toàn bộ hình ảnh khỏi Database và không thể hoàn tác!\n\nBạn có chắc chắn 100% muốn xóa?'))return;
+  state.rows=state.rows.filter(r=>r.property_id!==propertyId);
+  state.total=Math.max(0,state.total-1);
+  $('total').textContent=state.total.toLocaleString('vi-VN');
+  render();
+  closeDetailModal();
+  showToast('🗑️ Đang xóa vĩnh viễn...');
+  try{
+    const result=await api('/api/admin-archive',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({propertyId})});
+    showToast(result.message||'✅ Đã xóa vĩnh viễn!');
+    await load();
+  }catch(error){
+    alert('Lỗi: '+error.message);
+    await load();
+  }
 }
 async function logoutAdmin(){
   try{await api('/api/admin-login',{method:'DELETE'})}catch(_){}
@@ -582,27 +613,58 @@ if(bulkArchiveBtn){
     if(!state.selectedIds.size)return;
     const isRestoring=state.viewArchived;
     const actionName=isRestoring?'KHÔI PHỤC lên website':'ẨN khỏi website';
-    if(!confirm(`Bạn có chắc chắn muốn ${actionName} ${state.selectedIds.size} căn bất động sản đã chọn không?`))return;
-    bulkArchiveBtn.disabled=true;
-    bulkArchiveBtn.textContent='Đang xử lý…';
+    const count=state.selectedIds.size;
+    if(!confirm(`Bạn có chắc chắn muốn ${actionName} ${count} căn bất động sản đã chọn không?`))return;
+    const selectedArray=Array.from(state.selectedIds);
+    state.rows=state.rows.filter(r=>!state.selectedIds.has(r.property_id));
+    state.total=Math.max(0,state.total-count);
+    $('total').textContent=state.total.toLocaleString('vi-VN');
+    state.selectedIds.clear();
+    updateBulkBar();
+    render();
+    showToast(isRestoring?'✅ Đang khôi phục...':'✅ Đang ẩn hồ sơ...');
     try{
       const result=await api('/api/admin-archive',{
         method:'PATCH',
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({
-          propertyIds:Array.from(state.selectedIds),
+          propertyIds:selectedArray,
           archived:!isRestoring
         })
       });
       showToast(result.message||'Thao tác thành công!');
-      state.selectedIds.clear();
-      updateBulkBar();
       await load();
     }catch(error){
       showToast('❌ Lỗi: '+error.message,4000);
-    }finally{
-      bulkArchiveBtn.disabled=false;
-      updateBulkBar();
+      await load();
+    }
+  };
+}
+const bulkHardDeleteBtn=$('bulkHardDeleteBtn');
+if(bulkHardDeleteBtn){
+  bulkHardDeleteBtn.onclick=async()=>{
+    if(!state.selectedIds.size)return;
+    const count=state.selectedIds.size;
+    if(!confirm(`⚠️ CẢNH BÁO NGUY HIỂM:\n\nBạn có chắc chắn muốn XÓA VĨNH VIỄN ${count} căn bất động sản đã chọn và toàn bộ hình ảnh khỏi Database không?\n\nHành động này KHÔNG THỂ HOÀN TÁC!`))return;
+    const selectedArray=Array.from(state.selectedIds);
+    state.rows=state.rows.filter(r=>!state.selectedIds.has(r.property_id));
+    state.total=Math.max(0,state.total-count);
+    $('total').textContent=state.total.toLocaleString('vi-VN');
+    state.selectedIds.clear();
+    updateBulkBar();
+    render();
+    showToast('🗑️ Đang xóa vĩnh viễn...');
+    try{
+      const result=await api('/api/admin-archive',{
+        method:'DELETE',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({propertyIds:selectedArray})
+      });
+      showToast(result.message||'✅ Đã xóa vĩnh viễn!');
+      await load();
+    }catch(error){
+      alert('Lỗi: '+error.message);
+      await load();
     }
   };
 }
