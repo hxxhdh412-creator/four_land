@@ -143,11 +143,14 @@ function render(){
     
     // Specs pills with luxury vector line SVGs
     const specs = [];
-    if(row.area_text){
-      specs.push(`<span class="spec-tag" title="Diện tích"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="M3 9h18M9 21V9" stroke="currentColor" stroke-width="1.7"/></svg>${escapeHtml(row.area_text)}</span>`);
+    const cardArea = row.area_text || row.data_json?.property?.area || row.dimensions;
+    if(cardArea){
+      specs.push(`<span class="spec-tag" title="Diện tích / Kích thước"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="M3 9h18M9 21V9" stroke="currentColor" stroke-width="1.7"/></svg>${escapeHtml(cardArea)}</span>`);
     }
-    if(row.bedrooms){
-      specs.push(`<span class="spec-tag" title="Số phòng ngủ"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M2 19h20M2 17v-6a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v6M6 9V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>${escapeHtml(row.bedrooms)} PN</span>`);
+    const cardBedrooms = row.data_json?.property?.bedrooms || (row.bedrooms ? `${row.bedrooms} PN` : null);
+    if(cardBedrooms){
+      const bedLabel = (typeof cardBedrooms === 'number' || /^\d+$/.test(cardBedrooms)) ? `${cardBedrooms} PN` : cardBedrooms;
+      specs.push(`<span class="spec-tag" title="Phòng ngủ"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M2 19h20M2 17v-6a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v6M6 9V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>${escapeHtml(bedLabel)}</span>`);
     }
     const specsHtml = specs.length ? `<div class="card-specs">${specs.join('')}</div>` : '';
 
@@ -413,16 +416,22 @@ async function openDetail(id,seoPath=''){
     const propNameAlt=`${p.property_type||'Nhà'} ${p.address||p.property_id}`;
     const thumbsHtml=images.map((src,index)=>`<img class="${index===0?'active':''}" referrerpolicy="no-referrer" src="${escapeHtml(src)}" alt="${escapeHtml(propNameAlt)} - Ảnh ${index+1}" onerror="this.style.display='none';">`).join('')+
       (state.adminUnlocked?`<label class="admin-thumb-add" for="adminQuickUpload" title="Bổ sung hình ảnh"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></label><input id="adminQuickUpload" type="file" accept="image/jpeg,image/png,image/webp" multiple hidden style="display:none!important">`:'');
+    const displayBedrooms = p.data_json?.property?.bedrooms || (p.bedrooms ? `${p.bedrooms} PN` : null);
+    const displayBathrooms = p.data_json?.property?.bathrooms || (p.bathrooms ? `${p.bathrooms} WC` : null);
+    const displayArea = p.area_text || p.data_json?.property?.area || p.dimensions || null;
+    const displayLegal = p.legal || p.data_json?.property?.legal || null;
+    const displayStructure = p.structure || p.data_json?.property?.structure || null;
+
     const infoGridHtml=[
       ['Tình trạng', isRented ? '<span class="status-rented-pill">🔒 Đã cho thuê</span>' : '<span class="status-available-pill">🟢 Đang mở thuê</span>', true],
       ['Giá niêm yết',p.price_text||'Liên hệ'],
       ['Cập nhật lúc',formatVietnamFullDateTime(p.received_at||p.updated_at||p.created_at)],
-      ['Diện tích',p.area_text],
+      ['Diện tích',displayArea],
       ['Kích thước',p.dimensions],
-      ['Phòng ngủ',p.bedrooms?`${p.bedrooms} PN`:null],
-      ['Phòng tắm',p.bathrooms?`${p.bathrooms} WC`:null],
-      ['Kết cấu',p.structure],
-      ['Pháp lý',p.legal],
+      ['Phòng ngủ',displayBedrooms],
+      ['Phòng tắm',displayBathrooms],
+      ['Kết cấu',displayStructure],
+      ['Pháp lý',displayLegal],
       ['Liên hệ',phoneCellContent,true],
       ['Loại BĐS',p.property_type||'Nhà thuê']
     ].map(([label,value,isRaw])=>`<div><small>${label}</small><strong>${isRaw?value:escapeHtml(value||'—')}</strong></div>`).join('');
