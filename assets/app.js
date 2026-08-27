@@ -344,7 +344,14 @@ function adminToolsHtml(p){
 }
 function showToast(message,duration=2400){const toast=$('toast');if(!toast)return;toast.textContent=message;toast.classList.add('active');clearTimeout(toast._timer);toast._timer=setTimeout(()=>toast.classList.remove('active'),duration)}
 function maskPhone(phone){if(!phone)return'Chưa có SĐT';const clean=String(phone).trim();if(clean.length>=9)return clean.slice(0,4)+' ••• •••';return clean.slice(0,Math.max(3,clean.length-4))+' •••'}
-function maskTextPhones(text){if(!text)return'';const phonePattern=/(?:\+?84|0)(?:3|5|7|8|9)(?:[.\s-]?\d){7,8}/g;return String(text).replace(phonePattern,match=>{const clean=match.replace(/[.\s-]/g,'');return clean.slice(0,4)+' ••• •••'})}
+function maskTextPhones(text){
+  if(!text)return'';
+  const phonePattern=/(?:\+?84|0)(?:[35789])(?:[\s.-]*\d){7,9}/g;
+  return String(text).replace(phonePattern,match=>{
+    const clean=match.replace(/[\s.-]/g,'');
+    return clean.slice(0,4)+' ••• •••';
+  });
+}
 
 const COMPANY_HOTLINE='084.2222.813';
 const DEFAULT_PAGE_TITLE='FOURLAND · Kho Bất Động Sản Chọn Lọc TP.HCM | Mua Bán & Cho Thuê Nhà Đất';
@@ -412,7 +419,7 @@ async function openDetail(id,seoPath=''){
     const phoneCellContent=state.adminUnlocked
       ?(customerPhone?`<a href="tel:${escapeHtml(phoneHref(customerPhone))}" class="phone-link-call" title="Bấm để gọi số khách / chủ nhà">${escapeHtml(customerPhone)}</a>`:'—')
       :(customerPhone?`<button type="button" class="phone-link-unlock" id="unlockPhoneInline" title="Bấm để nhập mã Admin xem SĐT">${escapeHtml(maskPhone(customerPhone))}</button>`:'—');
-    const displayRawText=state.adminUnlocked?(p.raw_text||p.notes||'Chưa có nội dung mô tả.'):maskTextPhones(p.raw_text||p.notes||'Chưa có nội dung mô tả.');
+    const displayRawText=maskTextPhones(p.raw_text||p.notes||'Chưa có nội dung mô tả.');
     const propNameAlt=`${p.property_type||'Nhà'} ${p.address||p.property_id}`;
     const thumbsHtml=images.map((src,index)=>`<img class="${index===0?'active':''}" referrerpolicy="no-referrer" src="${escapeHtml(src)}" alt="${escapeHtml(propNameAlt)} - Ảnh ${index+1}" onerror="this.style.display='none';">`).join('')+
       (state.adminUnlocked?`<label class="admin-thumb-add" for="adminQuickUpload" title="Bổ sung hình ảnh"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></label><input id="adminQuickUpload" type="file" accept="image/jpeg,image/png,image/webp" multiple hidden style="display:none!important">`:'');
