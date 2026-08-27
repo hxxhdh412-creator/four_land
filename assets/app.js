@@ -748,9 +748,13 @@ loadFacets();
 load();
 checkAdminSession();
 
-const initUrlId=new URLSearchParams(window.location.search).get('id')||(window.location.hash?window.location.hash.replace(/^#/,''):'');
-if(initUrlId&&/^BDS-/i.test(initUrlId)){
-  setTimeout(()=>openDetail(initUrlId),200);
-}else{
+const pathSlug = window.location.pathname.startsWith('/bat-dong-san/') ? window.location.pathname.slice('/bat-dong-san/'.length) : '';
+const markerIdx = pathSlug.lastIndexOf('--');
+const extractedSlugId = markerIdx >= 0 ? pathSlug.slice(markerIdx + 2) : '';
+const initUrlId = extractedSlugId || new URLSearchParams(window.location.search).get('id') || (window.location.hash ? window.location.hash.replace(/^#/, '') : '');
+
+if (initUrlId && /^BDS-/i.test(initUrlId)) {
+  setTimeout(() => openDetail(initUrlId, window.location.pathname), 150);
+} else {
   handleSearchFromHash();
 }
