@@ -69,7 +69,11 @@ async function main() {
     if (raw.startsWith("Tin nhắn thử nghiệm") || raw === "||||||||||||" || raw === "1") continue;
     if (!addressVal && raw.length < 15) continue;
     if (addressVal === "2026 trống" || addressVal === "2PN view sông" || addressVal === "1 ngày" || addressVal === "2 phòng ngủ 2 wc") continue;
-    const record = parseJson(get(row, "Data JSON")), property = record.property || {}, source = record.source || {};
+    let rowImages = parseJson(get(row, "Images JSON"));
+    if (!Array.isArray(rowImages) || !rowImages.length) rowImages = record.media?.images || [];
+    const validImages = rowImages.filter(i => String(i.url || i.sourceUrl || "").trim());
+    if (validImages.length < 2) continue; // Chỉ nhận hồ sơ có từ 2 ảnh trở lên
+
     properties.push({
       property_id: propertyId, send_id: emptyToNull(get(row, "SendId")), status: get(row, "Status") || "raw",
       account_id: emptyToNull(source.accountId), group_id: emptyToNull(get(row, "GroupId")), group_name: emptyToNull(get(row, "GroupName")),
@@ -80,12 +84,10 @@ async function main() {
       bathrooms: integerOrNull(get(row, "Bathrooms")), structure: emptyToNull(get(row, "Structure")), price_text: emptyToNull(get(row, "Price")),
       price_number: numberOrNull(String(get(row, "PriceNumber")).replace(/[^0-9.,-]/g, "")), legal: emptyToNull(get(row, "Legal")),
       commission: emptyToNull(property.commission), notes: emptyToNull(get(row, "Notes")), raw_text: emptyToNull(get(row, "RawText")),
-      normalized_text: emptyToNull(get(row, "NormalizedText")), image_count: Number(get(row, "ImageCount") || 0),
+      normalized_text: emptyToNull(get(row, "NormalizedText")), image_count: validImages.length,
       received_at: source.receivedAt ? isoDate(source.receivedAt) : isoDate(get(row, "CreatedAt")), updated_at: new Date().toISOString(), data_json: record
     });
-    let rowImages = parseJson(get(row, "Images JSON"));
-    if (!Array.isArray(rowImages) || !rowImages.length) rowImages = record.media?.images || [];
-    rowImages.forEach((image, index) => {
+    validImages.forEach((image, index) => {
       const url = String(image.url || image.sourceUrl || "");
       images.push({ property_id: propertyId, position: Number(image.position || index + 1), storage_path: image.fileId ? `drive:${image.fileId}` : `external:${propertyId}:${index + 1}`, public_url: url || null, source_url: url || null });
     });
