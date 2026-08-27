@@ -422,6 +422,7 @@ async function openDetail(id,seoPath=''){
     const displayLegal = p.legal || p.data_json?.property?.legal || null;
     const displayStructure = p.structure || p.data_json?.property?.structure || null;
     const displayCommission = p.commission || p.data_json?.property?.commission || null;
+    const displayNotes = p.notes || p.data_json?.property?.notes || null;
 
     const infoGridHtml=[
       ['Tình trạng', isRented ? '<span class="status-rented-pill">🔒 Đã cho thuê</span>' : '<span class="status-available-pill">🟢 Đang mở thuê</span>', true],
@@ -434,6 +435,7 @@ async function openDetail(id,seoPath=''){
       ['Phòng tắm',displayBathrooms],
       ['Kết cấu',displayStructure],
       ['Pháp lý',displayLegal],
+      ['Ghi chú',displayNotes],
       ['Liên hệ',phoneCellContent,true],
       ['Loại BĐS',p.property_type||'Nhà thuê']
     ].map(([label,value,isRaw])=>`<div><small>${label}</small><strong>${isRaw?value:escapeHtml(value||'—')}</strong></div>`).join('');
