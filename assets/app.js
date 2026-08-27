@@ -425,20 +425,20 @@ async function openDetail(id,seoPath=''){
     const displayNotes = p.notes || p.data_json?.property?.notes || null;
 
     const infoGridHtml=[
-      ['Tình trạng', isRented ? '<span class="status-rented-pill">🔒 Đã cho thuê</span>' : '<span class="status-available-pill">🟢 Đang mở thuê</span>', true, false],
-      ['Giá niêm yết', p.price_text||'Liên hệ', false, false],
-      ['Cập nhật lúc', formatVietnamFullDateTime(p.received_at||p.updated_at||p.created_at), false, false],
-      ['Hoa hồng', displayCommission, false, false],
-      ['Diện tích', displayArea, false, false],
-      ['Kích thước', p.dimensions, false, false],
-      ['Phòng ngủ', displayBedrooms, false, false],
-      ['Phòng tắm', displayBathrooms, false, false],
-      ['Pháp lý', displayLegal, false, false],
-      ['Loại BĐS', p.property_type||'Nhà thuê', false, false],
-      ['Liên hệ', phoneCellContent, true, false],
-      ['Kết cấu', displayStructure, false, true],
-      ['Ghi chú', displayNotes, false, true]
-    ].map(([label,value,isRaw,isFull])=>`<div class="${isFull?'info-cell-full':''}"><small>${label}</small><strong>${isRaw?value:escapeHtml(value||'—')}</strong></div>`).join('');
+      ['Tình trạng', isRented ? '<span class="status-rented-pill">🔒 Đã cho thuê</span>' : '<span class="status-available-pill">🟢 Đang mở thuê</span>', true],
+      ['Giá niêm yết', p.price_text||'Liên hệ'],
+      ['Cập nhật lúc', formatVietnamFullDateTime(p.received_at||p.updated_at||p.created_at)],
+      ['Hoa hồng', displayCommission],
+      ['Diện tích', displayArea],
+      ['Kích thước', p.dimensions],
+      ['Phòng ngủ', displayBedrooms],
+      ['Phòng tắm', displayBathrooms],
+      ['Kết cấu', displayStructure],
+      ['Pháp lý', displayLegal],
+      ['Ghi chú', displayNotes],
+      ['Liên hệ', phoneCellContent, true],
+      ['Loại BĐS', p.property_type||'Nhà thuê']
+    ].map(([label,value,isRaw])=>`<div><small>${label}</small><strong>${isRaw?value:escapeHtml(value||'—')}</strong></div>`).join('');
 
     const galleryNavHtml = images.length > 1 ? `
       <button type="button" class="gallery-nav gallery-prev" id="galleryPrev" aria-label="Ảnh trước"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
