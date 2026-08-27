@@ -1348,4 +1348,123 @@ body.selection-mode-active .card-select-wrap,
   box-shadow: 0 0 0 2.5px rgba(239, 101, 9, 0.35), 0 4px 14px rgba(0, 0, 0, 0.22);
 }
 
+/* =========================================================
+   LUXURY BRAND SPLASH INTRO SCREEN
+   ========================================================= */
+.brand-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: radial-gradient(circle at 50% 45%, #ffffff 0%, #f6f8f5 65%, #edf1ec 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.42s cubic-bezier(0.16, 1, 0.3, 1), transform 0.42s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.42s ease;
+  pointer-events: all;
+  user-select: none;
+}
+
+.brand-splash.splash-fade-out {
+  opacity: 0;
+  transform: scale(1.03);
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.splash-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 14px;
+  transform: translateY(-6px);
+}
+
+.splash-logo-wrap {
+  position: relative;
+  width: 90px;
+  height: 82px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.splash-glow {
+  position: absolute;
+  inset: -14px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(239, 101, 9, 0.24) 0%, rgba(124, 163, 31, 0.14) 50%, transparent 75%);
+  filter: blur(14px);
+  animation: splashPulse 1.2s ease-in-out infinite alternate;
+}
+
+.splash-logo {
+  position: relative;
+  width: 82px;
+  height: 74px;
+  object-fit: contain;
+  animation: splashPop 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  filter: drop-shadow(0 8px 24px rgba(24, 43, 36, 0.12));
+}
+
+.splash-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.splash-title {
+  font-family: var(--font-sans, "Be Vietnam Pro", sans-serif);
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  color: var(--forest, #182b24);
+  line-height: 1;
+}
+
+.splash-caption {
+  font-family: var(--font-sans, "Be Vietnam Pro", sans-serif);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.26em;
+  color: var(--muted, #6b746e);
+  text-transform: uppercase;
+}
+
+.splash-progress {
+  width: 105px;
+  height: 2.5px;
+  background: rgba(24, 43, 36, 0.08);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 6px;
+}
+
+.splash-bar {
+  width: 0%;
+  height: 100%;
+  background: linear-gradient(90deg, #ef6509 0%, #7ca31f 100%);
+  border-radius: 3px;
+  animation: splashFill 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes splashPop {
+  0% { transform: scale(0.85); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes splashPulse {
+  0% { transform: scale(0.9); opacity: 0.6; }
+  100% { transform: scale(1.15); opacity: 1; }
+}
+
+@keyframes splashFill {
+  0% { width: 0%; }
+  60% { width: 75%; }
+  100% { width: 100%; }
+}
+
 

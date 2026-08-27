@@ -59,10 +59,20 @@ function skeleton(){
     </div>
   `).join('')
 }
+function dismissSplash(){
+  const splash=$('brandSplash');
+  if(!splash||splash.classList.contains('splash-fade-out'))return;
+  splash.classList.add('splash-fade-out');
+  setTimeout(()=>{
+    if(splash&&splash.parentNode)splash.parentNode.removeChild(splash);
+  },500);
+}
+setTimeout(dismissSplash,900);
+
 async function load(){
   const requestId=++state.requestId;$('error').hidden=true;$('grid').innerHTML=skeleton();
-  try{const data=await api('/api/properties?'+params(values()));if(requestId!==state.requestId)return;state.rows=data.rows||[];state.total=data.total||0;$('total').textContent=state.total.toLocaleString('vi-VN');$('withImages').textContent=state.rows.filter(row=>Number(row.image_count)>0).length;$('resultLabel').textContent=state.viewArchived?`${state.total.toLocaleString('vi-VN')} hồ sơ đã ẩn`:`${state.total.toLocaleString('vi-VN')} hồ sơ phù hợp`;$('pageLabel').textContent=`Trang ${state.page} / ${Math.max(1,Math.ceil(state.total/state.pageSize))}`;$('pageNumber').textContent=state.page;$('prev').disabled=state.page<=1;$('next').disabled=state.page*state.pageSize>=state.total;render()}
-  catch(error){if(requestId!==state.requestId)return;$('grid').innerHTML='<div class="empty">Chưa có dữ liệu để hiển thị.</div>';$('resultLabel').textContent='Không tải được kho dữ liệu';$('error').textContent=error.message;$('error').hidden=false}
+  try{const data=await api('/api/properties?'+params(values()));if(requestId!==state.requestId)return;state.rows=data.rows||[];state.total=data.total||0;$('total').textContent=state.total.toLocaleString('vi-VN');$('withImages').textContent=state.rows.filter(row=>Number(row.image_count)>0).length;$('resultLabel').textContent=state.viewArchived?`${state.total.toLocaleString('vi-VN')} hồ sơ đã ẩn`:`${state.total.toLocaleString('vi-VN')} hồ sơ phù hợp`;$('pageLabel').textContent=`Trang ${state.page} / ${Math.max(1,Math.ceil(state.total/state.pageSize))}`;$('pageNumber').textContent=state.page;$('prev').disabled=state.page<=1;$('next').disabled=state.page*state.pageSize>=state.total;render();dismissSplash()}
+  catch(error){if(requestId!==state.requestId)return;$('grid').innerHTML='<div class="empty">Chưa có dữ liệu để hiển thị.</div>';$('resultLabel').textContent='Không tải được kho dữ liệu';$('error').textContent=error.message;$('error').hidden=false;dismissSplash()}
 }
 function formatCardPrice(row){
   if(row.status === 'archived') return `<span class="price-val price-archived">Đã ẩn</span>`;
