@@ -955,6 +955,14 @@ label,.eyebrow,.detail-kicker,.result-head strong,.brand-caption{font-weight:700
     padding: 13px 15px;
     border-radius: 6px;
   }
+  .info-grid .info-cell-full {
+    grid-column: 1 / -1 !important;
+  }
+  .info-grid strong {
+    font-size: 13.5px;
+    line-height: 1.35;
+    word-break: break-word;
+  }
   .direct-contact {
     padding: 18px 22px;
     border-radius: 8px;
@@ -1500,6 +1508,10 @@ body.selection-mode-active .card-select-wrap,
   0% { width: 0%; }
   60% { width: 75%; }
   100% { width: 100%; }
+}
+
+.info-grid .info-cell-full {
+  grid-column: 1 / -1 !important;
 }
 
 
