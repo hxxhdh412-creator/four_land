@@ -17,6 +17,13 @@ function maskTextPhones(text) {
   });
 }
 
+function safeDriveImage(url) {
+  if (typeof driveImage === "function") return driveImage(url);
+  const input = String(url || "").trim();
+  const match = input.match(/\/d\/([\w-]+)/) || input.match(/[?&]id=([\w-]+)/);
+  return match ? `https://drive.google.com/thumbnail?id=${match[1]}&sz=w1600` : input;
+}
+
 module.exports = async function handler(req, res) {
   if (req.method !== "GET") return res.status(405).send("Method Not Allowed");
   try {
@@ -27,7 +34,7 @@ module.exports = async function handler(req, res) {
     const property = result.data?.[0];
     if (!property) return res.status(404).send("Không tìm thấy hồ sơ");
 
-    const images = (property.property_images || []).filter(i => i.public_url || i.source_url).sort((a,b) => a.position - b.position).map(i => driveImage(i.public_url || i.source_url));
+    const images = (property.property_images || []).filter(i => i.public_url || i.source_url).sort((a,b) => a.position - b.position).map(i => safeDriveImage(i.public_url || i.source_url));
     const titleBase = property.address || property.street || property.property_id;
     const location = [property.ward, property.district, "TP.HCM"].filter(Boolean).join(", ");
     const pageTitle = `${titleBase}${property.price_text ? ` · ${property.price_text}` : ""} | FOURLAND`;
