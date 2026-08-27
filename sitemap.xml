@@ -2,12 +2,24 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://www.fourland.vn/</loc>
-    <lastmod>2026-08-26</lastmod>
+    <lastmod>2026-08-27</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://www.fourland.vn/bat-dong-san/96-dinh-bo-linh--BDS-20260826-6556EDE7</loc>
+    <loc>https://www.fourland.vn/bat-dong-san/p6-12-vinhomes-central-park--BDS-20260826-EF694D2D</loc>
+    <lastmod>2026-08-26</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.fourland.vn/bat-dong-san/98-thach-thi-thanh--BDS-20260826-C49CA927</loc>
+    <lastmod>2026-08-26</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.fourland.vn/bat-dong-san/92-thach-thi-thanh--BDS-20260826-DBD9B5ED</loc>
     <lastmod>2026-08-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -25,43 +37,13 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.fourland.vn/bat-dong-san/dat-trong--BDS-20260826-CB3B9A9D</loc>
+    <loc>https://www.fourland.vn/bat-dong-san/2-0945685713--BDS-20260826-CB3B9A9D</loc>
     <lastmod>2026-08-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.fourland.vn/bat-dong-san/305-vo-tran-chi--BDS-20260826-90110223</loc>
-    <lastmod>2026-08-26</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://www.fourland.vn/bat-dong-san/280-bui-huu-nghia--BDS-20260826-96E513EA</loc>
-    <lastmod>2026-08-26</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://www.fourland.vn/bat-dong-san/2-thu-duc--BDS-20260826-6733E0CA</loc>
-    <lastmod>2026-08-26</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://www.fourland.vn/bat-dong-san/1-ngay--BDS-20260826-355D86EE</loc>
-    <lastmod>2026-08-26</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://www.fourland.vn/bat-dong-san/2-phong-ngu-2-wc--BDS-20260826-B8CEF302</loc>
-    <lastmod>2026-08-26</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://www.fourland.vn/bat-dong-san/2pn-view-song--BDS-20260826-BEAA50C4</loc>
     <lastmod>2026-08-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -80,12 +62,6 @@
   </url>
   <url>
     <loc>https://www.fourland.vn/bat-dong-san/29-81-doan-thi-diem--BDS-20260826-225C6414</loc>
-    <lastmod>2026-08-26</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://www.fourland.vn/bat-dong-san/449c-dien-bien-phu--BDS-20260826-45C56580</loc>
     <lastmod>2026-08-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -175,7 +151,7 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.fourland.vn/bat-dong-san/ho-so-bat-dong-san--BDS-20260825-365EBD95</loc>
+    <loc>https://www.fourland.vn/bat-dong-san/102-hoa-cuc-pn--BDS-20260825-365EBD95</loc>
     <lastmod>2026-08-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -187,55 +163,13 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.fourland.vn/bat-dong-san/86-36-pho-quang--BDS-20260825-8C094B22</loc>
-    <lastmod>2026-08-26</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://www.fourland.vn/bat-dong-san/211-2a-duong-hoang-van-thu--BDS-20260825-741FB45D</loc>
-    <lastmod>2026-08-26</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://www.fourland.vn/bat-dong-san/151-38d-duong-huynh-van-banh--BDS-20260825-E91B2722</loc>
-    <lastmod>2026-08-26</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://www.fourland.vn/bat-dong-san/250-nguyen-dinh-chinh--BDS-20260825-7B43DBB6</loc>
-    <lastmod>2026-08-26</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
     <loc>https://www.fourland.vn/bat-dong-san/81-105-40-nguyen-cuu-van--BDS-20260825-BF455AEE</loc>
     <lastmod>2026-08-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.fourland.vn/bat-dong-san/354-9-duong-phan-van-tri--BDS-20260825-C92EA901</loc>
-    <lastmod>2026-08-26</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://www.fourland.vn/bat-dong-san/235-13-thich-quang-duc--BDS-20260825-B6F61192</loc>
-    <lastmod>2026-08-26</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
     <loc>https://www.fourland.vn/bat-dong-san/181-69-4-phan-dang-luu--BDS-20260825-74B88A53</loc>
-    <lastmod>2026-08-26</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://www.fourland.vn/bat-dong-san/6-phong-lon--BDS-20260825-5EFF0C07</loc>
     <lastmod>2026-08-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -253,19 +187,7 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.fourland.vn/bat-dong-san/8-16-nguyen-dinh-khoi--BDS-20260825-2045728B</loc>
-    <lastmod>2026-08-26</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
     <loc>https://www.fourland.vn/bat-dong-san/61-17-binh-gia--BDS-20260825-01CEB114</loc>
-    <lastmod>2026-08-26</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://www.fourland.vn/bat-dong-san/156-1-8-cong-hoa--BDS-20260825-19DA792C</loc>
     <lastmod>2026-08-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -289,19 +211,7 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.fourland.vn/bat-dong-san/353-11b-nguyen-trong-tuyen--BDS-20260825-CD01A3CF</loc>
-    <lastmod>2026-08-26</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://www.fourland.vn/bat-dong-san/0769280999-a-son--BDS-20260825-38C9B00C</loc>
-    <lastmod>2026-08-26</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://www.fourland.vn/bat-dong-san/1-lung--BDS-20260825-6457D315</loc>
+    <loc>https://www.fourland.vn/bat-dong-san/45-10-tran-huy-lieu-qpn--BDS-20260825-38C9B00C</loc>
     <lastmod>2026-08-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -319,54 +229,6 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.fourland.vn/bat-dong-san/31-25-7-le-lai--BDS-20260824-DF5A0DFD</loc>
-    <lastmod>2026-08-26</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://www.fourland.vn/bat-dong-san/ho-so-bat-dong-san--BDS-20260824-3CE16B6E</loc>
-    <lastmod>2026-08-26</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://www.fourland.vn/bat-dong-san/ho-so-bat-dong-san--BDS-20260824-6F65FE1C</loc>
-    <lastmod>2026-08-26</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://www.fourland.vn/bat-dong-san/ho-so-bat-dong-san--BDS-20260824-6782A63E</loc>
-    <lastmod>2026-08-26</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://www.fourland.vn/bat-dong-san/ho-so-bat-dong-san--BDS-20260824-69258769</loc>
-    <lastmod>2026-08-26</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://www.fourland.vn/bat-dong-san/1c-tong-van-hen--BDS-20260824-7A91EEEE</loc>
-    <lastmod>2026-08-26</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://www.fourland.vn/bat-dong-san/ho-so-bat-dong-san--BDS-20260824-D13BE1E3</loc>
-    <lastmod>2026-08-26</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://www.fourland.vn/bat-dong-san/ho-so-bat-dong-san--BDS-20260824-74131603</loc>
-    <lastmod>2026-08-26</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
     <loc>https://www.fourland.vn/bat-dong-san/1c-tong-van-hen-p-15-q-tan-binh--BDS-20260824-7FB54A6B</loc>
     <lastmod>2026-08-26</lastmod>
     <changefreq>weekly</changefreq>
@@ -374,18 +236,6 @@
   </url>
   <url>
     <loc>https://www.fourland.vn/bat-dong-san/2-0898534339--BDS-20260824-719BF95D</loc>
-    <lastmod>2026-08-26</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://www.fourland.vn/bat-dong-san/ho-so-bat-dong-san--BDS-20260824-AB3C1134</loc>
-    <lastmod>2026-08-26</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://www.fourland.vn/bat-dong-san/160-34-13-phan-huy-ich-p-12-q-go-vap--BDS-20260824-E72EC721</loc>
     <lastmod>2026-08-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
