@@ -23,7 +23,7 @@ function driveImage(url) {
 }
 function jsonLd(value) { return JSON.stringify(value).replace(/</g, "\\u003c"); }
 function renderPropertyPage(property) {
-  const images = (property.property_images || []).filter(i => i.public_url).sort((a,b) => a.position-b.position).map(i => driveImage(i.public_url));
+  const images = (property.property_images || []).filter(i => (i.public_url || i.source_url) && String(i.public_url || i.source_url).startsWith('http')).sort((a,b) => a.position-b.position).map(i => driveImage(i.public_url || i.source_url));
   const titleBase = property.address || property.street || property.property_id;
   const location = [property.ward, property.district, "TP.HCM"].filter(Boolean).join(", ");
   const title = `${titleBase}${property.price_text ? ` · ${property.price_text}` : ""} | Fourland`;

@@ -125,7 +125,7 @@ function render(){
   $('grid').innerHTML=state.rows.map(row=>{
     const isFeatured = row.status === 'featured' || Boolean(row.is_featured);
     const isRented = row.status === 'rented' || Boolean(row.is_rented);
-    const images = (row.property_images || []).filter(item => item.public_url).sort((a, b) => a.position - b.position);
+    const images = (row.property_images || []).filter(item => item.public_url && String(item.public_url).startsWith('http')).sort((a, b) => a.position - b.position);
     const image = driveImage(images[0]?.public_url);
     let typeBadgeHtml = '';
     const displayType = row.property_type || 'Nhà thuê';
@@ -401,7 +401,7 @@ async function openDetail(id,seoPath=''){
   try{
     const {property:p}=await api('/api/property?id='+encodeURIComponent(id));
     const nextPath=seoPath||propertyPath(p);history.pushState({id},'',nextPath);
-    const imageItems=(p.property_images||[]).filter(i=>i.public_url||i.source_url).sort((a,b)=>a.position-b.position);
+    const imageItems=(p.property_images||[]).filter(i=>(i.public_url||i.source_url)&&String(i.public_url||i.source_url).startsWith('http')).sort((a,b)=>a.position-b.position);
     const images=imageItems.map(i=>driveImage(i.public_url||i.source_url)).filter(Boolean);
     const customerPhone=p.phone||'';
     const views=Number(p.view_count)||1;
