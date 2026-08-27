@@ -221,7 +221,7 @@ function render(){
         if(!state.selectedIds.has(id)){
           toggleCardSelection(id);
         }
-        if(navigator.vibrate)navigator.vibrate(50);
+        try { if (navigator.vibrate && navigator.userActivation?.hasBeenActive) navigator.vibrate(50); } catch (_) {}
         showToast('Đã bật chế độ chọn nhiều căn');
       },550);
     };
