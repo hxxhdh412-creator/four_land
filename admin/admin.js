@@ -1374,7 +1374,8 @@ async function handlePublishFacebook() {
     // Auto-update current property detail in UI
     if (fbState.propertyId) {
       if (cmsState.currentProperty && cmsState.currentProperty.id === fbState.propertyId) {
-        cmsState.currentProperty.notes = content;
+        cmsState.currentProperty.raw_text = content;
+        cmsState.currentProperty.notes = null;
       }
       cmsState.propertiesLoaded = false;
       openPropertyDetail(fbState.propertyId);

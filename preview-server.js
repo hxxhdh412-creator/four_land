@@ -607,12 +607,13 @@ http.createServer(async (req,res)=>{
           if (databaseEnabled) {
             await dbRequest(`properties?property_id=eq.${encodeURIComponent(propertyId)}`, {
               method: "PATCH",
-              body: { notes: content, updated_at: new Date().toISOString() }
-            }).catch(err => console.warn("Update property notes notice:", err.message));
+              body: { raw_text: content, notes: null, updated_at: new Date().toISOString() }
+            }).catch(err => console.warn("Update property content notice:", err.message));
           } else {
             const target = rows.find(item => item.property_id === propertyId);
             if (target) {
-              target.notes = content;
+              target.raw_text = content;
+              target.notes = null;
               target.updated_at = new Date().toISOString();
             }
           }

@@ -66,12 +66,12 @@ function createHandler({ requireCmsImpl = requireCms, request = supabaseRequest 
           return res.status(422).json({ ok: false, error: { message: "Nội dung bài viết không được để trống" } });
         }
 
-        // Save content to property notes in database
+        // Save content to property's main content (raw_text) in database
         if (propertyId) {
           await request(`properties?property_id=eq.${encodeURIComponent(propertyId)}`, {
             method: "PATCH",
-            body: { notes: content, updated_at: new Date().toISOString() }
-          }).catch(err => console.warn("Update property notes notice:", err.message));
+            body: { raw_text: content, notes: null, updated_at: new Date().toISOString() }
+          }).catch(err => console.warn("Update property content notice:", err.message));
         }
 
         const photoUrls = Array.isArray(body.images) ? body.images : [];
