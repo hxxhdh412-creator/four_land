@@ -7,7 +7,9 @@
     "check": "node scripts/check-project.js",
     "test": "node --test test/*.test.js",
     "sitemap": "node scripts/generate-sitemap.js",
+    "schema:check": "node scripts/inspect-supabase-schema.js",
     "sync:check": "node scripts/sync-sheet-to-supabase.js --dry-run",
+    "sync:diff": "node scripts/sync-sheet-to-supabase.js --diff",
     "sync:sheet": "node scripts/sync-sheet-to-supabase.js"
   },
   "engines": {

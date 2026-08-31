@@ -8,6 +8,7 @@ Tạo `.env.local` từ `.env.example`. Không commit `.env.local`.
 |---|---|---|
 | `SUPABASE_URL` | API, preview, sync | URL project |
 | `SUPABASE_SECRET_KEY` | Chỉ server | Tuyệt đối không đưa frontend |
+| `SUPABASE_PUBLISHABLE_KEY` | Auth adapter/CMS client | Khóa publishable, không thay thế secret server |
 | `ADMIN_ACCESS_CODE` | API/preview | Tối thiểu 6 ký tự |
 | `ADMIN_SESSION_SECRET` | Vercel API | Chuỗi ngẫu nhiên ≥32 ký tự |
 | `GOOGLE_SHEET_ID` | Sync | ID Sheet, không phải URL đầy đủ |

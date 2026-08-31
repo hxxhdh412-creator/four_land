@@ -98,3 +98,12 @@ Chỉ viết hoa toàn bộ cho eyebrow/label ngắn. Không viết hoa đoạn 
 - Card cùng chiều cao, text đã clamp?
 - Loading/empty/error rõ ràng?
 - Popup cuộn được và nút đóng luôn dễ thấy?
+
+## 11. CMS `/admin`
+
+- CMS dùng cùng token màu, font `Be Vietnam Pro`, logo và tỷ lệ spacing của public web.
+- Desktop có sidebar xanh rừng; active item dùng vạch cam, không dùng nhiều màu trang trí.
+- Card dashboard radius 5 px, shadow nhẹ; KPI chưa có API phải hiển thị `—`, không dùng dữ liệu mẫu như dữ liệu thật.
+- Mobile dưới 600 px ẩn sidebar, dùng bottom navigation 4 mục và không tạo cuộn ngang toàn trang.
+- Auth gate, loading, error và empty state phải tồn tại trước khi mở module nghiệp vụ.
+- CMS luôn có `noindex,nofollow` và không được đưa secret/config vào bundle.

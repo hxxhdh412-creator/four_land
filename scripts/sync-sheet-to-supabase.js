@@ -1,5 +1,6 @@
 const fs = require("fs");
 const path = require("path");
+const { mergeSourceProperty } = require("../server/property-field-ownership");
 
 function loadEnvironment() {
   const file = path.join(__dirname, "..", ".env.local");
@@ -35,6 +36,59 @@ const integerOrNull = value => { const result = numberOrNull(value); return resu
 const parseJson = value => { try { const parsed = JSON.parse(String(value || "")); return parsed && typeof parsed === "object" ? parsed : {}; } catch { return {}; } };
 const isoDate = value => { const parsed = new Date(String(value || "").replace(" ", "T")); return Number.isNaN(parsed.getTime()) ? new Date().toISOString() : parsed.toISOString(); };
 
+function recordParts(value) {
+  const record = parseJson(value);
+  return {
+    record,
+    property: record.property && typeof record.property === "object" ? record.property : {},
+    source: record.source && typeof record.source === "object" ? record.source : {}
+  };
+}
+
+function buildDiffReport(sourceProperties, sourceImages, productionProperties, productionImages, duplicatePropertyIds = []) {
+  const sourcePropertyIds = new Set(sourceProperties.map(item => item.property_id));
+  const productionPropertyIds = new Set(productionProperties.map(item => item.property_id));
+  const commonPropertyIds = new Set([...sourcePropertyIds].filter(id => productionPropertyIds.has(id)));
+  const sourceImageKeys = new Set(sourceImages.map(item => `${item.property_id}:${item.position}`));
+  const visibleProductionImages = productionImages.filter(item => !String(item.storage_path || "").startsWith("hidden:"));
+  const hiddenProductionImages = productionImages.filter(item => String(item.storage_path || "").startsWith("hidden:"));
+  const visibleProductionImageKeys = new Set(visibleProductionImages.map(item => `${item.property_id}:${item.position}`));
+  const commonImageKeys = [...sourceImageKeys].filter(key => visibleProductionImageKeys.has(key));
+  const sourceStatusById = new Map(sourceProperties.map(item => [item.property_id, String(item.status || "(null)")]));
+  const productionStatusById = new Map(productionProperties.map(item => [item.property_id, String(item.status || "(null)")]));
+  const statusMismatches = [...commonPropertyIds].filter(id => sourceStatusById.get(id) !== productionStatusById.get(id));
+  const sourceById = new Map(sourceProperties.map(item => [item.property_id, item]));
+  const productionById = new Map(productionProperties.map(item => [item.property_id, item]));
+  const comparedFields = ["status", "address", "district", "ward", "street", "price_text", "area_text", "phone", "image_count"];
+  const fieldMismatchCounts = Object.fromEntries(comparedFields.map(field => [field, [...commonPropertyIds].filter(id => {
+    const sourceValue = sourceById.get(id)?.[field];
+    const productionValue = productionById.get(id)?.[field];
+    return String(sourceValue ?? "") !== String(productionValue ?? "");
+  }).length]));
+
+  return {
+    mode: "read-only-diff",
+    properties: {
+      source: sourcePropertyIds.size,
+      production: productionPropertyIds.size,
+      common: commonPropertyIds.size,
+      sourceOnly: [...sourcePropertyIds].filter(id => !productionPropertyIds.has(id)).length,
+      productionOnly: [...productionPropertyIds].filter(id => !sourcePropertyIds.has(id)).length,
+      statusMismatches: statusMismatches.length,
+      duplicateDeletionCandidatesInProduction: [...duplicatePropertyIds].filter(id => productionPropertyIds.has(id)).length,
+      fieldMismatchCounts
+    },
+    images: {
+      source: sourceImageKeys.size,
+      productionVisible: visibleProductionImageKeys.size,
+      productionHiddenTombstones: hiddenProductionImages.length,
+      common: commonImageKeys.length,
+      sourceOnly: [...sourceImageKeys].filter(key => !visibleProductionImageKeys.has(key)).length,
+      productionOnly: [...visibleProductionImageKeys].filter(key => !sourceImageKeys.has(key)).length
+    }
+  };
+}
+
 async function request(config, route, { method = "GET", body, prefer } = {}) {
   const response = await fetch(`${config.url}/rest/v1/${route}`, {
     method,
@@ -64,6 +118,7 @@ async function main() {
   const properties = [], images = [];
   for (const row of rows.slice(1)) {
     const propertyId = get(row, "PropertyId"); if (!propertyId) continue;
+    const { record, property, source } = recordParts(get(row, "Data JSON"));
     const raw = String(get(row, "RawText") || "").trim();
     const addressVal = String(get(row, "Address") || "").trim();
     if (raw.startsWith("Tin nhắn thử nghiệm") || raw === "||||||||||||" || raw === "1") continue;
@@ -104,7 +159,7 @@ async function main() {
   // Group properties by normalized address to eliminate duplicates
   const initialProperties = [...new Map(properties.map(item => [item.property_id, item])).values()];
   const addressGroups = new Map();
-  const duplicateIdsToDelete = [];
+  const duplicateIdsToDelete = new Set();
 
   initialProperties.forEach(prop => {
     const key = normAddress(prop.address);
@@ -138,7 +193,7 @@ async function main() {
     finalPropertiesMap.set(winner.property_id, winner);
     group.slice(1).forEach(loser => {
       propertyIdRemap.set(loser.property_id, winner.property_id);
-      duplicateIdsToDelete.push(loser.property_id);
+      duplicateIdsToDelete.add(loser.property_id);
     });
   });
 
@@ -182,25 +237,29 @@ async function main() {
     sheetRows: rows.length - 1,
     properties: uniqueProperties.length,
     duplicatePropertiesRemoved: properties.length - uniqueProperties.length,
-    duplicateIds: duplicateIdsToDelete,
+    duplicateIdsCount: duplicateIdsToDelete.size,
     images: uniqueImages.length,
     mode: "dry-run"
   }));
 
   const config = { url: env.SUPABASE_URL.replace(/\/+$/, ""), key: env.SUPABASE_SECRET_KEY };
 
-  // Proactively delete duplicate property records from Supabase
-  if (duplicateIdsToDelete.length > 0) {
-    for (let offset = 0; offset < duplicateIdsToDelete.length; offset += 50) {
-      const batch = duplicateIdsToDelete.slice(offset, offset + 50);
-      await request(config, `properties?property_id=in.(${batch.map(encodeURIComponent).join(",")})`, { method: "DELETE" }).catch(() => null);
-      await request(config, `property_images?property_id=in.(${batch.map(encodeURIComponent).join(",")})`, { method: "DELETE" }).catch(() => null);
-    }
+  if (process.argv.includes("--diff")) {
+    const productionProperties = await request(config, "properties?select=property_id,status,address,district,ward,street,price_text,area_text,phone,image_count&limit=10000");
+    const productionImages = await request(config, "property_images?select=property_id,position,storage_path&limit=10000");
+    return console.log(JSON.stringify({
+      ok: true,
+      sheetRows: rows.length - 1,
+      duplicatePropertiesRemoved: properties.length - uniqueProperties.length,
+      duplicateIdsCount: duplicateIdsToDelete.size,
+      ...buildDiffReport(uniqueProperties, uniqueImages, productionProperties || [], productionImages || [], duplicateIdsToDelete)
+    }));
   }
 
-  const archived = await request(config, "properties?select=property_id&status=eq.archived&limit=10000");
-  const archivedIds = new Set((archived || []).map(item => item.property_id));
-  uniqueProperties = uniqueProperties.map(item => archivedIds.has(item.property_id) ? { ...item, status: "archived" } : item);
+  // Duplicate source rows are skipped, never hard-deleted from production.
+  const existingProperties = await request(config, "properties?select=*&limit=10000");
+  const existingById = new Map((existingProperties || []).map(item => [item.property_id, item]));
+  uniqueProperties = uniqueProperties.map(item => mergeSourceProperty(item, existingById.get(item.property_id)));
   const hiddenImages = await request(config, "property_images?select=property_id,position&storage_path=like.hidden:*&limit=10000");
   const hiddenImageKeys = new Set((hiddenImages || []).map(item => `${item.property_id}:${item.position}`));
   const filteredImages = uniqueImages.filter(item => !hiddenImageKeys.has(`${item.property_id}:${item.position}`));
@@ -213,7 +272,11 @@ async function main() {
 
   for (let offset = 0; offset < uniqueProperties.length; offset += 100) await request(config, "properties?on_conflict=property_id", { method: "POST", body: uniqueProperties.slice(offset, offset + 100), prefer: "resolution=merge-duplicates,return=minimal" });
   for (let offset = 0; offset < filteredImages.length; offset += 100) await request(config, "property_images?on_conflict=property_id,position", { method: "POST", body: filteredImages.slice(offset, offset + 100), prefer: "resolution=merge-duplicates,return=minimal" });
-  console.log(JSON.stringify({ ok: true, synced: uniqueProperties.length, deletedDuplicates: duplicateIdsToDelete.length, images: filteredImages.length }));
+  console.log(JSON.stringify({ ok: true, synced: uniqueProperties.length, skippedDuplicateIds: duplicateIdsToDelete.size, images: filteredImages.length }));
 }
 
-main().catch(error => { console.error(error.message); process.exitCode = 1; });
+if (require.main === module) {
+  main().catch(error => { console.error(error.message); process.exitCode = 1; });
+}
+
+module.exports = { buildDiffReport, parseCsv, parseJson, recordParts };

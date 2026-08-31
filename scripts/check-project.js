@@ -32,9 +32,23 @@ const javascriptFiles = [
   "assets/app.js",
   "preview-server.js",
   "scripts/sync-sheet-to-supabase.js",
+  "scripts/inspect-supabase-schema.js",
   "scripts/generate-sitemap.js",
   "scripts/check-project.js",
-  "server/seo.js"
+  "server/seo.js",
+  "server/property-field-ownership.js",
+  "server/cms-authorization.js",
+  "server/cms-audit.js",
+  "server/cms-authentication.js",
+  "server/cms-dashboard.js",
+  "server/cms-properties.js",
+  "server/cms-property-detail.js",
+  "server/cms-property-validation.js",
+  "server/cms-review-queue.js",
+  "server/cms-system-health.js",
+  "server/cms-mutations.js",
+  "server/smart-matcher.js",
+  "admin/admin.js"
 ];
 
 for (const file of javascriptFiles) {

@@ -1,0 +1,783 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="theme-color" content="#283d34">
+  <title>FOURLAND · Trung tâm quản trị</title>
+  <link rel="stylesheet" href="/admin/admin.css?v=13">
+</head>
+<body>
+  <div id="cmsApp" class="cms-app" aria-busy="true">
+    <header class="cms-topbar">
+      <a class="cms-brand" href="/admin/" aria-label="Fourland CMS">
+        <img src="/assets/brand/fourland-logo.png" alt="Fourland">
+        <span>
+          <strong>FOURLAND</strong>
+          <small>Kho Bất Động Sản</small>
+        </span>
+      </a>
+      <div class="cms-top-actions">
+        <div id="systemState" class="cms-system-state"><i></i><span>Đang kết nối…</span></div>
+        <button id="profileButton" class="cms-avatar" type="button" aria-label="Tài khoản" disabled>FL</button>
+        <button id="btnLogoutTopbar" class="cms-top-logout-btn" type="button" aria-label="Đăng xuất" title="Đăng xuất" hidden>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <div class="cms-layout">
+      <aside class="cms-sidebar" aria-label="Điều hướng quản trị">
+        <p class="cms-nav-label">Quản trị</p>
+        <button class="cms-nav-item active" data-page="dashboard" type="button">
+          <span class="cms-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg></span>
+          <span>Tổng quan</span>
+        </button>
+        <button class="cms-nav-item" data-page="match" type="button">
+          <span class="cms-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span>
+          <span>Khớp nhu cầu (AI)</span>
+        </button>
+        <button class="cms-nav-item" data-page="properties" type="button">
+          <span class="cms-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>
+          <span>Kho bất động sản</span>
+        </button>
+        <button class="cms-nav-item" data-page="editor" type="button">
+          <span class="cms-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></span>
+          <span>Chờ biên tập</span>
+        </button>
+        <p class="cms-nav-label secondary">Hệ thống</p>
+        <button class="cms-nav-item" data-page="users" type="button">
+          <span class="cms-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+          <span>Tài khoản & Phân quyền</span>
+        </button>
+        <button class="cms-nav-item" data-page="sync" type="button">
+          <span class="cms-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></span>
+          <span>Đồng bộ & dữ liệu</span>
+        </button>
+        <a class="cms-nav-item cms-public-link" href="/" target="_blank" rel="noopener">
+          <span class="cms-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></span>
+          <span>Mở website</span>
+        </a>
+      </aside>
+
+      <main class="cms-main">
+        <section id="authGate" class="cms-auth-gate">
+          <div class="cms-login-box">
+            <div class="cms-gate-mark">FL</div>
+            <p class="cms-eyebrow">FOURLAND REAL ESTATE CMS</p>
+            <h1>Đăng nhập quản trị</h1>
+            <p id="authMessage">Nhập thông tin tài khoản hoặc chọn nhanh vai trò để truy cập kho dữ liệu.</p>
+            <div id="authError" class="cms-alert" hidden></div>
+            
+            <form id="cmsLoginForm" class="cms-login-form">
+              <label class="cms-login-field">
+                <span>Email hoặc Tên đăng nhập</span>
+                <input id="loginEmail" type="text" placeholder="admin@fourland.vn" value="admin@fourland.vn" required autocomplete="username">
+              </label>
+              <label class="cms-login-field">
+                <span>Mật khẩu</span>
+                <input id="loginPassword" type="password" placeholder="••••••••" value="123456" required autocomplete="current-password">
+              </label>
+              <div class="cms-login-options">
+                <label class="cms-remember"><input type="checkbox" id="loginRemember" checked> <span>Ghi nhớ đăng nhập</span></label>
+                <span class="cms-forgot-hint">Môi trường: Live Preview</span>
+              </div>
+              <button id="btnLoginSubmit" class="cms-primary cms-login-btn" type="submit">
+                <svg class="cms-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+                <span>Đăng nhập hệ thống</span>
+              </button>
+            </form>
+
+            <div class="cms-quick-login-section">
+              <p class="cms-quick-login-title">Đăng nhập nhanh theo vai trò:</p>
+              <div class="cms-quick-login-grid">
+                <button type="button" class="cms-quick-role-btn super_admin" data-demo-role="super_admin">
+                  <div class="cms-role-btn-head">
+                    <svg class="cms-role-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    <strong>Super Admin</strong>
+                  </div>
+                  <span>Toàn quyền quản trị</span>
+                </button>
+                <button type="button" class="cms-quick-role-btn manager" data-demo-role="manager">
+                  <div class="cms-role-btn-head">
+                    <svg class="cms-role-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+                    <strong>Manager</strong>
+                  </div>
+                  <span>Quản lý & Xuất bản</span>
+                </button>
+                <button type="button" class="cms-quick-role-btn sales" data-demo-role="sales">
+                  <div class="cms-role-btn-head">
+                    <svg class="cms-role-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                    <strong>Sales</strong>
+                  </div>
+                  <span>Xem kho & Full SĐT</span>
+                </button>
+                <button type="button" class="cms-quick-role-btn editor" data-demo-role="editor">
+                  <div class="cms-role-btn-head">
+                    <svg class="cms-role-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                    <strong>Editor</strong>
+                  </div>
+                  <span>Biên tập nội dung</span>
+                </button>
+                <button type="button" class="cms-quick-role-btn viewer" data-demo-role="viewer">
+                  <div class="cms-role-btn-head">
+                    <svg class="cms-role-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    <strong>Viewer</strong>
+                  </div>
+                  <span>Tự động ẩn SĐT</span>
+                </button>
+              </div>
+            </div>
+
+            <button id="retryAuth" class="cms-primary" type="button" hidden>Thử lại</button>
+          </div>
+        </section>
+
+        <div id="cmsContent" hidden>
+          <section class="cms-page active" data-page-panel="dashboard">
+            <div class="cms-heading">
+              <div>
+                <p class="cms-eyebrow">Tổng quan vận hành</p>
+                <h1 id="welcomeTitle">Chào mừng trở lại</h1>
+                <p>Thống kê trực tiếp từ kho dữ liệu thời gian thực.</p>
+              </div>
+              <button id="btnCreatePropertyDashboard" class="cms-primary" type="button">
+                <svg class="cms-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                <span>Thêm hồ sơ</span>
+              </button>
+            </div>
+            <div class="cms-demo-notice">BẢN LOCAL ĐANG PHÁT TRIỂN · Quản trị kho bất động sản Fourland</div>
+            <div class="cms-metrics">
+              <article><span>Đang xuất bản</span><strong id="metricPublished">—</strong><small id="metricPublishedNote">Đang tải…</small></article>
+              <article><span>Chờ duyệt</span><strong id="metricReview">—</strong><small>Workflow nội dung</small></article>
+              <article><span>Thiếu dữ liệu</span><strong id="metricMissing">—</strong><small>Ảnh, giá hoặc địa chỉ</small></article>
+              <article><span>Còn giao dịch</span><strong id="metricAvailable">—</strong><small>Theo tình trạng hiện tại</small></article>
+            </div>
+            <div class="cms-dashboard-grid">
+              <section class="cms-surface"><header><strong>Việc cần ưu tiên</strong><span id="dashboardUpdated">Trực tiếp</span></header><div class="cms-health-list large"><div><span>Hồ sơ mới hôm nay</span><b id="metricToday">—</b></div><div><span>Không có hình ảnh</span><b id="metricNoImages">—</b></div><div><span>Đã lưu trữ</span><b id="metricArchived">—</b></div></div></section>
+              <section class="cms-surface"><header><strong>Chất lượng kho nhà</strong><span>Kiểm tra tức thời</span></header><div class="cms-health-list"><div><span>Đủ ảnh và địa chỉ</span><b class="ok">Chuẩn hóa cao</b></div><div><span>Thiếu trường dữ liệu</span><b class="warn">Cần biên tập</b></div></div></section>
+            </div>
+          </section>
+
+          <section class="cms-page" data-page-panel="match">
+            <div class="cms-heading">
+              <div>
+                <p class="cms-eyebrow">Trợ lý AI Thông Minh</p>
+                <h1>Khớp Nhu Cầu & Bán Hàng</h1>
+                <p>Nhập yêu cầu của khách hàng hoặc dán tin nhắn để thuật toán tự động quét và chấm điểm kho nhà phù hợp nhất.</p>
+              </div>
+            </div>
+
+            <div class="cms-match-card">
+              <form id="smartMatchForm" class="cms-match-form">
+                <label class="cms-match-input-wrapper">
+                  <span class="cms-match-label">Yêu cầu tìm nhà của khách (Nhập tự do hoặc dán tin nhắn Zalo):</span>
+                  <textarea id="smartMatchQuery" rows="3" placeholder="Ví dụ: Khách anh Hoàng cần thuê mặt bằng Tân Bình giá 15-20 triệu diện tích 4x20m kinh doanh ăn uống…"></textarea>
+                </label>
+                <div class="cms-match-quick-chips">
+                  <span class="chip-title">Gợi ý mẫu:</span>
+                  <button type="button" class="cms-chip" data-query="Thuê mặt bằng Tân Bình 15-20 triệu 4x20">
+                    <svg class="cms-chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M3 7v14M21 7v14M6 7V3h12v4M9 21v-4h6v4"/></svg>
+                    <span>Mặt bằng Tân Bình 15-20tr</span>
+                  </button>
+                  <button type="button" class="cms-chip" data-query="Nhà phố Quận 3 dưới 15 tỷ hẻm xe hơi">
+                    <svg class="cms-chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                    <span>Nhà bán Q.3 dưới 15 tỷ</span>
+                  </button>
+                  <button type="button" class="cms-chip" data-query="Nhà nguyên căn Phú Nhuận 30-40 triệu">
+                    <svg class="cms-chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                    <span>Nguyên căn Phú Nhuận 30-40tr</span>
+                  </button>
+                  <button type="button" class="cms-chip" data-query="Nhà thuê Gò Vấp 10-15 triệu 3 phòng ngủ">
+                    <svg class="cms-chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 19h20M2 17v-6a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v6M6 9V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v3"/></svg>
+                    <span>Thuê Gò Vấp 10-15tr (3PN)</span>
+                  </button>
+                </div>
+                <div class="cms-match-actions">
+                  <button class="cms-primary cms-match-submit-btn" type="submit">
+                    <svg class="cms-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                    <span>Quét & Chấm Điểm Kho Nhà</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <div id="matchMeta" class="cms-list-meta" hidden>
+              <strong id="matchCount">Đang tìm nhà phù hợp…</strong>
+              <span id="matchCriteriaSummary"></span>
+            </div>
+
+            <div id="matchLoading" class="cms-surface" hidden>
+              <div class="cms-empty">
+                <b>Đang phân tích và chấm điểm kho nhà…</b>
+                <span>Thuật toán đang quét đa tiêu chí: Khu vực, Ngân sách, Diện tích, Loại hình và Công năng.</span>
+              </div>
+            </div>
+
+            <div id="matchEmpty" class="cms-surface" hidden>
+              <div class="cms-empty">
+                <b>Chưa tìm thấy căn nhà phù hợp</b>
+                <span>Hãy thử mở rộng khoảng giá hoặc nới lỏng tiêu chí khu vực lân cận.</span>
+              </div>
+            </div>
+
+            <div id="matchGrid" class="cms-match-grid" hidden></div>
+          </section>
+
+          <section class="cms-page" data-page-panel="properties">
+            <div class="cms-heading">
+              <div>
+                <p class="cms-eyebrow">Kho bất động sản</p>
+                <h1>Quản lý hồ sơ</h1>
+                <p>Tìm kiếm, quản lý và thêm mới bất động sản vào kho dữ liệu.</p>
+              </div>
+              <button id="btnCreatePropertyPage" class="cms-primary" type="button">
+                <svg class="cms-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                <span>Thêm hồ sơ</span>
+              </button>
+            </div>
+            <div class="cms-filter-card">
+              <form id="propertyFilters" class="cms-filterbar">
+                <div class="cms-filter-row-primary">
+                  <div class="cms-search-box">
+                    <svg class="cms-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <input id="propertySearch" type="search" placeholder="Địa chỉ, quận, tên đường, loại nhà, mức giá (vd: 15tr)..." autocomplete="off">
+                    <button id="propertySearchClear" type="button" class="cms-clear-btn" aria-label="Xóa tìm kiếm" title="Xóa" hidden>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                  </div>
+                  
+                  <div class="cms-filter-selects">
+                    <div class="cms-select-wrapper">
+                      <svg class="cms-select-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                      <select id="propertyDistrict" aria-label="Quận / Huyện">
+                        <option value="">Tất cả khu vực</option>
+                        <option value="Quận 1">Quận 1</option>
+                        <option value="Quận 3">Quận 3</option>
+                        <option value="Quận 4">Quận 4</option>
+                        <option value="Quận 5">Quận 5</option>
+                        <option value="Quận 6">Quận 6</option>
+                        <option value="Quận 7">Quận 7</option>
+                        <option value="Quận 8">Quận 8</option>
+                        <option value="Quận 10">Quận 10</option>
+                        <option value="Quận 11">Quận 11</option>
+                        <option value="Quận 12">Quận 12</option>
+                        <option value="Bình Thạnh">Bình Thạnh</option>
+                        <option value="Phú Nhuận">Phú Nhuận</option>
+                        <option value="Gò Vấp">Gò Vấp</option>
+                        <option value="Tân Bình">Tân Bình</option>
+                        <option value="Tân Phú">Tân Phú</option>
+                        <option value="Bình Tân">Bình Tân</option>
+                        <option value="Thủ Đức">TP. Thủ Đức</option>
+                        <option value="Nhà Bè">Huyện Nhà Bè</option>
+                        <option value="Hóc Môn">Huyện Hóc Môn</option>
+                        <option value="Bình Chánh">Huyện Bình Chánh</option>
+                      </select>
+                    </div>
+
+                    <div class="cms-select-wrapper">
+                      <svg class="cms-select-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                      <select id="propertyStatus" aria-label="Trạng thái">
+                        <option value="active">Đang hoạt động</option>
+                        <option value="archived">Đã lưu trữ</option>
+                        <option value="all">Tất cả trạng thái</option>
+                      </select>
+                    </div>
+
+                    <div class="cms-select-wrapper">
+                      <svg class="cms-select-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                      <select id="propertyQuality" aria-label="Chất lượng">
+                        <option value="all">Tất cả chất lượng</option>
+                        <option value="missing_data">Cần bổ sung thông tin</option>
+                        <option value="without_images">Chưa có hình ảnh</option>
+                      </select>
+                    </div>
+
+                    <div class="cms-filter-buttons">
+                      <button class="cms-primary cms-btn-filter" type="submit">
+                        <svg class="cms-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                        <span>Lọc</span>
+                      </button>
+                      <button id="propertyResetFilters" class="cms-btn-reset" type="button" title="Đặt lại toàn bộ bộ lọc" aria-label="Đặt lại">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><polyline points="3 3 3 8 8 8"/></svg>
+                        <span>Đặt lại</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="cms-filter-quick-chips">
+                  <span class="cms-quick-label">Lọc nhanh:</span>
+                  <button type="button" class="cms-filter-chip active" data-filter-chip="all">
+                    <svg class="cms-chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg>
+                    <span>Tất cả</span>
+                  </button>
+                  <button type="button" class="cms-filter-chip" data-filter-chip="today">
+                    <svg class="cms-chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    <span>Mới hôm nay</span>
+                  </button>
+                  <button type="button" class="cms-filter-chip" data-filter-chip="has_images">
+                    <svg class="cms-chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                    <span>Có hình ảnh</span>
+                  </button>
+                  <button type="button" class="cms-filter-chip" data-filter-chip="mat_bang">
+                    <svg class="cms-chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M3 7v14M21 7v14M6 7V3h12v4M9 21v-4h6v4"/></svg>
+                    <span>Mặt bằng</span>
+                  </button>
+                  <button type="button" class="cms-filter-chip" data-filter-chip="nha_pho">
+                    <svg class="cms-chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                    <span>Nhà phố / Căn</span>
+                  </button>
+                  <button type="button" class="cms-filter-chip" data-filter-chip="under_20m">
+                    <svg class="cms-chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                    <span>Dưới 20 triệu</span>
+                  </button>
+                  <button type="button" class="cms-filter-chip" data-filter-chip="tan_binh">
+                    <svg class="cms-chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                    <span>Tân Bình</span>
+                  </button>
+                  <button type="button" class="cms-filter-chip" data-filter-chip="binh_thanh">
+                    <svg class="cms-chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                    <span>Bình Thạnh</span>
+                  </button>
+                  <button type="button" class="cms-filter-chip" data-filter-chip="phu_nhuan">
+                    <svg class="cms-chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                    <span>Phú Nhuận</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+            <div class="cms-list-meta">
+              <div class="cms-meta-left">
+                <span class="cms-meta-badge"><strong id="propertyCount">Đang tải kho nhà…</strong></span>
+                <span class="cms-meta-note">Không hiển thị SĐT và dữ liệu nguồn trong danh sách</span>
+              </div>
+              <div class="cms-meta-right">
+                <div class="cms-sort-box">
+                  <span>Sắp xếp:</span>
+                  <select id="propertySort">
+                    <option value="newest">Mới nhất trước</option>
+                    <option value="price_asc">Giá tăng dần</option>
+                    <option value="price_desc">Giá giảm dần</option>
+                    <option value="images_desc">Nhiều hình ảnh nhất</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div id="propertyError" class="cms-alert" hidden></div>
+            <div id="propertyLoading" class="cms-surface"><div class="cms-empty"><b>Đang tải hồ sơ…</b><span>Dữ liệu được truy vấn theo từng trang.</span></div></div>
+            <div id="propertyEmpty" class="cms-surface" hidden><div class="cms-empty"><b>Không tìm thấy hồ sơ phù hợp</b><span>Thử đổi từ khóa hoặc bộ lọc.</span></div></div>
+            <div id="propertyGrid" class="cms-property-grid" hidden></div>
+            <div id="propertyPagination" class="cms-pagination" hidden>
+              <button id="propertyPrev" class="cms-page-btn" type="button">
+                <svg class="cms-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                <span>Trang trước</span>
+              </button>
+              <span id="propertyPage" class="cms-page-current">Trang 1</span>
+              <button id="propertyNext" class="cms-page-btn" type="button">
+                <span>Trang sau</span>
+                <svg class="cms-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+            </div>
+          </section>
+
+          <section class="cms-page" data-page-panel="editor">
+            <div class="cms-heading">
+              <div>
+                <p class="cms-eyebrow">Biên tập hồ sơ</p>
+                <h1>Hàng chờ nội dung</h1>
+                <p>Ưu tiên hồ sơ thiếu dữ liệu quan trọng trước khi đưa vào workflow xuất bản.</p>
+              </div>
+              <button id="reviewRefresh" class="cms-primary" type="button">
+                <svg class="cms-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                <span>Làm mới</span>
+              </button>
+            </div>
+            <div class="cms-queue-summary"><article><span>Cần xử lý</span><strong id="reviewTotal">—</strong></article><article><span>Thiếu địa chỉ</span><strong id="reviewAddress">—</strong></article><article><span>Thiếu giá</span><strong id="reviewPrice">—</strong></article><article><span>Vấn đề hình ảnh</span><strong id="reviewImages">—</strong></article></div>
+            <div class="cms-demo-notice">BIÊN TẬP · Kiểm tra tính toàn vẹn của dữ liệu hồ sơ</div>
+            <div id="reviewError" class="cms-alert" hidden></div>
+            <div id="reviewLoading" class="cms-surface"><div class="cms-empty"><b>Đang phân tích hàng chờ…</b><span>Hồ sơ được xếp theo mức độ thiếu dữ liệu.</span></div></div>
+            <div id="reviewEmpty" class="cms-surface" hidden><div class="cms-empty"><b>Không còn hồ sơ cần xử lý</b><span>Kho dữ liệu hiện không có lỗi chất lượng thuộc nhóm theo dõi.</span></div></div>
+            <div id="reviewQueue" class="cms-review-queue" hidden></div>
+          </section>
+
+          <section class="cms-page" data-page-panel="users">
+            <div class="cms-heading">
+              <div>
+                <p class="cms-eyebrow">Quản trị nhân sự</p>
+                <h1>Tài khoản & Phân quyền</h1>
+                <p>Quản lý thành viên công ty và thiết lập vai trò bảo mật theo 5 cấp độ (RBAC).</p>
+              </div>
+              <button id="btnCreateUser" class="cms-primary" type="button">
+                <svg class="cms-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                <span>Thêm thành viên</span>
+              </button>
+            </div>
+            <div class="cms-queue-summary">
+              <article><span>Tổng thành viên</span><strong id="userMetricTotal">—</strong></article>
+              <article><span>Quản trị viên</span><strong id="userMetricAdmins">—</strong></article>
+              <article><span>Môi giới (Sales)</span><strong id="userMetricSales">—</strong></article>
+              <article><span>Biên tập (Editor)</span><strong id="userMetricEditors">—</strong></article>
+            </div>
+            <div id="userError" class="cms-alert" hidden></div>
+            <div id="userLoading" class="cms-surface"><div class="cms-empty"><b>Đang tải danh sách thành viên…</b></div></div>
+            <div id="userTableWrapper" class="cms-surface" hidden>
+              <div class="cms-table-container">
+                <table class="cms-table">
+                  <thead>
+                    <tr>
+                      <th>Thành viên</th>
+                      <th>Vai trò & Quyền hạn</th>
+                      <th>Trạng thái</th>
+                      <th>Ngày tham gia</th>
+                      <th class="text-right">Hành động</th>
+                    </tr>
+                  </thead>
+                  <tbody id="userTableBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <section class="cms-page" data-page-panel="sync">
+            <div class="cms-heading">
+              <div>
+                <p class="cms-eyebrow">Đồng bộ & dữ liệu</p>
+                <h1>Trạng thái hệ thống</h1>
+                <p>Chỉ hiển thị aggregate, không đưa PII hoặc mã hồ sơ vào phản hồi.</p>
+              </div>
+              <button id="healthRefresh" class="cms-primary" type="button">
+                <svg class="cms-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                <span>Kiểm tra lại</span>
+              </button>
+            </div>
+            <div class="cms-queue-summary"><article><span>Hồ sơ Supabase</span><strong id="healthProperties">—</strong></article><article><span>Hình ảnh</span><strong id="healthImages">—</strong></article><article><span>Schema CMS</span><strong id="healthSchema">—</strong></article><article><span>Quyền ghi</span><strong id="healthWrites">—</strong></article></div>
+            <div id="healthError" class="cms-alert" hidden></div>
+            <div id="healthLoading" class="cms-surface"><div class="cms-empty"><b>Đang kiểm tra hệ thống…</b><span>Các truy vấn chỉ đọc đang chạy.</span></div></div>
+            <div id="healthContent" class="cms-dashboard-grid" hidden>
+              <section class="cms-surface"><header><strong>Phân bố trạng thái hồ sơ</strong><span id="healthInspectedAt">Vừa kiểm tra</span></header><div id="healthStatuses" class="cms-health-list large"></div></section>
+              <section class="cms-surface"><header><strong>Điều kiện còn thiếu</strong><span>Rollout gate</span></header><div id="healthBlockers" class="cms-health-list large"></div></section>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <nav class="cms-mobile-nav" aria-label="Điều hướng mobile">
+      <button class="active" data-page="dashboard" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg>
+        <span>Tổng quan</span>
+      </button>
+      <button data-page="match" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        <span>Khớp AI</span>
+      </button>
+      <button data-page="properties" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span>Kho nhà</span>
+      </button>
+      <button data-page="editor" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        <span>Biên tập</span>
+      </button>
+      <button data-page="users" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span>Nhân sự</span>
+      </button>
+      <button data-page="sync" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        <span>Dữ liệu</span>
+      </button>
+    </nav>
+    <dialog id="propertyDetail" class="cms-detail-dialog" aria-labelledby="detailTitle">
+      <div class="cms-detail-shell">
+        <header>
+          <div>
+            <p class="cms-eyebrow">Chi tiết hồ sơ</p>
+            <h1 id="detailTitle">Đang tải…</h1>
+          </div>
+          <div class="cms-detail-actions">
+            <button id="btnWorkflowPublish" class="cms-workflow-btn publish" type="button" hidden>Xuất bản</button>
+            <button id="btnWorkflowArchive" class="cms-workflow-btn archive" type="button" hidden>Lưu trữ</button>
+            <button id="btnWorkflowRestore" class="cms-workflow-btn restore" type="button" hidden>Mở lại</button>
+            <button id="detailEdit" class="cms-edit-preview" type="button" hidden>Chỉnh sửa</button>
+            <button id="detailClose" class="cms-close-btn" type="button" aria-label="Đóng chi tiết">
+              <svg class="cms-close-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+        </header>
+        <div id="detailLoading" class="cms-empty"><b>Đang tải hồ sơ…</b></div>
+        <div id="detailError" class="cms-alert" hidden></div>
+        <div id="detailContent" hidden>
+          <div id="detailGallery" class="cms-detail-gallery"></div>
+          <div class="cms-detail-columns">
+            <section class="cms-detail-section"><h2>Thông tin bất động sản</h2><dl id="detailFacts"></dl></section>
+            <section class="cms-detail-section"><h2>Thông tin vận hành</h2><dl id="detailOperations"></dl></section>
+          </div>
+          <section id="detailSourceSection" class="cms-detail-section" hidden><h2>Nội dung nguồn</h2><p id="detailSource"></p></section>
+          <form id="detailEditForm" class="cms-detail-edit" hidden>
+            <div class="cms-edit-notice"><strong>Chế độ biên tập hồ sơ</strong><span>Chỉnh sửa thông tin và lưu trực tiếp vào cơ sở dữ liệu Supabase.</span></div>
+            <div class="cms-edit-grid">
+              <label class="wide"><span>Địa chỉ</span><input name="address" maxlength="300"></label>
+              <label><span>Loại bất động sản</span><input name="property_type" maxlength="120"></label>
+              <label><span>Giá</span><input name="price_text" maxlength="100"></label>
+              <label><span>Diện tích</span><input name="area_text" maxlength="100"></label>
+              <label><span>Kích thước</span><input name="dimensions" maxlength="100"></label>
+              <label><span>Số điện thoại</span><input name="phone" maxlength="30" inputmode="tel"></label>
+              <label><span>Phòng ngủ</span><input name="bedrooms" type="number" min="0" max="50"></label>
+              <label><span>Phòng tắm</span><input name="bathrooms" type="number" min="0" max="50"></label>
+              <label class="wide"><span>Pháp lý</span><input name="legal" maxlength="150"></label>
+              <label class="wide"><span>Kết cấu</span><textarea name="structure" maxlength="1000" rows="2"></textarea></label>
+              <label class="wide"><span>Ghi chú nội bộ</span><textarea name="notes" maxlength="2000" rows="2"></textarea></label>
+            </div>
+            <div id="editValidationResult" class="cms-validation-result" hidden></div>
+            <div class="cms-edit-footer">
+              <button id="editCancel" type="button">Hủy</button>
+              <button id="editSave" class="cms-primary" type="button">
+                <svg class="cms-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Lưu thay đổi vào kho</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog id="createPropertyDialog" class="cms-detail-dialog" aria-labelledby="createDialogTitle">
+      <div class="cms-detail-shell">
+        <header>
+          <div>
+            <p class="cms-eyebrow">Quản lý kho BĐS</p>
+            <h1 id="createDialogTitle">Thêm mới bất động sản</h1>
+          </div>
+          <div class="cms-detail-actions">
+            <button id="createDialogClose" class="cms-close-btn" type="button" aria-label="Đóng bảng tạo mới">
+              <svg class="cms-close-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+        </header>
+        <div class="cms-detail-body-pad">
+          <form id="createPropertyForm" class="cms-create-form">
+            <div class="cms-form-section">
+              <h2 class="cms-form-section-title">1. Vị trí & Loại hình</h2>
+              <div class="cms-edit-grid">
+                <label class="wide">
+                  <span>Địa chỉ chính xác <strong class="req">*</strong></span>
+                  <input name="address" required placeholder="Ví dụ: 123 Lê Lợi hoặc 45/6 Nguyễn Đình Chiểu" maxlength="300">
+                </label>
+                <label>
+                  <span>Quận / Huyện</span>
+                  <input name="district" placeholder="Ví dụ: Quận 1, Bình Thạnh…" maxlength="100">
+                </label>
+                <label>
+                  <span>Phường / Xã</span>
+                  <input name="ward" placeholder="Ví dụ: Phường Bến Nghé…" maxlength="100">
+                </label>
+                <label>
+                  <span>Tên đường</span>
+                  <input name="street" placeholder="Ví dụ: Lê Lợi…" maxlength="150">
+                </label>
+                <label>
+                  <span>Loại hình BĐS</span>
+                  <select name="property_type">
+                    <option value="Nhà phố">Nhà phố</option>
+                    <option value="Biệt thự">Biệt thự</option>
+                    <option value="Căn hộ">Căn hộ / Chung cư</option>
+                    <option value="Mặt bằng kinh doanh">Mặt bằng kinh doanh</option>
+                    <option value="Tòa nhà">Tòa nhà văn phòng</option>
+                    <option value="Đất thổ cư">Đất thổ cư</option>
+                    <option value="Kho xưởng">Kho xưởng</option>
+                    <option value="Khác">Khác</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+
+            <div class="cms-form-section">
+              <h2 class="cms-form-section-title">2. Thông số & Giá cả</h2>
+              <div class="cms-edit-grid">
+                <label>
+                  <span>Giá chào bán / thuê</span>
+                  <input name="price_text" placeholder="Ví dụ: 50 triệu/tháng hoặc 12.5 tỷ" maxlength="100">
+                </label>
+                <label>
+                  <span>Diện tích</span>
+                  <input name="area_text" placeholder="Ví dụ: 80m2 hoặc 100m² (5x20)" maxlength="100">
+                </label>
+                <label>
+                  <span>Kích thước</span>
+                  <input name="dimensions" placeholder="Ví dụ: 4x20m hoặc 5.5x18m" maxlength="100">
+                </label>
+                <label>
+                  <span>Kết cấu nhà</span>
+                  <input name="structure" placeholder="Ví dụ: 1 trệt 2 lầu sân thượng" maxlength="500">
+                </label>
+                <label>
+                  <span>Phòng ngủ</span>
+                  <input name="bedrooms" type="number" min="0" max="50" placeholder="0">
+                </label>
+                <label>
+                  <span>Phòng tắm (WC)</span>
+                  <input name="bathrooms" type="number" min="0" max="50" placeholder="0">
+                </label>
+                <label class="wide">
+                  <span>Pháp lý</span>
+                  <input name="legal" placeholder="Ví dụ: Sổ hồng riêng, hoàn công đầy đủ" maxlength="150">
+                </label>
+              </div>
+            </div>
+
+            <div class="cms-form-section">
+              <h2 class="cms-form-section-title">3. Liên hệ & Vận hành</h2>
+              <div class="cms-edit-grid">
+                <label>
+                  <span>Số điện thoại chủ nhà</span>
+                  <input name="phone" placeholder="09xxxxxxxx" maxlength="30" inputmode="tel">
+                </label>
+                <label>
+                  <span>Hoa hồng môi giới</span>
+                  <input name="commission" placeholder="Ví dụ: 1 tháng hoặc 1%" maxlength="100">
+                </label>
+                <label class="wide">
+                  <span>Hình ảnh (Link ảnh online, mỗi dòng 1 link)</span>
+                  <textarea name="image_urls" rows="2" placeholder="https://example.com/anh1.jpg&#10;https://example.com/anh2.jpg"></textarea>
+                </label>
+                <label class="wide">
+                  <span>Ghi chú nội bộ</span>
+                  <textarea name="notes" rows="2" placeholder="Thông tin thêm về chủ nhà, thời gian xem nhà…" maxlength="2000"></textarea>
+                </label>
+              </div>
+            </div>
+
+            <div id="createPropertyError" class="cms-alert" hidden></div>
+            <div id="createPropertySuccess" class="cms-validation-result ok" hidden></div>
+
+            <div class="cms-edit-footer">
+              <button id="createCancelBtn" type="button">Hủy bỏ</button>
+              <button id="createSubmitBtn" class="cms-primary" type="submit">
+                <svg class="cms-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Lưu hồ sơ vào kho</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog id="userDialog" class="cms-detail-dialog" aria-labelledby="userDialogTitle">
+      <div class="cms-detail-shell">
+        <header>
+          <div>
+            <p class="cms-eyebrow">Phân quyền bảo mật</p>
+            <h1 id="userDialogTitle">Thêm thành viên mới</h1>
+          </div>
+          <div class="cms-detail-actions">
+            <button id="userDialogClose" class="cms-close-btn" type="button" aria-label="Đóng bảng">
+              <svg class="cms-close-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+        </header>
+        <div class="cms-detail-body-pad">
+          <form id="userForm" class="cms-create-form">
+            <input type="hidden" name="id" id="userIdInput">
+            <div class="cms-form-section">
+              <h2 class="cms-form-section-title">Thông tin tài khoản</h2>
+              <div class="cms-edit-grid">
+                <label class="wide">
+                  <span>Họ và tên thành viên <strong class="req">*</strong></span>
+                  <input name="displayName" id="userDisplayNameInput" required placeholder="Ví dụ: Nguyễn Văn A" maxlength="150">
+                </label>
+                <label class="wide">
+                  <span>Vai trò phân quyền (Role) <strong class="req">*</strong></span>
+                  <select name="role" id="userRoleSelect">
+                    <option value="viewer">Viewer · Chỉ xem thông tin công khai (Ẩn SĐT)</option>
+                    <option value="sales">Sales · Xem kho & Số điện thoại chủ nhà (Không sửa)</option>
+                    <option value="editor">Editor · Biên tập, sửa thông tin & gửi duyệt</option>
+                    <option value="manager">Manager · Quản lý xuất bản, duyệt kho & xem SĐT</option>
+                    <option value="super_admin">Super Admin · Toàn quyền quản trị & phân quyền</option>
+                  </select>
+                </label>
+                <label class="wide">
+                  <span>Trạng thái tài khoản</span>
+                  <select name="isActive" id="userStatusSelect">
+                    <option value="true">Đang hoạt động</option>
+                    <option value="false">Tạm khóa tài khoản</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+            <div id="userFormError" class="cms-alert" hidden></div>
+            <div class="cms-edit-footer">
+              <button id="userCancelBtn" type="button">Hủy bỏ</button>
+              <button id="userSubmitBtn" class="cms-primary" type="submit">
+                <svg class="cms-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Lưu thông tin</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog id="profileDialog" class="cms-detail-dialog" aria-labelledby="profileDialogTitle">
+      <div class="cms-detail-shell">
+        <header>
+          <div>
+            <p class="cms-eyebrow">Tài khoản & Phiên làm việc</p>
+            <h1 id="profileDialogTitle">Thông tin tài khoản</h1>
+          </div>
+          <div class="cms-detail-actions">
+            <button id="profileDialogClose" class="cms-close-btn" type="button" aria-label="Đóng">
+              <svg class="cms-close-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+        </header>
+        <div class="cms-detail-body-pad">
+          <div class="cms-profile-card">
+            <div class="cms-profile-avatar" id="profileModalAvatar">FL</div>
+            <div class="cms-profile-info">
+              <h2 id="profileModalName">Lê Fourland</h2>
+              <span id="profileModalRole" class="cms-badge">Super Admin</span>
+            </div>
+          </div>
+
+          <div class="cms-form-section" style="margin-top: 20px;">
+            <h2 class="cms-form-section-title">Chuyển đổi vai trò thử nghiệm (Role Switcher)</h2>
+            <p class="cms-section-desc">Bấm chọn một vai trò bên dưới để kiểm tra tức thì phân quyền ẩn/hiện SĐT và các nút thao tác trên hệ thống:</p>
+            <div class="cms-role-switcher-grid">
+              <button class="cms-role-card" data-switch-role="super_admin" type="button">
+                <strong>Super Admin</strong>
+                <span>Toàn quyền quản trị & phân quyền nhân sự</span>
+              </button>
+              <button class="cms-role-card" data-switch-role="manager" type="button">
+                <strong>Manager</strong>
+                <span>Quản lý kho BĐS, xuất bản & xem SĐT</span>
+              </button>
+              <button class="cms-role-card" data-switch-role="editor" type="button">
+                <strong>Editor</strong>
+                <span>Biên tập, chỉnh sửa thông tin nhà</span>
+              </button>
+              <button class="cms-role-card" data-switch-role="sales" type="button">
+                <strong>Sales</strong>
+                <span>Xem kho & đầy đủ Số điện thoại chủ nhà</span>
+              </button>
+              <button class="cms-role-card" data-switch-role="viewer" type="button">
+                <strong>Viewer</strong>
+                <span>Xem nhà công khai (Tự động ẩn SĐT)</span>
+              </button>
+            </div>
+          </div>
+          <div class="cms-profile-dialog-footer">
+            <button id="btnLogoutModal" class="cms-logout-btn" type="button">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+              <span>Đăng xuất tài khoản</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </dialog>
+  </div>
+  <script src="/admin/admin.js?v=13" defer></script>
+</body>
+</html>

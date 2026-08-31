@@ -55,7 +55,33 @@ Lưu yêu cầu quan tâm nếu tính năng này được bật: `property_id`, 
 - Thời gian truyền API dùng ISO 8601; hiển thị theo múi giờ sản phẩm.
 - Không nhét dữ liệu có thể lọc/sort vào riêng `data_json`; trường quan trọng phải có column riêng.
 
-## 6. Index khuyến nghị
+### Tương thích CMS trước migration
+
+Trong giai đoạn chuyển đổi, `data_json.cms_override_fields` lưu danh sách field đã được admin sửa thủ công. Sync phải giữ giá trị production của các field này và bảo toàn `view_count`, `is_featured`, `is_rented` cùng metadata `cms`. Đây là lớp tương thích tạm thời; schema CMS mục tiêu sẽ có field ownership/audit rõ ràng hơn.
+
+### Migration CMS core đang chờ áp dụng
+
+Migration `20260829080000_cms_core_additive.sql` thêm nhưng không thay thế `status` legacy:
+
+- `content_status`: `draft`, `pending_review`, `published`, `rejected`, `archived`.
+- `availability_status`: `available`, `reserved`, `rented`, `sold`, `unavailable`.
+- `quality_status`: `raw`, `partial`, `complete`, `needs_review`.
+- `is_featured`, `assigned_to`, `published_at`, `verified_at`.
+- `last_synced_at`, `source_updated_at`, `cms_override_fields`, `version`.
+
+Backfill bảo toàn public hiện tại: mọi hồ sơ legacy không archived thành `published`; `archived` giữ archived; `rented` chuyển availability sang rented; `ready`, `featured`, `rented` được xem là quality complete. Public API vẫn dùng `status` cho đến một release cutover riêng.
+
+## 6. Bảng CMS core đang chờ áp dụng
+
+### `profiles`
+
+Liên kết `auth.users`; lưu `display_name`, role và trạng thái hoạt động. Role giới hạn trong `super_admin`, `manager`, `editor`, `sales`, `viewer`.
+
+### `audit_logs`
+
+Lưu actor, action, entity, dữ liệu trước/sau, field thay đổi, request ID, source và thời điểm. RLS được bật; anonymous/authenticated không có quyền update/delete trực tiếp.
+
+## 7. Index khuyến nghị
 
 - `properties(received_at desc)`
 - `properties(status, received_at desc)`
@@ -65,4 +91,3 @@ Lưu yêu cầu quan tâm nếu tính năng này được bật: `property_id`, 
 - Trigram/FTS cho `address`, `phone`, `raw_text`, `normalized_text` khi dữ liệu tăng lớn.
 
 Mọi thay đổi schema phải có migration trong `supabase/migrations/` và cập nhật file này.
-

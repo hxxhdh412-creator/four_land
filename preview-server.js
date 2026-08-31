@@ -4,6 +4,13 @@ const path = require("path");
 const crypto = require("crypto");
 const { parseNaturalQuery, matchAndScoreProperty, removeVietnameseTones } = require("./api/_smartSearch");
 const { propertyIdFromSlug, renderPropertyPage } = require("./server/seo");
+const { buildDashboardSummary } = require("./server/cms-dashboard");
+const { buildPropertyListRoute, normalizePropertyListItem, parsePropertyListQuery } = require("./server/cms-properties");
+const { buildPropertyDetailRoute, normalizePropertyDetail, validPropertyId } = require("./server/cms-property-detail");
+const { validatePropertyDraft } = require("./server/cms-property-validation");
+const { buildReviewQueue, buildReviewQueueRoute } = require("./server/cms-review-queue");
+const { buildSystemHealth } = require("./server/cms-system-health");
+const { rankPropertiesForLead } = require("./server/smart-matcher");
 
 const root = __dirname;
 const port = Number(process.env.PORT || 4175);
@@ -27,6 +34,21 @@ const inquiries = [];
 const adminCode = env.ADMIN_ACCESS_CODE || process.env.ADMIN_ACCESS_CODE || "246810";
 const previewAdminToken = "fourland-preview-admin";
 const isAdmin = req => String(req.headers.cookie||"").split(";").map(v=>v.trim()).includes(`fourland_admin=${previewAdminToken}`);
+
+// High-Speed In-Memory Cache for CMS Admin
+let cachedDashboardSummary = null;
+let cachedDashboardSummaryTime = 0;
+const propertyListCache = new Map();
+let cachedReviewQueue = null;
+let cachedReviewQueueTime = 0;
+
+function invalidateCmsCache() {
+  cachedDashboardSummary = null;
+  cachedDashboardSummaryTime = 0;
+  propertyListCache.clear();
+  cachedReviewQueue = null;
+  cachedReviewQueueTime = 0;
+}
 
 function send(res, status, body, contentType="application/json; charset=utf-8") {
   res.writeHead(status,{"Content-Type":contentType,"Cache-Control":"no-store"});
@@ -134,8 +156,425 @@ async function listDatabaseProperties(url){
   return { ok: true, rows: paginatedRows, total, page, pageSize, parsedNlp: nlp.filters };
 }
 
+let currentSimulatedRole = "super_admin";
+let currentDisplayName = "Lê Fourland";
+let mockUsers = [
+  { id: "usr_superadmin", display_name: "Lê Fourland (Super Admin)", role: "super_admin", is_active: true, created_at: new Date(Date.now() - 86400000 * 30).toISOString(), updated_at: new Date().toISOString() },
+  { id: "usr_manager", display_name: "Trần Quản Lý (Manager)", role: "manager", is_active: true, created_at: new Date(Date.now() - 86400000 * 20).toISOString(), updated_at: new Date().toISOString() },
+  { id: "usr_editor", display_name: "Nguyễn Biên Tập (Editor)", role: "editor", is_active: true, created_at: new Date(Date.now() - 86400000 * 15).toISOString(), updated_at: new Date().toISOString() },
+  { id: "usr_sales", display_name: "Phạm Môi Giới (Sales)", role: "sales", is_active: true, created_at: new Date(Date.now() - 86400000 * 10).toISOString(), updated_at: new Date().toISOString() },
+  { id: "usr_viewer", display_name: "Khách Xem Kho (Viewer)", role: "viewer", is_active: true, created_at: new Date(Date.now() - 86400000 * 5).toISOString(), updated_at: new Date().toISOString() }
+];
+
 http.createServer(async (req,res)=>{
   const url=new URL(req.url,`http://127.0.0.1:${port}`);
+  if(url.pathname==="/api/admin/v1/login") {
+    if(req.method!=="POST") return send(res,405,{ok:false,error:{code:"METHOD_NOT_ALLOWED",message:"Method Not Allowed"}});
+    try {
+      const body=await readBody(req);
+      const email=String(body.email||body.username||"").toLowerCase().trim();
+      const selectedRole=body.role;
+      const DEMO_MAP={
+        "admin@fourland.vn": { id:"usr_superadmin", displayName:"Lê Fourland (Super Admin)", role:"super_admin" },
+        "manager@fourland.vn": { id:"usr_manager", displayName:"Trần Quản Lý (Manager)", role:"manager" },
+        "sales@fourland.vn": { id:"usr_sales", displayName:"Phạm Môi Giới (Sales)", role:"sales" },
+        "editor@fourland.vn": { id:"usr_editor", displayName:"Nguyễn Biên Tập (Editor)", role:"editor" },
+        "viewer@fourland.vn": { id:"usr_viewer", displayName:"Khách Xem Kho (Viewer)", role:"viewer" }
+      };
+      let user = null;
+      if(selectedRole && ["super_admin","manager","editor","sales","viewer"].includes(selectedRole)) {
+        user = Object.values(DEMO_MAP).find(u=>u.role===selectedRole) || { id:`usr_${selectedRole}`, displayName:`Tài khoản ${selectedRole}`, role:selectedRole };
+      } else if(DEMO_MAP[email]) {
+        user = DEMO_MAP[email];
+      } else if(email) {
+        user = { id:`usr_${Date.now().toString(36)}`, displayName:email.split("@")[0].toUpperCase(), role:"sales" };
+      }
+      if(!user) return send(res,401,{ok:false,error:{code:"INVALID_CREDENTIALS",message:"Tài khoản hoặc mật khẩu không chính xác"}});
+      currentSimulatedRole=user.role;
+      currentDisplayName=user.displayName;
+      return send(res,200,{ok:true,data:{user,token:"fourland-preview-cms",expiresIn:86400},message:`Đăng nhập thành công với vai trò ${user.role}`});
+    } catch(error){ return send(res,500,{ok:false,error:{code:"DEPENDENCY_UNAVAILABLE",message:error.message}}); }
+  }
+  if(url.pathname==="/api/admin/v1/logout") {
+    if(req.method!=="POST") return send(res,405,{ok:false,error:{code:"METHOD_NOT_ALLOWED",message:"Method Not Allowed"}});
+    return send(res,200,{ok:true,message:"Đã đăng xuất thành công"});
+  }
+  if(url.pathname==="/api/admin/v1/me") {
+    if(req.method!=="GET") return send(res,405,{ok:false,error:{code:"METHOD_NOT_ALLOWED",message:"Method Not Allowed"}});
+    if(String(req.headers.authorization||"")!=="Bearer fourland-preview-cms") return send(res,401,{ok:false,error:{code:"AUTH_REQUIRED",message:"Cần đăng nhập CMS"}});
+    return send(res,200,{ok:true,data:{user:{id:"preview-user",displayName:currentDisplayName,role:currentSimulatedRole}}});
+  }
+  if(url.pathname==="/api/admin/v1/switch-role") {
+    if(req.method!=="POST") return send(res,405,{ok:false,error:{code:"METHOD_NOT_ALLOWED",message:"Method Not Allowed"}});
+    if(String(req.headers.authorization||"")!=="Bearer fourland-preview-cms") return send(res,401,{ok:false,error:{code:"AUTH_REQUIRED",message:"Cần đăng nhập CMS"}});
+    try {
+      const body=await readBody(req);
+      const requestedRole=String(body.role||"").toLowerCase();
+      const validRoles=["super_admin","manager","editor","sales","viewer"];
+      if(!validRoles.includes(requestedRole)) return send(res,422,{ok:false,error:{code:"VALIDATION_FAILED",message:"Vai trò không hợp lệ"}});
+      currentSimulatedRole=requestedRole;
+      const roleTitles={super_admin:"Lê Fourland (Super Admin)",manager:"Lê Fourland (Manager)",editor:"Lê Fourland (Editor)",sales:"Lê Fourland (Sales)",viewer:"Lê Fourland (Viewer)"};
+      currentDisplayName=roleTitles[requestedRole]||"Lê Fourland";
+      return send(res,200,{ok:true,data:{user:{id:"preview-user",displayName:currentDisplayName,role:currentSimulatedRole}},message:`Đã chuyển sang vai trò: ${requestedRole}`});
+    } catch(error) { return send(res,500,{ok:false,error:{code:"DEPENDENCY_UNAVAILABLE",message:error.message}}); }
+  }
+  if(url.pathname==="/api/admin/v1/users") {
+    if(String(req.headers.authorization||"")!=="Bearer fourland-preview-cms") return send(res,401,{ok:false,error:{code:"AUTH_REQUIRED",message:"Cần đăng nhập CMS"}});
+    if(req.method==="GET") {
+      try {
+        let userList = mockUsers;
+        if(databaseEnabled) {
+          const dbUsers = await dbRequest("profiles?select=id,display_name,role,is_active,created_at,updated_at&order=created_at.desc");
+          if(dbUsers.data && dbUsers.data.length > 0) userList = dbUsers.data;
+        }
+        const users = userList.map(r => ({
+          id: String(r.id),
+          displayName: r.display_name || "Chưa đặt tên",
+          role: r.role || "viewer",
+          isActive: r.is_active !== undefined ? Boolean(r.is_active) : true,
+          createdAt: r.created_at || new Date().toISOString(),
+          updatedAt: r.updated_at || new Date().toISOString()
+        }));
+        const summary = {
+          total: users.length,
+          superAdmin: users.filter(u => u.role === "super_admin").length,
+          manager: users.filter(u => u.role === "manager").length,
+          editor: users.filter(u => u.role === "editor").length,
+          sales: users.filter(u => u.role === "sales").length,
+          viewer: users.filter(u => u.role === "viewer").length,
+          active: users.filter(u => u.isActive).length
+        };
+        return send(res,200,{ok:true,data:{users,summary}});
+      } catch(error) { return send(res,500,{ok:false,error:{code:"DEPENDENCY_UNAVAILABLE",message:error.message}}); }
+    }
+    if(req.method==="POST") {
+      try {
+        const body=await readBody(req);
+        const displayName=String(body.displayName||body.display_name||"").trim();
+        const role=String(body.role||"viewer").toLowerCase();
+        if(!displayName) return send(res,422,{ok:false,error:{code:"VALIDATION_FAILED",message:"Họ và tên không được để trống"}});
+        const newUser={
+          id:`usr_${Date.now()}_${Math.random().toString(36).slice(2,6)}`,
+          display_name:displayName,
+          role:role,
+          is_active:body.isActive!==undefined?Boolean(body.isActive):true,
+          created_at:new Date().toISOString(),
+          updated_at:new Date().toISOString()
+        };
+        mockUsers.unshift(newUser);
+        return send(res,201,{ok:true,data:{user:newUser},message:"Đã tạo tài khoản thành viên thành công"});
+      } catch(error) { return send(res,500,{ok:false,error:{code:"DEPENDENCY_UNAVAILABLE",message:error.message}}); }
+    }
+    if(req.method==="PATCH") {
+      try {
+        const body=await readBody(req);
+        const userId=String(url.searchParams.get("id")||body.id||"");
+        if(!userId) return send(res,400,{ok:false,error:{code:"VALIDATION_FAILED",message:"Thiếu ID người dùng"}});
+        const target=mockUsers.find(u=>u.id===userId);
+        if(!target) return send(res,404,{ok:false,error:{code:"NOT_FOUND",message:"Không tìm thấy người dùng"}});
+        if(body.role) target.role=String(body.role).toLowerCase();
+        if(body.displayName||body.display_name) target.display_name=String(body.displayName||body.display_name).trim();
+        if(body.isActive!==undefined) target.is_active=Boolean(body.isActive);
+        target.updated_at=new Date().toISOString();
+        return send(res,200,{ok:true,data:{user:target},message:"Đã cập nhật tài khoản thành công"});
+      } catch(error) { return send(res,500,{ok:false,error:{code:"DEPENDENCY_UNAVAILABLE",message:error.message}}); }
+    }
+  }
+  if(url.pathname==="/api/admin/v1/smart-match") {
+    if(req.method!=="POST") return send(res,405,{ok:false,error:{code:"METHOD_NOT_ALLOWED",message:"Method Not Allowed"}});
+    if(String(req.headers.authorization||"")!=="Bearer fourland-preview-cms") return send(res,401,{ok:false,error:{code:"AUTH_REQUIRED",message:"Cần đăng nhập CMS"}});
+    try {
+      const body=await readBody(req);
+      const rawQuery=String(body.query||"").trim();
+      let criteria={};
+      if(rawQuery){
+        const parsed=parseNaturalQuery(rawQuery);
+        criteria={
+          district:parsed.district||body.district||null,
+          propertyType:parsed.propertyType||body.propertyType||null,
+          minPrice:parsed.minPrice||(body.minPrice?Number(body.minPrice):null),
+          maxPrice:parsed.maxPrice||(body.maxPrice?Number(body.maxPrice):null),
+          minArea:parsed.minArea||(body.minArea?Number(body.minArea):null),
+          maxArea:parsed.maxArea||(body.maxArea?Number(body.maxArea):null),
+          bedrooms:parsed.bedrooms||(body.bedrooms?Number(body.bedrooms):null),
+          dimensions:parsed.dimensions||body.dimensions||null
+        };
+      } else {
+        criteria={
+          district:body.district||null,
+          propertyType:body.propertyType||null,
+          minPrice:body.minPrice?Number(body.minPrice):null,
+          maxPrice:body.maxPrice?Number(body.maxPrice):null,
+          minArea:body.minArea?Number(body.minArea):null,
+          maxArea:body.maxArea?Number(body.maxArea):null,
+          bedrooms:body.bedrooms?Number(body.bedrooms):null,
+          dimensions:body.dimensions||null
+        };
+      }
+      const rawProperties=databaseEnabled
+        ? (await dbRequest("properties?status=neq.archived&order=received_at.desc&limit=150")).data
+        : rows.filter(r=>r.status!=="archived");
+      const rankedItems=rankPropertiesForLead(rawProperties,criteria);
+      const items=rankedItems.slice(0,20).map(item=>({
+        id:item.property_id,
+        address:item.address||`Khu vực ${item.district||"TP.HCM"}`,
+        district:item.district,
+        ward:item.ward,
+        street:item.street,
+        propertyType:item.property_type||"Nhà phố",
+        price:item.price_text,
+        priceNumber:item.price_number,
+        area:item.area_text||item.dimensions,
+        dimensions:item.dimensions,
+        bedrooms:item.bedrooms,
+        bathrooms:item.bathrooms,
+        structure:item.structure,
+        legal:item.legal,
+        commission:item.commission,
+        phone:item.phone,
+        imageCount:item.image_count||0,
+        matchScore:item.matchScore,
+        isTopMatch:item.isTopMatch,
+        reasons:item.reasons,
+        highlights:item.highlights,
+        pitchText:item.pitchText,
+        receivedAt:item.received_at
+      }));
+      return send(res,200,{ok:true,data:{items,criteriaUsed:criteria,totalAvailable:rawProperties.length,totalMatched:rankedItems.length},message:`Đã tìm thấy ${items.length} căn nhà phù hợp nhất trong kho`});
+    } catch(error){ return send(res,500,{ok:false,error:{code:"DEPENDENCY_UNAVAILABLE",message:error.message}}); }
+  }
+  if(url.pathname==="/api/admin/v1/dashboard/summary") {
+    if(req.method!=="GET") return send(res,405,{ok:false,error:{code:"METHOD_NOT_ALLOWED",message:"Method Not Allowed"}});
+    if(String(req.headers.authorization||"")!=="Bearer fourland-preview-cms") return send(res,401,{ok:false,error:{code:"AUTH_REQUIRED",message:"Cần đăng nhập CMS"}});
+    try {
+      if (cachedDashboardSummary && (Date.now() - cachedDashboardSummaryTime < 30000)) {
+        return send(res,200,{ok:true,data:{summary:cachedDashboardSummary}});
+      }
+      const sourceRows=databaseEnabled
+        ? (await dbRequest("properties?select=status,content_status,availability_status,address,price_text,image_count,received_at&limit=5000")).data
+        : rows;
+      const summary = buildDashboardSummary(sourceRows);
+      cachedDashboardSummary = summary;
+      cachedDashboardSummaryTime = Date.now();
+      return send(res,200,{ok:true,data:{summary}});
+    } catch(error) { return send(res,500,{ok:false,error:{code:"DEPENDENCY_UNAVAILABLE",message:error.message}}); }
+  }
+  if(url.pathname==="/api/admin/v1/properties") {
+    if(String(req.headers.authorization||"")!=="Bearer fourland-preview-cms") return send(res,401,{ok:false,error:{code:"AUTH_REQUIRED",message:"Cần đăng nhập CMS"}});
+    if(req.method==="POST") {
+      try {
+        const body=await readBody(req);
+        const address=String(body.address||"").trim();
+        if(!address) return send(res,422,{ok:false,error:{code:"VALIDATION_FAILED",message:"Địa chỉ bất động sản không được để trống",fieldErrors:{address:"Địa chỉ là bắt buộc"}}});
+        const now=new Date().toISOString();
+        const propertyId=`FL_${Date.now()}_${Math.random().toString(36).slice(2,6).toUpperCase()}`;
+        const rawImageUrls=Array.isArray(body.images)?body.images:String(body.image_urls||"").split(/[\n,]+/).map(s=>s.trim()).filter(Boolean);
+        const propertyRow={
+          property_id:propertyId,
+          address:address,
+          district:String(body.district||"").trim()||null,
+          ward:String(body.ward||"").trim()||null,
+          street:String(body.street||"").trim()||null,
+          property_type:String(body.property_type||"").trim()||"Nhà phố",
+          price_text:String(body.price_text||"").trim()||null,
+          area_text:String(body.area_text||"").trim()||null,
+          dimensions:String(body.dimensions||"").trim()||null,
+          structure:String(body.structure||"").trim()||null,
+          bedrooms:Number.isInteger(Number(body.bedrooms))&&Number(body.bedrooms)>=0?Number(body.bedrooms):null,
+          bathrooms:Number.isInteger(Number(body.bathrooms))&&Number(body.bathrooms)>=0?Number(body.bathrooms):null,
+          legal:String(body.legal||"").trim()||null,
+          phone:String(body.phone||"").trim()||null,
+          commission:String(body.commission||"").trim()||null,
+          notes:String(body.notes||"").trim()||null,
+          raw_text:String(body.notes||"").trim()||`Hồ sơ tạo trực tiếp: ${address}`,
+          status:body.status||"ready",
+          content_status:"published",
+          availability_status:"available",
+          quality_status:"complete",
+          is_featured:Boolean(body.is_featured),
+          image_count:rawImageUrls.length,
+          received_at:now,
+          updated_at:now,
+          data_json:{
+            source:"manual_cms",
+            created_by:"manager",
+            created_at:now
+          }
+        };
+        invalidateCmsCache();
+        if(databaseEnabled){
+          const result=await dbRequest("properties",{method:"POST",body:propertyRow,prefer:"return=representation"});
+          if(rawImageUrls.length>0){
+            const imageRows=rawImageUrls.map((url,idx)=>({property_id:propertyId,position:idx+1,public_url:url,file_name:`img_${idx+1}.jpg`,file_path:url}));
+            await dbRequest("property_images",{method:"POST",body:imageRows}).catch(err=>console.error("Image insert error:",err.message));
+          }
+          return send(res,201,{ok:true,data:{property:result.data?.[0]||propertyRow},message:"Đã tạo hồ sơ bất động sản thành công"});
+        }else{
+          rows.unshift(propertyRow);
+          return send(res,201,{ok:true,data:{property:propertyRow},message:"Đã tạo hồ sơ bất động sản thành công (môi trường giả lập)"});
+        }
+      } catch(error) { return send(res,500,{ok:false,error:{code:"DEPENDENCY_UNAVAILABLE",message:error.message}}); }
+    }
+    if(req.method!=="GET") return send(res,405,{ok:false,error:{code:"METHOD_NOT_ALLOWED",message:"Method Not Allowed"}});
+    try {
+      const filters=parsePropertyListQuery(url.searchParams);
+      const cacheKey = url.searchParams.toString();
+      const cached = propertyListCache.get(cacheKey);
+      if (cached && (Date.now() - cached.time < 15000)) {
+        return send(res,200,cached.response);
+      }
+
+      if(databaseEnabled){
+        const result=await dbRequest(buildPropertyListRoute(filters),{prefer:"count=exact"});
+        const responseData = {ok:true,data:{items:result.data.map(normalizePropertyListItem)},meta:{page:filters.page,pageSize:filters.pageSize,total:result.count,hasNext:filters.page*filters.pageSize<result.count}};
+        propertyListCache.set(cacheKey, { time: Date.now(), response: responseData });
+        return send(res,200,responseData);
+      }
+      let filtered=rows.filter(row=>filters.status==="all"||(filters.status==="archived"?row.status==="archived":row.status!=="archived"));
+      if(filters.q){const query=removeVietnameseTones(filters.q).toLowerCase();filtered=filtered.filter(row=>removeVietnameseTones([row.address,row.district,row.ward,row.street,row.property_type,row.price_text].join(" ")).toLowerCase().includes(query))}
+      if(filters.district)filtered=filtered.filter(row=>removeVietnameseTones(row.district).toLowerCase().includes(removeVietnameseTones(filters.district).toLowerCase()));
+      if(filters.quality==="without_images")filtered=filtered.filter(row=>Number(row.image_count||0)===0);
+      if(filters.quality==="missing_data")filtered=filtered.filter(row=>!row.address||!row.price_text||Number(row.image_count||0)<2);
+      const total=filtered.length,start=(filters.page-1)*filters.pageSize;
+      const responseData = {ok:true,data:{items:filtered.slice(start,start+filters.pageSize).map(normalizePropertyListItem)},meta:{page:filters.page,pageSize:filters.pageSize,total,hasNext:filters.page*filters.pageSize<total}};
+      propertyListCache.set(cacheKey, { time: Date.now(), response: responseData });
+      return send(res,200,responseData);
+    } catch(error) { return send(res,500,{ok:false,error:{code:"DEPENDENCY_UNAVAILABLE",message:error.message}}); }
+  }
+  if(url.pathname==="/api/admin/v1/review-queue") {
+    if(req.method!=="GET") return send(res,405,{ok:false,error:{code:"METHOD_NOT_ALLOWED",message:"Method Not Allowed"}});
+    if(String(req.headers.authorization||"")!=="Bearer fourland-preview-cms") return send(res,401,{ok:false,error:{code:"AUTH_REQUIRED",message:"Cần đăng nhập CMS"}});
+    try {
+      if (cachedReviewQueue && (Date.now() - cachedReviewQueueTime < 30000)) {
+        return send(res,200,{ok:true,data:cachedReviewQueue});
+      }
+      const sourceRows=databaseEnabled?(await dbRequest(buildReviewQueueRoute(30))).data:rows;
+      const data = buildReviewQueue(sourceRows);
+      cachedReviewQueue = data;
+      cachedReviewQueueTime = Date.now();
+      return send(res,200,{ok:true,data});
+    } catch(error) { return send(res,500,{ok:false,error:{code:"DEPENDENCY_UNAVAILABLE",message:error.message}}); }
+  }
+  if(url.pathname==="/api/admin/v1/system/health") {
+    if(req.method!=="GET") return send(res,405,{ok:false,error:{code:"METHOD_NOT_ALLOWED",message:"Method Not Allowed"}});
+    if(String(req.headers.authorization||"")!=="Bearer fourland-preview-cms") return send(res,401,{ok:false,error:{code:"AUTH_REQUIRED",message:"Cần đăng nhập CMS"}});
+    try {
+      const propertyRows=databaseEnabled?(await dbRequest("properties?select=status,content_status&limit=5000")).data:rows;
+      const imageCount=databaseEnabled?(await dbRequest("property_images?select=property_id&limit=1",{prefer:"count=exact"})).count:rows.reduce((sum,row)=>sum+Number(row.image_count||0),0);
+      return send(res,200,{ok:true,data:{health:buildSystemHealth({
+        properties:propertyRows,
+        imageCount,
+        mutationsEnabled: env.CMS_MUTATIONS_ENABLED === "true" || process.env.CMS_MUTATIONS_ENABLED === "true",
+        syncWritesEnabled: env.SYNC_WRITES_ENABLED === "true" || process.env.SYNC_WRITES_ENABLED === "true"
+      })}});
+    } catch(error) { return send(res,500,{ok:false,error:{code:"DEPENDENCY_UNAVAILABLE",message:error.message}}); }
+  }
+  const cmsPropertyMatch=url.pathname.match(/^\/api\/admin\/v1\/properties\/([^/]+)$/);
+  if(cmsPropertyMatch) {
+    if(req.method!=="GET") return send(res,405,{ok:false,error:{code:"METHOD_NOT_ALLOWED",message:"Method Not Allowed"}});
+    if(String(req.headers.authorization||"")!=="Bearer fourland-preview-cms") return send(res,401,{ok:false,error:{code:"AUTH_REQUIRED",message:"Cần đăng nhập CMS"}});
+    const id=validPropertyId(decodeURIComponent(cmsPropertyMatch[1]));
+    if(!id)return send(res,400,{ok:false,error:{code:"VALIDATION_FAILED",message:"Mã hồ sơ không hợp lệ"}});
+    try {
+      const row=databaseEnabled?(await dbRequest(buildPropertyDetailRoute(id))).data[0]:rows.find(item=>item.property_id===id);
+      if(!row)return send(res,404,{ok:false,error:{code:"NOT_FOUND",message:"Không tìm thấy hồ sơ"}});
+      return send(res,200,{ok:true,data:{property:normalizePropertyDetail(row,{includeSensitive:true})}});
+    } catch(error) { return send(res,500,{ok:false,error:{code:"DEPENDENCY_UNAVAILABLE",message:error.message}}); }
+  }
+  const cmsValidateMatch=url.pathname.match(/^\/api\/admin\/v1\/properties\/([^/]+)\/validate$/);
+  if(cmsValidateMatch) {
+    if(req.method!=="POST") return send(res,405,{ok:false,error:{code:"METHOD_NOT_ALLOWED",message:"Method Not Allowed"}});
+    if(String(req.headers.authorization||"")!=="Bearer fourland-preview-cms") return send(res,401,{ok:false,error:{code:"AUTH_REQUIRED",message:"Cần đăng nhập CMS"}});
+    const id=validPropertyId(decodeURIComponent(cmsValidateMatch[1]));
+    if(!id)return send(res,400,{ok:false,error:{code:"VALIDATION_FAILED",message:"Mã hồ sơ không hợp lệ"}});
+    try {
+      const body=await readBody(req);
+      const current=databaseEnabled?(await dbRequest(buildPropertyDetailRoute(id))).data[0]:rows.find(item=>item.property_id===id);
+      if(!current)return send(res,404,{ok:false,error:{code:"NOT_FOUND",message:"Không tìm thấy hồ sơ"}});
+      if(body.expectedUpdatedAt&&String(body.expectedUpdatedAt)!==String(current.updated_at||""))return send(res,409,{ok:false,error:{code:"VERSION_CONFLICT",message:"Hồ sơ đã thay đổi, cần tải lại trước khi tiếp tục"}});
+      const validation=validatePropertyDraft(current,body.fields);
+      return send(res,validation.valid?200:422,{ok:validation.valid,data:{validation,mode:"preview-only"},...(validation.valid?{}:{error:{code:"VALIDATION_FAILED",message:"Dữ liệu biên tập chưa hợp lệ",fieldErrors:validation.errors}})});
+    } catch(error) { return send(res,500,{ok:false,error:{code:"DEPENDENCY_UNAVAILABLE",message:error.message}}); }
+  }
+  const cmsMutationMatch=url.pathname.match(/^\/api\/admin\/v1\/properties\/([^/]+)\/(update|workflow)$/);
+  if(cmsMutationMatch) {
+    if(String(req.headers.authorization||"")!=="Bearer fourland-preview-cms") return send(res,401,{ok:false,error:{code:"AUTH_REQUIRED",message:"Cần đăng nhập CMS"}});
+    const id=validPropertyId(decodeURIComponent(cmsMutationMatch[1]));
+    const action=cmsMutationMatch[2];
+    if(!id) return send(res,400,{ok:false,error:{code:"VALIDATION_FAILED",message:"Mã hồ sơ không hợp lệ"}});
+    
+    if(action==="update") {
+      try {
+        const body=await readBody(req);
+        const fields=body.fields||body;
+        const now=new Date().toISOString();
+        const updateData={
+          updated_at: now
+        };
+        if(fields.address!==undefined) updateData.address=String(fields.address||"").trim();
+        if(fields.district!==undefined) updateData.district=String(fields.district||"").trim()||null;
+        if(fields.ward!==undefined) updateData.ward=String(fields.ward||"").trim()||null;
+        if(fields.street!==undefined) updateData.street=String(fields.street||"").trim()||null;
+        if(fields.property_type!==undefined) updateData.property_type=String(fields.property_type||"").trim()||null;
+        if(fields.price_text!==undefined) updateData.price_text=String(fields.price_text||"").trim()||null;
+        if(fields.area_text!==undefined) updateData.area_text=String(fields.area_text||"").trim()||null;
+        if(fields.dimensions!==undefined) updateData.dimensions=String(fields.dimensions||"").trim()||null;
+        if(fields.structure!==undefined) updateData.structure=String(fields.structure||"").trim()||null;
+        if(fields.bedrooms!==undefined) updateData.bedrooms=Number.isInteger(Number(fields.bedrooms))?Number(fields.bedrooms):null;
+        if(fields.bathrooms!==undefined) updateData.bathrooms=Number.isInteger(Number(fields.bathrooms))?Number(fields.bathrooms):null;
+        if(fields.legal!==undefined) updateData.legal=String(fields.legal||"").trim()||null;
+        if(fields.phone!==undefined) updateData.phone=String(fields.phone||"").trim()||null;
+        if(fields.commission!==undefined) updateData.commission=String(fields.commission||"").trim()||null;
+        if(fields.notes!==undefined) updateData.notes=String(fields.notes||"").trim()||null;
+        
+        invalidateCmsCache();
+        if(databaseEnabled){
+          const result=await dbRequest(`properties?property_id=eq.${encodeURIComponent(id)}`,{method:"PATCH",body:updateData,prefer:"return=representation"});
+          return send(res,200,{ok:true,data:{property:result.data?.[0]||{property_id:id,...updateData}},message:"Đã lưu thay đổi hồ sơ bất động sản thành công"});
+        }else{
+          const target=rows.find(item=>item.property_id===id);
+          if(target) Object.assign(target,updateData);
+          return send(res,200,{ok:true,data:{property:target||{property_id:id,...updateData}},message:"Đã lưu thay đổi hồ sơ bất động sản thành công"});
+        }
+      } catch(error) { return send(res,500,{ok:false,error:{code:"DEPENDENCY_UNAVAILABLE",message:error.message}}); }
+    }
+    
+    if(action==="workflow") {
+      try {
+        const body=await readBody(req);
+        const command=String(body.command||"").toLowerCase();
+        const now=new Date().toISOString();
+        let updateData={ updated_at: now };
+        if(command==="publish") {
+          updateData.status="ready";
+          updateData.content_status="published";
+          updateData.availability_status="available";
+        } else if(command==="archive") {
+          updateData.status="archived";
+          updateData.content_status="archived";
+          updateData.availability_status="rented";
+        } else if(command==="restore") {
+          updateData.status="ready";
+          updateData.content_status="published";
+          updateData.availability_status="available";
+        } else if(command==="submit_review") {
+          updateData.content_status="pending_review";
+        } else {
+          return send(res,400,{ok:false,error:{code:"VALIDATION_FAILED",message:"Lệnh workflow không hợp lệ"}});
+        }
+        
+        invalidateCmsCache();
+        if(databaseEnabled){
+          const result=await dbRequest(`properties?property_id=eq.${encodeURIComponent(id)}`,{method:"PATCH",body:updateData,prefer:"return=representation"});
+          return send(res,200,{ok:true,data:{property:result.data?.[0]||{property_id:id,...updateData}},message:`Đã cập nhật trạng thái hồ sơ: ${command}`});
+        }else{
+          const target=rows.find(item=>item.property_id===id);
+          if(target) Object.assign(target,updateData);
+          return send(res,200,{ok:true,data:{property:target||{property_id:id,...updateData}},message:`Đã cập nhật trạng thái hồ sơ: ${command}`});
+        }
+      } catch(error) { return send(res,500,{ok:false,error:{code:"DEPENDENCY_UNAVAILABLE",message:error.message}}); }
+    }
+  }
   if(url.pathname==="/api/admin-login") {
     if(req.method==="GET") return send(res,200,{ok:true,authenticated:isAdmin(req)});
     if(req.method==="DELETE") {
@@ -300,7 +739,7 @@ http.createServer(async (req,res)=>{
       res.writeHead(200,{"Content-Type":"text/html; charset=utf-8","Cache-Control":"no-cache"});res.end(renderPropertyPage(property));return;
     } catch(error) { return send(res,500,error.message,"text/plain; charset=utf-8") }
   }
-  const requestPath=url.pathname==="/"?"/index.html":url.pathname;
+  const requestPath=url.pathname==="/"?"/index.html":(url.pathname==="/admin"||url.pathname==="/admin/"?"/admin/index.html":url.pathname);
   const filePath=path.resolve(root,"."+requestPath);
   if(!filePath.startsWith(root)||!fs.existsSync(filePath)||fs.statSync(filePath).isDirectory()) return send(res,404,"Not Found","text/plain; charset=utf-8");
   const ext=path.extname(filePath);

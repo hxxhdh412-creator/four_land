@@ -1,5 +1,6 @@
 const { requireAdmin } = require("./_admin");
 const { sendError, supabaseRequest, text } = require("./_supabase");
+const { markOverrideFields } = require("../server/property-field-ownership");
 
 const TEXT_FIELDS = ["address","district","ward","street","price_text","area_text","dimensions","structure","legal","phone","property_type","raw_text","notes"];
 const NUMBER_FIELDS = ["bedrooms","bathrooms"];
@@ -11,8 +12,16 @@ module.exports = async function handler(req, res) {
     const propertyId = text(req.body?.propertyId, 100);
     if (!propertyId) return res.status(400).json({ ok: false, error: "Thiếu mã bất động sản" });
     const update = {};
-    TEXT_FIELDS.forEach(field => { if (Object.prototype.hasOwnProperty.call(req.body || {}, field)) update[field] = text(req.body[field], field === "raw_text" || field === "notes" ? 5000 : 300); });
-    NUMBER_FIELDS.forEach(field => { if (Object.prototype.hasOwnProperty.call(req.body || {}, field)) { const value = Number(req.body[field]); update[field] = Number.isFinite(value) && value >= 0 ? Math.round(value) : null; } });
+    const editedFields = [];
+    TEXT_FIELDS.forEach(field => { if (Object.prototype.hasOwnProperty.call(req.body || {}, field)) { update[field] = text(req.body[field], field === "raw_text" || field === "notes" ? 5000 : 300); editedFields.push(field); } });
+    NUMBER_FIELDS.forEach(field => { if (Object.prototype.hasOwnProperty.call(req.body || {}, field)) { const value = Number(req.body[field]); update[field] = Number.isFinite(value) && value >= 0 ? Math.round(value) : null; editedFields.push(field); } });
+
+    if (editedFields.length) {
+      const currentQuery = new URLSearchParams({ select: "data_json", property_id: `eq.${propertyId}`, limit: "1" });
+      const current = await supabaseRequest(`properties?${currentQuery}`);
+      if (!current.data[0]) return res.status(404).json({ ok: false, error: "Không tìm thấy bất động sản" });
+      update.data_json = markOverrideFields(current.data[0].data_json, editedFields);
+    }
     
     // Status management: featured, rented, ready, archived
     if (Object.prototype.hasOwnProperty.call(req.body || {}, "is_rented")) {

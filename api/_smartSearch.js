@@ -128,7 +128,7 @@ function parseNaturalQuery(rawInput) {
   }
 
   // 7. Nhận diện Phòng ngủ (2pn, 3 phòng ngủ, 4 phòng)
-  const bedMatch = working.match(/\b(\d+)\s*(?:pn|phong\s*ngu|phòng\s*ngủ|phong|phòng)\b/i);
+  const bedMatch = working.match(/\b(\d+)\s*(?:pn|phong\s*ngu|phòng\s*ngủ|phong|phòng)(?=\s|$|[,.;])/i);
   if (bedMatch) {
     parsed.bedrooms = parseInt(bedMatch[1], 10);
     working = working.replace(bedMatch[0], ' ');
@@ -136,7 +136,7 @@ function parseNaturalQuery(rawInput) {
 
   // 8. Nhận diện Giá Tiền (Khoảng giá: 10-20tr, Dưới 15tr, Trên 5 tỷ...)
   // 8a. Dải giá: 10-20tr, 10 - 20 triệu, 5-10 tỷ
-  const rangePriceMatch = working.match(/\b(\d+(?:[.,]\d+)?)\s*(?:-|den|đến|to)\s*(\d+(?:[.,]\d+)?)\s*(tr|trieu|triệu|ty|tỷ|k|m)\b/i);
+  const rangePriceMatch = working.match(/\b(\d+(?:[.,]\d+)?)\s*(?:-|den|đến|to)\s*(\d+(?:[.,]\d+)?)\s*(tr|trieu|triệu|ty|tỷ|k|m(?!2|²))\b/i);
   if (rangePriceMatch) {
     const unit = rangePriceMatch[3].toLowerCase();
     const mult = (unit === 'ty' || unit === 'tỷ') ? 1000000000 : 1000000;
@@ -177,10 +177,10 @@ function parseNaturalQuery(rawInput) {
   }
 
   // 9. Nhận diện Diện tích (50m2, tren 50m, 50 - 100 m2)
-  const areaRangeMatch = working.match(/\b(\d+(?:[.,]\d+)?)\s*(?:-|den|đến)\s*(\d+(?:[.,]\d+)?)\s*(?:m2|m²|m)\b/i);
+  const areaRangeMatch = working.match(/\b(\d+(?:[.,]\d+)?)\s*(?:-|den|đến)\s*(\d+(?:[.,]\d+)?)\s*(?:m2|m²|m)(?=\s|$|[,.;])/i);
   if (areaRangeMatch) {
-    parsed.minArea = parseFloat(areaRangeRange[1].replace(',', '.'));
-    parsed.maxArea = parseFloat(areaRangeRange[2].replace(',', '.'));
+    parsed.minArea = parseFloat(areaRangeMatch[1].replace(',', '.'));
+    parsed.maxArea = parseFloat(areaRangeMatch[2].replace(',', '.'));
     working = working.replace(areaRangeMatch[0], ' ');
   } else {
     const maxAreaMatch = working.match(/\b(?:duoi|dưới|<|<=)\s*(\d+(?:[.,]\d+)?)\s*(?:m2|m²|m)?\b/i);
