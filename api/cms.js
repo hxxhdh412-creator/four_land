@@ -15,12 +15,24 @@ const cmsSystemHealth = require("./_cms-system-health");
 const cmsUsers = require("./_cms-users");
 const cmsSmartMatch = require("./_cms-smart-match");
 
+// Classic In-Page Admin Handlers
+const adminLogin = require("./_admin-login");
+const adminArchive = require("./_admin-archive");
+const adminProperty = require("./_admin-property");
+const adminImage = require("./_admin-image");
+
 module.exports = async function handler(req, res) {
   const host = req.headers["x-forwarded-host"] || req.headers.host || "localhost";
   const url = new URL(req.url, `https://${host}`);
   const pathname = url.pathname;
 
   try {
+    // 0. Classic In-Page Admin APIs
+    if (pathname === "/api/admin-login") return adminLogin(req, res);
+    if (pathname === "/api/admin-archive") return adminArchive(req, res);
+    if (pathname === "/api/admin-property") return adminProperty(req, res);
+    if (pathname === "/api/admin-image") return adminImage(req, res);
+
     // 1. Auth & Session
     if (pathname === "/api/admin/v1/login" || pathname === "/api/cms-login") return cmsLogin(req, res);
     if (pathname === "/api/admin/v1/logout" || pathname === "/api/cms-logout") return cmsLogin(req, res);

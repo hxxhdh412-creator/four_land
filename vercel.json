@@ -12,6 +12,10 @@
     { "source": "/admin", "destination": "/admin.html" },
     { "source": "/admin/", "destination": "/admin.html" },
     { "source": "/api/admin/v1/:path*", "destination": "/api/cms" },
+    { "source": "/api/admin-login", "destination": "/api/cms" },
+    { "source": "/api/admin-archive", "destination": "/api/cms" },
+    { "source": "/api/admin-property", "destination": "/api/cms" },
+    { "source": "/api/admin-image", "destination": "/api/cms" },
     { "source": "/bat-dong-san/:slug", "destination": "/api/seo-property?slug=:slug" }
   ],
   "headers": [
