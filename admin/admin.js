@@ -144,6 +144,8 @@ async function handleLogin(credentials = {}) {
 
     byId('authGate').hidden = true;
     byId('cmsContent').hidden = false;
+    if (byId('cmsSidebar')) byId('cmsSidebar').hidden = false;
+    document.body.classList.add('authenticated');
     updateHeaderUser();
     byId('cmsApp').setAttribute('aria-busy', 'false');
     showToast(`Chào mừng ${user.displayName} đã đăng nhập!`);
@@ -177,6 +179,8 @@ async function handleLogout() {
     if (byId('profileDialog')) byId('profileDialog').close();
     byId('cmsContent').hidden = true;
     byId('authGate').hidden = false;
+    if (byId('cmsSidebar')) byId('cmsSidebar').hidden = true;
+    document.body.classList.remove('authenticated');
     if (byId('btnLogoutTopbar')) byId('btnLogoutTopbar').hidden = true;
     byId('systemState').classList.remove('ready');
     byId('systemState').querySelector('span').textContent = 'Chưa đăng nhập';
@@ -194,6 +198,8 @@ async function bootstrapCms() {
     byId('cmsApp').setAttribute('aria-busy', 'false');
     byId('authGate').hidden = false;
     byId('cmsContent').hidden = true;
+    if (byId('cmsSidebar')) byId('cmsSidebar').hidden = true;
+    document.body.classList.remove('authenticated');
     byId('authError').hidden = true;
     byId('retryAuth').hidden = true;
     byId('authMessage').textContent = 'Nhập thông tin tài khoản hoặc chọn nhanh vai trò để truy cập kho dữ liệu.';
@@ -209,6 +215,8 @@ async function bootstrapCms() {
     cmsState.user = result.data.user;
     byId('authGate').hidden = true;
     byId('cmsContent').hidden = false;
+    if (byId('cmsSidebar')) byId('cmsSidebar').hidden = false;
+    document.body.classList.add('authenticated');
     updateHeaderUser();
     byId('cmsApp').setAttribute('aria-busy', 'false');
     await loadDashboard();
@@ -218,6 +226,8 @@ async function bootstrapCms() {
     cmsState.accessToken = '';
     localStorage.removeItem('fourland_cms_access_token');
     sessionStorage.removeItem('fourland_cms_access_token');
+    if (byId('cmsSidebar')) byId('cmsSidebar').hidden = true;
+    document.body.classList.remove('authenticated');
     showAuthError(error);
   }
 }
