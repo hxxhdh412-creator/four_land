@@ -11,6 +11,7 @@ const { validatePropertyDraft } = require("./server/cms-property-validation");
 const { buildReviewQueue, buildReviewQueueRoute } = require("./server/cms-review-queue");
 const { buildSystemHealth } = require("./server/cms-system-health");
 const { rankPropertiesForLead } = require("./server/smart-matcher");
+const { generateFacebookPost, publishToComposioFacebook } = require("./server/cms-facebook");
 
 const root = __dirname;
 const port = Number(process.env.PORT || 4175);
@@ -573,6 +574,41 @@ http.createServer(async (req,res)=>{
           return send(res,200,{ok:true,data:{property:target||{property_id:id,...updateData}},message:`Đã cập nhật trạng thái hồ sơ: ${command}`});
         }
       } catch(error) { return send(res,500,{ok:false,error:{code:"DEPENDENCY_UNAVAILABLE",message:error.message}}); }
+    }
+  }
+  if(url.pathname==="/api/admin/v1/facebook/draft" || url.pathname==="/api/admin/v1/facebook/publish" || url.pathname==="/api/admin/v1/facebook") {
+    if(req.method!=="POST") return send(res,405,{ok:false,error:{code:"METHOD_NOT_ALLOWED",message:"Method Not Allowed"}});
+    try {
+      const body=await readBody(req);
+      const action = body.action || (url.pathname.includes("/draft") ? "draft" : "publish");
+      if (action === "draft") {
+        const propertyId = body.propertyId;
+        const current = databaseEnabled ? (await dbRequest(buildPropertyDetailRoute(propertyId))).data[0] : rows.find(item => item.property_id === propertyId);
+        if (!current) return send(res, 404, { ok: false, error: { message: "Không tìm thấy bất động sản" } });
+        const tone = body.tone || "hot";
+        const content = generateFacebookPost(current, {
+          tone,
+          includeLink: body.includeLink !== false,
+          hotline: body.hotline || current.phone,
+          pageName: process.env.FACEBOOK_PAGE_NAME || "Ngọc Ngà Tốt"
+        });
+        const images = (current.property_images || []).map(img => img.public_url).filter(Boolean);
+        return send(res, 200, { ok: true, data: { propertyId, tone, content, images, pageName: process.env.FACEBOOK_PAGE_NAME || "Ngọc Ngà Tốt" } });
+      }
+      if (action === "publish") {
+        const content = String(body.content || "").trim();
+        const photoUrls = Array.isArray(body.images) ? body.images : [];
+        const pageName = body.pageName || process.env.FACEBOOK_PAGE_NAME || "Ngọc Ngà Tốt";
+        const publishResult = await publishToComposioFacebook({
+          content,
+          imageUrls: photoUrls,
+          pageName,
+          apiKey: process.env.COMPOSIO_API_KEY
+        });
+        return send(res, 200, { ok: true, data: publishResult, message: publishResult.message });
+      }
+    } catch(error) {
+      return send(res, 500, { ok: false, error: { message: error.message } });
     }
   }
   if(url.pathname==="/api/admin-login") {
