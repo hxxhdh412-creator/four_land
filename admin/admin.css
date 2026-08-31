@@ -2880,6 +2880,15 @@ strong.req {
   display: grid;
   place-items: center;
   border: 2px solid #e7f3ff;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.fb-mock-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .fb-mock-meta {
