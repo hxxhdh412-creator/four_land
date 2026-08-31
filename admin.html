@@ -6,18 +6,27 @@
   <meta name="robots" content="noindex,nofollow">
   <meta name="theme-color" content="#283d34">
   <title>FOURLAND · Trung tâm quản trị</title>
-  <link rel="stylesheet" href="/admin/admin.css?v=15">
+  <link rel="stylesheet" href="/admin/admin.css?v=16">
 </head>
 <body>
   <div id="cmsApp" class="cms-app" aria-busy="true">
     <header class="cms-topbar">
-      <a class="cms-brand" href="/admin/" aria-label="Fourland CMS">
-        <img src="/assets/brand/fourland-logo.png" alt="Fourland">
-        <span>
-          <strong>FOURLAND</strong>
-          <small>Kho Bất Động Sản</small>
-        </span>
-      </a>
+      <div class="cms-top-left">
+        <button id="btnToggleSidebar" class="cms-menu-toggle" type="button" aria-label="Mở menu quản trị" title="Menu">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        </button>
+        <a class="cms-brand" href="/admin/" aria-label="Fourland CMS">
+          <img src="/assets/brand/fourland-logo.png" alt="Fourland">
+          <span>
+            <strong>FOURLAND</strong>
+            <small>Kho Bất Động Sản</small>
+          </span>
+        </a>
+      </div>
       <div class="cms-top-actions">
         <div id="systemState" class="cms-system-state"><i></i><span>Đang kết nối…</span></div>
         <button id="profileButton" class="cms-avatar" type="button" aria-label="Tài khoản" disabled>FL</button>
@@ -28,7 +37,22 @@
     </header>
 
     <div class="cms-layout">
-      <aside class="cms-sidebar" aria-label="Điều hướng quản trị">
+      <aside class="cms-sidebar" id="cmsSidebar" aria-label="Điều hướng quản trị">
+        <div class="cms-sidebar-header">
+          <div class="cms-sidebar-brand">
+            <img src="/assets/brand/fourland-logo.png" alt="Fourland">
+            <span>
+              <strong>FOURLAND</strong>
+              <small>Hệ thống CMS</small>
+            </span>
+          </div>
+          <button id="btnCloseSidebar" class="cms-sidebar-close" type="button" aria-label="Đóng menu">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
         <p class="cms-nav-label">Quản trị</p>
         <button class="cms-nav-item active" data-page="dashboard" type="button">
           <span class="cms-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg></span>
@@ -60,6 +84,7 @@
           <span>Mở website</span>
         </a>
       </aside>
+      <div id="cmsBackdrop" class="cms-backdrop"></div>
 
       <main class="cms-main">
         <section id="authGate" class="cms-auth-gate">
@@ -894,6 +919,6 @@
       </div>
     </dialog>
   </div>
-  <script src="/admin/admin.js?v=18" defer></script>
+  <script src="/admin/admin.js?v=19" defer></script>
 </body>
 </html>
