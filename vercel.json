@@ -9,6 +9,12 @@
     { "source": "/:path*", "has": [{ "type": "host", "value": "fourland.vn" }], "destination": "https://www.fourland.vn/:path*", "permanent": true }
   ],
   "rewrites": [
+    { "source": "/admin", "destination": "/admin/index.html" },
+    { "source": "/admin/", "destination": "/admin/index.html" },
+    { "source": "/api/admin/v1/login", "destination": "/api/cms-login" },
+    { "source": "/api/admin/v1/logout", "destination": "/api/cms-login" },
+    { "source": "/api/admin/v1/users", "destination": "/api/cms-users" },
+    { "source": "/api/admin/v1/smart-match", "destination": "/api/cms-smart-match" },
     { "source": "/api/admin/v1/me", "destination": "/api/cms-me" },
     { "source": "/api/admin/v1/dashboard/summary", "destination": "/api/cms-dashboard" },
     { "source": "/api/admin/v1/properties", "destination": "/api/cms-properties" },

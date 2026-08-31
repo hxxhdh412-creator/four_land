@@ -2,9 +2,13 @@ const { requireCms } = require("./_cms-auth");
 const { ACTIONS } = require("../server/cms-authorization");
 const { buildPropertyListRoute, normalizePropertyListItem, parsePropertyListQuery } = require("../server/cms-properties");
 const { sendError, supabaseRequest } = require("./_supabase");
+const cmsPropertyCreate = require("./cms-property-create");
 
 function createHandler({ requireCmsImpl = requireCms, request = supabaseRequest } = {}) {
   return async function handler(req, res) {
+    if (req.method === "POST") {
+      return cmsPropertyCreate(req, res);
+    }
     if (req.method !== "GET") return res.status(405).json({ ok: false, error: { code: "METHOD_NOT_ALLOWED", message: "Method Not Allowed" } });
     const principal = await requireCmsImpl(req, res, ACTIONS.PROPERTY_READ);
     if (!principal) return;
@@ -22,3 +26,4 @@ function createHandler({ requireCmsImpl = requireCms, request = supabaseRequest 
 
 module.exports = createHandler();
 module.exports.createHandler = createHandler;
+
