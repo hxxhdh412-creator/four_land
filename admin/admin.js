@@ -1354,8 +1354,8 @@ async function handlePublishFacebook() {
   const submitBtn = byId('fbSubmitBtn');
   const statusNote = byId('fbPublishStatus');
   submitBtn.disabled = true;
-  submitBtn.innerHTML = `<span>Đang đăng lên Facebook qua Composio…</span>`;
-  statusNote.textContent = 'Đang xử lý kết nối Composio MCP…';
+  submitBtn.innerHTML = `<span>Đang đăng lên Facebook…</span>`;
+  statusNote.textContent = 'Đang xuất bản bài viết…';
 
   try {
     const result = await cmsApi('/api/admin/v1/facebook/publish', {

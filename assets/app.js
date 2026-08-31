@@ -980,9 +980,9 @@ async function handlePublishFacebook() {
   const statusNote = $('fbPublishStatus');
   if (submitBtn) {
     submitBtn.disabled = true;
-    submitBtn.innerHTML = `<span>Đang đăng lên Facebook qua Composio…</span>`;
+    submitBtn.innerHTML = `<span>Đang đăng lên Facebook…</span>`;
   }
-  if (statusNote) statusNote.textContent = 'Đang xử lý kết nối Composio MCP…';
+  if (statusNote) statusNote.textContent = 'Đang xuất bản bài viết…';
 
   try {
     const result = await api('/api/admin/v1/facebook/publish', {
