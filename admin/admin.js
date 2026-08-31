@@ -50,12 +50,15 @@ async function cmsApi(path, options = {}) {
 
 function showAuthError(error) {
   byId('cmsApp').setAttribute('aria-busy', 'false');
-  byId('authMessage').textContent = error.code === 'AUTH_REQUIRED'
-    ? 'CMS chưa có phiên đăng nhập. Màn hình đăng nhập sẽ được nối sau khi staging Auth sẵn sàng.'
-    : 'Không thể xác minh quyền truy cập CMS.';
-  byId('authError').hidden = false;
-  byId('authError').textContent = `${error.code || 'AUTH_ERROR'} · ${error.message}`;
-  byId('retryAuth').hidden = false;
+  if (error.code === 'AUTH_REQUIRED') {
+    byId('authMessage').textContent = 'Nhập thông tin tài khoản hoặc chọn nhanh vai trò để truy cập kho dữ liệu.';
+    byId('authError').hidden = true;
+  } else {
+    byId('authMessage').textContent = 'Không thể xác minh quyền truy cập CMS.';
+    byId('authError').hidden = false;
+    byId('authError').textContent = `${error.code || 'AUTH_ERROR'} · ${error.message}`;
+  }
+  byId('retryAuth').hidden = true;
   byId('systemState').querySelector('span').textContent = 'Chưa đăng nhập';
 }
 
