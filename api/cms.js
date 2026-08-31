@@ -14,6 +14,7 @@ const cmsReviewQueue = require("./_cms-review-queue");
 const cmsSystemHealth = require("./_cms-system-health");
 const cmsUsers = require("./_cms-users");
 const cmsSmartMatch = require("./_cms-smart-match");
+const cmsFacebook = require("./_cms-facebook");
 
 // Classic In-Page Admin Handlers
 const adminLogin = require("./_admin-login");
@@ -45,7 +46,12 @@ module.exports = async function handler(req, res) {
     // 3. Smart Matching AI
     if (pathname === "/api/admin/v1/smart-match" || pathname === "/api/cms-smart-match") return cmsSmartMatch(req, res);
 
-    // 4. Dashboard Summary
+    // 4. Facebook Studio & Composio MCP
+    if (pathname === "/api/admin/v1/facebook" || pathname === "/api/admin/v1/facebook/draft" || pathname === "/api/admin/v1/facebook/publish") {
+      return cmsFacebook(req, res);
+    }
+
+    // 5. Dashboard Summary
     if (pathname === "/api/admin/v1/dashboard/summary" || pathname === "/api/cms-dashboard") return cmsDashboard(req, res);
 
     // 5. Review Queue

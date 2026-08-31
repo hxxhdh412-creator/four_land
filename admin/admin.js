@@ -376,6 +376,10 @@ async function openPropertyDetail(id) {
     byId('detailLoading').hidden = true;
     byId('detailContent').hidden = false;
     byId('detailEdit').hidden = !['super_admin', 'manager', 'editor'].includes(cmsState.user?.role);
+    if (byId('btnPostFacebook')) {
+      byId('btnPostFacebook').hidden = !['super_admin', 'manager', 'editor', 'sales'].includes(cmsState.user?.role);
+      byId('btnPostFacebook').onclick = () => openFacebookStudio(item.id);
+    }
 
     // Workflow actions
     const canManageWorkflow = ['super_admin', 'manager'].includes(cmsState.user?.role);
@@ -1174,5 +1178,216 @@ document.querySelectorAll('[data-demo-role]').forEach(btn => {
 
 if (byId('btnLogoutTopbar')) byId('btnLogoutTopbar').addEventListener('click', handleLogout);
 if (byId('btnLogoutModal')) byId('btnLogoutModal').addEventListener('click', handleLogout);
+
+// ==========================================================================
+// FACEBOOK POST STUDIO & COMPOSIO MCP CLIENT
+// ==========================================================================
+
+const fbState = {
+  propertyId: null,
+  tone: 'hot',
+  content: '',
+  allImages: [],
+  selectedImages: new Set(),
+  pageName: 'Ngọc Ngà Tốt'
+};
+
+async function openFacebookStudio(propertyId) {
+  fbState.propertyId = propertyId;
+  const dialog = byId('facebookPostDialog');
+  if (!dialog) return;
+
+  byId('fbPublishStatus').textContent = 'Đang chuẩn bị bài viết…';
+  byId('fbSubmitBtn').disabled = false;
+  byId('fbSubmitBtn').innerHTML = `<svg class="cms-btn-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg><span>🚀 Đăng Lên Fanpage Ngọc Ngà Tốt</span>`;
+
+  dialog.showModal();
+  await loadFacebookDraft(propertyId, fbState.tone);
+}
+
+function closeFacebookStudio() {
+  const dialog = byId('facebookPostDialog');
+  if (dialog) dialog.close();
+}
+
+async function loadFacebookDraft(propertyId, tone = 'hot') {
+  fbState.tone = tone;
+  const contentInput = byId('fbPostContent');
+  const previewText = byId('fbPreviewText');
+  contentInput.value = 'Đang sinh nội dung bài viết với AI…';
+  previewText.textContent = 'Đang sinh nội dung bài viết với AI…';
+
+  // Highlight active tone chip
+  document.querySelectorAll('[data-fb-tone]').forEach(chip => {
+    chip.classList.toggle('active', chip.dataset.fbTone === tone);
+  });
+
+  try {
+    const result = await cmsApi('/api/admin/v1/facebook/draft', {
+      method: 'POST',
+      body: {
+        propertyId,
+        tone,
+        includeLink: byId('fbIncludeLink')?.checked !== false
+      }
+    });
+
+    const data = result.data;
+    fbState.content = data.content;
+    fbState.allImages = data.images || [];
+    fbState.pageName = data.pageName || 'Ngọc Ngà Tốt';
+
+    contentInput.value = data.content;
+    previewText.textContent = data.content;
+
+    // Default: select up to 4 images
+    fbState.selectedImages = new Set(fbState.allImages.slice(0, 4));
+    renderFacebookPhotoGrid();
+    renderFacebookPreviewGallery();
+
+    byId('fbPublishStatus').textContent = `Sẵn sàng đăng lên Fanpage ${fbState.pageName}`;
+  } catch (error) {
+    contentInput.value = '';
+    previewText.textContent = `Lỗi: ${error.message}`;
+    byId('fbPublishStatus').textContent = error.message;
+  }
+}
+
+function renderFacebookPhotoGrid() {
+  const grid = byId('fbPhotoGrid');
+  const countLabel = byId('fbPhotoCount');
+  if (!grid) return;
+
+  grid.innerHTML = '';
+  countLabel.textContent = `Đã chọn ${fbState.selectedImages.size}/${fbState.allImages.length} ảnh`;
+
+  if (!fbState.allImages.length) {
+    grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--muted); font-size: 12px; padding: 10px;">Căn nhà này chưa có hình ảnh</div>';
+    return;
+  }
+
+  fbState.allImages.forEach((imgUrl, index) => {
+    const isSelected = fbState.selectedImages.has(imgUrl);
+    const item = document.createElement('div');
+    item.className = `cms-fb-photo-item ${isSelected ? 'selected' : ''}`;
+    item.innerHTML = `
+      <img src="${imgUrl}" alt="Ảnh ${index + 1}" loading="lazy">
+      <div class="check-badge">${isSelected ? '✓' : ''}</div>
+    `;
+
+    item.onclick = () => {
+      if (fbState.selectedImages.has(imgUrl)) {
+        fbState.selectedImages.delete(imgUrl);
+      } else {
+        fbState.selectedImages.add(imgUrl);
+      }
+      renderFacebookPhotoGrid();
+      renderFacebookPreviewGallery();
+    };
+
+    grid.appendChild(item);
+  });
+}
+
+function renderFacebookPreviewGallery() {
+  const gallery = byId('fbPreviewGallery');
+  if (!gallery) return;
+
+  const images = Array.from(fbState.selectedImages);
+  gallery.className = `fb-mock-gallery layout-${Math.min(images.length, 4)}`;
+  gallery.innerHTML = '';
+
+  if (!images.length) {
+    gallery.style.display = 'none';
+    return;
+  }
+
+  gallery.style.display = 'grid';
+  images.slice(0, 4).forEach((imgUrl, index) => {
+    const img = document.createElement('img');
+    img.src = imgUrl;
+    img.alt = `Facebook Preview Photo ${index + 1}`;
+    gallery.appendChild(img);
+  });
+}
+
+async function handlePublishFacebook() {
+  const content = (byId('fbPostContent')?.value || '').trim();
+  if (!content) {
+    alert('Vui lòng nhập nội dung bài viết');
+    return;
+  }
+
+  const submitBtn = byId('fbSubmitBtn');
+  const statusNote = byId('fbPublishStatus');
+  submitBtn.disabled = true;
+  submitBtn.innerHTML = `<span>Đang đăng lên Facebook qua Composio…</span>`;
+  statusNote.textContent = 'Đang xử lý kết nối Composio MCP…';
+
+  try {
+    const result = await cmsApi('/api/admin/v1/facebook/publish', {
+      method: 'POST',
+      body: {
+        content,
+        images: Array.from(fbState.selectedImages),
+        pageName: fbState.pageName
+      }
+    });
+
+    statusNote.textContent = result.message || 'Đã đăng thành công!';
+    submitBtn.innerHTML = `<span>Đã xuất bản thành công ✓</span>`;
+
+    // Show toast with Facebook link
+    if (result.data?.postUrl) {
+      if (confirm(`🎉 ${result.message || 'Đã xuất bản thành công lên Fanpage Ngọc Ngà Tốt!'}\n\nBạn có muốn mở xem bài viết trên Facebook không?`)) {
+        window.open(result.data.postUrl, '_blank');
+      }
+    } else {
+      alert(result.message || 'Đã đăng bài thành công lên Facebook!');
+    }
+
+    setTimeout(closeFacebookStudio, 1500);
+  } catch (error) {
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = `<span>🚀 Thử lại</span>`;
+    statusNote.textContent = `Lỗi: ${error.message}`;
+    alert(`Không thể đăng bài: ${error.message}`);
+  }
+}
+
+// Facebook Studio Event Listeners
+if (byId('fbDialogClose')) byId('fbDialogClose').addEventListener('click', closeFacebookStudio);
+if (byId('fbCancelBtn')) byId('fbCancelBtn').addEventListener('click', closeFacebookStudio);
+if (byId('fbSubmitBtn')) byId('fbSubmitBtn').addEventListener('click', handlePublishFacebook);
+
+document.querySelectorAll('[data-fb-tone]').forEach(chip => {
+  chip.addEventListener('click', () => {
+    const tone = chip.dataset.fbTone;
+    if (fbState.propertyId) {
+      loadFacebookDraft(fbState.propertyId, tone);
+    }
+  });
+});
+
+if (byId('fbPostContent')) {
+  byId('fbPostContent').addEventListener('input', function() {
+    fbState.content = this.value;
+    if (byId('fbPreviewText')) byId('fbPreviewText').textContent = this.value;
+  });
+}
+
+if (byId('fbIncludeLink')) {
+  byId('fbIncludeLink').addEventListener('change', () => {
+    if (fbState.propertyId) {
+      loadFacebookDraft(fbState.propertyId, fbState.tone);
+    }
+  });
+}
+
+if (byId('facebookPostDialog')) {
+  byId('facebookPostDialog').addEventListener('click', event => {
+    if (event.target === byId('facebookPostDialog')) closeFacebookStudio();
+  });
+}
 
 bootstrapCms();

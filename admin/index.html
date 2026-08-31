@@ -501,6 +501,10 @@
             <button id="btnWorkflowPublish" class="cms-workflow-btn publish" type="button" hidden>Xuất bản</button>
             <button id="btnWorkflowArchive" class="cms-workflow-btn archive" type="button" hidden>Lưu trữ</button>
             <button id="btnWorkflowRestore" class="cms-workflow-btn restore" type="button" hidden>Mở lại</button>
+            <button id="btnPostFacebook" class="cms-fb-btn" type="button" title="Đăng bài lên Fanpage Ngọc Ngà Tốt" hidden>
+              <svg class="cms-btn-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+              <span>Đăng Facebook</span>
+            </button>
             <button id="detailEdit" class="cms-edit-preview" type="button" hidden>Chỉnh sửa</button>
             <button id="detailClose" class="cms-close-btn" type="button" aria-label="Đóng chi tiết">
               <svg class="cms-close-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -777,7 +781,105 @@
         </div>
       </div>
     </dialog>
+
+    <dialog id="facebookPostDialog" class="cms-detail-dialog cms-fb-dialog" aria-labelledby="fbDialogTitle">
+      <div class="cms-detail-shell">
+        <header>
+          <div>
+            <p class="cms-eyebrow">Marketing & Mạng Xã Hội</p>
+            <h1 id="fbDialogTitle">Đăng bài lên Fanpage Ngọc Ngà Tốt</h1>
+          </div>
+          <div class="cms-detail-actions">
+            <button id="fbDialogClose" class="cms-close-btn" type="button" aria-label="Đóng Facebook Studio">
+              <svg class="cms-close-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+        </header>
+        <div class="cms-fb-studio-body">
+          <div class="cms-fb-editor-col">
+            <div class="cms-fb-tone-section">
+              <span class="cms-fb-label">Chọn phong cách bài viết (AI soạn tự động):</span>
+              <div class="cms-fb-tone-chips">
+                <button type="button" class="cms-fb-tone-chip active" data-fb-tone="hot">
+                  <span>🔥 Siêu Hot / Thu Hút</span>
+                </button>
+                <button type="button" class="cms-fb-tone-chip" data-fb-tone="detail">
+                  <span>📋 Chi Tiết / Chuyên Nghiệp</span>
+                </button>
+                <button type="button" class="cms-fb-tone-chip" data-fb-tone="quick">
+                  <span>⚡ Ngắn Gọn / Cọc Nhanh</span>
+                </button>
+              </div>
+            </div>
+
+            <label class="cms-fb-field">
+              <span class="cms-fb-label">Nội dung bài viết (Có thể chỉnh sửa):</span>
+              <textarea id="fbPostContent" rows="9" placeholder="Đang tạo nội dung bài viết..."></textarea>
+            </label>
+
+            <div class="cms-fb-photo-section">
+              <div class="cms-fb-photo-header">
+                <span class="cms-fb-label">Chọn hình ảnh đăng kèm:</span>
+                <span id="fbPhotoCount" class="cms-fb-photo-count">Đã chọn 0 ảnh</span>
+              </div>
+              <div id="fbPhotoGrid" class="cms-fb-photo-grid"></div>
+            </div>
+
+            <div class="cms-fb-options">
+              <label class="cms-fb-checkbox">
+                <input type="checkbox" id="fbIncludeLink" checked>
+                <span>Gắn link xem kho nhà Fourland ở cuối bài</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="cms-fb-preview-col">
+            <div class="cms-fb-preview-title">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              <span>Xem trước bài viết trên Facebook</span>
+            </div>
+
+            <div class="fb-mock-card">
+              <div class="fb-mock-head">
+                <div class="fb-mock-avatar">NNT</div>
+                <div class="fb-mock-meta">
+                  <div class="fb-mock-name">
+                    <strong>Ngọc Ngà Tốt</strong>
+                    <svg class="fb-verified-badge" viewBox="0 0 24 24" width="14" height="14" fill="#1877f2"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                  </div>
+                  <span class="fb-mock-time">Vừa xong · 🌐</span>
+                </div>
+              </div>
+
+              <div id="fbPreviewText" class="fb-mock-body"></div>
+
+              <div id="fbPreviewGallery" class="fb-mock-gallery"></div>
+
+              <div class="fb-mock-footer">
+                <div class="fb-mock-action"><span>👍 Thích</span></div>
+                <div class="fb-mock-action"><span>💬 Bình luận</span></div>
+                <div class="fb-mock-action"><span>↗️ Chia sẻ</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="cms-fb-footer">
+          <div class="cms-fb-status-bar">
+            <span class="cms-fb-status-tag">⚡ Kết nối qua Composio MCP</span>
+            <span id="fbPublishStatus" class="cms-fb-status-note">Sẵn sàng xuất bản</span>
+          </div>
+          <div class="cms-fb-buttons">
+            <button id="fbCancelBtn" type="button" class="cms-btn-reset">Hủy</button>
+            <button id="fbSubmitBtn" type="button" class="cms-primary cms-btn-fb-publish">
+              <svg class="cms-btn-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+              <span>🚀 Đăng Lên Fanpage Ngọc Ngà Tốt</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </dialog>
   </div>
-  <script src="/admin/admin.js?v=13" defer></script>
+  <script src="/admin/admin.js?v=14" defer></script>
 </body>
 </html>
