@@ -18,6 +18,7 @@ const port = Number(process.env.PORT || 4175);
 const env = {};
 const envFile = path.join(root, ".env.local");
 if (fs.existsSync(envFile)) fs.readFileSync(envFile, "utf8").split(/\r?\n/).forEach(line => { const index=line.indexOf("=");if(index>0&&!line.trim().startsWith("#"))env[line.slice(0,index).trim()]=line.slice(index+1).trim() });
+Object.assign(process.env, env);
 const database = { url:String(env.SUPABASE_URL||"").replace(/\/+$/, ""), key:String(env.SUPABASE_SECRET_KEY||"") };
 const databaseEnabled = /^https:\/\/.+\.supabase\.co$/i.test(database.url) && database.key.length > 20;
 const photo = (id) => `https://drive.google.com/thumbnail?id=${id}&sz=w1400`;
@@ -593,17 +594,18 @@ http.createServer(async (req,res)=>{
           pageName: process.env.FACEBOOK_PAGE_NAME || "Ngọc Ngà Tốt"
         });
         const images = (current.property_images || []).map(img => img.public_url).filter(Boolean);
-        return send(res, 200, { ok: true, data: { propertyId, tone, content, images, pageName: process.env.FACEBOOK_PAGE_NAME || "Ngọc Ngà Tốt" } });
+        return send(res, 200, { ok: true, data: { propertyId, tone, content, images, pageName: process.env.FACEBOOK_PAGE_NAME || "Ngọc Nhà Tốt" } });
       }
       if (action === "publish") {
         const content = String(body.content || "").trim();
         const photoUrls = Array.isArray(body.images) ? body.images : [];
-        const pageName = body.pageName || process.env.FACEBOOK_PAGE_NAME || "Ngọc Ngà Tốt";
+        const pageName = body.pageName || process.env.FACEBOOK_PAGE_NAME || "Ngọc Nhà Tốt";
         const publishResult = await publishToComposioFacebook({
           content,
           imageUrls: photoUrls,
           pageName,
-          apiKey: process.env.COMPOSIO_API_KEY
+          apiKey: process.env.COMPOSIO_API_KEY || "ck_e4AHzIDYFZKwFT8XrkwX",
+          pageId: process.env.FACEBOOK_PAGE_ID || "106656702112510"
         });
         return send(res, 200, { ok: true, data: publishResult, message: publishResult.message });
       }

@@ -63,13 +63,14 @@ function createHandler({ requireCmsImpl = requireCms, request = supabaseRequest 
         }
 
         const photoUrls = Array.isArray(body.images) ? body.images : [];
-        const pageName = body.pageName || process.env.FACEBOOK_PAGE_NAME || "Ngọc Ngà Tốt";
+        const pageName = body.pageName || process.env.FACEBOOK_PAGE_NAME || "Ngọc Nhà Tốt";
 
         const publishResult = await publishToComposioFacebook({
           content,
           imageUrls: photoUrls,
           pageName,
-          apiKey: process.env.COMPOSIO_API_KEY
+          apiKey: process.env.COMPOSIO_API_KEY || "ck_e4AHzIDYFZKwFT8XrkwX",
+          pageId: process.env.FACEBOOK_PAGE_ID || "106656702112510"
         });
 
         return res.status(200).json({
