@@ -2,7 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 
 const { ACTIONS } = require('../server/cms-authorization');
-const { createHandler } = require('../api/cms-me');
+const { createHandler } = require('../api/_cms-me');
 
 function responseRecorder() {
   return {

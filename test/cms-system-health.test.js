@@ -1,7 +1,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const { buildSystemHealth } = require("../server/cms-system-health");
-const { createHandler } = require("../api/cms-system-health");
+const { createHandler } = require('../api/_cms-system-health');
 
 function responseRecorder() { return { statusCode: 200, headers: {}, status(code) { this.statusCode = code; return this; }, setHeader(k, v) { this.headers[k] = v; }, json(body) { this.body = body; return this; } }; }
 

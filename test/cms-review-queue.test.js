@@ -1,7 +1,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const { buildReviewQueue, buildReviewQueueRoute, reviewIssues } = require("../server/cms-review-queue");
-const { createHandler } = require("../api/cms-review-queue");
+const { createHandler } = require('../api/_cms-review-queue');
 
 function responseRecorder() { return { statusCode: 200, headers: {}, status(code) { this.statusCode = code; return this; }, setHeader(k, v) { this.headers[k] = v; }, json(body) { this.body = body; return this; } }; }
 

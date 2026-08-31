@@ -1,7 +1,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const { buildPropertyListRoute, normalizePropertyListItem, parsePropertyListQuery } = require("../server/cms-properties");
-const { createHandler } = require("../api/cms-properties");
+const { createHandler } = require('../api/_cms-properties');
 
 test("property list query is bounded and sanitized", () => {
   const filters = parsePropertyListQuery("q=Nh%C3%A0%2C%20Qu%E1%BA%ADn%201&status=bad&page=-2&pageSize=500");
@@ -43,7 +43,7 @@ test("property list endpoint is permission guarded and paginated", async () => {
   assert.equal(response.body.meta.hasNext, true);
 });
 
-const { createHandler: createPropertyHandler } = require("../api/cms-property-create");
+const { createHandler: createPropertyHandler } = require('../api/_cms-property-create');
 
 test("property create endpoint validates required address and inserts property", async () => {
   let action;

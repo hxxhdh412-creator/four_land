@@ -43,7 +43,7 @@ test('permission guard distinguishes unauthenticated, disabled and forbidden use
   assert.equal(requirePermission({ id: 'u3', role: ROLES.EDITOR, isActive: true }, ACTIONS.PROPERTY_EDIT), true);
 });
 
-const { createHandler: createUsersHandler } = require('../api/cms-users');
+const { createHandler: createUsersHandler } = require('../api/_cms-users');
 
 test('users management endpoint allows super admin to list, add and update users', async () => {
   let mockDb = [

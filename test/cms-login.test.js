@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { createHandler, DEMO_USERS } = require('../api/cms-login');
+const { createHandler, DEMO_USERS } = require('../api/_cms-login');
 
 test('DEMO_USERS defines all 5 operational roles', () => {
   assert.ok(DEMO_USERS['admin@fourland.vn']);

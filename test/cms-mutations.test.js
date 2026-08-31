@@ -1,7 +1,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const { assertTransition, mutationsEnabled, requireMutationsEnabled, workflowCommand } = require("../server/cms-mutations");
-const { createHandler: createUpdateHandler } = require("../api/cms-property-update");
+const { createHandler: createUpdateHandler } = require('../api/_cms-property-update');
 
 function responseRecorder() { return { statusCode: 200, status(code) { this.statusCode = code; return this; }, setHeader() {}, json(body) { this.body = body; return this; } }; }
 

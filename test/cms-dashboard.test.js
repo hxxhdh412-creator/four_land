@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { createHandler } = require('../api/cms-dashboard');
+const { createHandler } = require('../api/_cms-dashboard');
 const { ACTIONS } = require('../server/cms-authorization');
 const { buildDashboardSummary } = require('../server/cms-dashboard');
 

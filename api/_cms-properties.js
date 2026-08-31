@@ -2,7 +2,7 @@ const { requireCms } = require("./_cms-auth");
 const { ACTIONS } = require("../server/cms-authorization");
 const { buildPropertyListRoute, normalizePropertyListItem, parsePropertyListQuery } = require("../server/cms-properties");
 const { sendError, supabaseRequest } = require("./_supabase");
-const cmsPropertyCreate = require("./cms-property-create");
+const cmsPropertyCreate = require("./_cms-property-create");
 
 function createHandler({ requireCmsImpl = requireCms, request = supabaseRequest } = {}) {
   return async function handler(req, res) {

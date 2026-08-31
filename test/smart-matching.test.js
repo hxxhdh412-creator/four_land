@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { scorePropertyMatch, generateCustomerPitch, rankPropertiesForLead } = require('../server/smart-matcher');
-const { createHandler } = require('../api/cms-smart-match');
+const { createHandler } = require('../api/_cms-smart-match');
 
 const sampleProperties = [
   {

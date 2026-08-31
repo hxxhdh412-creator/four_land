@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { createHandler } = require("../api/cms-property-detail");
+const { createHandler } = require('../api/_cms-property-detail');
 const { normalizePropertyDetail, validPropertyId } = require("../server/cms-property-detail");
 
 function responseRecorder() { return { statusCode: 200, headers: {}, status(code) { this.statusCode = code; return this; }, setHeader(k, v) { this.headers[k] = v; }, json(body) { this.body = body; return this; } }; }
