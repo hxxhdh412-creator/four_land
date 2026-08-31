@@ -13,9 +13,6 @@
     "sync:sheet": "node scripts/sync-sheet-to-supabase.js"
   },
   "engines": {
-    "node": "22.x"
-  },
-  "devDependencies": {
-    "sharp": "^0.35.4"
+    "node": ">=18.0.0"
   }
 }
