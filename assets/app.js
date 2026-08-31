@@ -66,10 +66,9 @@ function formatVietnamFullDateTime(isoString){
   return`${timeStr} - ${dateStr}`;
 }
 
-function driveImage(url){const value=String(url||'');const match=value.match(/\/d\/([\w-]+)/)||value.match(/[?&]id=([\w-]+)/);return match?`https://drive.google.com/thumbnail?id=${match[1]}&sz=w1400`:value}
 function values(){return{q:$('q').value,district:$('district').value,ward:$('ward').value,street:$('street').value,type:$('type').value,timeRange:$('timeRange')?$('timeRange').value:'',sortBy:$('sortBy')?$('sortBy').value:'',rentalStatus:$('rentalStatus')?$('rentalStatus').value:'',minPrice:$('minPrice').value,maxPrice:$('maxPrice').value,minArea:$('minArea').value,maxArea:$('maxArea').value,page:state.page,pageSize:state.pageSize,archived:state.viewArchived?'only':'',featured:state.filterTab==='featured'?'1':'',_t:Date.now()}}
 function params(input){const search=new URLSearchParams();Object.entries(input).forEach(([key,value])=>{if(value!==''&&value!=null)search.set(key,value)});return search}
-async function api(path,options={}){const response=await fetch(path,options);const body=await response.json();if(!response.ok||body.ok===false)throw new Error(body.error||'Không tải được dữ liệu');return body}
+async function api(path,options={}){const response=await fetch(path,options);const body=await response.json();if(!response.ok||body.ok===false){const errText=typeof body.error==='object'&&body.error!==null?(body.error.message||JSON.stringify(body.error)):(body.error||'Không tải được dữ liệu');throw new Error(errText);}return body;}
 function setOptions(id,items,label){const select=$(id);if(!select)return;const current=select.value;select.innerHTML=`<option value="">${label}</option>`+(items||[]).map(item=>`<option value="${escapeHtml(item)}">${escapeHtml(item)}</option>`).join('');select.value=current}
 async function loadFacets(){try{const data=await api('/api/facets');state.facets=data;setOptions('district',data.districts,'Tất cả quận huyện');setOptions('ward',data.wards,'Tất cả phường xã');setOptions('street',data.streets,'Tất cả tuyến đường');setOptions('type',data.types,'Tất cả loại hình')}catch{}}
 function skeleton(){
@@ -849,7 +848,7 @@ async function openFacebookStudio(propertyId) {
   const submitBtn = $('fbSubmitBtn');
   if (submitBtn) {
     submitBtn.disabled = false;
-    submitBtn.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg><span>Đăng lên Fanpage Ngọc Nhà Tốt</span>`;
+    submitBtn.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg><span>Đăng lên Facebook</span>`;
   }
 
   dialog.showModal();
@@ -874,7 +873,16 @@ async function loadFacebookDraft(propertyId, tone = 'hot') {
 
   try {
     const includeLink = $('fbIncludeLink')?.checked ?? true;
-    const res = await api(`/api/admin/v1/facebook/draft?id=${encodeURIComponent(propertyId)}&tone=${tone}&includeLink=${includeLink}`);
+    const res = await api('/api/admin/v1/facebook/draft', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'draft',
+        propertyId,
+        tone,
+        includeLink
+      })
+    });
     const data = res.data || {};
 
     fbPortalState.content = data.content || '';

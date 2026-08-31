@@ -1984,79 +1984,87 @@ body.selection-mode-active .card-select-wrap,
   gap: 12px;
 }
 
-@media (max-width: 600px) {
-  .fb-portal-footer {
-    flex-direction: column;
-    align-items: stretch;
+@media (max-width: 760px) {
+  dialog#facebookPostDialog.fb-portal-dialog {
+    inset: 0 !important;
+    width: 100vw !important;
+    min-width: 100vw !important;
+    max-width: none !important;
+    height: 100dvh !important;
+    min-height: 100dvh !important;
+    max-height: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    overflow: hidden !important;
+    background: #ffffff !important;
   }
-}
-
-.fb-portal-status-bar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.fb-portal-tag {
-  font-size: 9.5px;
-  font-weight: 800;
-  padding: 3px 7px;
-  border-radius: 4px;
-  background: #e0f2fe;
-  color: #0369a1;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.fb-portal-status-note {
-  font-size: 11.5px;
-  color: #64748b;
-}
-
-.fb-portal-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.fb-portal-btn-cancel {
-  padding: 8px 16px;
-  border-radius: 6px;
-  border: 1px solid #cbd5e1;
-  background: #ffffff;
-  color: #475569;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.fb-portal-btn-cancel:hover {
-  background: #f1f5f9;
-}
-
-.fb-portal-btn-publish {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 8px 18px;
-  border-radius: 6px;
-  border: none;
-  background: #1877f2;
-  color: #ffffff;
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(24, 119, 242, 0.3);
-  transition: all 0.15s ease;
-}
-
-.fb-portal-btn-publish:hover {
-  background: #166fe5;
-}
-
-.fb-portal-btn-publish:disabled {
-  opacity: 0.65;
-  cursor: not-allowed;
+  .fb-portal-shell {
+    width: 100% !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    border-radius: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+  .fb-portal-header {
+    flex: 0 0 auto !important;
+    padding: 12px 16px !important;
+  }
+  .fb-portal-title {
+    font-size: 15px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 280px !important;
+  }
+  .fb-portal-body {
+    flex: 1 1 auto !important;
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+    padding: 14px 16px 20px !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+  .fb-portal-tone-chips {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 6px !important;
+  }
+  .fb-portal-tone-chip {
+    justify-content: center !important;
+    padding: 7px 4px !important;
+    font-size: 11px !important;
+  }
+  .fb-portal-footer {
+    flex: 0 0 auto !important;
+    padding: 12px 16px !important;
+    background: #ffffff !important;
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.06) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+  .fb-portal-actions {
+    display: grid !important;
+    grid-template-columns: 74px 1fr !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+  .fb-portal-btn-publish {
+    justify-content: center !important;
+    width: 100% !important;
+    height: 42px !important;
+    font-size: 13px !important;
+    padding: 0 10px !important;
+    white-space: nowrap !important;
+  }
+  .fb-portal-btn-cancel {
+    justify-content: center !important;
+    height: 42px !important;
+    padding: 0 10px !important;
+  }
 }
 
 
