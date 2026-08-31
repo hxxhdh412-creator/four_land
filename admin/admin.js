@@ -1273,8 +1273,8 @@ async function loadFacebookDraft(propertyId, tone = 'hot') {
     contentInput.value = data.content;
     previewText.textContent = data.content;
 
-    // Default: select up to 4 images
-    fbState.selectedImages = new Set(fbState.allImages.slice(0, 4));
+    // Default: select ALL images
+    fbState.selectedImages = new Set(fbState.allImages);
     renderFacebookPhotoGrid();
     renderFacebookPreviewGallery();
 

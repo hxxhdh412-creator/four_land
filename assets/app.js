@@ -893,9 +893,8 @@ async function loadFacebookDraft(propertyId, tone = 'hot') {
     fbPortalState.allImages = data.images || [];
     fbPortalState.pageName = data.pageName || 'Ngọc Nhà Tốt';
 
-    if (fbPortalState.allImages.length > 0 && fbPortalState.selectedImages.size === 0) {
-      fbPortalState.selectedImages.add(fbPortalState.allImages[0]);
-    }
+    // Default: select ALL images automatically
+    fbPortalState.selectedImages = new Set(fbPortalState.allImages);
 
     if (contentInput) contentInput.value = fbPortalState.content;
     if (previewText) previewText.textContent = fbPortalState.content;
