@@ -3,7 +3,7 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "functions": {
-    "api/*.js": { "maxDuration": 10 }
+    "api/*.js": { "maxDuration": 60 }
   },
   "redirects": [
     { "source": "/:path*", "has": [{ "type": "host", "value": "fourland.vn" }], "destination": "https://www.fourland.vn/:path*", "permanent": true }

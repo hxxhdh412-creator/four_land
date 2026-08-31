@@ -122,7 +122,11 @@ async function publishToComposioFacebook({
   // 1. If Composio API key is provided and active, execute via Composio MCP Gateway
   if (apiKey && apiKey.trim() && apiKey !== "pending") {
     try {
-      const validImages = Array.isArray(imageUrls) ? imageUrls.filter(Boolean) : [];
+      const validImages = (Array.isArray(imageUrls) ? imageUrls.filter(Boolean) : []).slice(0, 10).map((url) => {
+        const match = String(url).match(/\/d\/([\w-]+)/) || String(url).match(/[?&]id=([\w-]+)/);
+        if (match) return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w1200`;
+        return url;
+      });
       let rawId = "";
 
       if (validImages.length > 1) {
