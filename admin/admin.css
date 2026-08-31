@@ -3242,33 +3242,7 @@ body:not(.authenticated) .cms-sidebar,
   display: none !important;
 }
 
-.cms-top-left {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.cms-menu-toggle {
-  display: none;
-}
-
-.cms-sidebar-header {
-  display: none;
-}
-
-.cms-nav-text-mobile {
-  display: none;
-}
-
 @media (max-width: 900px) {
-  .cms-nav-text-desktop {
-    display: none !important;
-  }
-
-  .cms-nav-text-mobile {
-    display: inline !important;
-  }
-
   .cms-layout {
     display: flex;
     flex-direction: column;

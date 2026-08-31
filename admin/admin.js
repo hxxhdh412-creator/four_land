@@ -1444,23 +1444,9 @@ if (byId('facebookPostDialog')) {
   });
 }
 
-// Sidebar Drawer Mobile Handlers
-function toggleMobileSidebar() {
-  document.body.classList.toggle('sidebar-open');
-}
-
-function closeMobileSidebar() {
-  document.body.classList.remove('sidebar-open');
-}
-
-if (byId('btnToggleSidebar')) byId('btnToggleSidebar').addEventListener('click', toggleMobileSidebar);
-if (byId('btnCloseSidebar')) byId('btnCloseSidebar').addEventListener('click', closeMobileSidebar);
-if (byId('cmsBackdrop')) byId('cmsBackdrop').addEventListener('click', closeMobileSidebar);
-
 // Sidebar Navigation Events & Deep-Linking Routing
 document.querySelectorAll('[data-page]').forEach(btn => {
   btn.addEventListener('click', () => {
-    closeMobileSidebar();
     const page = btn.dataset.page;
     if (page) setActivePage(page, true);
   });
