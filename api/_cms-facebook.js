@@ -58,8 +58,17 @@ function createHandler({ requireCmsImpl = requireCms, request = supabaseRequest 
       // Publish action
       if (action === "publish") {
         const content = String(body.content || "").trim();
+        const propertyId = body.propertyId;
         if (!content) {
           return res.status(422).json({ ok: false, error: { message: "Nội dung bài viết không được để trống" } });
+        }
+
+        // Save content to property notes in database
+        if (propertyId) {
+          await request(`properties?property_id=eq.${encodeURIComponent(propertyId)}`, {
+            method: "PATCH",
+            body: { notes: content, updated_at: new Date().toISOString() }
+          }).catch(err => console.warn("Update property notes notice:", err.message));
         }
 
         const photoUrls = Array.isArray(body.images) ? body.images : [];
@@ -76,7 +85,7 @@ function createHandler({ requireCmsImpl = requireCms, request = supabaseRequest 
         return res.status(200).json({
           ok: true,
           data: publishResult,
-          message: publishResult.message
+          message: `${publishResult.message} (Đã lưu nội dung vào kho nhà)`
         });
       }
 

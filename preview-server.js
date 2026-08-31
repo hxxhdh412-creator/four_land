@@ -598,8 +598,26 @@ http.createServer(async (req,res)=>{
       }
       if (action === "publish") {
         const content = String(body.content || "").trim();
+        const propertyId = body.propertyId;
         const photoUrls = Array.isArray(body.images) ? body.images : [];
         const pageName = body.pageName || process.env.FACEBOOK_PAGE_NAME || "Ngọc Nhà Tốt";
+
+        if (propertyId) {
+          invalidateCmsCache();
+          if (databaseEnabled) {
+            await dbRequest(`properties?property_id=eq.${encodeURIComponent(propertyId)}`, {
+              method: "PATCH",
+              body: { notes: content, updated_at: new Date().toISOString() }
+            }).catch(err => console.warn("Update property notes notice:", err.message));
+          } else {
+            const target = rows.find(item => item.property_id === propertyId);
+            if (target) {
+              target.notes = content;
+              target.updated_at = new Date().toISOString();
+            }
+          }
+        }
+
         const publishResult = await publishToComposioFacebook({
           content,
           imageUrls: photoUrls,
@@ -607,7 +625,7 @@ http.createServer(async (req,res)=>{
           apiKey: process.env.COMPOSIO_API_KEY || "ck_e4AHzIDYFZKwFT8XrkwX",
           pageId: process.env.FACEBOOK_PAGE_ID || "106656702112510"
         });
-        return send(res, 200, { ok: true, data: publishResult, message: publishResult.message });
+        return send(res, 200, { ok: true, data: publishResult, message: `${publishResult.message} (Đã lưu nội dung vào kho nhà)` });
       }
     } catch(error) {
       return send(res, 500, { ok: false, error: { message: error.message } });

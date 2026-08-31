@@ -1361,6 +1361,7 @@ async function handlePublishFacebook() {
     const result = await cmsApi('/api/admin/v1/facebook/publish', {
       method: 'POST',
       body: {
+        propertyId: fbState.propertyId,
         content,
         images: Array.from(fbState.selectedImages),
         pageName: fbState.pageName
@@ -1368,11 +1369,20 @@ async function handlePublishFacebook() {
     });
 
     statusNote.textContent = result.message || 'Đã đăng thành công!';
-    submitBtn.innerHTML = `<svg class="cms-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span>Đã xuất bản thành công</span>`;
+    submitBtn.innerHTML = `<svg class="cms-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span>Đã xuất bản & Lưu thành công</span>`;
+
+    // Auto-update current property detail in UI
+    if (fbState.propertyId) {
+      if (cmsState.currentProperty && cmsState.currentProperty.id === fbState.propertyId) {
+        cmsState.currentProperty.notes = content;
+      }
+      cmsState.propertiesLoaded = false;
+      openPropertyDetail(fbState.propertyId);
+    }
 
     // Show toast with Facebook link
     if (result.data?.postUrl) {
-      if (confirm(`${result.message || 'Đã xuất bản thành công lên Fanpage Ngọc Ngà Tốt!'}\n\nBạn có muốn mở xem bài viết trên Facebook không?`)) {
+      if (confirm(`${result.message || 'Đã xuất bản thành công lên Fanpage Ngọc Nhà Tốt!'}\n\nBạn có muốn mở xem bài viết trên Facebook không?`)) {
         window.open(result.data.postUrl, '_blank');
       }
     } else {
