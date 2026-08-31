@@ -164,11 +164,20 @@ async function publishToComposioFacebook({
             if (textContent) {
               const parsed = JSON.parse(textContent);
               const toolResult = parsed.data?.results?.[0]?.response?.data || {};
-              const postId = toolResult.post_id || toolResult.id || `fb_${Date.now()}`;
+              const rawId = toolResult.post_id || toolResult.id || "";
+              let postUrl = `https://www.facebook.com/${pageId}`;
+              if (rawId) {
+                const parts = String(rawId).split("_");
+                if (parts.length === 2) {
+                  postUrl = `https://www.facebook.com/${parts[0]}/posts/${parts[1]}`;
+                } else {
+                  postUrl = `https://www.facebook.com/${pageId}/posts/${rawId}`;
+                }
+              }
               return {
                 ok: true,
-                postId,
-                postUrl: `https://www.facebook.com/${postId}`,
+                postId: rawId || `fb_${Date.now()}`,
+                postUrl,
                 pageName,
                 message: `Đã đăng bài thành công lên Fanpage ${pageName}!`
               };
@@ -183,7 +192,7 @@ async function publishToComposioFacebook({
 
   // 2. Clean fallback simulation with instant preview
   const simulatedPostId = `post_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-  const simulatedUrl = `https://www.facebook.com/${simulatedPostId}`;
+  const simulatedUrl = `https://www.facebook.com/${pageId}`;
 
   return {
     ok: true,
