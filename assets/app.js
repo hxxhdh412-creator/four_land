@@ -368,7 +368,7 @@ function handleDetailImgError(img){
 function adminToolsHtml(p){
   const isFeatured = p.status === 'featured' || Boolean(p.is_featured);
   const isRented = p.status === 'rented' || Boolean(p.is_rented);
-  return`<details class="admin-panel"><summary><span>Quản trị hồ sơ</span><small>Sửa thông tin nhà</small></summary><form id="propertyEditForm"><div class="admin-toggles-grid"><label class="admin-featured-toggle"><div class="toggle-content"><svg class="star-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg><strong>Ghim Nổi Bật</strong></div><input type="checkbox" name="is_featured" id="adminFeaturedInput" ${isFeatured?'checked':''}><span class="toggle-switch"></span></label><label class="admin-featured-toggle admin-rented-toggle"><div class="toggle-content"><svg class="lock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><strong>Đã Cho Thuê</strong></div><input type="checkbox" name="is_rented" id="adminRentedInput" ${isRented?'checked':''}><span class="toggle-switch toggle-switch-rented"></span></label></div><div class="admin-fields"><label class="wide">Nội dung nhà<textarea name="raw_text" rows="5">${escapeHtml(p.raw_text||'')}</textarea></label><label class="wide">Địa chỉ<input name="address" value="${escapeHtml(p.address||'')}"></label><label>Quận/Huyện<input name="district" value="${escapeHtml(p.district||'')}"></label><label>Phường/Xã<input name="ward" value="${escapeHtml(p.ward||'')}"></label><label>Tên đường<input name="street" value="${escapeHtml(p.street||'')}"></label><label>Giá<input name="price_text" value="${escapeHtml(p.price_text||'')}"></label><label>Diện tích<input name="area_text" value="${escapeHtml(p.area_text||'')}"></label><label>Kích thước<input name="dimensions" value="${escapeHtml(p.dimensions||'')}"></label><label>Phòng ngủ<input name="bedrooms" type="number" min="0" value="${escapeHtml(p.bedrooms??'')}"></label><label>Phòng tắm<input name="bathrooms" type="number" min="0" value="${escapeHtml(p.bathrooms??'')}"></label><label>Kết cấu<input name="structure" value="${escapeHtml(p.structure||'')}"></label><label>Pháp lý<input name="legal" value="${escapeHtml(p.legal||'')}"></label><label>Số liên hệ<input name="phone" inputmode="tel" value="${escapeHtml(p.phone||'')}"></label><label>Loại BĐS<input name="property_type" value="${escapeHtml(p.property_type||'')}"></label></div><div class="admin-actions"><button class="admin-save" type="submit">Lưu thay đổi</button><button type="button" class="${p.status==='archived'?'admin-restore':'admin-archive'}" id="adminArchiveBtn">${p.status==='archived'?'Khôi phục hồ sơ lên web':'Ẩn hồ sơ khỏi web'}</button><button type="button" class="admin-hard-delete" id="adminHardDeleteBtn" title="Xóa hoàn toàn khỏi cơ sở dữ liệu">🗑️ Xóa vĩnh viễn</button></div><div id="adminEditStatus" class="admin-status" role="status"></div></form></details>`
+  return`<details class="admin-panel"><summary><span>Quản trị hồ sơ</span><small>Sửa thông tin nhà</small></summary><form id="propertyEditForm"><div class="admin-toggles-grid"><label class="admin-featured-toggle"><div class="toggle-content"><svg class="star-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg><strong>Ghim Nổi Bật</strong></div><input type="checkbox" name="is_featured" id="adminFeaturedInput" ${isFeatured?'checked':''}><span class="toggle-switch"></span></label><label class="admin-featured-toggle admin-rented-toggle"><div class="toggle-content"><svg class="lock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><strong>Đã Cho Thuê</strong></div><input type="checkbox" name="is_rented" id="adminRentedInput" ${isRented?'checked':''}><span class="toggle-switch toggle-switch-rented"></span></label></div><div class="admin-fields"><label class="wide">Nội dung nhà<textarea name="raw_text" rows="5">${escapeHtml(p.raw_text||'')}</textarea></label><label class="wide">Địa chỉ<input name="address" value="${escapeHtml(p.address||'')}"></label><label>Quận/Huyện<input name="district" value="${escapeHtml(p.district||'')}"></label><label>Phường/Xã<input name="ward" value="${escapeHtml(p.ward||'')}"></label><label>Tên đường<input name="street" value="${escapeHtml(p.street||'')}"></label><label>Giá<input name="price_text" value="${escapeHtml(p.price_text||'')}"></label><label>Diện tích<input name="area_text" value="${escapeHtml(p.area_text||'')}"></label><label>Kích thước<input name="dimensions" value="${escapeHtml(p.dimensions||'')}"></label><label>Phòng ngủ<input name="bedrooms" type="number" min="0" value="${escapeHtml(p.bedrooms??'')}"></label><label>Phòng tắm<input name="bathrooms" type="number" min="0" value="${escapeHtml(p.bathrooms??'')}"></label><label>Kết cấu<input name="structure" value="${escapeHtml(p.structure||'')}"></label><label>Pháp lý<input name="legal" value="${escapeHtml(p.legal||'')}"></label><label>Số liên hệ<input name="phone" inputmode="tel" value="${escapeHtml(p.phone||'')}"></label><label>Loại BĐS<input name="property_type" value="${escapeHtml(p.property_type||'')}"></label></div><div class="admin-actions"><button class="admin-save" type="submit">Lưu thay đổi</button><button type="button" class="${p.status==='archived'?'admin-restore':'admin-archive'}" id="adminArchiveBtn">${p.status==='archived'?'Khôi phục hồ sơ lên web':'Ẩn hồ sơ khỏi web'}</button><button type="button" class="admin-hard-delete" id="adminHardDeleteBtn" title="Xóa hoàn toàn khỏi cơ sở dữ liệu">🗑️ Xóa vĩnh viễn</button></div><button type="button" class="admin-post-facebook" id="adminPanelFbBtn"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg><span>Đăng lên Fanpage Ngọc Nhà Tốt</span></button><div id="adminEditStatus" class="admin-status" role="status"></div></form></details>`
 }
 function showToast(message,duration=2400){const toast=$('toast');if(!toast)return;toast.textContent=message;toast.classList.add('active');clearTimeout(toast._timer);toast._timer=setTimeout(()=>toast.classList.remove('active'),duration)}
 function maskPhone(phone){if(!phone)return'Chưa có SĐT';const clean=String(phone).trim();if(clean.length>=9)return clean.slice(0,4)+' ••• •••';return clean.slice(0,Math.max(3,clean.length-4))+' •••'}
@@ -500,7 +500,11 @@ async function openDetail(id,seoPath=''){
       <span class="gallery-counter"><span id="activeImgIndex">1</span> / ${images.length}</span>
     ` : '';
 
-    $('detailBody').innerHTML=`<div><div class="gallery-main ${!images[0]?'no-photo':''}">${images[0]?`<img id="mainImage" referrerpolicy="no-referrer" src="${escapeHtml(images[0])}" alt="${escapeHtml(propNameAlt)}" onerror="handleDetailImgError(this)">`:`<div class="placeholder-watermark watermark-detail"><img src="/assets/brand/fourland-logo.png" alt="Fourland" class="watermark-logo"><span class="watermark-text">Hình ảnh đang cập nhật</span></div>`}${galleryNavHtml}<button type="button" class="gallery-share-badge" id="shareDetail" title="Chia sẻ căn nhà này"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg><span>Chia sẻ</span></button></div><div class="thumbs">${thumbsHtml}</div></div><div><section class="content-panel"><h3>Nội dung nhà</h3><p>${escapeHtml(displayRawText)}</p></section><section class="info-panel"><div class="price">${escapeHtml(p.price_text||'Liên hệ')}</div><h2>${escapeHtml(displayAddress)}</h2><div class="meta">${escapeHtml([p.street,p.ward,p.district].filter(Boolean).join(' · '))}</div><div class="info-grid">${infoGridHtml}</div></section>${state.adminUnlocked?adminToolsHtml(p):''}<section class="direct-contact"><div><span>Hotline hỗ trợ Fourland</span><strong>${escapeHtml(COMPANY_HOTLINE)}</strong></div><a href="tel:${escapeHtml(phoneHref(COMPANY_HOTLINE))}" aria-label="Gọi Hotline Fourland"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.2 3.5 9.6 7c.35.5.28 1.18-.16 1.62l-1.3 1.3a14.5 14.5 0 0 0 5.94 5.94l1.3-1.3c.44-.44 1.12-.51 1.62-.16l3.5 2.4c.55.38.72 1.11.39 1.69l-1 1.75c-.34.59-.98.95-1.66.93C10.1 20.95 3.05 13.9 2.83 5.77c-.02-.68.34-1.32.93-1.66l1.75-1c.58-.33 1.31-.16 1.69.39Z"/></svg>Gọi ngay</a></section></div>`;
+    const adminFbBadgeHtml = state.adminUnlocked
+      ? `<button type="button" class="gallery-fb-badge" id="adminPostFbBtn" title="Đăng lên Fanpage Ngọc Nhà Tốt"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg><span>Đăng FB</span></button>`
+      : '';
+
+    $('detailBody').innerHTML=`<div><div class="gallery-main ${!images[0]?'no-photo':''}">${images[0]?`<img id="mainImage" referrerpolicy="no-referrer" src="${escapeHtml(images[0])}" alt="${escapeHtml(propNameAlt)}" onerror="handleDetailImgError(this)">`:`<div class="placeholder-watermark watermark-detail"><img src="/assets/brand/fourland-logo.png" alt="Fourland" class="watermark-logo"><span class="watermark-text">Hình ảnh đang cập nhật</span></div>`}${galleryNavHtml}${adminFbBadgeHtml}<button type="button" class="gallery-share-badge" id="shareDetail" title="Chia sẻ căn nhà này"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg><span>Chia sẻ</span></button></div><div class="thumbs">${thumbsHtml}</div></div><div><section class="content-panel"><h3>Nội dung nhà</h3><p>${escapeHtml(displayRawText)}</p></section><section class="info-panel"><div class="price">${escapeHtml(p.price_text||'Liên hệ')}</div><h2>${escapeHtml(displayAddress)}</h2><div class="meta">${escapeHtml([p.street,p.ward,p.district].filter(Boolean).join(' · '))}</div><div class="info-grid">${infoGridHtml}</div></section>${state.adminUnlocked?adminToolsHtml(p):''}<section class="direct-contact"><div><span>Hotline hỗ trợ Fourland</span><strong>${escapeHtml(COMPANY_HOTLINE)}</strong></div><a href="tel:${escapeHtml(phoneHref(COMPANY_HOTLINE))}" aria-label="Gọi Hotline Fourland"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.2 3.5 9.6 7c.35.5.28 1.18-.16 1.62l-1.3 1.3a14.5 14.5 0 0 0 5.94 5.94l1.3-1.3c.44-.44 1.12-.51 1.62-.16l3.5 2.4c.55.38.72 1.11.39 1.69l-1 1.75c-.34.59-.98.95-1.66.93C10.1 20.95 3.05 13.9 2.83 5.77c-.02-.68.34-1.32.93-1.66l1.75-1c.58-.33 1.31-.16 1.69.39Z"/></svg>Gọi ngay</a></section></div>`;
     
     let currentImgIdx=0;
     function setActiveImage(idx){
@@ -560,6 +564,8 @@ async function openDetail(id,seoPath=''){
       document.querySelectorAll('.thumbs img').forEach((img,index)=>{const wrap=document.createElement('span');wrap.className='admin-thumb';img.parentNode.insertBefore(wrap,img);wrap.appendChild(img);const remove=document.createElement('button');remove.type='button';remove.className='image-remove';remove.setAttribute('aria-label',`Xóa ảnh ${index+1}`);remove.title='Xóa ảnh này';remove.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18m-2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/></svg>';remove.onclick=event=>{event.stopPropagation();deleteImage(p.property_id,imageItems[index].position)};wrap.appendChild(remove)});
       const archiveBtn=document.getElementById('adminArchiveBtn');if(archiveBtn){archiveBtn.onclick=()=>setPropertyArchived(p.property_id,p.status!=='archived')}
       const hardDeleteBtn=document.getElementById('adminHardDeleteBtn');if(hardDeleteBtn){hardDeleteBtn.onclick=()=>deletePropertyPermanent(p.property_id)}
+      const fbBtn=$('adminPostFbBtn');if(fbBtn)fbBtn.onclick=()=>openFacebookStudio(p.property_id);
+      const panelFbBtn=$('adminPanelFbBtn');if(panelFbBtn)panelFbBtn.onclick=()=>openFacebookStudio(p.property_id);
     }
   }catch(error){$('detailBody').innerHTML=`<div class="error">${escapeHtml(error.message)}</div>`}
 }
@@ -805,3 +811,223 @@ if (initUrlId && /^BDS-/i.test(initUrlId)) {
 } else {
   handleSearchFromHash();
 }
+
+// ==========================================================================
+// PUBLIC PORTAL FACEBOOK STUDIO & COMPOSIO CLIENT
+// ==========================================================================
+const fbPortalState = {
+  propertyId: null,
+  tone: 'hot',
+  content: '',
+  allImages: [],
+  selectedImages: new Set(),
+  pageName: 'Ngọc Nhà Tốt'
+};
+
+async function openFacebookStudio(propertyId) {
+  fbPortalState.propertyId = propertyId;
+  const dialog = $('facebookPostDialog');
+  if (!dialog) return;
+
+  const statusNote = $('fbPublishStatus');
+  if (statusNote) statusNote.textContent = 'Đang chuẩn bị bài viết…';
+  const submitBtn = $('fbSubmitBtn');
+  if (submitBtn) {
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg><span>Đăng lên Fanpage Ngọc Nhà Tốt</span>`;
+  }
+
+  dialog.showModal();
+  await loadFacebookDraft(propertyId, fbPortalState.tone);
+}
+
+function closeFacebookStudio() {
+  const dialog = $('facebookPostDialog');
+  if (dialog) dialog.close();
+}
+
+async function loadFacebookDraft(propertyId, tone = 'hot') {
+  fbPortalState.tone = tone;
+  const contentInput = $('fbPostContent');
+  const previewText = $('fbPreviewText');
+  if (contentInput) contentInput.value = 'Đang sinh nội dung bài viết với AI…';
+  if (previewText) previewText.textContent = 'Đang sinh nội dung bài viết với AI…';
+
+  document.querySelectorAll('[data-fb-tone]').forEach(chip => {
+    chip.classList.toggle('active', chip.dataset.fbTone === tone);
+  });
+
+  try {
+    const includeLink = $('fbIncludeLink')?.checked ?? true;
+    const res = await api(`/api/admin/v1/facebook/draft?id=${encodeURIComponent(propertyId)}&tone=${tone}&includeLink=${includeLink}`);
+    const data = res.data || {};
+
+    fbPortalState.content = data.content || '';
+    fbPortalState.allImages = data.images || [];
+    fbPortalState.pageName = data.pageName || 'Ngọc Nhà Tốt';
+
+    if (fbPortalState.allImages.length > 0 && fbPortalState.selectedImages.size === 0) {
+      fbPortalState.selectedImages.add(fbPortalState.allImages[0]);
+    }
+
+    if (contentInput) contentInput.value = fbPortalState.content;
+    if (previewText) previewText.textContent = fbPortalState.content;
+
+    renderFacebookPhotoGrid();
+    renderFacebookPreviewGallery();
+
+    const statusNote = $('fbPublishStatus');
+    if (statusNote) statusNote.textContent = 'Sẵn sàng đăng lên Fanpage Ngọc Nhà Tốt';
+  } catch (error) {
+    if (contentInput) contentInput.value = `Lỗi tải nội dung: ${error.message}`;
+    if (previewText) previewText.textContent = `Lỗi tải nội dung: ${error.message}`;
+  }
+}
+
+function renderFacebookPhotoGrid() {
+  const grid = $('fbPhotoGrid');
+  const countLabel = $('fbPhotoCount');
+  if (!grid) return;
+
+  grid.innerHTML = '';
+  if (countLabel) countLabel.textContent = `Đã chọn ${fbPortalState.selectedImages.size}/${fbPortalState.allImages.length} ảnh`;
+
+  if (!fbPortalState.allImages.length) {
+    grid.innerHTML = '<span style="font-size:11px;color:#8c9891;padding:8px;">Hồ sơ không có hình ảnh</span>';
+    return;
+  }
+
+  fbPortalState.allImages.forEach((imgUrl, index) => {
+    const item = document.createElement('div');
+    const isSelected = fbPortalState.selectedImages.has(imgUrl);
+    item.className = `fb-portal-photo-item ${isSelected ? 'selected' : ''}`;
+    item.innerHTML = `
+      <img src="${escapeHtml(imgUrl)}" alt="Ảnh ${index + 1}">
+      <div class="fb-portal-photo-check">✓</div>
+    `;
+
+    item.onclick = () => {
+      if (fbPortalState.selectedImages.has(imgUrl)) {
+        fbPortalState.selectedImages.delete(imgUrl);
+      } else {
+        fbPortalState.selectedImages.add(imgUrl);
+      }
+      renderFacebookPhotoGrid();
+      renderFacebookPreviewGallery();
+    };
+
+    grid.appendChild(item);
+  });
+}
+
+function renderFacebookPreviewGallery() {
+  const gallery = $('fbPreviewGallery');
+  if (!gallery) return;
+
+  const images = Array.from(fbPortalState.selectedImages);
+  gallery.className = `fb-mock-gallery layout-${Math.min(images.length, 4)}`;
+  gallery.innerHTML = '';
+
+  if (!images.length) {
+    gallery.style.display = 'none';
+    return;
+  }
+
+  gallery.style.display = 'grid';
+  images.slice(0, 4).forEach((imgUrl, index) => {
+    const img = document.createElement('img');
+    img.src = imgUrl;
+    img.alt = `Facebook Preview Photo ${index + 1}`;
+    gallery.appendChild(img);
+  });
+}
+
+async function handlePublishFacebook() {
+  const content = ($('fbPostContent')?.value || '').trim();
+  if (!content) {
+    alert('Vui lòng nhập nội dung bài viết');
+    return;
+  }
+
+  const submitBtn = $('fbSubmitBtn');
+  const statusNote = $('fbPublishStatus');
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = `<span>Đang đăng lên Facebook qua Composio…</span>`;
+  }
+  if (statusNote) statusNote.textContent = 'Đang xử lý kết nối Composio MCP…';
+
+  try {
+    const result = await api('/api/admin/v1/facebook/publish', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        propertyId: fbPortalState.propertyId,
+        content,
+        images: Array.from(fbPortalState.selectedImages),
+        pageName: fbPortalState.pageName
+      })
+    });
+
+    if (statusNote) statusNote.textContent = result.message || 'Đã đăng thành công!';
+    if (submitBtn) submitBtn.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span>Đã xuất bản & Lưu thành công</span>`;
+
+    // Update open detail view
+    if (fbPortalState.propertyId && $('detail').open) {
+      openDetail(fbPortalState.propertyId);
+    }
+
+    if (result.data?.postUrl) {
+      if (confirm(`${result.message || 'Đã xuất bản thành công lên Fanpage Ngọc Nhà Tốt!'}\n\nBạn có muốn mở xem bài viết trên Facebook không?`)) {
+        window.open(result.data.postUrl, '_blank');
+      }
+    } else {
+      alert(result.message || 'Đã đăng bài thành công lên Facebook!');
+    }
+
+    setTimeout(closeFacebookStudio, 1500);
+  } catch (error) {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = `<span>Thử lại</span>`;
+    }
+    if (statusNote) statusNote.textContent = `Lỗi: ${error.message}`;
+    alert(`Không thể đăng bài: ${error.message}`);
+  }
+}
+
+// Facebook Studio Event Listeners
+if ($('fbDialogClose')) $('fbDialogClose').onclick = closeFacebookStudio;
+if ($('fbCancelBtn')) $('fbCancelBtn').onclick = closeFacebookStudio;
+if ($('fbSubmitBtn')) $('fbSubmitBtn').onclick = handlePublishFacebook;
+
+document.querySelectorAll('[data-fb-tone]').forEach(chip => {
+  chip.onclick = () => {
+    const tone = chip.dataset.fbTone;
+    if (fbPortalState.propertyId) {
+      loadFacebookDraft(fbPortalState.propertyId, tone);
+    }
+  };
+});
+
+if ($('fbPostContent')) {
+  $('fbPostContent').oninput = function() {
+    fbPortalState.content = this.value;
+    if ($('fbPreviewText')) $('fbPreviewText').textContent = this.value;
+  };
+}
+
+if ($('fbIncludeLink')) {
+  $('fbIncludeLink').onchange = () => {
+    if (fbPortalState.propertyId) {
+      loadFacebookDraft(fbPortalState.propertyId, fbPortalState.tone);
+    }
+  };
+}
+
+if ($('facebookPostDialog')) {
+  $('facebookPostDialog').onclick = event => {
+    if (event.target === $('facebookPostDialog')) closeFacebookStudio();
+  };
+}
+

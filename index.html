@@ -341,8 +341,102 @@
       </div>
     </form>
   </dialog>
+  <dialog id="facebookPostDialog" class="fb-portal-dialog" aria-labelledby="fbDialogTitle">
+    <div class="fb-portal-shell">
+      <header class="fb-portal-header">
+        <div>
+          <p class="fb-portal-eyebrow">Marketing & Mạng Xã Hội</p>
+          <h2 id="fbDialogTitle" class="fb-portal-title">Đăng bài lên Fanpage Ngọc Nhà Tốt</h2>
+        </div>
+        <button id="fbDialogClose" class="fb-portal-close" type="button" aria-label="Đóng Facebook Studio">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </header>
+
+      <div class="fb-portal-body">
+        <div class="fb-portal-editor">
+          <div class="fb-portal-tone-section">
+            <span class="fb-portal-label">Chọn phong cách bài viết:</span>
+            <div class="fb-portal-tone-chips">
+              <button type="button" class="fb-portal-tone-chip active" data-fb-tone="hot">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                <span>Thu hút & Nổi bật</span>
+              </button>
+              <button type="button" class="fb-portal-tone-chip" data-fb-tone="detail">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                <span>Đầy đủ & Chi tiết</span>
+              </button>
+              <button type="button" class="fb-portal-tone-chip" data-fb-tone="quick">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <span>Súc tích & Gọn</span>
+              </button>
+            </div>
+          </div>
+
+          <label class="fb-portal-field">
+            <span class="fb-portal-label">Nội dung bài viết (Có thể chỉnh sửa):</span>
+            <textarea id="fbPostContent" rows="7" placeholder="Đang tạo nội dung bài viết..."></textarea>
+          </label>
+
+          <div class="fb-portal-photo-section">
+            <div class="fb-portal-photo-header">
+              <span class="fb-portal-label">Chọn hình ảnh đăng kèm:</span>
+              <span id="fbPhotoCount" class="fb-portal-photo-count">Đã chọn 0 ảnh</span>
+            </div>
+            <div id="fbPhotoGrid" class="fb-portal-photo-grid"></div>
+          </div>
+
+          <div class="fb-portal-options">
+            <label class="fb-portal-checkbox">
+              <input type="checkbox" id="fbIncludeLink" checked>
+              <span>Gắn link xem kho nhà Fourland ở cuối bài</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="fb-portal-preview">
+          <div class="fb-portal-preview-title">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            <span>Xem trước bài viết trên Facebook</span>
+          </div>
+
+          <div class="fb-mock-card">
+            <div class="fb-mock-head">
+              <div class="fb-mock-avatar">
+                <img src="https://graph.facebook.com/106656702112510/picture?type=large" alt="Avatar Ngọc Nhà Tốt" onerror="this.style.display='none';this.parentElement.textContent='NNT'">
+              </div>
+              <div class="fb-mock-meta">
+                <div class="fb-mock-name">
+                  <strong>Ngọc Nhà Tốt</strong>
+                  <svg class="fb-verified-badge" viewBox="0 0 24 24" width="13" height="13" fill="#1877f2"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                </div>
+                <span class="fb-mock-time">Vừa xong · <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></span>
+              </div>
+            </div>
+
+            <div id="fbPreviewText" class="fb-mock-body"></div>
+            <div id="fbPreviewGallery" class="fb-mock-gallery"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="fb-portal-footer">
+        <div class="fb-portal-status-bar">
+          <span class="fb-portal-tag">Composio MCP Active</span>
+          <span id="fbPublishStatus" class="fb-portal-status-note">Sẵn sàng đăng lên Fanpage Ngọc Nhà Tốt</span>
+        </div>
+        <div class="fb-portal-actions">
+          <button id="fbCancelBtn" type="button" class="fb-portal-btn-cancel">Hủy</button>
+          <button id="fbSubmitBtn" type="button" class="fb-portal-btn-publish">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+            <span>Đăng lên Fanpage Ngọc Nhà Tốt</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </dialog>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script src="/assets/app.js?v=20260827-hide-house-number-v51" defer></script>
+  <script src="/assets/app.js?v=20260827-hide-house-number-v52" defer></script>
 </body>
 
 </html>
