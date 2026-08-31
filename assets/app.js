@@ -66,6 +66,7 @@ function formatVietnamFullDateTime(isoString){
   return`${timeStr} - ${dateStr}`;
 }
 
+function driveImage(url){const value=String(url||'');const match=value.match(/\/d\/([\w-]+)/)||value.match(/[?&]id=([\w-]+)/);return match?`https://drive.google.com/thumbnail?id=${match[1]}&sz=w1400`:value}
 function values(){return{q:$('q').value,district:$('district').value,ward:$('ward').value,street:$('street').value,type:$('type').value,timeRange:$('timeRange')?$('timeRange').value:'',sortBy:$('sortBy')?$('sortBy').value:'',rentalStatus:$('rentalStatus')?$('rentalStatus').value:'',minPrice:$('minPrice').value,maxPrice:$('maxPrice').value,minArea:$('minArea').value,maxArea:$('maxArea').value,page:state.page,pageSize:state.pageSize,archived:state.viewArchived?'only':'',featured:state.filterTab==='featured'?'1':'',_t:Date.now()}}
 function params(input){const search=new URLSearchParams();Object.entries(input).forEach(([key,value])=>{if(value!==''&&value!=null)search.set(key,value)});return search}
 async function api(path,options={}){const response=await fetch(path,options);const body=await response.json();if(!response.ok||body.ok===false){const errText=typeof body.error==='object'&&body.error!==null?(body.error.message||JSON.stringify(body.error)):(body.error||'Không tải được dữ liệu');throw new Error(errText);}return body;}
