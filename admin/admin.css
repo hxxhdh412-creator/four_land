@@ -3039,10 +3039,346 @@ strong.req {
   box-shadow: 0 4px 14px rgba(24, 119, 242, 0.35);
 }
 
-@media (max-width: 768px) {
-  .cms-fb-studio-body {
+/* ==========================================================================
+   RESPONSIVE DESIGN FOR MOBILE & TABLET (CMS OPTIMIZATION)
+   ========================================================================== */
+
+@media (max-width: 900px) {
+  .cms-layout {
+    display: flex;
+    flex-direction: column;
+    min-height: auto;
+  }
+
+  .cms-sidebar {
+    padding: 8px 12px;
+    flex-direction: row;
+    align-items: center;
+    overflow-x: auto;
+    gap: 8px;
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    position: sticky;
+    top: 60px;
+    z-index: 45;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .cms-nav-label {
+    display: none;
+  }
+
+  .cms-nav-item {
+    width: auto;
+    height: 38px;
+    margin-bottom: 0;
+    padding: 0 12px;
+    border-radius: 20px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    font-size: 12px;
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  .cms-topbar {
+    height: 60px;
+    padding: 0 14px;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+
+  .cms-brand img {
+    width: 32px;
+    height: 32px;
+  }
+
+  .cms-brand > span {
+    padding-left: 8px;
+  }
+
+  .cms-brand strong {
+    font-size: 13.5px;
+  }
+
+  .cms-brand small {
+    display: none;
+  }
+
+  .cms-system-state {
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+
+  .cms-system-state span {
+    display: none;
+  }
+
+  .cms-avatar {
+    width: 34px;
+    height: 34px;
+    font-size: 12px;
+  }
+
+  .cms-main {
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .cms-content {
+    padding: 14px 12px 28px;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .cms-heading {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .cms-heading h1 {
+    font-size: 20px;
+    line-height: 1.25;
+  }
+
+  .cms-heading .cms-primary,
+  .cms-heading button {
+    width: 100%;
+    height: 42px;
+    justify-content: center;
+  }
+
+  .cms-metrics {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .cms-metrics article {
+    padding: 12px 14px;
+  }
+
+  .cms-metrics strong {
+    font-size: 24px;
+  }
+
+  .cms-dashboard-grid {
     grid-template-columns: 1fr;
-    gap: 16px;
+    gap: 14px;
+  }
+
+  .cms-filter-card {
+    padding: 12px;
+  }
+
+  .cms-filter-row-primary {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .cms-search-box {
+    width: 100%;
+  }
+
+  .cms-filter-selects {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .cms-select-wrapper {
+    width: 100%;
+  }
+
+  .cms-select-wrapper select {
+    width: 100%;
+  }
+
+  .cms-filter-buttons {
+    width: 100%;
+    display: flex;
+    gap: 8px;
+  }
+
+  .cms-filter-buttons button {
+    flex: 1;
+    height: 40px;
+    justify-content: center;
+  }
+
+  .cms-surface {
+    border-radius: 8px;
+    overflow: hidden;
+    max-width: 100%;
+  }
+
+  .cms-table-container,
+  .cms-surface-table-wrap {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .cms-table {
+    min-width: 620px;
+  }
+
+  .cms-pagination {
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+  }
+
+  .cms-match-card {
+    padding: 14px;
+  }
+
+  .cms-match-actions button {
+    width: 100%;
+    justify-content: center;
+    height: 44px;
+  }
+
+  .cms-match-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .cms-match-quick-chips {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 6px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .cms-chip {
+    flex-shrink: 0;
+  }
+
+  .cms-login-box {
+    width: 100%;
+    max-width: 100%;
+    padding: 24px 16px;
+    border-radius: 12px;
+    box-shadow: none;
+    border: 1px solid var(--line);
+  }
+
+  .cms-quick-login-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .cms-quick-role-btn {
+    padding: 10px 8px;
+  }
+
+  .cms-quick-role-btn strong {
+    font-size: 12px;
+  }
+
+  .cms-quick-role-btn span {
+    font-size: 10px;
+  }
+
+  /* Modal Dialogs */
+  dialog.cms-dialog,
+  dialog.cms-detail-dialog,
+  dialog#cmsDetailModal,
+  dialog#cmsFacebookModal {
+    inset: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    overflow: hidden !important;
+  }
+
+  .cms-detail-shell,
+  .cms-fb-studio-shell {
+    width: 100% !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    border-radius: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+  }
+
+  .cms-detail-body,
+  .cms-fb-studio-body {
+    flex: 1 1 auto !important;
+    overflow-y: auto !important;
+    padding: 14px !important;
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .cms-detail-actions,
+  .cms-fb-footer {
+    padding: 12px 14px !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+  }
+
+  .cms-detail-actions button,
+  .cms-fb-buttons button {
+    width: 100% !important;
+    height: 42px !important;
+    justify-content: center !important;
+  }
+}
+
+@media(max-width:600px) {
+  .cms-sidebar {
+    display: grid;
+    grid-template-columns:repeat(6,1fr);
+    gap: 4px;
+    padding: 6px 4px;
+  }
+
+  .cms-nav-item {
+    flex-direction: column;
+    height: 48px;
+    padding: 4px 2px;
+    font-size: 9.5px;
+    justify-content: center;
+    gap: 3px;
+    border-radius: 6px;
+    text-align: center;
+  }
+
+  .cms-nav-item span:not(.cms-nav-icon) {
+    font-size: 8.5px;
+    line-height: 1.1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+
+  .cms-nav-icon svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .cms-metrics {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .cms-quick-login-grid {
+    grid-template-columns: 1fr;
+    gap: 6px;
   }
 }
 
