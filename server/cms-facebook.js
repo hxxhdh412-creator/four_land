@@ -172,10 +172,10 @@ async function publishToComposioFacebook({
                 const textContent = json.result?.content?.[0]?.text;
                 if (textContent) {
                   const parsed = JSON.parse(textContent);
-                  const results = parsed.data?.results || [];
+                  const results = (parsed.data?.results || []).slice().sort((a, b) => (a.index ?? 0) - (b.index ?? 0));
                   results.forEach((r) => {
-                    const mediaId = r.response?.data?.id;
-                    if (mediaId) mediaIds.push(mediaId);
+                    const mediaId = r.response?.data?.id || r.response?.data?.post_id;
+                    if (mediaId) mediaIds.push(String(mediaId));
                   });
                 }
               } catch {}

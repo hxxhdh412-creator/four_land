@@ -984,6 +984,8 @@ async function handlePublishFacebook() {
   if (statusNote) statusNote.textContent = 'Đang xuất bản bài viết…';
 
   try {
+    const selectedList = Array.from(fbPortalState.selectedImages);
+    const imagesToPublish = selectedList.length > 0 ? selectedList : (fbPortalState.allImages || []);
     const result = await api('/api/admin/v1/facebook/publish', {
       method: 'POST',
       headers: {
@@ -993,7 +995,7 @@ async function handlePublishFacebook() {
       body: JSON.stringify({
         propertyId: fbPortalState.propertyId,
         content,
-        images: Array.from(fbPortalState.selectedImages),
+        images: imagesToPublish,
         pageName: fbPortalState.pageName
       })
     });
