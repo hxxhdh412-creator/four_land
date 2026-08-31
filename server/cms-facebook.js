@@ -128,163 +128,156 @@ async function publishToComposioFacebook({
         return url;
       });
 
-      // Fetch Page Access Token from Composio
-      let pageToken = "";
-      try {
-        const pageListRes = await fetchImpl("https://connect.composio.dev/mcp", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Accept": "application/json, text/event-stream",
-            "x-consumer-api-key": apiKey,
-            "Mcp-Session-Id": sessionId
-          },
-          body: JSON.stringify({
-            jsonrpc: "2.0",
-            id: Date.now(),
-            method: "tools/call",
-            params: {
-              name: "COMPOSIO_MULTI_EXECUTE_TOOL",
-              arguments: {
-                tools: [{ tool_slug: "FACEBOOK_LIST_MANAGED_PAGES", arguments: { fields: "id,name,access_token" } }]
+      // Page Access Token for Fanpage Ngọc Nhà Tốt
+      const DEFAULT_PAGE_TOKEN = "EAAM4uULUpAUBSU9xH13NOrCzer4tEqkAWJHV3PGIZAd9pZBjViOBMBTbm8e7OscvgBbXpCQiZC7hyrwURaPrkZCoBo03MXWLXn6vWVZA1i23bZCZCwZBlZAimnrtVyHBDd1eTvc8O50b4ZAK9nukLumlvYkkcTAfBeNIDRbyCVhsiwz36ZCN2SkjaSyeYbNxnpfDusasdAB4sux9FBL3dHiTZCsZD";
+      let pageToken = process.env.FACEBOOK_PAGE_ACCESS_TOKEN || DEFAULT_PAGE_TOKEN;
+
+      // If token not set, attempt retrieval from Composio
+      if (!pageToken) {
+        try {
+          const pageListRes = await fetchImpl("https://connect.composio.dev/mcp", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Accept": "application/json, text/event-stream",
+              "x-consumer-api-key": apiKey,
+              "Mcp-Session-Id": sessionId
+            },
+            body: JSON.stringify({
+              jsonrpc: "2.0",
+              id: 1,
+              method: "tools/call",
+              params: {
+                name: "COMPOSIO_MULTI_EXECUTE_TOOL",
+                arguments: {
+                  tools: [{ tool_slug: "FACEBOOK_LIST_MANAGED_PAGES", arguments: { fields: "id,name,access_token" } }]
+                }
+              }
+            }),
+            signal: AbortSignal.timeout(15000)
+          });
+
+          if (pageListRes.ok) {
+            const raw = await pageListRes.text();
+            for (const line of raw.split("\n")) {
+              if (line.startsWith("data: ")) {
+                try {
+                  const json = JSON.parse(line.slice(6));
+                  const textContent = json.result?.content?.[0]?.text;
+                  if (textContent) {
+                    const parsed = JSON.parse(textContent);
+                    const pages = parsed.data?.results?.[0]?.response?.data?.data || [];
+                    const target = pages.find((p) => String(p.id) === String(pageId));
+                    if (target?.access_token) pageToken = target.access_token;
+                  }
+                } catch {}
               }
             }
-          }),
-          signal: AbortSignal.timeout(15000)
-        });
-
-        if (pageListRes.ok) {
-          const raw = await pageListRes.text();
-          for (const line of raw.split("\n")) {
-            if (line.startsWith("data: ")) {
-              try {
-                const json = JSON.parse(line.slice(6));
-                const textContent = json.result?.content?.[0]?.text;
-                if (textContent) {
-                  const parsed = JSON.parse(textContent);
-                  const pages = parsed.data?.results?.[0]?.response?.data?.data || [];
-                  const target = pages.find((p) => String(p.id) === String(pageId));
-                  if (target?.access_token) pageToken = target.access_token;
-                }
-              } catch {}
-            }
           }
+        } catch (tokenErr) {
+          console.warn("Fetch page token notice:", tokenErr.message);
         }
-      } catch (tokenErr) {
-        console.warn("Fetch page token notice:", tokenErr.message);
       }
 
-      // If we have pageToken and multiple images: Use direct Graph API for native multi-photo post!
-      if (pageToken && validImages.length > 1) {
-        // Step 1: Upload all photos concurrently to Facebook Graph API as unpublished media
-        const uploadPromises = validImages.map(async (imgUrl) => {
-          try {
-            const upRes = await fetchImpl(`https://graph.facebook.com/v19.0/${pageId}/photos`, {
+      // Direct Graph API Execution (Native Facebook Album / Multi-Photo Post)
+      if (pageToken) {
+        if (validImages.length > 1) {
+          // Multi-photo post: Upload all images as unpublished, then publish feed post with attached_media
+          const uploadPromises = validImages.map(async (imgUrl) => {
+            try {
+              const upRes = await fetchImpl(`https://graph.facebook.com/v19.0/${pageId}/photos`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  url: imgUrl,
+                  published: false,
+                  access_token: pageToken
+                }),
+                signal: AbortSignal.timeout(20000)
+              });
+              const upData = await upRes.json();
+              return upData.id || null;
+            } catch {
+              return null;
+            }
+          });
+
+          const uploadedIds = (await Promise.all(uploadPromises)).filter(Boolean);
+
+          if (uploadedIds.length > 0) {
+            const feedRes = await fetchImpl(`https://graph.facebook.com/v19.0/${pageId}/feed`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
-                url: imgUrl,
-                published: false,
+                message: content,
+                attached_media: uploadedIds.map((id) => ({ media_fbid: id })),
                 access_token: pageToken
               }),
               signal: AbortSignal.timeout(20000)
             });
-            const upData = await upRes.json();
-            return upData.id || null;
-          } catch {
-            return null;
+
+            const feedData = await feedRes.json();
+            const rawId = feedData.id || "";
+            if (rawId) {
+              const parts = String(rawId).split("_");
+              const postUrl = parts.length === 2
+                ? `https://www.facebook.com/${parts[0]}/posts/${parts[1]}`
+                : `https://www.facebook.com/${pageId}/posts/${rawId}`;
+
+              return {
+                ok: true,
+                postId: rawId,
+                postUrl,
+                pageName,
+                message: `Đã đăng bài thành công lên Fanpage ${pageName}!`
+              };
+            }
           }
-        });
-
-        const uploadedIds = (await Promise.all(uploadPromises)).filter(Boolean);
-
-        if (uploadedIds.length > 0) {
-          // Step 2: Publish feed post with attached_media
+        } else if (validImages.length === 1) {
+          // Single photo post
+          const photoRes = await fetchImpl(`https://graph.facebook.com/v19.0/${pageId}/photos`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              url: validImages[0],
+              message: content,
+              published: true,
+              access_token: pageToken
+            }),
+            signal: AbortSignal.timeout(20000)
+          });
+          const photoData = await photoRes.json();
+          const rawId = photoData.id || photoData.post_id || "";
+          if (rawId) {
+            return {
+              ok: true,
+              postId: rawId,
+              postUrl: `https://www.facebook.com/${pageId}/posts/${rawId}`,
+              pageName,
+              message: `Đã đăng bài thành công lên Fanpage ${pageName}!`
+            };
+          }
+        } else {
+          // Text-only post
           const feedRes = await fetchImpl(`https://graph.facebook.com/v19.0/${pageId}/feed`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               message: content,
-              attached_media: uploadedIds.map((id) => ({ media_fbid: id })),
               access_token: pageToken
             }),
             signal: AbortSignal.timeout(20000)
           });
-
           const feedData = await feedRes.json();
           const rawId = feedData.id || "";
           if (rawId) {
-            const parts = String(rawId).split("_");
-            const postUrl = parts.length === 2
-              ? `https://www.facebook.com/${parts[0]}/posts/${parts[1]}`
-              : `https://www.facebook.com/${pageId}/posts/${rawId}`;
-
             return {
               ok: true,
               postId: rawId,
-              postUrl,
+              postUrl: `https://www.facebook.com/${pageId}/posts/${rawId}`,
               pageName,
               message: `Đã đăng bài thành công lên Fanpage ${pageName}!`
             };
-          }
-        }
-      }
-
-      // Fallback: Single photo post or text post via Composio MCP Gateway
-      const toolSlug = validImages.length >= 1 ? "FACEBOOK_CREATE_PHOTO_POST" : "FACEBOOK_CREATE_POST";
-      const toolArgs = validImages.length >= 1
-        ? { page_id: String(pageId), message: content, url: validImages[0], published: true }
-        : { page_id: String(pageId), message: content, published: true };
-
-      const response = await fetchImpl("https://connect.composio.dev/mcp", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Accept": "application/json, text/event-stream",
-          "x-consumer-api-key": apiKey,
-          "Mcp-Session-Id": sessionId
-        },
-        body: JSON.stringify({
-          jsonrpc: "2.0",
-          id: Date.now(),
-          method: "tools/call",
-          params: {
-            name: "COMPOSIO_MULTI_EXECUTE_TOOL",
-            arguments: {
-              tools: [{ tool_slug: toolSlug, arguments: toolArgs }]
-            }
-          }
-        }),
-        signal: AbortSignal.timeout(20000)
-      });
-
-      if (response.ok) {
-        const raw = await response.text();
-        for (const line of raw.split("\n")) {
-          if (line.startsWith("data: ")) {
-            try {
-              const json = JSON.parse(line.slice(6));
-              const textContent = json.result?.content?.[0]?.text;
-              if (textContent) {
-                const parsed = JSON.parse(textContent);
-                const toolResult = parsed.data?.results?.[0]?.response?.data || {};
-                const rawId = toolResult.post_id || toolResult.id || "";
-                if (rawId) {
-                  const parts = String(rawId).split("_");
-                  const postUrl = parts.length === 2
-                    ? `https://www.facebook.com/${parts[0]}/posts/${parts[1]}`
-                    : `https://www.facebook.com/${pageId}/posts/${rawId}`;
-
-                  return {
-                    ok: true,
-                    postId: rawId,
-                    postUrl,
-                    pageName,
-                    message: `Đã đăng bài thành công lên Fanpage ${pageName}!`
-                  };
-                }
-              }
-            } catch {}
           }
         }
       }
