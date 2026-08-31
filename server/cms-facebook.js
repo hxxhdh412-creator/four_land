@@ -109,52 +109,75 @@ function generateFacebookPost(property = {}, options = {}) {
 async function publishToComposioFacebook({
   content,
   imageUrls = [],
-  pageId = process.env.FACEBOOK_PAGE_ID || "me",
-  pageName = process.env.FACEBOOK_PAGE_NAME || "Ngọc Ngà Tốt",
+  pageId = process.env.FACEBOOK_PAGE_ID || "106656702112510",
+  pageName = process.env.FACEBOOK_PAGE_NAME || "Ngọc Nhà Tốt",
   apiKey = process.env.COMPOSIO_API_KEY || "",
-  entityId = "default",
+  sessionId = "fourland_session_" + Date.now(),
   fetchImpl = fetch
 } = {}) {
   if (!content || !content.trim()) {
     throw new Error("Nội dung bài viết không được để trống");
   }
 
-  // 1. If Composio API key is provided and active
+  // 1. If Composio API key is provided and active, execute via Composio MCP Gateway
   if (apiKey && apiKey.trim() && apiKey !== "pending") {
     try {
-      const response = await fetchImpl("https://backend.composio.dev/api/v3/actions/execute", {
+      const toolSlug = imageUrls.length > 0 ? "FACEBOOK_CREATE_PHOTO_POST" : "FACEBOOK_CREATE_POST";
+      const toolArgs = imageUrls.length > 0
+        ? { page_id: String(pageId), message: content, url: imageUrls[0], published: true }
+        : { page_id: String(pageId), message: content, published: true };
+
+      const response = await fetchImpl("https://connect.composio.dev/mcp", {
         method: "POST",
         headers: {
-          "x-api-key": apiKey,
+          "Content-Type": "application/json",
+          "Accept": "application/json, text/event-stream",
           "x-consumer-api-key": apiKey,
-          "Content-Type": "application/json"
+          "Mcp-Session-Id": sessionId
         },
         body: JSON.stringify({
-          actionName: "FACEBOOK_CREATE_PAGE_POST",
-          entityId,
+          jsonrpc: "2.0",
+          id: Date.now(),
+          method: "tools/call",
           params: {
-            page_id: pageId,
-            message: content,
-            published: true,
-            attached_media: imageUrls.map(url => ({ media_url: url }))
+            name: "COMPOSIO_MULTI_EXECUTE_TOOL",
+            arguments: {
+              tools: [
+                {
+                  tool_slug: toolSlug,
+                  arguments: toolArgs
+                }
+              ]
+            }
           }
         }),
-        signal: AbortSignal.timeout(15000)
+        signal: AbortSignal.timeout(20000)
       });
 
       if (response.ok) {
-        const data = await response.json();
-        const postId = data.data?.id || data.id || `fb_${Date.now()}`;
-        return {
-          ok: true,
-          postId,
-          postUrl: `https://www.facebook.com/${postId}`,
-          pageName,
-          message: `Đã đăng thành công lên Fanpage ${pageName}!`
-        };
+        const raw = await response.text();
+        const lines = raw.split("\n");
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            const json = JSON.parse(line.slice(6));
+            const textContent = json.result?.content?.[0]?.text;
+            if (textContent) {
+              const parsed = JSON.parse(textContent);
+              const toolResult = parsed.data?.results?.[0]?.response?.data || {};
+              const postId = toolResult.post_id || toolResult.id || `fb_${Date.now()}`;
+              return {
+                ok: true,
+                postId,
+                postUrl: `https://www.facebook.com/${postId}`,
+                pageName,
+                message: `Đã đăng bài thành công lên Fanpage ${pageName}!`
+              };
+            }
+          }
+        }
       }
     } catch (err) {
-      console.warn("Composio API call notice:", err.message);
+      console.warn("Composio MCP execution notice:", err.message);
     }
   }
 
