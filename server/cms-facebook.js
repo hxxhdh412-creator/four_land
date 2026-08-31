@@ -126,6 +126,7 @@ async function publishToComposioFacebook({
         method: "POST",
         headers: {
           "x-api-key": apiKey,
+          "x-consumer-api-key": apiKey,
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
