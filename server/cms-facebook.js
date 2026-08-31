@@ -31,8 +31,8 @@ function slugifyHashtag(text) {
 
 function generateFacebookPost(property = {}, options = {}) {
   const tone = options.tone || "hot"; // 'hot' | 'detail' | 'quick'
-  const pageName = options.pageName || "Ngọc Ngà Tốt";
-  const hotline = options.hotline || property.phone || "0909.xxx.xxx";
+  const pageName = options.pageName || process.env.FACEBOOK_PAGE_NAME || "Ngọc Nhà Tốt";
+  const hotline = options.hotline || process.env.FACEBOOK_HOTLINE || "037.6789.808";
   const includeLink = options.includeLink !== false;
   const location = formatSafeLocation(property);
 

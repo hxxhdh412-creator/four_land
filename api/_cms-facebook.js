@@ -37,8 +37,8 @@ function createHandler({ requireCmsImpl = requireCms, request = supabaseRequest 
         const postContent = generateFacebookPost(property, {
           tone,
           includeLink: body.includeLink !== false,
-          hotline: body.hotline || property.phone,
-          pageName: process.env.FACEBOOK_PAGE_NAME || "Ngọc Ngà Tốt"
+          hotline: body.hotline || process.env.FACEBOOK_HOTLINE || "037.6789.808",
+          pageName: process.env.FACEBOOK_PAGE_NAME || "Ngọc Nhà Tốt"
         });
 
         const images = (property.property_images || []).map(img => img.public_url).filter(Boolean);
@@ -50,7 +50,7 @@ function createHandler({ requireCmsImpl = requireCms, request = supabaseRequest 
             tone,
             content: postContent,
             images,
-            pageName: process.env.FACEBOOK_PAGE_NAME || "Ngọc Ngà Tốt"
+            pageName: process.env.FACEBOOK_PAGE_NAME || "Ngọc Nhà Tốt"
           }
         });
       }

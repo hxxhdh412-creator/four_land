@@ -590,8 +590,8 @@ http.createServer(async (req,res)=>{
         const content = generateFacebookPost(current, {
           tone,
           includeLink: body.includeLink !== false,
-          hotline: body.hotline || current.phone,
-          pageName: process.env.FACEBOOK_PAGE_NAME || "Ngọc Ngà Tốt"
+          hotline: body.hotline || process.env.FACEBOOK_HOTLINE || "037.6789.808",
+          pageName: process.env.FACEBOOK_PAGE_NAME || "Ngọc Nhà Tốt"
         });
         const images = (current.property_images || []).map(img => img.public_url).filter(Boolean);
         return send(res, 200, { ok: true, data: { propertyId, tone, content, images, pageName: process.env.FACEBOOK_PAGE_NAME || "Ngọc Nhà Tốt" } });
