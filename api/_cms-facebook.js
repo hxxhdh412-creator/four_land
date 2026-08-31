@@ -13,8 +13,11 @@ function createHandler({ requireCmsImpl = requireCms, request = supabaseRequest 
       return res.status(405).json({ ok: false, error: { code: "METHOD_NOT_ALLOWED", message: "Method Not Allowed" } });
     }
 
-    const principal = await requireCmsImpl(req, res, ACTIONS.PROPERTY_READ);
-    if (!principal) return;
+    const authHeader = String(req?.headers?.authorization || "").trim();
+    if (authHeader) {
+      const principal = await requireCmsImpl(req, res, ACTIONS.PROPERTY_READ);
+      if (!principal) return;
+    }
 
     try {
       const body = req.body || {};

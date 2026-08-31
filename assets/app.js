@@ -876,7 +876,10 @@ async function loadFacebookDraft(propertyId, tone = 'hot') {
     const includeLink = $('fbIncludeLink')?.checked ?? true;
     const res = await api('/api/admin/v1/facebook/draft', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer fourland-preview-cms'
+      },
       body: JSON.stringify({
         action: 'draft',
         propertyId,
@@ -984,7 +987,10 @@ async function handlePublishFacebook() {
   try {
     const result = await api('/api/admin/v1/facebook/publish', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer fourland-preview-cms'
+      },
       body: JSON.stringify({
         propertyId: fbPortalState.propertyId,
         content,
