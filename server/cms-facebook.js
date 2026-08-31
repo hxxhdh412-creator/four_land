@@ -122,68 +122,185 @@ async function publishToComposioFacebook({
   // 1. If Composio API key is provided and active, execute via Composio MCP Gateway
   if (apiKey && apiKey.trim() && apiKey !== "pending") {
     try {
-      const toolSlug = imageUrls.length > 0 ? "FACEBOOK_CREATE_PHOTO_POST" : "FACEBOOK_CREATE_POST";
-      const toolArgs = imageUrls.length > 0
-        ? { page_id: String(pageId), message: content, url: imageUrls[0], published: true }
-        : { page_id: String(pageId), message: content, published: true };
+      const validImages = Array.isArray(imageUrls) ? imageUrls.filter(Boolean) : [];
+      let rawId = "";
 
-      const response = await fetchImpl("https://connect.composio.dev/mcp", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Accept": "application/json, text/event-stream",
-          "x-consumer-api-key": apiKey,
-          "Mcp-Session-Id": sessionId
-        },
-        body: JSON.stringify({
-          jsonrpc: "2.0",
-          id: Date.now(),
-          method: "tools/call",
-          params: {
-            name: "COMPOSIO_MULTI_EXECUTE_TOOL",
-            arguments: {
-              tools: [
-                {
-                  tool_slug: toolSlug,
-                  arguments: toolArgs
-                }
-              ]
-            }
+      if (validImages.length > 1) {
+        // Multi-photo post (Album / Multi-Image Post)
+        // Step 1: Upload all selected photos as unpublished to get media IDs
+        const uploadTools = validImages.map((url) => ({
+          tool_slug: "FACEBOOK_CREATE_PHOTO_POST",
+          arguments: {
+            page_id: String(pageId),
+            url,
+            published: false
           }
-        }),
-        signal: AbortSignal.timeout(20000)
-      });
+        }));
 
-      if (response.ok) {
-        const raw = await response.text();
-        const lines = raw.split("\n");
-        for (const line of lines) {
-          if (line.startsWith("data: ")) {
-            const json = JSON.parse(line.slice(6));
-            const textContent = json.result?.content?.[0]?.text;
-            if (textContent) {
-              const parsed = JSON.parse(textContent);
-              const toolResult = parsed.data?.results?.[0]?.response?.data || {};
-              const rawId = toolResult.post_id || toolResult.id || "";
-              let postUrl = `https://www.facebook.com/${pageId}`;
-              if (rawId) {
-                const parts = String(rawId).split("_");
-                if (parts.length === 2) {
-                  postUrl = `https://www.facebook.com/${parts[0]}/posts/${parts[1]}`;
-                } else {
-                  postUrl = `https://www.facebook.com/${pageId}/posts/${rawId}`;
+        const uploadRes = await fetchImpl("https://connect.composio.dev/mcp", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "x-consumer-api-key": apiKey,
+            "Mcp-Session-Id": sessionId
+          },
+          body: JSON.stringify({
+            jsonrpc: "2.0",
+            id: Date.now(),
+            method: "tools/call",
+            params: {
+              name: "COMPOSIO_MULTI_EXECUTE_TOOL",
+              arguments: { tools: uploadTools }
+            }
+          }),
+          signal: AbortSignal.timeout(30000)
+        });
+
+        const mediaIds = [];
+        if (uploadRes.ok) {
+          const raw = await uploadRes.text();
+          const lines = raw.split("\n");
+          for (const line of lines) {
+            if (line.startsWith("data: ")) {
+              try {
+                const json = JSON.parse(line.slice(6));
+                const textContent = json.result?.content?.[0]?.text;
+                if (textContent) {
+                  const parsed = JSON.parse(textContent);
+                  const results = parsed.data?.results || [];
+                  results.forEach((r) => {
+                    const mediaId = r.response?.data?.id;
+                    if (mediaId) mediaIds.push(mediaId);
+                  });
                 }
-              }
-              return {
-                ok: true,
-                postId: rawId || `fb_${Date.now()}`,
-                postUrl,
-                pageName,
-                message: `Đã đăng bài thành công lên Fanpage ${pageName}!`
-              };
+              } catch {}
             }
           }
         }
+
+        // Step 2: Create a single feed post with all uploaded photos attached
+        if (mediaIds.length > 0) {
+          const postRes = await fetchImpl("https://connect.composio.dev/mcp", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Accept": "application/json, text/event-stream",
+              "x-consumer-api-key": apiKey,
+              "Mcp-Session-Id": sessionId
+            },
+            body: JSON.stringify({
+              jsonrpc: "2.0",
+              id: Date.now(),
+              method: "tools/call",
+              params: {
+                name: "COMPOSIO_MULTI_EXECUTE_TOOL",
+                arguments: {
+                  tools: [
+                    {
+                      tool_slug: "FACEBOOK_CREATE_POST",
+                      arguments: {
+                        page_id: String(pageId),
+                        message: content,
+                        attached_media: mediaIds.map((id) => ({ media_fbid: id })),
+                        published: true
+                      }
+                    }
+                  ]
+                }
+              }
+            }),
+            signal: AbortSignal.timeout(20000)
+          });
+
+          if (postRes.ok) {
+            const raw = await postRes.text();
+            const lines = raw.split("\n");
+            for (const line of lines) {
+              if (line.startsWith("data: ")) {
+                try {
+                  const json = JSON.parse(line.slice(6));
+                  const textContent = json.result?.content?.[0]?.text;
+                  if (textContent) {
+                    const parsed = JSON.parse(textContent);
+                    const toolResult = parsed.data?.results?.[0]?.response?.data || {};
+                    rawId = toolResult.post_id || toolResult.id || "";
+                  }
+                } catch {}
+              }
+            }
+          }
+        }
+      }
+
+      // Single photo or text fallback
+      if (!rawId) {
+        const toolSlug = validImages.length === 1 ? "FACEBOOK_CREATE_PHOTO_POST" : "FACEBOOK_CREATE_POST";
+        const toolArgs = validImages.length === 1
+          ? { page_id: String(pageId), message: content, url: validImages[0], published: true }
+          : { page_id: String(pageId), message: content, published: true };
+
+        const response = await fetchImpl("https://connect.composio.dev/mcp", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "x-consumer-api-key": apiKey,
+            "Mcp-Session-Id": sessionId
+          },
+          body: JSON.stringify({
+            jsonrpc: "2.0",
+            id: Date.now(),
+            method: "tools/call",
+            params: {
+              name: "COMPOSIO_MULTI_EXECUTE_TOOL",
+              arguments: {
+                tools: [
+                  {
+                    tool_slug: toolSlug,
+                    arguments: toolArgs
+                  }
+                ]
+              }
+            }
+          }),
+          signal: AbortSignal.timeout(20000)
+        });
+
+        if (response.ok) {
+          const raw = await response.text();
+          const lines = raw.split("\n");
+          for (const line of lines) {
+            if (line.startsWith("data: ")) {
+              try {
+                const json = JSON.parse(line.slice(6));
+                const textContent = json.result?.content?.[0]?.text;
+                if (textContent) {
+                  const parsed = JSON.parse(textContent);
+                  const toolResult = parsed.data?.results?.[0]?.response?.data || {};
+                  rawId = toolResult.post_id || toolResult.id || "";
+                }
+              } catch {}
+            }
+          }
+        }
+      }
+
+      if (rawId) {
+        let postUrl = `https://www.facebook.com/${pageId}`;
+        const parts = String(rawId).split("_");
+        if (parts.length === 2) {
+          postUrl = `https://www.facebook.com/${parts[0]}/posts/${parts[1]}`;
+        } else {
+          postUrl = `https://www.facebook.com/${pageId}/posts/${rawId}`;
+        }
+        return {
+          ok: true,
+          postId: rawId,
+          postUrl,
+          pageName,
+          message: `Đã đăng bài thành công lên Fanpage ${pageName}!`
+        };
       }
     } catch (err) {
       console.warn("Composio MCP execution notice:", err.message);
