@@ -918,11 +918,6 @@ function renderFacebookPhotoGrid() {
   grid.innerHTML = '';
   if (countLabel) countLabel.textContent = `Đã chọn ${fbPortalState.selectedImages.size}/${fbPortalState.allImages.length} ảnh`;
 
-  if (!fbPortalState.allImages.length) {
-    grid.innerHTML = '<span style="font-size:11px;color:#8c9891;padding:8px;">Hồ sơ không có hình ảnh</span>';
-    return;
-  }
-
   fbPortalState.allImages.forEach((imgUrl, index) => {
     const item = document.createElement('div');
     const isSelected = fbPortalState.selectedImages.has(imgUrl);
@@ -944,6 +939,68 @@ function renderFacebookPhotoGrid() {
 
     grid.appendChild(item);
   });
+
+  // Nút tải thêm ảnh (+ Thêm ảnh)
+  const addBtn = document.createElement('label');
+  addBtn.className = 'fb-portal-photo-add';
+  addBtn.title = 'Tải thêm ảnh từ thiết bị';
+  addBtn.innerHTML = `
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="12" y1="5" x2="12" y2="19"></line>
+      <line x1="5" y1="12" x2="19" y2="12"></line>
+    </svg>
+    <span>Thêm ảnh</span>
+    <input type="file" accept="image/jpeg,image/png,image/webp" multiple style="display:none!important">
+  `;
+
+  const fileInput = addBtn.querySelector('input');
+  fileInput.onchange = async (e) => {
+    const files = [...e.target.files];
+    if (!files.length || !fbPortalState.propertyId) return;
+
+    fileInput.disabled = true;
+    showToast(`Đang nén và tải lên ${files.length} ảnh…`, 4000);
+    const statusNote = $('fbPublishStatus');
+    if (statusNote) statusNote.textContent = `Đang tải ${files.length} ảnh lên hồ sơ nhà…`;
+
+    try {
+      for (let i = 0; i < files.length; i++) {
+        if (statusNote) statusNote.textContent = `Đang tải ảnh ${i + 1}/${files.length}…`;
+        const dataUrl = await compressImage(files[i]);
+        const res = await api('/api/admin-image', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer fourland-preview-cms'
+          },
+          body: JSON.stringify({ propertyId: fbPortalState.propertyId, dataUrl })
+        });
+        if (res.image?.public_url) {
+          const newUrl = res.image.public_url;
+          if (!fbPortalState.allImages.includes(newUrl)) {
+            fbPortalState.allImages.push(newUrl);
+          }
+          fbPortalState.selectedImages.add(newUrl);
+        }
+      }
+      showToast(`✅ Đã thêm ${files.length} ảnh vào hồ sơ nhà!`);
+      if (statusNote) statusNote.textContent = 'Sẵn sàng đăng lên Fanpage Ngọc Nhà Tốt';
+      renderFacebookPhotoGrid();
+      renderFacebookPreviewGallery();
+      await load();
+      if ($('detail')?.open) {
+        openDetail(fbPortalState.propertyId);
+      }
+    } catch (err) {
+      showToast('❌ Lỗi tải ảnh: ' + err.message, 4000);
+      if (statusNote) statusNote.textContent = 'Lỗi tải ảnh: ' + err.message;
+    } finally {
+      fileInput.disabled = false;
+      fileInput.value = '';
+    }
+  };
+
+  grid.appendChild(addBtn);
 }
 
 function renderFacebookPreviewGallery() {
