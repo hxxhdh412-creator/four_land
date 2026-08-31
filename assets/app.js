@@ -500,11 +500,37 @@ async function openDetail(id,seoPath=''){
       <span class="gallery-counter"><span id="activeImgIndex">1</span> / ${images.length}</span>
     ` : '';
 
-    const adminFbBadgeHtml = state.adminUnlocked
-      ? `<button type="button" class="gallery-fb-badge" id="adminPostFbBtn" title="Đăng lên Fanpage Ngọc Nhà Tốt"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg><span>Đăng FB</span></button>`
-      : '';
+    const headerActions = $('detailHeaderActions');
+    if (headerActions) {
+      headerActions.innerHTML = `
+        ${state.adminUnlocked ? `<button type="button" class="header-fb-btn" id="adminHeaderFbBtn" title="Đăng lên Fanpage Ngọc Nhà Tốt"><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg><span>Đăng FB</span></button>` : ''}
+        <button id="closeDetail" type="button" aria-label="Đóng" title="Đóng"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17" /></svg></button>
+      `;
+      $('closeDetail').onclick = closeDetailModal;
+      const headerFb = $('adminHeaderFbBtn');
+      if (headerFb) headerFb.onclick = () => openFacebookStudio(p.property_id);
+    }
 
-    $('detailBody').innerHTML=`<div><div class="gallery-main ${!images[0]?'no-photo':''}">${images[0]?`<img id="mainImage" referrerpolicy="no-referrer" src="${escapeHtml(images[0])}" alt="${escapeHtml(propNameAlt)}" onerror="handleDetailImgError(this)">`:`<div class="placeholder-watermark watermark-detail"><img src="/assets/brand/fourland-logo.png" alt="Fourland" class="watermark-logo"><span class="watermark-text">Hình ảnh đang cập nhật</span></div>`}${galleryNavHtml}${adminFbBadgeHtml}<button type="button" class="gallery-share-badge" id="shareDetail" title="Chia sẻ căn nhà này"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg><span>Chia sẻ</span></button></div><div class="thumbs">${thumbsHtml}</div></div><div><section class="content-panel"><h3>Nội dung nhà</h3><p>${escapeHtml(displayRawText)}</p></section><section class="info-panel"><div class="price">${escapeHtml(p.price_text||'Liên hệ')}</div><h2>${escapeHtml(displayAddress)}</h2><div class="meta">${escapeHtml([p.street,p.ward,p.district].filter(Boolean).join(' · '))}</div><div class="info-grid">${infoGridHtml}</div></section>${state.adminUnlocked?adminToolsHtml(p):''}<section class="direct-contact"><div><span>Hotline hỗ trợ Fourland</span><strong>${escapeHtml(COMPANY_HOTLINE)}</strong></div><a href="tel:${escapeHtml(phoneHref(COMPANY_HOTLINE))}" aria-label="Gọi Hotline Fourland"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.2 3.5 9.6 7c.35.5.28 1.18-.16 1.62l-1.3 1.3a14.5 14.5 0 0 0 5.94 5.94l1.3-1.3c.44-.44 1.12-.51 1.62-.16l3.5 2.4c.55.38.72 1.11.39 1.69l-1 1.75c-.34.59-.98.95-1.66.93C10.1 20.95 3.05 13.9 2.83 5.77c-.02-.68.34-1.32.93-1.66l1.75-1c.58-.33 1.31-.16 1.69.39Z"/></svg>Gọi ngay</a></section></div>`;
+    const quickActionsHtml = `
+      <div class="property-quick-actions">
+        <button type="button" class="action-chip" id="actionShareBtn" title="Chia sẻ căn nhà này">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+          <span>Chia sẻ</span>
+        </button>
+        <button type="button" class="action-chip" id="actionCopyZaloBtn" title="Sao chép tin gửi Zalo">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          <span>Sao chép Zalo</span>
+        </button>
+        ${state.adminUnlocked ? `
+        <button type="button" class="action-chip fb-chip" id="actionFbBtn" title="Đăng lên Fanpage Ngọc Nhà Tốt">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+          <span>Đăng Facebook</span>
+        </button>
+        ` : ''}
+      </div>
+    `;
+
+    $('detailBody').innerHTML=`<div><div class="gallery-main ${!images[0]?'no-photo':''}">${images[0]?`<img id="mainImage" referrerpolicy="no-referrer" src="${escapeHtml(images[0])}" alt="${escapeHtml(propNameAlt)}" onerror="handleDetailImgError(this)">`:`<div class="placeholder-watermark watermark-detail"><img src="/assets/brand/fourland-logo.png" alt="Fourland" class="watermark-logo"><span class="watermark-text">Hình ảnh đang cập nhật</span></div>`}${galleryNavHtml}</div><div class="thumbs">${thumbsHtml}</div></div><div><section class="info-panel"><div class="price">${escapeHtml(p.price_text||'Liên hệ')}</div><h2>${escapeHtml(displayAddress)}</h2><div class="meta">${escapeHtml([p.street,p.ward,p.district].filter(Boolean).join(' · '))}</div>${quickActionsHtml}<div class="info-grid">${infoGridHtml}</div></section><section class="content-panel"><h3>Nội dung nhà</h3><p>${escapeHtml(displayRawText)}</p></section>${state.adminUnlocked?adminToolsHtml(p):''}<section class="direct-contact"><div><span>Hotline hỗ trợ Fourland</span><strong>${escapeHtml(COMPANY_HOTLINE)}</strong></div><a href="tel:${escapeHtml(phoneHref(COMPANY_HOTLINE))}" aria-label="Gọi Hotline Fourland"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.2 3.5 9.6 7c.35.5.28 1.18-.16 1.62l-1.3 1.3a14.5 14.5 0 0 0 5.94 5.94l1.3-1.3c.44-.44 1.12-.51 1.62-.16l3.5 2.4c.55.38.72 1.11.39 1.69l-1 1.75c-.34.59-.98.95-1.66.93C10.1 20.95 3.05 13.9 2.83 5.77c-.02-.68.34-1.32.93-1.66l1.75-1c.58-.33 1.31-.16 1.69.39Z"/></svg>Gọi ngay</a></section></div>`;
     
     let currentImgIdx=0;
     function setActiveImage(idx){
@@ -529,25 +555,16 @@ async function openDetail(id,seoPath=''){
     document.querySelectorAll('.thumbs img').forEach((img,idx)=>{img.onclick=()=>setActiveImage(idx)});
     const prevBtn=$('galleryPrev');if(prevBtn)prevBtn.onclick=()=>setActiveImage(currentImgIdx-1);
     const nextBtn=$('galleryNext');if(nextBtn)nextBtn.onclick=()=>setActiveImage(currentImgIdx+1);
-    const shareBtn=$('shareDetail');
-    if(shareBtn){
-      shareBtn.onclick=async()=>{
-        const link=window.location.href;
-        const title=p.address||p.property_id||'Chi tiết bất động sản · Fourland';
-        const price=p.price_text||'';
-        if(navigator.share&&/mobile|android|iphone|ipad/i.test(navigator.userAgent)){
-          try{
-            await navigator.share({title:`${price?price+' · ':''}${title}`,url:link});
-            return;
-          }catch(_){}
-        }
-        if(navigator.clipboard&&navigator.clipboard.writeText){
-          navigator.clipboard.writeText(link).then(()=>showToast('🔗 Đã sao chép link căn nhà thành công!')).catch(()=>prompt('Sao chép link này gửi cho khách:',link));
-        }else{
-          prompt('Sao chép link này gửi cho khách:',link);
-        }
-      };
-    }
+    
+    const actionShare=$('actionShareBtn');
+    if(actionShare)actionShare.onclick=()=>handleShareProperty(p);
+
+    const actionCopy=$('actionCopyZaloBtn');
+    if(actionCopy)actionCopy.onclick=()=>handleCopyZalo(p);
+
+    const actionFb=$('actionFbBtn');
+    if(actionFb)actionFb.onclick=()=>openFacebookStudio(p.property_id);
+
     const unlockInlineBtn=$('unlockPhoneInline');
     if(unlockInlineBtn){
       unlockInlineBtn.onclick=()=>{
@@ -564,10 +581,43 @@ async function openDetail(id,seoPath=''){
       document.querySelectorAll('.thumbs img').forEach((img,index)=>{const wrap=document.createElement('span');wrap.className='admin-thumb';img.parentNode.insertBefore(wrap,img);wrap.appendChild(img);const remove=document.createElement('button');remove.type='button';remove.className='image-remove';remove.setAttribute('aria-label',`Xóa ảnh ${index+1}`);remove.title='Xóa ảnh này';remove.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18m-2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/></svg>';remove.onclick=event=>{event.stopPropagation();deleteImage(p.property_id,imageItems[index].position)};wrap.appendChild(remove)});
       const archiveBtn=document.getElementById('adminArchiveBtn');if(archiveBtn){archiveBtn.onclick=()=>setPropertyArchived(p.property_id,p.status!=='archived')}
       const hardDeleteBtn=document.getElementById('adminHardDeleteBtn');if(hardDeleteBtn){hardDeleteBtn.onclick=()=>deletePropertyPermanent(p.property_id)}
-      const fbBtn=$('adminPostFbBtn');if(fbBtn)fbBtn.onclick=()=>openFacebookStudio(p.property_id);
       const panelFbBtn=$('adminPanelFbBtn');if(panelFbBtn)panelFbBtn.onclick=()=>openFacebookStudio(p.property_id);
     }
   }catch(error){$('detailBody').innerHTML=`<div class="error">${escapeHtml(error.message)}</div>`}
+}
+
+function handleCopyZalo(p) {
+  const displayAddress = formatPublicAddress(p, false);
+  const text = `🏡 [FOURLAND] ${p.property_type || 'Bất động sản'} tại ${displayAddress}\n` +
+    `💰 Giá: ${p.price_text || 'Thỏa thuận'}\n` +
+    (p.area_text ? `📐 Diện tích: ${p.area_text}\n` : '') +
+    (p.structure ? `🏗️ Kết cấu: ${p.structure}\n` : '') +
+    `📍 Khu vực: ${[p.ward, p.district].filter(Boolean).join(' · ')}\n` +
+    `📞 Hotline hỗ trợ: ${COMPANY_HOTLINE}\n` +
+    `🔗 Xem chi tiết: ${window.location.href}`;
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => showToast('📋 Đã sao chép tin nhắn Zalo gửi khách!')).catch(() => prompt('Sao chép tin nhắn:', text));
+  } else {
+    prompt('Sao chép tin nhắn:', text);
+  }
+}
+
+function handleShareProperty(p) {
+  const link = window.location.href;
+  const title = p.address || p.property_id || 'Chi tiết bất động sản · Fourland';
+  const price = p.price_text || '';
+  if (navigator.share && /mobile|android|iphone|ipad/i.test(navigator.userAgent)) {
+    try {
+      navigator.share({ title: `${price ? price + ' · ' : ''}${title}`, url: link });
+      return;
+    } catch (_) {}
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(link).then(() => showToast('🔗 Đã sao chép link căn nhà thành công!')).catch(() => prompt('Sao chép link này gửi cho khách:', link));
+  } else {
+    prompt('Sao chép link này gửi cho khách:', link);
+  }
 }
 
 async function saveProperty(event,propertyId){
