@@ -1199,7 +1199,7 @@ async function openFacebookStudio(propertyId) {
 
   byId('fbPublishStatus').textContent = 'Đang chuẩn bị bài viết…';
   byId('fbSubmitBtn').disabled = false;
-  byId('fbSubmitBtn').innerHTML = `<svg class="cms-btn-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg><span>🚀 Đăng Lên Fanpage Ngọc Ngà Tốt</span>`;
+  byId('fbSubmitBtn').innerHTML = `<svg class="cms-btn-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg><span>Đăng lên Fanpage Ngọc Ngà Tốt</span>`;
 
   dialog.showModal();
   await loadFacebookDraft(propertyId, fbState.tone);
@@ -1335,11 +1335,11 @@ async function handlePublishFacebook() {
     });
 
     statusNote.textContent = result.message || 'Đã đăng thành công!';
-    submitBtn.innerHTML = `<span>Đã xuất bản thành công ✓</span>`;
+    submitBtn.innerHTML = `<svg class="cms-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span>Đã xuất bản thành công</span>`;
 
     // Show toast with Facebook link
     if (result.data?.postUrl) {
-      if (confirm(`🎉 ${result.message || 'Đã xuất bản thành công lên Fanpage Ngọc Ngà Tốt!'}\n\nBạn có muốn mở xem bài viết trên Facebook không?`)) {
+      if (confirm(`${result.message || 'Đã xuất bản thành công lên Fanpage Ngọc Ngà Tốt!'}\n\nBạn có muốn mở xem bài viết trên Facebook không?`)) {
         window.open(result.data.postUrl, '_blank');
       }
     } else {
@@ -1349,7 +1349,7 @@ async function handlePublishFacebook() {
     setTimeout(closeFacebookStudio, 1500);
   } catch (error) {
     submitBtn.disabled = false;
-    submitBtn.innerHTML = `<span>🚀 Thử lại</span>`;
+    submitBtn.innerHTML = `<span>Thử lại</span>`;
     statusNote.textContent = `Lỗi: ${error.message}`;
     alert(`Không thể đăng bài: ${error.message}`);
   }

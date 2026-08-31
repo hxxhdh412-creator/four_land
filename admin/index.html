@@ -798,16 +798,19 @@
         <div class="cms-fb-studio-body">
           <div class="cms-fb-editor-col">
             <div class="cms-fb-tone-section">
-              <span class="cms-fb-label">Chọn phong cách bài viết (AI soạn tự động):</span>
+              <span class="cms-fb-label">Chọn phong cách bài viết:</span>
               <div class="cms-fb-tone-chips">
                 <button type="button" class="cms-fb-tone-chip active" data-fb-tone="hot">
-                  <span>🔥 Siêu Hot / Thu Hút</span>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                  <span>Thu hút & Nổi bật</span>
                 </button>
                 <button type="button" class="cms-fb-tone-chip" data-fb-tone="detail">
-                  <span>📋 Chi Tiết / Chuyên Nghiệp</span>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                  <span>Đầy đủ & Chi tiết</span>
                 </button>
                 <button type="button" class="cms-fb-tone-chip" data-fb-tone="quick">
-                  <span>⚡ Ngắn Gọn / Cọc Nhanh</span>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  <span>Súc tích & Gọn</span>
                 </button>
               </div>
             </div>
@@ -847,7 +850,7 @@
                     <strong>Ngọc Ngà Tốt</strong>
                     <svg class="fb-verified-badge" viewBox="0 0 24 24" width="14" height="14" fill="#1877f2"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
                   </div>
-                  <span class="fb-mock-time">Vừa xong · 🌐</span>
+                  <span class="fb-mock-time">Vừa xong · <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></span>
                 </div>
               </div>
 
@@ -856,9 +859,18 @@
               <div id="fbPreviewGallery" class="fb-mock-gallery"></div>
 
               <div class="fb-mock-footer">
-                <div class="fb-mock-action"><span>👍 Thích</span></div>
-                <div class="fb-mock-action"><span>💬 Bình luận</span></div>
-                <div class="fb-mock-action"><span>↗️ Chia sẻ</span></div>
+                <div class="fb-mock-action">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>
+                  <span>Thích</span>
+                </div>
+                <div class="fb-mock-action">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                  <span>Bình luận</span>
+                </div>
+                <div class="fb-mock-action">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                  <span>Chia sẻ</span>
+                </div>
               </div>
             </div>
           </div>
@@ -866,14 +878,14 @@
 
         <div class="cms-fb-footer">
           <div class="cms-fb-status-bar">
-            <span class="cms-fb-status-tag">⚡ Kết nối qua Composio MCP</span>
+            <span class="cms-fb-status-tag">Composio MCP Active</span>
             <span id="fbPublishStatus" class="cms-fb-status-note">Sẵn sàng xuất bản</span>
           </div>
           <div class="cms-fb-buttons">
             <button id="fbCancelBtn" type="button" class="cms-btn-reset">Hủy</button>
             <button id="fbSubmitBtn" type="button" class="cms-primary cms-btn-fb-publish">
               <svg class="cms-btn-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-              <span>🚀 Đăng Lên Fanpage Ngọc Ngà Tốt</span>
+              <span>Đăng lên Fanpage Ngọc Ngà Tốt</span>
             </button>
           </div>
         </div>

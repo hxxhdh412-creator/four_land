@@ -2683,6 +2683,9 @@ strong.req {
 }
 
 .cms-fb-tone-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   padding: 8px 14px;
   border-radius: 20px;
   border: 1px solid var(--line);
@@ -2692,6 +2695,12 @@ strong.req {
   font-weight: 700;
   cursor: pointer;
   transition: all 0.15s ease;
+}
+
+.cms-fb-tone-chip svg {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
 }
 
 .cms-fb-tone-chip:hover {
@@ -2954,7 +2963,23 @@ strong.req {
 }
 
 .fb-mock-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   cursor: pointer;
+  padding: 4px 10px;
+  border-radius: 4px;
+  transition: background 0.15s ease;
+}
+
+.fb-mock-action:hover {
+  background: #f0f2f5;
+}
+
+.fb-mock-action svg {
+  width: 15px;
+  height: 15px;
+  stroke: currentColor;
 }
 
 .cms-fb-footer {
