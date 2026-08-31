@@ -13,12 +13,14 @@ const cmsState = {
 const byId = id => document.getElementById(id);
 
 function getPageFromUrl() {
-  const hash = window.location.hash.replace(/^#\/?/, '').toLowerCase();
-  const validPages = ['dashboard', 'match', 'properties', 'editor', 'users', 'sync'];
-  if (validPages.includes(hash)) return hash;
   const params = new URLSearchParams(window.location.search);
   const tab = params.get('tab') || params.get('page');
+  const validPages = ['dashboard', 'match', 'properties', 'editor', 'users', 'sync'];
   if (tab && validPages.includes(tab.toLowerCase())) return tab.toLowerCase();
+
+  const hash = window.location.hash.replace(/^#\/?/, '').toLowerCase();
+  if (validPages.includes(hash)) return hash;
+
   return 'dashboard';
 }
 
@@ -29,8 +31,19 @@ function setActivePage(page, updateUrl = true) {
   document.querySelectorAll('[data-page-panel]').forEach(panel => panel.classList.toggle('active', panel.dataset.pagePanel === targetPage));
   document.querySelectorAll('[data-page]').forEach(item => item.classList.toggle('active', item.dataset.page === targetPage));
 
-  if (updateUrl && window.location.hash !== `#${targetPage}`) {
-    history.replaceState(null, '', `#${targetPage}`);
+  if (updateUrl) {
+    const url = new URL(window.location.href);
+    if (targetPage === 'dashboard') {
+      url.searchParams.delete('tab');
+      url.searchParams.delete('page');
+    } else {
+      url.searchParams.set('tab', targetPage);
+    }
+    url.hash = '';
+    const newUrl = url.pathname + (url.search ? url.search : '');
+    if (window.location.pathname + window.location.search !== newUrl || window.location.hash) {
+      history.replaceState(null, '', newUrl);
+    }
   }
 
   if (targetPage === 'properties' && cmsState.user && !cmsState.propertiesLoaded) loadProperties();
