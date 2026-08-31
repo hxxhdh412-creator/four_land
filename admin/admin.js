@@ -12,20 +12,38 @@ const cmsState = {
 };
 const byId = id => document.getElementById(id);
 
-function setActivePage(page) {
-  document.querySelectorAll('[data-page-panel]').forEach(panel => panel.classList.toggle('active', panel.dataset.pagePanel === page));
-  document.querySelectorAll('[data-page]').forEach(item => item.classList.toggle('active', item.dataset.page === page));
-  if (page === 'properties' && cmsState.user && !cmsState.propertiesLoaded) loadProperties();
-  if (page === 'match' && cmsState.user && !cmsState.matchLoaded) {
+function getPageFromUrl() {
+  const hash = window.location.hash.replace(/^#\/?/, '').toLowerCase();
+  const validPages = ['dashboard', 'match', 'properties', 'editor', 'users', 'sync'];
+  if (validPages.includes(hash)) return hash;
+  const params = new URLSearchParams(window.location.search);
+  const tab = params.get('tab') || params.get('page');
+  if (tab && validPages.includes(tab.toLowerCase())) return tab.toLowerCase();
+  return 'dashboard';
+}
+
+function setActivePage(page, updateUrl = true) {
+  const validPages = ['dashboard', 'match', 'properties', 'editor', 'users', 'sync'];
+  const targetPage = validPages.includes(page) ? page : 'dashboard';
+
+  document.querySelectorAll('[data-page-panel]').forEach(panel => panel.classList.toggle('active', panel.dataset.pagePanel === targetPage));
+  document.querySelectorAll('[data-page]').forEach(item => item.classList.toggle('active', item.dataset.page === targetPage));
+
+  if (updateUrl && window.location.hash !== `#${targetPage}`) {
+    history.replaceState(null, '', `#${targetPage}`);
+  }
+
+  if (targetPage === 'properties' && cmsState.user && !cmsState.propertiesLoaded) loadProperties();
+  if (targetPage === 'match' && cmsState.user && !cmsState.matchLoaded) {
     const queryInput = byId('smartMatchQuery');
     if (queryInput && !queryInput.value.trim()) {
       queryInput.value = 'Thuê mặt bằng Tân Bình 15-20 triệu 4x20';
     }
     loadSmartMatch();
   }
-  if (page === 'editor' && cmsState.user && !cmsState.reviewLoaded) loadReviewQueue();
-  if (page === 'users' && cmsState.user && !cmsState.usersLoaded) loadUsers();
-  if (page === 'sync' && cmsState.user && !cmsState.healthLoaded) loadSystemHealth();
+  if (targetPage === 'editor' && cmsState.user && !cmsState.reviewLoaded) loadReviewQueue();
+  if (targetPage === 'users' && cmsState.user && !cmsState.usersLoaded) loadUsers();
+  if (targetPage === 'sync' && cmsState.user && !cmsState.healthLoaded) loadSystemHealth();
 }
 
 async function cmsApi(path, options = {}) {
@@ -181,6 +199,8 @@ async function bootstrapCms() {
     updateHeaderUser();
     byId('cmsApp').setAttribute('aria-busy', 'false');
     await loadDashboard();
+    const initialPage = getPageFromUrl();
+    setActivePage(initialPage, false);
   } catch (error) {
     cmsState.accessToken = '';
     localStorage.removeItem('fourland_cms_access_token');
@@ -1390,4 +1410,23 @@ if (byId('facebookPostDialog')) {
   });
 }
 
+// Sidebar Navigation Events & Deep-Linking Routing
+document.querySelectorAll('[data-page]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const page = btn.dataset.page;
+    if (page) setActivePage(page, true);
+  });
+});
+
+window.addEventListener('hashchange', () => {
+  const page = getPageFromUrl();
+  setActivePage(page, false);
+});
+
+window.addEventListener('popstate', () => {
+  const page = getPageFromUrl();
+  setActivePage(page, false);
+});
+
 bootstrapCms();
+
