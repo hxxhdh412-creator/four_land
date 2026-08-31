@@ -1,7 +1,7 @@
 const isLocalPreview = ['127.0.0.1', 'localhost'].includes(window.location.hostname);
 const cmsState = {
   user: null,
-  accessToken: isLocalPreview ? 'fourland-preview-cms' : (sessionStorage.getItem('fourland_cms_access_token') || ''),
+  accessToken: isLocalPreview ? 'fourland-preview-cms' : (localStorage.getItem('fourland_cms_access_token') || sessionStorage.getItem('fourland_cms_access_token') || ''),
   propertiesLoaded: false,
   propertyPage: 1,
   propertyMeta: null,
@@ -154,6 +154,22 @@ async function handleLogout() {
 }
 
 async function bootstrapCms() {
+  const savedToken = isLocalPreview ? 'fourland-preview-cms' : (localStorage.getItem('fourland_cms_access_token') || sessionStorage.getItem('fourland_cms_access_token') || '');
+  if (savedToken) {
+    cmsState.accessToken = savedToken;
+  }
+
+  if (!cmsState.accessToken) {
+    byId('cmsApp').setAttribute('aria-busy', 'false');
+    byId('authGate').hidden = false;
+    byId('cmsContent').hidden = true;
+    byId('authError').hidden = true;
+    byId('retryAuth').hidden = true;
+    byId('authMessage').textContent = 'Nhập thông tin tài khoản hoặc chọn nhanh vai trò để truy cập kho dữ liệu.';
+    byId('systemState').querySelector('span').textContent = 'Chưa đăng nhập';
+    return;
+  }
+
   byId('authError').hidden = true;
   byId('retryAuth').hidden = true;
   byId('authMessage').textContent = 'Đang xác minh quyền truy cập…';
@@ -166,6 +182,9 @@ async function bootstrapCms() {
     byId('cmsApp').setAttribute('aria-busy', 'false');
     await loadDashboard();
   } catch (error) {
+    cmsState.accessToken = '';
+    localStorage.removeItem('fourland_cms_access_token');
+    sessionStorage.removeItem('fourland_cms_access_token');
     showAuthError(error);
   }
 }
