@@ -6,6 +6,12 @@ const cmsState = {
   propertyPage: 1,
   propertyMeta: null,
   currentProperty: null,
+  currentPropertyItems: [],
+  viewMode: window.matchMedia('(max-width: 600px)').matches
+    ? 'grid'
+    : (localStorage.getItem('fourland_cms_view_mode') || 'grid'),
+  selectedPropertyIds: new Set(),
+  lightbox: { images: [], currentIndex: 0, rotation: 0, caption: '' },
   reviewLoaded: false,
   healthLoaded: false,
   usersLoaded: false
@@ -245,6 +251,18 @@ async function loadDashboard() {
     byId('metricArchived').textContent = summary.archived.toLocaleString('vi-VN');
     byId('metricPublishedNote').textContent = summary.schemaMode === 'cms' ? 'CMS workflow' : 'Tương thích schema legacy';
     byId('dashboardUpdated').textContent = 'Dữ liệu trực tiếp';
+
+    const badgeReview = byId('navBadgeReview');
+    if (badgeReview) {
+      badgeReview.textContent = summary.pendingReview || 0;
+      badgeReview.hidden = !summary.pendingReview;
+    }
+    const badgeProps = byId('navBadgeProperties');
+    if (badgeProps) {
+      const totalCount = summary.available || summary.published || 0;
+      badgeProps.textContent = totalCount > 999 ? '999+' : totalCount;
+      badgeProps.hidden = !totalCount;
+    }
   } catch (error) {
     byId('dashboardUpdated').textContent = `Không tải được · ${error.code}`;
   }
@@ -281,9 +299,66 @@ function driveImage(url) {
   return str;
 }
 
+function formatPropertyPitch(item) {
+  const parts = [];
+  parts.push(`🏠 [BĐS FOURLAND] ${item.address || 'Nhà cho thuê'}`);
+  if (item.district) parts.push(`📍 Khu vực: ${[item.ward, item.district].filter(Boolean).join(', ')}`);
+  if (item.propertyType) parts.push(`🏢 Loại hình: ${item.propertyType}`);
+  if (item.area || item.dimensions) parts.push(`📐 Diện tích: ${[item.dimensions, item.area].filter(Boolean).join(' - ')}`);
+  if (item.structure) parts.push(`🧱 Kết cấu: ${item.structure}`);
+  if (item.bedrooms) parts.push(`🛏️ Phòng ngủ: ${item.bedrooms} PN`);
+  if (item.price) parts.push(`💰 Giá thuê: ${item.price}`);
+  if (item.phone) parts.push(`📞 Liên hệ / Zalo: ${item.phone}`);
+  parts.push(`✨ Hỗ trợ xem nhà 24/7 trực tiếp Fourland`);
+  return parts.join('\n');
+}
+
+function openLightbox(images, startIndex = 0, caption = '') {
+  if (!images || !images.length) return;
+  cmsState.lightbox.images = images;
+  cmsState.lightbox.currentIndex = Math.max(0, Math.min(startIndex, images.length - 1));
+  cmsState.lightbox.rotation = 0;
+  cmsState.lightbox.caption = caption;
+  updateLightbox();
+  const dlg = byId('imageLightbox');
+  if (dlg && !dlg.open) dlg.showModal();
+}
+
+function closeLightbox() {
+  const dlg = byId('imageLightbox');
+  if (dlg && dlg.open) dlg.close();
+}
+
+function updateLightbox() {
+  const { images, currentIndex, rotation, caption } = cmsState.lightbox;
+  const imgElem = byId('lightboxImg');
+  const captionElem = byId('lightboxCaption');
+  const downloadLink = byId('lightboxDownload');
+  const prevBtn = byId('lightboxPrev');
+  const nextBtn = byId('lightboxNext');
+
+  if (!imgElem || !images.length) return;
+  const currentUrl = images[currentIndex];
+  imgElem.src = currentUrl;
+  imgElem.style.transform = `rotate(${rotation}deg)`;
+
+  if (captionElem) {
+    captionElem.textContent = `${caption ? caption + ' · ' : ''}Ảnh ${currentIndex + 1} / ${images.length}`;
+  }
+  if (downloadLink) {
+    downloadLink.href = currentUrl;
+  }
+  if (prevBtn) prevBtn.style.visibility = images.length > 1 ? 'visible' : 'hidden';
+  if (nextBtn) nextBtn.style.visibility = images.length > 1 ? 'visible' : 'hidden';
+}
+
 function createPropertyCard(item) {
   const article = document.createElement('article');
   article.className = 'cms-property-card';
+  if (cmsState.selectedPropertyIds.has(item.id)) {
+    article.classList.add('selected');
+  }
+
   const cover = document.createElement('div');
   cover.className = 'cms-property-cover';
   const imgSrc = driveImage(item.coverImage);
@@ -293,6 +368,12 @@ function createPropertyCard(item) {
     image.alt = item.address || 'Ảnh bất động sản';
     image.loading = 'lazy';
     image.decoding = 'async';
+    image.style.cursor = 'pointer';
+    image.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const allImgs = item.images && item.images.length ? item.images.map(x => driveImage(x.url)) : [imgSrc];
+      openLightbox(allImgs, 0, item.address);
+    });
     image.onerror = () => {
       cover.innerHTML = '<div class="cms-no-photo-placeholder"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span>Hình ảnh đang xử lý</span></div>';
     };
@@ -300,6 +381,7 @@ function createPropertyCard(item) {
   } else {
     cover.innerHTML = '<div class="cms-no-photo-placeholder"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span>Chưa có hình ảnh</span></div>';
   }
+
   const body = document.createElement('div');
   body.className = 'cms-property-body';
   const badges = document.createElement('div');
@@ -319,7 +401,7 @@ function createPropertyCard(item) {
   const location = document.createElement('p');
   location.className = 'cms-property-location';
   location.innerHTML = `<svg class="cms-fact-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><span>${[item.ward, item.district].filter(Boolean).join(' · ') || item.propertyType || 'Chưa rõ khu vực'}</span>`;
-  
+
   const facts = document.createElement('div');
   facts.className = 'cms-property-facts';
 
@@ -338,19 +420,141 @@ function createPropertyCard(item) {
   const imgFact = document.createElement('span');
   imgFact.innerHTML = `<svg class="cms-fact-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span>${item.imageCount || 0} ảnh</span>`;
   facts.append(imgFact);
+
   const footer = document.createElement('div');
   footer.className = 'cms-property-footer';
   const price = document.createElement('strong');
   price.textContent = item.price || 'Liên hệ';
+
+  const btnGroup = document.createElement('div');
+  btnGroup.style.display = 'flex';
+  btnGroup.style.gap = '6px';
+  btnGroup.style.alignItems = 'center';
+
+  const pitchBtn = document.createElement('button');
+  pitchBtn.className = 'cms-pitch-btn';
+  pitchBtn.type = 'button';
+  pitchBtn.title = 'Sao chép tin Zalo gửi khách';
+  pitchBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span>Chép tin</span>';
+  pitchBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    handleCopyPitch(formatPropertyPitch(item));
+  });
+
   const detailButton = document.createElement('button');
   detailButton.className = 'cms-card-action';
   detailButton.type = 'button';
   detailButton.textContent = 'Xem chi tiết';
   detailButton.addEventListener('click', () => openPropertyDetail(item.id));
-  footer.append(price, detailButton);
+
+  btnGroup.append(pitchBtn, detailButton);
+  footer.append(price, btnGroup);
   body.append(badges, title, location, facts, footer);
   article.append(cover, body);
   return article;
+}
+
+function createPropertyTableRow(item) {
+  const tr = document.createElement('tr');
+  if (cmsState.selectedPropertyIds.has(item.id)) {
+    tr.classList.add('selected');
+  }
+
+  // Checkbox
+  const tdCb = document.createElement('td');
+  const cb = document.createElement('input');
+  cb.type = 'checkbox';
+  cb.checked = cmsState.selectedPropertyIds.has(item.id);
+  cb.addEventListener('change', () => {
+    if (cb.checked) {
+      cmsState.selectedPropertyIds.add(item.id);
+      tr.classList.add('selected');
+    } else {
+      cmsState.selectedPropertyIds.delete(item.id);
+      tr.classList.remove('selected');
+    }
+    updateBulkActionBar();
+  });
+  tdCb.append(cb);
+
+  // Thumbnail
+  const tdThumb = document.createElement('td');
+  const thumbWrap = document.createElement('div');
+  thumbWrap.className = 'cms-table-thumb-wrap';
+  const img = document.createElement('img');
+  img.className = 'cms-table-thumb';
+  const imgSrc = driveImage(item.coverImage);
+  img.src = imgSrc || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="%23eef2ed"><rect width="48" height="48"/></svg>';
+  img.alt = item.address || 'BĐS';
+  img.loading = 'lazy';
+  img.addEventListener('click', () => {
+    const allImgs = item.images && item.images.length ? item.images.map(x => driveImage(x.url)) : (imgSrc ? [imgSrc] : []);
+    if (allImgs.length) openLightbox(allImgs, 0, item.address);
+  });
+  thumbWrap.append(img);
+  if (item.imageCount > 1) {
+    const cnt = document.createElement('span');
+    cnt.className = 'cms-table-thumb-count';
+    cnt.textContent = item.imageCount;
+    thumbWrap.append(cnt);
+  }
+  tdThumb.append(thumbWrap);
+
+  // Address & District
+  const tdAddr = document.createElement('td');
+  tdAddr.innerHTML = `
+    <div class="cms-table-addr-title">${item.address || 'Hồ sơ chưa có địa chỉ'}</div>
+    <div class="cms-table-addr-sub">${[item.ward, item.district].filter(Boolean).join(', ') || 'Chưa rõ khu vực'}</div>
+  `;
+
+  // Type
+  const tdType = document.createElement('td');
+  tdType.textContent = item.propertyType || 'Chưa rõ';
+
+  // Specs
+  const tdSpecs = document.createElement('td');
+  tdSpecs.innerHTML = `<div>${item.dimensions || item.area || '—'}</div><small style="color:var(--muted);">${item.structure || (item.bedrooms ? item.bedrooms + ' PN' : '')}</small>`;
+
+  // Price
+  const tdPrice = document.createElement('td');
+  tdPrice.className = 'cms-table-price';
+  tdPrice.textContent = item.price || 'Liên hệ';
+
+  // Status
+  const tdStatus = document.createElement('td');
+  const badge = document.createElement('span');
+  badge.className = 'cms-badge';
+  badge.textContent = statusLabel(item.status);
+  tdStatus.append(badge);
+
+  // Actions
+  const tdActions = document.createElement('td');
+  tdActions.className = 'cms-table-actions';
+
+  const pitchBtn = document.createElement('button');
+  pitchBtn.className = 'cms-table-btn';
+  pitchBtn.title = 'Sao chép tin gửi khách';
+  pitchBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span>Chép</span>';
+  pitchBtn.addEventListener('click', () => handleCopyPitch(formatPropertyPitch(item)));
+
+  const detailBtn = document.createElement('button');
+  detailBtn.className = 'cms-table-btn primary';
+  detailBtn.textContent = 'Chi tiết';
+  detailBtn.addEventListener('click', () => openPropertyDetail(item.id));
+
+  tdActions.append(pitchBtn, detailBtn);
+
+  tr.append(tdCb, tdThumb, tdAddr, tdType, tdSpecs, tdPrice, tdStatus, tdActions);
+  return tr;
+}
+
+function updateBulkActionBar() {
+  const bar = byId('bulkActionBar');
+  const countElem = byId('bulkSelectedCount');
+  if (!bar || !countElem) return;
+  const count = cmsState.selectedPropertyIds.size;
+  countElem.textContent = count;
+  bar.hidden = count === 0;
 }
 
 function detailRow(label, value) {
@@ -379,12 +583,16 @@ async function openPropertyDetail(id) {
     byId('detailTitle').textContent = item.address || 'Hồ sơ chưa có địa chỉ';
     const gallery = byId('detailGallery');
     if (item.images && item.images.length) {
+      const allUrls = item.images.map(entry => driveImage(entry.url));
       gallery.replaceChildren(...item.images.slice(0, 8).map((entry, index) => {
         const image = document.createElement('img');
         image.src = driveImage(entry.url);
         image.alt = `Ảnh bất động sản ${index + 1}`;
         image.loading = 'lazy';
         image.decoding = 'async';
+        image.style.cursor = 'pointer';
+        image.title = 'Nhấn để phóng to ảnh';
+        image.addEventListener('click', () => openLightbox(allUrls, index, item.address));
         image.onerror = () => { image.style.opacity = '0.4'; };
         return image;
       }));
@@ -513,9 +721,30 @@ async function loadProperties(page = cmsState.propertyPage) {
   cmsState.propertyPage = page;
   byId('propertyLoading').hidden = false;
   byId('propertyGrid').hidden = true;
+  if (byId('propertyTableWrap')) byId('propertyTableWrap').hidden = true;
   byId('propertyEmpty').hidden = true;
   byId('propertyPagination').hidden = true;
   byId('propertyError').hidden = true;
+
+  // Render skeleton cards while loading
+  const loadingContainer = byId('propertyLoading');
+  if (loadingContainer) {
+    loadingContainer.innerHTML = `
+      <div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(280px, 1fr));gap:20px;width:100%;">
+        ${Array.from({ length: 6 }).map(() => `
+          <div class="cms-skeleton-card">
+            <div class="cms-skeleton-img"></div>
+            <div class="cms-skeleton-body">
+              <div class="cms-skeleton-line w-80"></div>
+              <div class="cms-skeleton-line w-50"></div>
+              <div class="cms-skeleton-line w-30"></div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+
   const districtFilter = byId('propertyDistrict')?.value || '';
   const params = new URLSearchParams({
     q: (byId('propertySearch')?.value || '').trim(),
@@ -525,18 +754,28 @@ async function loadProperties(page = cmsState.propertyPage) {
     page: String(page),
     pageSize: '12'
   });
+
   try {
     const result = await cmsApi(`/api/admin/v1/properties?${params}`);
     cmsState.propertiesLoaded = true;
     cmsState.propertyMeta = result.meta;
     byId('propertyLoading').hidden = true;
     byId('propertyCount').textContent = `${result.meta.total.toLocaleString('vi-VN')} hồ sơ phù hợp`;
+
+    const badgeProps = byId('navBadgeProperties');
+    if (badgeProps) {
+      badgeProps.textContent = result.meta.total > 999 ? '999+' : result.meta.total;
+      badgeProps.hidden = result.meta.total === 0;
+    }
+
     if (!result.data.items.length) {
       byId('propertyEmpty').hidden = false;
       return;
     }
 
     let items = [...result.data.items];
+    cmsState.currentPropertyItems = items;
+
     const sortVal = byId('propertySort')?.value || 'newest';
     if (sortVal === 'price_asc') {
       items.sort((a, b) => (a.priceNumber || 0) - (b.priceNumber || 0));
@@ -548,15 +787,182 @@ async function loadProperties(page = cmsState.propertyPage) {
 
     const grid = byId('propertyGrid');
     grid.replaceChildren(...items.map(createPropertyCard));
-    grid.hidden = false;
+
+    const tableBody = byId('propertyTableBody');
+    if (tableBody) {
+      tableBody.replaceChildren(...items.map(createPropertyTableRow));
+    }
+
+    const isGrid = cmsState.viewMode === 'grid';
+    grid.hidden = !isGrid;
+    if (byId('propertyTableWrap')) byId('propertyTableWrap').hidden = isGrid;
+
     byId('propertyPagination').hidden = false;
     byId('propertyPage').textContent = `Trang ${result.meta.page} / ${Math.max(1, Math.ceil(result.meta.total / result.meta.pageSize))}`;
     byId('propertyPrev').disabled = result.meta.page <= 1;
     byId('propertyNext').disabled = !result.meta.hasNext;
+
+    const selectAllCb = byId('selectAllProperties');
+    if (selectAllCb) selectAllCb.checked = false;
+    updateBulkActionBar();
   } catch (error) {
     byId('propertyLoading').hidden = true;
     byId('propertyError').hidden = false;
     byId('propertyError').textContent = `${error.code || 'REQUEST_FAILED'} · ${error.message}`;
+  }
+}
+
+function formatMatchCriteria(criteria = {}) {
+  const parts = [];
+  if (criteria.district) parts.push(criteria.district);
+  if (criteria.propertyType) parts.push(criteria.propertyType);
+  if (criteria.minPrice || criteria.maxPrice) {
+    const formatMoney = value => value ? `${Number(value / 1000000).toLocaleString('vi-VN')} triệu` : '';
+    const range = criteria.minPrice && criteria.maxPrice
+      ? `${formatMoney(criteria.minPrice)} – ${formatMoney(criteria.maxPrice)}`
+      : criteria.maxPrice ? `Tối đa ${formatMoney(criteria.maxPrice)}` : `Từ ${formatMoney(criteria.minPrice)}`;
+    parts.push(range);
+  }
+  if (criteria.dimensions) parts.push(criteria.dimensions);
+  if (criteria.bedrooms) parts.push(`${criteria.bedrooms} phòng ngủ`);
+  return parts.length ? parts.join(' · ') : 'Đang xếp hạng theo độ đầy đủ của hồ sơ';
+}
+
+function createMatchItem(item) {
+  const article = document.createElement('article');
+  article.className = 'cms-match-item';
+
+  const header = document.createElement('header');
+  header.className = 'cms-match-header';
+  const heading = document.createElement('div');
+  const title = document.createElement('h2');
+  title.textContent = item.address || 'Hồ sơ chưa có địa chỉ';
+  const location = document.createElement('p');
+  location.textContent = [item.propertyType, item.ward, item.district].filter(Boolean).join(' · ') || 'TP.HCM';
+  heading.append(title, location);
+  const score = document.createElement('span');
+  score.className = `cms-score-badge ${item.matchScore >= 80 ? 'top' : item.matchScore >= 60 ? 'medium' : 'low'}`;
+  score.textContent = `${item.matchScore || 0}% khớp`;
+  header.append(heading, score);
+
+  const body = document.createElement('div');
+  body.className = 'cms-match-body';
+  const facts = document.createElement('div');
+  facts.className = 'cms-match-facts';
+  [
+    ['Giá', item.price || 'Liên hệ'],
+    ['Diện tích', item.area || item.dimensions || 'Chưa rõ'],
+    ['Hình ảnh', `${item.imageCount || 0} ảnh`]
+  ].forEach(([label, value]) => {
+    const fact = document.createElement('div');
+    const factLabel = document.createElement('span');
+    const factValue = document.createElement('strong');
+    factLabel.textContent = label;
+    factValue.textContent = value;
+    fact.append(factLabel, factValue);
+    facts.append(fact);
+  });
+
+  const reasons = document.createElement('div');
+  reasons.className = 'cms-match-reasons';
+  (item.reasons || []).slice(0, 5).forEach(reason => {
+    const row = document.createElement('div');
+    row.className = `cms-match-reason-item ${reason.pass ? 'pass' : 'fail'}`;
+    const dot = document.createElement('i');
+    dot.className = 'cms-match-reason-dot';
+    const label = document.createElement('span');
+    label.textContent = reason.label;
+    row.append(dot, label);
+    reasons.append(row);
+  });
+  body.append(facts, reasons);
+
+  const footer = document.createElement('footer');
+  footer.className = 'cms-match-footer';
+  const price = document.createElement('strong');
+  price.className = 'cms-match-price';
+  price.textContent = item.price || 'Liên hệ';
+  const actions = document.createElement('div');
+  actions.className = 'cms-match-card-actions';
+  const copyButton = document.createElement('button');
+  copyButton.className = 'cms-copy-pitch-btn';
+  copyButton.type = 'button';
+  copyButton.textContent = 'Chép tin gửi khách';
+  copyButton.addEventListener('click', () => handleCopyPitch(item.pitchText || formatPropertyPitch(item)));
+  const detailButton = document.createElement('button');
+  detailButton.className = 'cms-card-action';
+  detailButton.type = 'button';
+  detailButton.textContent = 'Xem hồ sơ';
+  detailButton.addEventListener('click', () => openPropertyDetail(item.id));
+  actions.append(copyButton, detailButton);
+  footer.append(price, actions);
+  article.append(header, body, footer);
+  return article;
+}
+
+async function loadSmartMatch(queryOverride = '') {
+  const queryInput = byId('smartMatchQuery');
+  const query = String(queryOverride || queryInput?.value || '').trim();
+  const submitButton = byId('smartMatchForm')?.querySelector('[type="submit"]');
+  const errorBox = byId('matchError');
+
+  if (!query) {
+    if (errorBox) {
+      errorBox.hidden = false;
+      errorBox.textContent = 'Nhập nhu cầu của khách trước khi tìm nhà phù hợp.';
+    }
+    showToast('Vui lòng nhập nhu cầu tìm nhà của khách', 'warning');
+    queryInput?.focus();
+    return;
+  }
+
+  if (errorBox) errorBox.hidden = true;
+  if (byId('matchMeta')) byId('matchMeta').hidden = true;
+  if (byId('matchGrid')) byId('matchGrid').hidden = true;
+  if (byId('matchEmpty')) byId('matchEmpty').hidden = true;
+  if (byId('matchLoading')) byId('matchLoading').hidden = false;
+  if (submitButton) {
+    submitButton.disabled = true;
+    const span = submitButton.querySelector('span');
+    if (span) span.textContent = 'Đang quét kho nhà…';
+  }
+
+  try {
+    const result = await cmsApi('/api/admin/v1/smart-match', {
+      method: 'POST',
+      body: { query }
+    });
+    const data = result.data || {};
+    const items = Array.isArray(data.items) ? data.items : [];
+    cmsState.matchLoaded = true;
+    if (byId('matchLoading')) byId('matchLoading').hidden = true;
+    if (byId('matchCount')) byId('matchCount').textContent = `${items.length} gợi ý phù hợp nhất`;
+    if (byId('matchCriteriaSummary')) byId('matchCriteriaSummary').textContent = formatMatchCriteria(data.criteriaUsed);
+    if (byId('matchMeta')) byId('matchMeta').hidden = false;
+
+    if (!items.length) {
+      if (byId('matchEmpty')) byId('matchEmpty').hidden = false;
+      return;
+    }
+
+    const grid = byId('matchGrid');
+    if (grid) {
+      grid.replaceChildren(...items.map(createMatchItem));
+      grid.hidden = false;
+    }
+  } catch (error) {
+    if (byId('matchLoading')) byId('matchLoading').hidden = true;
+    if (errorBox) {
+      errorBox.hidden = false;
+      errorBox.textContent = `${error.code || 'MATCH_FAILED'} · ${error.message}`;
+    }
+    showToast(`Không thể khớp nhu cầu: ${error.message}`, 'error');
+  } finally {
+    if (submitButton) {
+      submitButton.disabled = false;
+      const span = submitButton.querySelector('span');
+      if (span) span.textContent = 'Quét & Chấm Điểm Kho Nhà';
+    }
   }
 }
 
@@ -602,6 +1008,13 @@ async function loadReviewQueue() {
     byId('reviewPrice').textContent = summary.missingPrice.toLocaleString('vi-VN');
     byId('reviewImages').textContent = summary.imageIssues.toLocaleString('vi-VN');
     byId('reviewLoading').hidden = true;
+
+    const badgeReview = byId('navBadgeReview');
+    if (badgeReview) {
+      badgeReview.textContent = summary.total || 0;
+      badgeReview.hidden = !summary.total;
+    }
+
     if (!items.length) { byId('reviewEmpty').hidden = false; return; }
     byId('reviewQueue').replaceChildren(...items.map(createReviewItem));
     byId('reviewQueue').hidden = false;
@@ -919,6 +1332,30 @@ let searchDebounceTimer = null;
 const searchInput = byId('propertySearch');
 const clearBtn = byId('propertySearchClear');
 
+function updateMobilePropertyFilters() {
+  const panel = byId('propertyAdvancedFilters');
+  const toggle = byId('propertyMobileFilterToggle');
+  const countBadge = byId('propertyActiveFilterCount');
+  if (!panel || !toggle || !countBadge) return;
+
+  const activeCount = [
+    byId('propertyDistrict')?.value,
+    byId('propertyStatus')?.value !== 'active' ? byId('propertyStatus')?.value : '',
+    byId('propertyQuality')?.value !== 'all' ? byId('propertyQuality')?.value : ''
+  ].filter(Boolean).length;
+  countBadge.textContent = String(activeCount);
+  countBadge.hidden = activeCount === 0;
+  toggle.classList.toggle('has-filters', activeCount > 0);
+}
+
+if (byId('propertyMobileFilterToggle')) {
+  byId('propertyMobileFilterToggle').addEventListener('click', () => {
+    const panel = byId('propertyAdvancedFilters');
+    const isOpen = panel?.classList.toggle('mobile-open') || false;
+    byId('propertyMobileFilterToggle').setAttribute('aria-expanded', String(isOpen));
+  });
+}
+
 if (searchInput) {
   searchInput.addEventListener('input', () => {
     if (clearBtn) clearBtn.hidden = !searchInput.value;
@@ -942,9 +1379,9 @@ if (byId('propertyFilters')) {
   });
 }
 
-if (byId('propertyDistrict')) byId('propertyDistrict').addEventListener('change', () => loadProperties(1));
-if (byId('propertyStatus')) byId('propertyStatus').addEventListener('change', () => loadProperties(1));
-if (byId('propertyQuality')) byId('propertyQuality').addEventListener('change', () => loadProperties(1));
+if (byId('propertyDistrict')) byId('propertyDistrict').addEventListener('change', () => { updateMobilePropertyFilters(); loadProperties(1); });
+if (byId('propertyStatus')) byId('propertyStatus').addEventListener('change', () => { updateMobilePropertyFilters(); loadProperties(1); });
+if (byId('propertyQuality')) byId('propertyQuality').addEventListener('change', () => { updateMobilePropertyFilters(); loadProperties(1); });
 if (byId('propertySort')) byId('propertySort').addEventListener('change', () => loadProperties(1));
 
 if (byId('propertyResetFilters')) {
@@ -956,6 +1393,7 @@ if (byId('propertyResetFilters')) {
     if (byId('propertyQuality')) byId('propertyQuality').value = 'all';
     if (byId('propertySort')) byId('propertySort').value = 'newest';
     document.querySelectorAll('[data-filter-chip]').forEach(c => c.classList.toggle('active', c.dataset.filterChip === 'all'));
+    updateMobilePropertyFilters();
     loadProperties(1);
   });
 }
@@ -983,8 +1421,14 @@ document.querySelectorAll('[data-filter-chip]').forEach(chip => {
     } else if (type === 'nha_pho') {
       if (searchInput) searchInput.value = 'Nhà phố';
       if (byId('propertyDistrict')) byId('propertyDistrict').value = '';
-    } else if (type === 'under_20m') {
-      if (searchInput) searchInput.value = 'triệu';
+    } else if (type === 'under_15m') {
+      if (searchInput) searchInput.value = '10 triệu';
+      if (byId('propertyDistrict')) byId('propertyDistrict').value = '';
+    } else if (type === '15_30m') {
+      if (searchInput) searchInput.value = '20 triệu';
+      if (byId('propertyDistrict')) byId('propertyDistrict').value = '';
+    } else if (type === 'above_30m') {
+      if (searchInput) searchInput.value = '50 triệu';
       if (byId('propertyDistrict')) byId('propertyDistrict').value = '';
     } else if (type === 'tan_binh') {
       if (byId('propertyDistrict')) byId('propertyDistrict').value = 'Tân Bình';
@@ -995,171 +1439,292 @@ document.querySelectorAll('[data-filter-chip]').forEach(chip => {
     } else if (type === 'phu_nhuan') {
       if (byId('propertyDistrict')) byId('propertyDistrict').value = 'Phú Nhuận';
       if (searchInput) searchInput.value = '';
+    } else if (type === 'go_vap') {
+      if (byId('propertyDistrict')) byId('propertyDistrict').value = 'Gò Vấp';
+      if (searchInput) searchInput.value = '';
+    } else if (type === 'quan_1') {
+      if (byId('propertyDistrict')) byId('propertyDistrict').value = 'Quận 1';
+      if (searchInput) searchInput.value = '';
     }
     if (clearBtn && searchInput) clearBtn.hidden = !searchInput.value;
+    updateMobilePropertyFilters();
     loadProperties(1);
   });
 });
 
-byId('propertyPrev').addEventListener('click', () => loadProperties(Math.max(1, cmsState.propertyPage - 1)));
-byId('propertyNext').addEventListener('click', () => loadProperties(cmsState.propertyPage + 1));
-byId('reviewRefresh').addEventListener('click', () => { cmsState.reviewLoaded = false; loadReviewQueue(); });
-byId('healthRefresh').addEventListener('click', () => { cmsState.healthLoaded = false; loadSystemHealth(); });
-byId('detailClose').addEventListener('click', () => byId('propertyDetail').close());
-byId('detailEdit').addEventListener('click', () => setEditFormVisible(true));
-byId('editCancel').addEventListener('click', () => setEditFormVisible(false));
-byId('detailEditForm').addEventListener('submit', validateEditPreview);
-byId('propertyDetail').addEventListener('click', event => { if (event.target === byId('propertyDetail')) byId('propertyDetail').close(); });
+updateMobilePropertyFilters();
 
-if (byId('btnCreatePropertyDashboard')) byId('btnCreatePropertyDashboard').addEventListener('click', openCreatePropertyModal);
-if (byId('btnCreatePropertyPage')) byId('btnCreatePropertyPage').addEventListener('click', openCreatePropertyModal);
-if (byId('createDialogClose')) byId('createDialogClose').addEventListener('click', closeCreatePropertyModal);
-if (byId('createCancelBtn')) byId('createCancelBtn').addEventListener('click', closeCreatePropertyModal);
-if (byId('createPropertyForm')) byId('createPropertyForm').addEventListener('submit', handleCreateProperty);
-if (byId('createPropertyDialog')) byId('createPropertyDialog').addEventListener('click', event => { if (event.target === byId('createPropertyDialog')) closeCreatePropertyModal(); });
+// View Switcher (Grid / Table)
+function setViewMode(mode) {
+  cmsState.viewMode = mode;
+  localStorage.setItem('fourland_cms_view_mode', mode);
+  const isGrid = mode === 'grid';
+  if (byId('btnViewGrid')) byId('btnViewGrid').classList.toggle('active', isGrid);
+  if (byId('btnViewTable')) byId('btnViewTable').classList.toggle('active', !isGrid);
+  if (byId('propertyGrid')) byId('propertyGrid').hidden = !isGrid;
+  if (byId('propertyTableWrap')) byId('propertyTableWrap').hidden = isGrid;
+}
 
-// User Management & Profile Dialog Events
-byId('profileButton').addEventListener('click', openProfileDialog);
-if (byId('profileDialogClose')) byId('profileDialogClose').addEventListener('click', closeProfileDialog);
-if (byId('profileDialog')) byId('profileDialog').addEventListener('click', event => { if (event.target === byId('profileDialog')) closeProfileDialog(); });
+if (byId('btnViewGrid')) byId('btnViewGrid').addEventListener('click', () => setViewMode('grid'));
+if (byId('btnViewTable')) byId('btnViewTable').addEventListener('click', () => setViewMode('table'));
 
-if (byId('btnCreateUser')) byId('btnCreateUser').addEventListener('click', () => openUserModal());
-if (byId('userDialogClose')) byId('userDialogClose').addEventListener('click', closeUserModal);
-if (byId('userCancelBtn')) byId('userCancelBtn').addEventListener('click', closeUserModal);
-if (byId('userForm')) byId('userForm').addEventListener('submit', handleSaveUser);
-if (byId('userDialog')) byId('userDialog').addEventListener('click', event => { if (event.target === byId('userDialog')) closeUserModal(); });
-
-// Workflow & Edit Action Events
-if (byId('btnWorkflowPublish')) byId('btnWorkflowPublish').addEventListener('click', () => handlePropertyWorkflow('publish'));
-if (byId('btnWorkflowArchive')) byId('btnWorkflowArchive').addEventListener('click', () => handlePropertyWorkflow('archive'));
-if (byId('btnWorkflowRestore')) byId('btnWorkflowRestore').addEventListener('click', () => handlePropertyWorkflow('restore'));
-if (byId('editSave')) byId('editSave').addEventListener('click', handleSavePropertyEdit);
-
-// ==========================================================================
-// SMART MATCHING & PITCH GENERATOR FUNCTIONS
-// ==========================================================================
-
-async function loadSmartMatch(customQuery) {
-  const query = (customQuery !== undefined ? customQuery : byId('smartMatchQuery').value).trim();
-  byId('matchLoading').hidden = false;
-  byId('matchGrid').hidden = true;
-  byId('matchEmpty').hidden = true;
-  byId('matchMeta').hidden = true;
-
-  try {
-    const result = await cmsApi('/api/admin/v1/smart-match', {
-      method: 'POST',
-      body: { query }
-    });
-    cmsState.matchLoaded = true;
-    const { items, criteriaUsed, totalMatched } = result.data;
-
-    byId('matchLoading').hidden = true;
-    byId('matchMeta').hidden = false;
-    byId('matchCount').textContent = `Tìm thấy ${items.length} căn nhà phù hợp nhất`;
-
-    const summaryParts = [];
-    if (criteriaUsed.district) summaryParts.push(`Quận: ${criteriaUsed.district}`);
-    if (criteriaUsed.minPrice || criteriaUsed.maxPrice) {
-      summaryParts.push(`Giá: ${criteriaUsed.minPrice ? criteriaUsed.minPrice / 1000000 + 'tr' : '0'} - ${criteriaUsed.maxPrice ? criteriaUsed.maxPrice / 1000000 + 'tr' : 'Vô hạn'}`);
+// Bulk Actions
+if (byId('selectAllProperties')) {
+  byId('selectAllProperties').addEventListener('change', (e) => {
+    const isChecked = e.target.checked;
+    cmsState.selectedPropertyIds.clear();
+    if (isChecked && cmsState.currentPropertyItems) {
+      cmsState.currentPropertyItems.forEach(item => cmsState.selectedPropertyIds.add(item.id));
     }
-    if (criteriaUsed.propertyType) summaryParts.push(`Loại: ${criteriaUsed.propertyType}`);
-    byId('matchCriteriaSummary').textContent = summaryParts.length ? `Tiêu chí bóc tách: ${summaryParts.join(' · ')}` : 'Quét toàn bộ kho dữ liệu';
+    document.querySelectorAll('.cms-card-checkbox, .cms-table-responsive tbody input[type="checkbox"]').forEach(cb => {
+      cb.checked = isChecked;
+    });
+    document.querySelectorAll('.cms-property-card, .cms-data-table tbody tr').forEach(el => {
+      el.classList.toggle('selected', isChecked);
+    });
+    updateBulkActionBar();
+  });
+}
 
-    if (!items.length) {
-      byId('matchEmpty').hidden = false;
+if (byId('bulkDeselectBtn')) {
+  byId('bulkDeselectBtn').addEventListener('click', () => {
+    cmsState.selectedPropertyIds.clear();
+    const selectAllCb = byId('selectAllProperties');
+    if (selectAllCb) selectAllCb.checked = false;
+    document.querySelectorAll('.cms-card-checkbox, .cms-table-responsive tbody input[type="checkbox"]').forEach(cb => {
+      cb.checked = false;
+    });
+    document.querySelectorAll('.cms-property-card, .cms-data-table tbody tr').forEach(el => {
+      el.classList.remove('selected');
+    });
+    updateBulkActionBar();
+  });
+}
+
+if (byId('bulkPublishBtn')) {
+  byId('bulkPublishBtn').addEventListener('click', async () => {
+    const ids = Array.from(cmsState.selectedPropertyIds);
+    if (!ids.length) return;
+    if (!confirm(`Bạn có chắc muốn xuất bản ${ids.length} bất động sản đã chọn?`)) return;
+    try {
+      for (const id of ids) {
+        await cmsApi(`/api/admin/v1/properties/${encodeURIComponent(id)}/workflow`, {
+          method: 'POST',
+          body: { command: 'publish' }
+        });
+      }
+      showToast(`Đã xuất bản thành công ${ids.length} bất động sản!`, 'success');
+      cmsState.selectedPropertyIds.clear();
+      loadProperties(cmsState.propertyPage);
+      loadDashboard();
+    } catch (error) {
+      showToast(`Lỗi xuất bản hàng loạt: ${error.message}`, 'error');
+    }
+  });
+}
+
+if (byId('bulkArchiveBtn')) {
+  byId('bulkArchiveBtn').addEventListener('click', async () => {
+    const ids = Array.from(cmsState.selectedPropertyIds);
+    if (!ids.length) return;
+    if (!confirm(`Bạn có chắc muốn lưu trữ ${ids.length} bất động sản đã chọn?`)) return;
+    try {
+      for (const id of ids) {
+        await cmsApi(`/api/admin/v1/properties/${encodeURIComponent(id)}/workflow`, {
+          method: 'POST',
+          body: { command: 'archive' }
+        });
+      }
+      showToast(`Đã lưu trữ ${ids.length} bất động sản!`, 'warning');
+      cmsState.selectedPropertyIds.clear();
+      loadProperties(cmsState.propertyPage);
+      loadDashboard();
+    } catch (error) {
+      showToast(`Lỗi lưu trữ hàng loạt: ${error.message}`, 'error');
+    }
+  });
+}
+
+// Lightbox Navigation Events
+if (byId('lightboxClose')) byId('lightboxClose').addEventListener('click', closeLightbox);
+if (byId('lightboxPrev')) {
+  byId('lightboxPrev').addEventListener('click', () => {
+    if (!cmsState.lightbox.images.length) return;
+    cmsState.lightbox.currentIndex = (cmsState.lightbox.currentIndex - 1 + cmsState.lightbox.images.length) % cmsState.lightbox.images.length;
+    cmsState.lightbox.rotation = 0;
+    updateLightbox();
+  });
+}
+if (byId('lightboxNext')) {
+  byId('lightboxNext').addEventListener('click', () => {
+    if (!cmsState.lightbox.images.length) return;
+    cmsState.lightbox.currentIndex = (cmsState.lightbox.currentIndex + 1) % cmsState.lightbox.images.length;
+    cmsState.lightbox.rotation = 0;
+    updateLightbox();
+  });
+}
+if (byId('lightboxRotate')) {
+  byId('lightboxRotate').addEventListener('click', () => {
+    cmsState.lightbox.rotation = (cmsState.lightbox.rotation + 90) % 360;
+    updateLightbox();
+  });
+}
+if (byId('imageLightbox')) {
+  byId('imageLightbox').addEventListener('click', (e) => {
+    if (e.target === byId('imageLightbox')) closeLightbox();
+  });
+}
+
+// Sidebar Toggle & Shortcuts Dialog
+if (byId('btnToggleSidebar')) {
+  byId('btnToggleSidebar').addEventListener('click', () => {
+    const sidebar = byId('cmsSidebar');
+    if (!sidebar) return;
+    if (window.matchMedia('(max-width: 600px)').matches) {
+      const isOpen = sidebar.classList.toggle('mobile-open');
+      document.body.classList.toggle('cms-mobile-menu-open', isOpen);
+      byId('btnToggleSidebar').setAttribute('aria-expanded', String(isOpen));
       return;
     }
-
-    const grid = byId('matchGrid');
-    grid.replaceChildren(...items.map(createMatchCard));
-    grid.hidden = false;
-  } catch (error) {
-    byId('matchLoading').hidden = true;
-    byId('matchEmpty').hidden = false;
-    byId('matchEmpty').querySelector('b').textContent = 'Lỗi tìm kiếm khớp nhu cầu';
-    byId('matchEmpty').querySelector('span').textContent = `${error.code || 'REQUEST_FAILED'} · ${error.message}`;
-  }
+    sidebar.classList.toggle('collapsed');
+  });
 }
 
-function createMatchCard(item) {
-  const article = document.createElement('article');
-  article.className = 'cms-match-item';
+document.querySelectorAll('#cmsSidebar [data-page]').forEach((item) => {
+  item.addEventListener('click', () => {
+    if (!window.matchMedia('(max-width: 600px)').matches) return;
+    byId('cmsSidebar')?.classList.remove('mobile-open');
+    document.body.classList.remove('cms-mobile-menu-open');
+    byId('btnToggleSidebar')?.setAttribute('aria-expanded', 'false');
+  });
+});
 
-  // Header
-  const header = document.createElement('div');
-  header.className = 'cms-match-header';
-  const headerText = document.createElement('div');
-  const title = document.createElement('h2');
-  title.textContent = item.address;
-  const subtitle = document.createElement('p');
-  subtitle.textContent = [item.propertyType, item.ward, item.district].filter(Boolean).join(' · ');
-  headerText.append(title, subtitle);
+document.addEventListener('keydown', (event) => {
+  if (event.key !== 'Escape') return;
+  byId('cmsSidebar')?.classList.remove('mobile-open');
+  document.body.classList.remove('cms-mobile-menu-open');
+  byId('btnToggleSidebar')?.setAttribute('aria-expanded', 'false');
+});
 
-  const scoreBadge = document.createElement('div');
-  const scoreClass = item.matchScore >= 80 ? 'top' : (item.matchScore >= 65 ? 'medium' : 'low');
-  scoreBadge.className = `cms-score-badge ${scoreClass}`;
-  scoreBadge.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> <span>${item.matchScore}% KHỚP</span>`;
+if (byId('btnShortcuts')) {
+  byId('btnShortcuts').addEventListener('click', () => {
+    const dlg = byId('shortcutDialog');
+    if (dlg) dlg.showModal();
+  });
+}
+if (byId('shortcutClose')) {
+  byId('shortcutClose').addEventListener('click', () => {
+    const dlg = byId('shortcutDialog');
+    if (dlg) dlg.close();
+  });
+}
+byId('shortcutDialog')?.addEventListener('click', (e) => {
+  if (e.target === byId('shortcutDialog')) byId('shortcutDialog').close();
+});
 
-  header.append(headerText, scoreBadge);
+// Global Keyboard Shortcuts
+window.addEventListener('keydown', (e) => {
+  // Ignore inside inputs/textareas for normal characters
+  const activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
+  const isInput = ['input', 'textarea', 'select'].includes(activeTag);
 
-  // Body
-  const body = document.createElement('div');
-  body.className = 'cms-match-body';
+  // Esc closes open dialogs / lightbox
+  if (e.key === 'Escape') {
+    const openDialogs = document.querySelectorAll('dialog[open]');
+    openDialogs.forEach(d => d.close());
+    return;
+  }
 
-  const facts = document.createElement('div');
-  facts.className = 'cms-match-facts';
-  facts.innerHTML = `
-    <div><span>Giá</span><strong>${item.price || 'Thỏa thuận'}</strong></div>
-    <div><span>Diện tích</span><strong>${item.area || '—'}</strong></div>
-    <div><span>Phòng / WC</span><strong>${item.bedrooms ? item.bedrooms + ' PN' : '—'} / ${item.bathrooms ? item.bathrooms + ' WC' : '—'}</strong></div>
+  // Lightbox Arrow Keys
+  const lb = byId('imageLightbox');
+  if (lb && lb.open) {
+    if (e.key === 'ArrowLeft') {
+      byId('lightboxPrev')?.click();
+      e.preventDefault();
+    } else if (e.key === 'ArrowRight') {
+      byId('lightboxNext')?.click();
+      e.preventDefault();
+    }
+    return;
+  }
+
+  // Ctrl+S / Cmd+S: Save edit form if open
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+    const editForm = byId('detailEditForm');
+    if (editForm && !editForm.hidden) {
+      e.preventDefault();
+      handleSavePropertyEdit();
+    }
+    return;
+  }
+
+  // Focus Search with / or Ctrl+K
+  if ((e.key === '/' && !isInput) || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k')) {
+    e.preventDefault();
+    const activePage = document.querySelector('[data-page-panel].active')?.dataset.pagePanel;
+    if (activePage === 'match') {
+      const q = byId('smartMatchQuery');
+      if (q) { q.focus(); q.select(); }
+    } else {
+      const s = byId('propertySearch');
+      if (s) { s.focus(); s.select(); }
+    }
+    return;
+  }
+
+  // Alt + 1..6: Switch Navigation Tabs
+  if (e.altKey && ['1', '2', '3', '4', '5', '6'].includes(e.key)) {
+    const pages = ['dashboard', 'match', 'properties', 'editor', 'users', 'sync'];
+    const idx = Number(e.key) - 1;
+    if (pages[idx]) {
+      e.preventDefault();
+      setActivePage(pages[idx]);
+    }
+  }
+});
+
+function showToast(message, type = 'success', duration = 3200) {
+  let container = byId('toastContainer');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'toastContainer';
+    container.className = 'cms-toast-container';
+    document.body.append(container);
+  }
+  const toast = document.createElement('div');
+  toast.className = `cms-toast-card ${type}`;
+
+  let iconSvg = '<svg class="cms-toast-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>';
+  if (type === 'error') {
+    iconSvg = '<svg class="cms-toast-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>';
+  } else if (type === 'warning') {
+    iconSvg = '<svg class="cms-toast-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
+  } else if (type === 'info') {
+    iconSvg = '<svg class="cms-toast-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>';
+  }
+
+  toast.innerHTML = `
+    ${iconSvg}
+    <div class="cms-toast-content">
+      <span>${message}</span>
+    </div>
+    <button class="cms-toast-close" type="button" aria-label="Đóng">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
   `;
 
-  const reasons = document.createElement('div');
-  reasons.className = 'cms-match-reasons';
-  (item.reasons || []).slice(0, 4).forEach(r => {
-    const rDiv = document.createElement('div');
-    rDiv.className = `cms-match-reason-item ${r.pass ? 'pass' : 'fail'}`;
-    rDiv.innerHTML = `<span class="cms-match-reason-dot"></span><span>${r.label}</span>`;
-    reasons.append(rDiv);
+  toast.querySelector('.cms-toast-close').addEventListener('click', () => {
+    toast.remove();
   });
 
-  body.append(facts, reasons);
+  container.append(toast);
 
-  // Footer
-  const footer = document.createElement('div');
-  footer.className = 'cms-match-footer';
-
-  const viewBtn = document.createElement('button');
-  viewBtn.className = 'cms-edit-preview';
-  viewBtn.type = 'button';
-  viewBtn.textContent = 'Xem chi tiết';
-  viewBtn.addEventListener('click', () => openPropertyDetail(item.id));
-
-  const copyBtn = document.createElement('button');
-  copyBtn.className = 'cms-copy-pitch-btn';
-  copyBtn.type = 'button';
-  copyBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span>Sao chép tin gửi Zalo</span>`;
-  copyBtn.addEventListener('click', () => handleCopyPitch(item.pitchText));
-
-  footer.append(viewBtn, copyBtn);
-
-  article.append(header, body, footer);
-  return article;
-}
-
-function showToast(message) {
-  const existing = document.querySelector('.cms-toast');
-  if (existing) existing.remove();
-  const toast = document.createElement('div');
-  toast.className = 'cms-toast';
-  toast.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg><span>${message}</span>`;
-  document.body.append(toast);
   setTimeout(() => {
-    toast.style.transition = 'opacity 0.3s';
+    toast.style.transition = 'all 0.25s ease';
     toast.style.opacity = '0';
-    setTimeout(() => toast.remove(), 300);
-  }, 3000);
+    toast.style.transform = 'translateY(-10px)';
+    setTimeout(() => toast.remove(), 250);
+  }, duration);
 }
 
 function handleCopyPitch(pitchText) {
@@ -1463,4 +2028,3 @@ window.addEventListener('popstate', () => {
 });
 
 bootstrapCms();
-

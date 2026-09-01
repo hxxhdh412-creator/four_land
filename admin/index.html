@@ -6,19 +6,28 @@
   <meta name="robots" content="noindex,nofollow">
   <meta name="theme-color" content="#283d34">
   <title>FOURLAND · Trung tâm quản trị</title>
-  <link rel="stylesheet" href="/admin/admin.css?v=20">
+  <link rel="stylesheet" href="/admin/admin.css?v=26">
 </head>
 <body>
   <div id="cmsApp" class="cms-app" aria-busy="true">
     <header class="cms-topbar">
-      <a class="cms-brand" href="/admin/" aria-label="Fourland CMS">
-        <img src="/assets/brand/fourland-logo.png" alt="Fourland">
-        <span>
-          <strong>FOURLAND</strong>
-          <small>Kho Bất Động Sản</small>
-        </span>
-      </a>
+      <div class="cms-brand-group">
+        <button id="btnToggleSidebar" class="cms-sidebar-toggle" type="button" aria-label="Đóng/mở Menu" title="Đóng/mở Menu">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <a class="cms-brand" href="/admin/" aria-label="Fourland CMS">
+          <img src="/assets/brand/fourland-logo.png" alt="Fourland">
+          <span>
+            <strong>FOURLAND</strong>
+            <small>Kho Bất Động Sản</small>
+          </span>
+        </a>
+      </div>
       <div class="cms-top-actions">
+        <button id="btnShortcuts" class="cms-shortcut-chip" type="button" title="Xem danh sách phím tắt nhanh">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M6 12h.01M10 12h.01M14 12h.01M18 12h.01M8 16h8"/></svg>
+          <span><kbd>/</kbd> Tìm nhanh</span>
+        </button>
         <div id="systemState" class="cms-system-state"><i></i><span>Đang kết nối…</span></div>
         <button id="profileButton" class="cms-avatar" type="button" aria-label="Tài khoản" disabled>FL</button>
         <button id="btnLogoutTopbar" class="cms-top-logout-btn" type="button" aria-label="Đăng xuất" title="Đăng xuất" hidden>
@@ -32,28 +41,31 @@
         <p class="cms-nav-label">Quản trị</p>
         <button class="cms-nav-item active" data-page="dashboard" type="button">
           <span class="cms-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg></span>
-          <span>Tổng quan</span>
+          <span class="cms-nav-text" data-short="Tổng quan">Tổng quan</span>
         </button>
         <button class="cms-nav-item" data-page="match" type="button">
           <span class="cms-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span>
-          <span>Khớp nhu cầu (AI)</span>
+          <span class="cms-nav-text" data-short="Khớp AI">Khớp nhu cầu</span>
+          <span class="cms-nav-badge ai">AI</span>
         </button>
         <button class="cms-nav-item" data-page="properties" type="button">
           <span class="cms-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>
-          <span>Kho bất động sản</span>
+          <span class="cms-nav-text" data-short="Kho nhà">Kho bất động sản</span>
+          <span id="navBadgeProperties" class="cms-nav-badge count" hidden>0</span>
         </button>
         <button class="cms-nav-item" data-page="editor" type="button">
           <span class="cms-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></span>
-          <span>Chờ biên tập</span>
+          <span class="cms-nav-text" data-short="Biên tập">Chờ biên tập</span>
+          <span id="navBadgeReview" class="cms-nav-badge warn" hidden>0</span>
         </button>
         <p class="cms-nav-label secondary">Hệ thống</p>
         <button class="cms-nav-item" data-page="users" type="button">
           <span class="cms-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
-          <span>Tài khoản & Phân quyền</span>
+          <span class="cms-nav-text" data-short="Tài khoản">Tài khoản & Phân quyền</span>
         </button>
         <button class="cms-nav-item" data-page="sync" type="button">
           <span class="cms-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></span>
-          <span>Đồng bộ & dữ liệu</span>
+          <span class="cms-nav-text" data-short="Đồng bộ">Đồng bộ & dữ liệu</span>
         </button>
         <a class="cms-nav-item cms-public-link" href="/" target="_blank" rel="noopener">
           <span class="cms-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></span>
@@ -69,7 +81,7 @@
             <h1>Đăng nhập quản trị</h1>
             <p id="authMessage">Nhập thông tin tài khoản hoặc chọn nhanh vai trò để truy cập kho dữ liệu.</p>
             <div id="authError" class="cms-alert" hidden></div>
-            
+
             <form id="cmsLoginForm" class="cms-login-form">
               <label class="cms-login-field">
                 <span>Email hoặc Tên đăng nhập</span>
@@ -172,11 +184,12 @@
             <div class="cms-match-card">
               <form id="smartMatchForm" class="cms-match-form">
                 <label class="cms-match-input-wrapper">
-                  <span class="cms-match-label">Yêu cầu tìm nhà của khách (Nhập tự do hoặc dán tin nhắn Zalo):</span>
+                  <span class="cms-match-label">Mô tả nhu cầu khách hàng</span>
+                  <small class="cms-match-helper">Dán tin nhắn Zalo hoặc nhập tự do — hệ thống sẽ tự nhận diện khu vực, giá và diện tích.</small>
                   <textarea id="smartMatchQuery" rows="3" placeholder="Ví dụ: Khách anh Hoàng cần thuê mặt bằng Tân Bình giá 15-20 triệu diện tích 4x20m kinh doanh ăn uống…"></textarea>
                 </label>
                 <div class="cms-match-quick-chips">
-                  <span class="chip-title">Gợi ý mẫu:</span>
+                  <span class="chip-title">Mẫu tìm kiếm nhanh</span>
                   <button type="button" class="cms-chip" data-query="Thuê mặt bằng Tân Bình 15-20 triệu 4x20">
                     <svg class="cms-chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M3 7v14M21 7v14M6 7V3h12v4M9 21v-4h6v4"/></svg>
                     <span>Mặt bằng Tân Bình 15-20tr</span>
@@ -247,8 +260,14 @@
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                     </button>
                   </div>
+
+                  <button id="propertyMobileFilterToggle" class="cms-mobile-filter-toggle" type="button" aria-expanded="false" aria-controls="propertyAdvancedFilters">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
+                    <span>Bộ lọc</span>
+                    <i id="propertyActiveFilterCount" hidden>0</i>
+                  </button>
                   
-                  <div class="cms-filter-selects">
+                  <div id="propertyAdvancedFilters" class="cms-filter-selects">
                     <div class="cms-select-wrapper">
                       <svg class="cms-select-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                       <select id="propertyDistrict" aria-label="Quận / Huyện">
@@ -329,9 +348,17 @@
                     <svg class="cms-chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
                     <span>Nhà phố / Căn</span>
                   </button>
-                  <button type="button" class="cms-filter-chip" data-filter-chip="under_20m">
+                  <button type="button" class="cms-filter-chip" data-filter-chip="under_15m">
                     <svg class="cms-chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                    <span>Dưới 20 triệu</span>
+                    <span>&lt; 15 triệu</span>
+                  </button>
+                  <button type="button" class="cms-filter-chip" data-filter-chip="15_30m">
+                    <svg class="cms-chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                    <span>15 - 30 triệu</span>
+                  </button>
+                  <button type="button" class="cms-filter-chip" data-filter-chip="above_30m">
+                    <svg class="cms-chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                    <span>&gt; 30 triệu</span>
                   </button>
                   <button type="button" class="cms-filter-chip" data-filter-chip="tan_binh">
                     <svg class="cms-chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
@@ -345,6 +372,14 @@
                     <svg class="cms-chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                     <span>Phú Nhuận</span>
                   </button>
+                  <button type="button" class="cms-filter-chip" data-filter-chip="go_vap">
+                    <svg class="cms-chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                    <span>Gò Vấp</span>
+                  </button>
+                  <button type="button" class="cms-filter-chip" data-filter-chip="quan_1">
+                    <svg class="cms-chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                    <span>Quận 1 / 3</span>
+                  </button>
                 </div>
               </form>
             </div>
@@ -354,6 +389,16 @@
                 <span class="cms-meta-note">Không hiển thị SĐT và dữ liệu nguồn trong danh sách</span>
               </div>
               <div class="cms-meta-right">
+                <div class="cms-view-switcher" role="group" aria-label="Chế độ hiển thị">
+                  <button id="btnViewGrid" class="cms-view-btn active" type="button" title="Xem dạng lưới thẻ (Grid)">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg>
+                    <span>Lưới</span>
+                  </button>
+                  <button id="btnViewTable" class="cms-view-btn" type="button" title="Xem dạng bảng dữ liệu (Table)">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                    <span>Bảng</span>
+                  </button>
+                </div>
                 <div class="cms-sort-box">
                   <span>Sắp xếp:</span>
                   <select id="propertySort">
@@ -369,6 +414,23 @@
             <div id="propertyLoading" class="cms-surface"><div class="cms-empty"><b>Đang tải hồ sơ…</b><span>Dữ liệu được truy vấn theo từng trang.</span></div></div>
             <div id="propertyEmpty" class="cms-surface" hidden><div class="cms-empty"><b>Không tìm thấy hồ sơ phù hợp</b><span>Thử đổi từ khóa hoặc bộ lọc.</span></div></div>
             <div id="propertyGrid" class="cms-property-grid" hidden></div>
+            <div id="propertyTableWrap" class="cms-table-responsive" hidden>
+              <table class="cms-data-table">
+                <thead>
+                  <tr>
+                    <th class="col-cb"><input type="checkbox" id="selectAllProperties" title="Chọn tất cả"></th>
+                    <th class="col-thumb">Ảnh</th>
+                    <th class="col-address">Địa chỉ / Vị trí</th>
+                    <th class="col-type">Loại hình</th>
+                    <th class="col-specs">Quy mô / KC</th>
+                    <th class="col-price">Giá thuê</th>
+                    <th class="col-status">Trạng thái</th>
+                    <th class="col-actions">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody id="propertyTableBody"></tbody>
+              </table>
+            </div>
             <div id="propertyPagination" class="cms-pagination" hidden>
               <button id="propertyPrev" class="cms-page-btn" type="button">
                 <svg class="cms-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
@@ -379,6 +441,24 @@
                 <span>Trang sau</span>
                 <svg class="cms-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
               </button>
+            </div>
+
+            <div id="bulkActionBar" class="cms-bulk-bar" hidden>
+              <div class="cms-bulk-info">
+                <span class="cms-bulk-badge" id="bulkSelectedCount">0</span>
+                <span>BĐS đã chọn</span>
+              </div>
+              <div class="cms-bulk-actions">
+                <button id="bulkPublishBtn" class="cms-bulk-btn publish" type="button">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                  <span>Xuất bản</span>
+                </button>
+                <button id="bulkArchiveBtn" class="cms-bulk-btn archive" type="button">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+                  <span>Lưu trữ</span>
+                </button>
+                <button id="bulkDeselectBtn" class="cms-bulk-btn deselect" type="button">Bỏ chọn</button>
+              </div>
             </div>
           </section>
 
@@ -669,7 +749,7 @@
       </div>
     </dialog>
 
-    <dialog id="userDialog" class="cms-detail-dialog" aria-labelledby="userDialogTitle">
+    <dialog id="userDialog" class="cms-detail-dialog cms-user-dialog" aria-labelledby="userDialogTitle">
       <div class="cms-detail-shell">
         <header>
           <div>
@@ -724,7 +804,7 @@
       </div>
     </dialog>
 
-    <dialog id="profileDialog" class="cms-detail-dialog" aria-labelledby="profileDialogTitle">
+    <dialog id="profileDialog" class="cms-detail-dialog cms-profile-dialog" aria-labelledby="profileDialogTitle">
       <div class="cms-detail-shell">
         <header>
           <div>
@@ -893,7 +973,58 @@
         </div>
       </div>
     </dialog>
+
+    <dialog id="imageLightbox" class="cms-lightbox-dialog" aria-label="Xem ảnh phóng to">
+      <div class="cms-lightbox-shell">
+        <button id="lightboxClose" class="cms-lightbox-close" type="button" aria-label="Đóng">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+        <button id="lightboxPrev" class="cms-lightbox-nav prev" type="button" aria-label="Ảnh trước">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div class="cms-lightbox-img-wrap">
+          <img id="lightboxImg" src="" alt="Ảnh BĐS">
+          <div id="lightboxCaption" class="cms-lightbox-caption"></div>
+        </div>
+        <button id="lightboxNext" class="cms-lightbox-nav next" type="button" aria-label="Ảnh sau">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <div class="cms-lightbox-tools">
+          <button id="lightboxRotate" type="button" class="cms-lightbox-tool-btn">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            <span>Xoay ảnh</span>
+          </button>
+          <a id="lightboxDownload" href="#" target="_blank" rel="noopener" class="cms-lightbox-tool-btn">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            <span>Mở ảnh gốc</span>
+          </a>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog id="shortcutDialog" class="cms-detail-dialog cms-shortcut-dialog" aria-labelledby="shortcutTitle">
+      <div class="cms-detail-shell">
+        <header>
+          <div>
+            <p class="cms-eyebrow">Trợ giúp thao tác</p>
+            <h2 id="shortcutTitle" style="margin:0;font-size:18px;font-weight:700;">Phím tắt bàn phím</h2>
+          </div>
+          <button id="shortcutClose" class="cms-close-btn" type="button" aria-label="Đóng">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </header>
+        <div class="cms-shortcut-list">
+          <div class="cms-shortcut-row"><span class="cms-shortcut-desc">Tìm kiếm nhanh BĐS</span><span class="cms-shortcut-keys"><kbd>/</kbd> hoặc <kbd>Ctrl</kbd> + <kbd>K</kbd></span></div>
+          <div class="cms-shortcut-row"><span class="cms-shortcut-desc">Đóng cửa sổ / Lightbox</span><span class="cms-shortcut-keys"><kbd>Esc</kbd></span></div>
+          <div class="cms-shortcut-row"><span class="cms-shortcut-desc">Xem ảnh trước / sau (Lightbox)</span><span class="cms-shortcut-keys"><kbd>←</kbd> <kbd>→</kbd></span></div>
+          <div class="cms-shortcut-row"><span class="cms-shortcut-desc">Lưu form đang biên tập</span><span class="cms-shortcut-keys"><kbd>Ctrl</kbd> + <kbd>S</kbd></span></div>
+          <div class="cms-shortcut-row"><span class="cms-shortcut-desc">Chuyển qua lại các Menu</span><span class="cms-shortcut-keys"><kbd>Alt</kbd> + <kbd>1..6</kbd></span></div>
+        </div>
+      </div>
+    </dialog>
+
+    <div id="toastContainer" class="cms-toast-container" aria-live="polite"></div>
   </div>
-  <script src="/admin/admin.js?v=23" defer></script>
+  <script src="/admin/admin.js?v=26" defer></script>
 </body>
 </html>

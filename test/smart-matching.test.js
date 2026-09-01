@@ -134,4 +134,7 @@ test('smart match API handler filters and ranks properties securely', async () =
   assert.ok(responseData.data.items.length > 0);
   assert.equal(responseData.data.items[0].id, 'BDS-TEST-001');
   assert.ok(responseData.data.items[0].matchScore >= 80);
+  assert.equal(responseData.data.criteriaUsed.district, 'Tân Bình');
+  assert.equal(responseData.data.criteriaUsed.minPrice, 15000000);
+  assert.equal(responseData.data.criteriaUsed.maxPrice, 20000000);
 });

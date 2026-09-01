@@ -104,6 +104,11 @@ Chỉ viết hoa toàn bộ cho eyebrow/label ngắn. Không viết hoa đoạn 
 - CMS dùng cùng token màu, font `Be Vietnam Pro`, logo và tỷ lệ spacing của public web.
 - Desktop có sidebar xanh rừng; active item dùng vạch cam, không dùng nhiều màu trang trí.
 - Card dashboard radius 5 px, shadow nhẹ; KPI chưa có API phải hiển thị `—`, không dùng dữ liệu mẫu như dữ liệu thật.
-- Mobile dưới 600 px ẩn sidebar, dùng bottom navigation 4 mục và không tạo cuộn ngang toàn trang.
+- Mobile dưới 600 px dùng bottom navigation 4 mục chính; các mục hệ thống nằm trong menu drawer mở từ topbar, không hiển thị đồng thời hai thanh điều hướng và không tạo cuộn ngang toàn trang.
+- CMS mobile dùng card một cột để giữ khả năng đọc/chạm trong tác vụ biên tập; chip lọc được cuộn ngang có kiểm soát, form hai cột chỉ áp dụng từ 375 px và tự hạ về một cột ở màn hình hẹp hơn.
+- Input mobile dùng cỡ chữ tối thiểu 16 px để tránh trình duyệt tự zoom; topbar, bottom navigation và dialog phải tôn trọng safe-area của thiết bị.
+- Mỗi phân hệ CMS có bố cục mobile riêng: Kho nhà ưu tiên card và tìm kiếm; Biên tập dùng thẻ ưu tiên; Nhân sự chuyển bảng thành card có nhãn; Khớp AI giữ một luồng nhập → quét → kết quả; Đồng bộ ưu tiên trạng thái và blocker. Các quy tắc này chỉ áp dụng dưới 600 px, không thay đổi desktop.
+- Trên mobile, Kho nhà luôn hiện ô tìm kiếm và chip lọc nhanh; bộ lọc khu vực/trạng thái/chất lượng mặc định thu gọn sau nút có chỉ báo số điều kiện đang áp dụng. Khối tổng kết chỉ giữ số hồ sơ và sắp xếp, còn card ưu tiên ảnh, giá, địa chỉ, thông số và hai thao tác chính trong một màn cuộn ngắn.
+- Trên mobile, Khớp AI dùng một luồng quyết định dọc: nhãn và hướng dẫn nhập ngắn, textarea không tự kéo giãn, tiêu đề mẫu nằm riêng phía trên carousel chip, CTA toàn chiều rộng, tóm tắt tiêu chí một dòng và kết quả dạng card gọn với điểm khớp–thông số–lý do–hành động theo đúng thứ tự ưu tiên.
 - Auth gate, loading, error và empty state phải tồn tại trước khi mở module nghiệp vụ.
 - CMS luôn có `noindex,nofollow` và không được đưa secret/config vào bundle.

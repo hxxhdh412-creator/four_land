@@ -291,15 +291,16 @@ http.createServer(async (req,res)=>{
       let criteria={};
       if(rawQuery){
         const parsed=parseNaturalQuery(rawQuery);
+        const filters=parsed.filters||{};
         criteria={
-          district:parsed.district||body.district||null,
-          propertyType:parsed.propertyType||body.propertyType||null,
-          minPrice:parsed.minPrice||(body.minPrice?Number(body.minPrice):null),
-          maxPrice:parsed.maxPrice||(body.maxPrice?Number(body.maxPrice):null),
-          minArea:parsed.minArea||(body.minArea?Number(body.minArea):null),
-          maxArea:parsed.maxArea||(body.maxArea?Number(body.maxArea):null),
-          bedrooms:parsed.bedrooms||(body.bedrooms?Number(body.bedrooms):null),
-          dimensions:parsed.dimensions||body.dimensions||null
+          district:filters.district||body.district||null,
+          propertyType:filters.propertyType||body.propertyType||null,
+          minPrice:filters.minPrice||(body.minPrice?Number(body.minPrice):null),
+          maxPrice:filters.maxPrice||(body.maxPrice?Number(body.maxPrice):null),
+          minArea:filters.minArea||(body.minArea?Number(body.minArea):null),
+          maxArea:filters.maxArea||(body.maxArea?Number(body.maxArea):null),
+          bedrooms:filters.bedrooms||(body.bedrooms?Number(body.bedrooms):null),
+          dimensions:filters.dimensions||body.dimensions||null
         };
       } else {
         criteria={

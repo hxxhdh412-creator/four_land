@@ -43,6 +43,10 @@ test('CMS shell has a mobile layout without a global horizontal scroller', () =>
 
 test('CMS shell exposes read-only property list and detail states', () => {
   assert.match(html, /id="propertyFilters"/);
+  assert.match(html, /id="propertyMobileFilterToggle"[^>]+aria-controls="propertyAdvancedFilters"/);
+  assert.match(html, /id="propertyActiveFilterCount"/);
+  assert.match(css, /#propertyAdvancedFilters\.mobile-open/);
+  assert.match(js, /function updateMobilePropertyFilters\(\)/);
   assert.match(html, /id="propertyLoading"/);
   assert.match(html, /id="propertyEmpty"/);
   assert.match(html, /id="propertyDetail"/);
@@ -56,4 +60,12 @@ test('CMS shell exposes read-only property list and detail states', () => {
   assert.match(html, /id="healthContent"/);
   assert.match(html, /id="healthBlockers"/);
   assert.match(js, /\/api\/admin\/v1\/system\/health/);
+});
+
+test('CMS Smart Match exposes a compact mobile decision flow', () => {
+  assert.match(html, /class="cms-match-helper"/);
+  assert.match(html, /Mẫu tìm kiếm nhanh/);
+  assert.match(css, /Smart Match: premium mobile decision flow/);
+  assert.match(css, /\.cms-match-quick-chips \.chip-title \{[\s\S]*position: absolute !important/);
+  assert.match(css, /\.cms-match-price \{[\s\S]*display: none/);
 });
