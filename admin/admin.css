@@ -176,13 +176,16 @@ button, input, select, textarea {
    ========================================================================== */
 
 .cms-layout {
-  display: grid;
-  grid-template-columns: 240px minmax(0, 1fr);
+  display: flex;
   flex: 1;
   min-height: calc(100dvh - 70px);
+  width: 100%;
 }
 
 .cms-sidebar {
+  width: 240px;
+  min-width: 240px;
+  flex-shrink: 0;
   padding: 24px 14px;
   background: linear-gradient(180deg, #152721 0%, #0e1c17 100%);
   color: #ffffff;
@@ -190,6 +193,40 @@ button, input, select, textarea {
   flex-direction: column;
   border-right: 1px solid rgba(255, 255, 255, 0.05);
 }
+
+.cms-sidebar[hidden] {
+  display: none !important;
+}
+
+.cms-main {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  padding: 30px 36px;
+}
+
+body:not(.authenticated) .cms-layout {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100dvh - 70px);
+}
+
+body:not(.authenticated) .cms-sidebar {
+  display: none !important;
+}
+
+body:not(.authenticated) .cms-main {
+  max-width: 580px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 40px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 
 .cms-nav-label {
   margin: 0;
@@ -269,11 +306,6 @@ button, input, select, textarea {
 
 .cms-public-link:hover {
   color: #ffffff;
-}
-
-.cms-main {
-  min-width: 0;
-  padding: 30px 36px;
 }
 
 .cms-btn-icon {
