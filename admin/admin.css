@@ -183,10 +183,10 @@ button, input, select, textarea {
 }
 
 .cms-sidebar {
-  width: 240px;
-  min-width: 240px;
+  width: 256px;
+  min-width: 256px;
   flex-shrink: 0;
-  padding: 24px 14px;
+  padding: 24px 12px;
   background: linear-gradient(180deg, #152721 0%, #0e1c17 100%);
   color: #ffffff;
   display: flex;
@@ -246,18 +246,19 @@ body:not(.authenticated) .cms-main {
   width: 100%;
   height: 44px;
   margin-bottom: 4px;
-  padding: 0 14px;
+  padding: 0 12px;
   border: 0;
   border-radius: var(--radius-sm);
   background: transparent;
   color: rgba(255, 255, 255, 0.75);
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   text-align: left;
   text-decoration: none;
   font-size: 13.5px;
   font-weight: 600;
+  white-space: nowrap;
   cursor: pointer;
   transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -273,6 +274,17 @@ body:not(.authenticated) .cms-main {
   color: #ffffff;
   border-left: 3.5px solid var(--orange);
   font-weight: 700;
+}
+
+.cms-nav-text {
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.cms-nav-badge {
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .cms-nav-icon {
