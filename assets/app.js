@@ -69,7 +69,28 @@ function formatVietnamFullDateTime(isoString){
 function driveImage(url){const value=String(url||'');const match=value.match(/\/d\/([\w-]+)/)||value.match(/[?&]id=([\w-]+)/);return match?`https://drive.google.com/thumbnail?id=${match[1]}&sz=w1400`:value}
 function values(){return{q:$('q').value,district:$('district').value,ward:$('ward').value,street:$('street').value,type:$('type').value,timeRange:$('timeRange')?$('timeRange').value:'',sortBy:$('sortBy')?$('sortBy').value:'',rentalStatus:$('rentalStatus')?$('rentalStatus').value:'',minPrice:$('minPrice').value,maxPrice:$('maxPrice').value,minArea:$('minArea').value,maxArea:$('maxArea').value,page:state.page,pageSize:state.pageSize,archived:state.viewArchived?'only':'',featured:state.filterTab==='featured'?'1':'',_t:Date.now()}}
 function params(input){const search=new URLSearchParams();Object.entries(input).forEach(([key,value])=>{if(value!==''&&value!=null)search.set(key,value)});return search}
-async function api(path,options={}){const response=await fetch(path,options);const rawText=await response.text();let body={};try{body=rawText?JSON.parse(rawText):{}}catch{if(!response.ok){throw new Error(`Lỗi máy chủ (${response.status}): ${rawText.slice(0,100)||response.statusText}`);}throw new Error('Phản hồi từ máy chủ không hợp lệ');}if(!response.ok||body.ok===false){const errText=typeof body.error==='object'&&body.error!==null?(body.error.message||JSON.stringify(body.error)):(body.error||'Không tải được dữ liệu');throw new Error(errText);}return body;}
+async function api(path,options={},retries=1){
+  try{
+    const response=await fetch(path,options);
+    const rawText=await response.text();
+    let body={};
+    try{body=rawText?JSON.parse(rawText):{}}catch{
+      if(!response.ok){throw new Error(`Lỗi máy chủ (${response.status}): ${rawText.slice(0,100)||response.statusText}`);}
+      throw new Error('Phản hồi từ máy chủ không hợp lệ');
+    }
+    if(!response.ok||body.ok===false){
+      const errText=typeof body.error==='object'&&body.error!==null?(body.error.message||JSON.stringify(body.error)):(body.error||'Không tải được dữ liệu');
+      throw new Error(errText);
+    }
+    return body;
+  }catch(err){
+    if(retries>0){
+      await new Promise(r=>setTimeout(r,1000));
+      return api(path,options,retries-1);
+    }
+    throw err;
+  }
+}
 function setOptions(id,items,label){const select=$(id);if(!select)return;const current=select.value;select.innerHTML=`<option value="">${label}</option>`+(items||[]).map(item=>`<option value="${escapeHtml(item)}">${escapeHtml(item)}</option>`).join('');select.value=current}
 async function loadFacets(){try{const data=await api('/api/facets');state.facets=data;setOptions('district',data.districts,'Tất cả quận huyện');setOptions('ward',data.wards,'Tất cả phường xã');setOptions('street',data.streets,'Tất cả tuyến đường');setOptions('type',data.types,'Tất cả loại hình')}catch{}}
 function skeleton(){
@@ -98,8 +119,28 @@ setTimeout(dismissSplash,900);
 
 async function load(){
   const requestId=++state.requestId;$('error').hidden=true;$('grid').innerHTML=skeleton();
-  try{const data=await api('/api/properties?'+params(values()));if(requestId!==state.requestId)return;state.rows=data.rows||[];state.total=data.total||0;$('total').textContent=state.total.toLocaleString('vi-VN');$('withImages').textContent=state.rows.filter(row=>Number(row.image_count)>0).length;$('resultLabel').textContent=state.viewArchived?`${state.total.toLocaleString('vi-VN')} hồ sơ đã ẩn`:`${state.total.toLocaleString('vi-VN')} hồ sơ phù hợp`;$('pageLabel').textContent=`Trang ${state.page} / ${Math.max(1,Math.ceil(state.total/state.pageSize))}`;$('pageNumber').textContent=state.page;$('prev').disabled=state.page<=1;$('next').disabled=state.page*state.pageSize>=state.total;render();dismissSplash()}
-  catch(error){if(requestId!==state.requestId)return;$('grid').innerHTML='<div class="empty">Chưa có dữ liệu để hiển thị.</div>';$('resultLabel').textContent='Không tải được kho dữ liệu';$('error').textContent=error.message;$('error').hidden=false;dismissSplash()}
+  try{
+    const data=await api('/api/properties?'+params(values()));
+    if(requestId!==state.requestId)return;
+    state.rows=data.rows||[];
+    state.total=data.total||0;
+    $('total').textContent=state.total.toLocaleString('vi-VN');
+    $('withImages').textContent=state.rows.filter(row=>Number(row.image_count)>0).length;
+    $('resultLabel').textContent=state.viewArchived?`${state.total.toLocaleString('vi-VN')} hồ sơ đã ẩn`:`${state.total.toLocaleString('vi-VN')} hồ sơ phù hợp`;
+    $('pageLabel').textContent=`Trang ${state.page} / ${Math.max(1,Math.ceil(state.total/state.pageSize))}`;
+    $('pageNumber').textContent=state.page;
+    $('prev').disabled=state.page<=1;
+    $('next').disabled=state.page*state.pageSize>=state.total;
+    render();
+    dismissSplash();
+  }catch(error){
+    if(requestId!==state.requestId)return;
+    $('grid').innerHTML='<div class="empty"><b>Đang kết nối lại máy chủ dữ liệu...</b><br><button type="button" class="primary" style="margin-top:14px;min-width:140px;display:inline-block;padding:0 20px;" onclick="load()">Thử tải lại ngay</button></div>';
+    $('resultLabel').textContent='Tạm thời không tải được kho dữ liệu';
+    $('error').textContent=error.message;
+    $('error').hidden=false;
+    dismissSplash();
+  }
 }
 function formatCardPrice(row){
   if(row.status === 'archived') return `<span class="price-val price-archived">Đã ẩn</span>`;

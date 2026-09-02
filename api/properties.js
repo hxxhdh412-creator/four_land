@@ -2,6 +2,52 @@ const { isAdmin } = require("./_admin");
 const { parseNaturalQuery, matchAndScoreProperty } = require("./_smartSearch");
 const { sendError, supabaseRequest, text } = require("./_supabase");
 
+// High-speed In-Memory Cache
+let memoryCachedActiveRows = null;
+let memoryCachedActiveTime = 0;
+let memoryCachedArchivedRows = null;
+let memoryCachedArchivedTime = 0;
+const CACHE_TTL_MS = 25000; // 25 giây cache RAM để phản hồi trong 1-5ms
+
+async function getPropertiesData(archivedOnly = false, bypassCache = false) {
+  const now = Date.now();
+  if (!archivedOnly && !bypassCache && memoryCachedActiveRows && (now - memoryCachedActiveTime < CACHE_TTL_MS)) {
+    return memoryCachedActiveRows;
+  }
+  if (archivedOnly && !bypassCache && memoryCachedArchivedRows && (now - memoryCachedArchivedTime < CACHE_TTL_MS)) {
+    return memoryCachedArchivedRows;
+  }
+
+  const params = new URLSearchParams({
+    select: "property_id,status,phone,property_type,address,district,ward,street,area_text,area_number,dimensions,bedrooms,bathrooms,structure,price_text,price_number,legal,commission,image_count,received_at,updated_at,data_json,property_images(position,public_url)",
+    order: "received_at.desc",
+    limit: "2000"
+  });
+  params.set("status", archivedOnly ? "eq.archived" : "neq.archived");
+
+  try {
+    const result = await supabaseRequest(`properties?${params}`);
+    const rows = result.data || [];
+    if (archivedOnly) {
+      memoryCachedArchivedRows = rows;
+      memoryCachedArchivedTime = now;
+    } else {
+      memoryCachedActiveRows = rows;
+      memoryCachedActiveTime = now;
+    }
+    return rows;
+  } catch (error) {
+    // Stale Fallback: Nếu Supabase bị lỗi mạng hoặc timeout tạm thời, trả về dữ liệu cache gần nhất nếu có
+    if (!archivedOnly && memoryCachedActiveRows && memoryCachedActiveRows.length > 0) {
+      return memoryCachedActiveRows;
+    }
+    if (archivedOnly && memoryCachedArchivedRows && memoryCachedArchivedRows.length > 0) {
+      return memoryCachedArchivedRows;
+    }
+    throw error;
+  }
+}
+
 module.exports = async function handler(req, res) {
   if (req.method !== "GET") return res.status(405).json({ ok: false, error: "Method Not Allowed" });
   try {
@@ -15,6 +61,7 @@ module.exports = async function handler(req, res) {
     const nlp = parseNaturalQuery(rawQ);
     const featuredOnly = req.query.featured === "1" || req.query.featured === "true";
     const sortBy = text(req.query.sortBy) || "newest";
+    const bypassCache = Boolean(isAdmin(req) || req.query.archived);
 
     const explicitFilters = {
       district: text(req.query.district),
@@ -30,16 +77,8 @@ module.exports = async function handler(req, res) {
       bedrooms: req.query.bedrooms ? Number(req.query.bedrooms) : null
     };
 
-    // Query properties from Supabase
-    const params = new URLSearchParams({
-      select: "property_id,status,phone,property_type,address,district,ward,street,area_text,area_number,dimensions,bedrooms,bathrooms,structure,price_text,price_number,legal,notes,raw_text,normalized_text,image_count,received_at,data_json,property_images(position,public_url)",
-      order: "received_at.desc",
-      limit: "5000"
-    });
-    params.set("status", archivedOnly ? "eq.archived" : "neq.archived");
-
-    const result = await supabaseRequest(`properties?${params}`);
-    const allRows = result.data || [];
+    // Query properties from Supabase with High-Speed In-Memory Cache
+    const allRows = await getPropertiesData(archivedOnly, bypassCache);
 
     // 2. Chấm điểm liên quan, lọc đa tầng và ghim nhà nổi bật lên đầu
     const scoredRows = allRows
@@ -112,9 +151,10 @@ module.exports = async function handler(req, res) {
     if (isAdmin(req) || req.query._t || req.query.archived) {
       res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0");
     } else {
-      res.setHeader("Cache-Control", "public, s-maxage=2, stale-while-revalidate=5");
+      res.setHeader("Cache-Control", "public, s-maxage=10, stale-while-revalidate=60");
     }
     res.status(200).json({ ok: true, rows: paginatedRows, total, page, pageSize, parsedNlp: nlp.filters });
   } catch (error) { sendError(res, error); }
 };
+
 
