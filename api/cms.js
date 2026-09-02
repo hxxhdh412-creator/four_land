@@ -40,8 +40,23 @@ module.exports = async function handler(req, res) {
     if (pathname === "/api/admin/v1/switch-role") return cmsLogin(req, res);
     if (pathname === "/api/admin/v1/me" || pathname === "/api/cms-me") return cmsMe(req, res);
 
-    // 2. Users Management
+    // 2. Users Management & PIN Access Settings
     if (pathname === "/api/admin/v1/users" || pathname === "/api/cms-users") return cmsUsers(req, res);
+    if (pathname === "/api/admin/v1/access-pins" || pathname === "/api/admin-pin-settings") {
+      const { handleAccessPins } = require("./_admin-pin-settings");
+      const { isAdmin } = require("./_admin");
+      const { requireCms } = require("./_cms-auth");
+      const { ACTIONS } = require("../server/cms-authorization");
+
+      let authorized = isAdmin(req);
+      if (!authorized) {
+        try {
+          const principal = await requireCms(req, res, ACTIONS.USER_MANAGE);
+          if (principal) authorized = true;
+        } catch (_) {}
+      }
+      return handleAccessPins(req, res, { isAuthorized: authorized });
+    }
 
     // 3. Smart Matching AI
     if (pathname === "/api/admin/v1/smart-match" || pathname === "/api/cms-smart-match") return cmsSmartMatch(req, res);

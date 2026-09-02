@@ -34,6 +34,9 @@ const rows = [
 ];
 const adminCode = env.ADMIN_ACCESS_CODE || process.env.ADMIN_ACCESS_CODE || "246810";
 const ctvCode = env.CTV_ACCESS_CODE || process.env.CTV_ACCESS_CODE || "135790";
+let dynamicAdminCode = adminCode;
+let dynamicCtvCode = ctvCode;
+let dynamicPinsUpdatedAt = new Date().toISOString();
 const previewAdminToken = "fourland-preview-admin";
 const previewCtvToken = "fourland-preview-ctv";
 const getAuthRole = req => {
@@ -641,6 +644,40 @@ http.createServer(async (req,res)=>{
       return send(res, 500, { ok: false, error: { message: error.message } });
     }
   }
+  if(url.pathname==="/api/admin/v1/access-pins" || url.pathname==="/api/admin-pin-settings") {
+    if(req.method==="GET") {
+      return send(res, 200, {
+        ok: true,
+        data: {
+          adminCode: dynamicAdminCode,
+          ctvCode: dynamicCtvCode,
+          updatedAt: dynamicPinsUpdatedAt
+        }
+      });
+    }
+    if(req.method==="PATCH" || req.method==="POST") {
+      try {
+        const body = await readBody(req);
+        const nextAdmin = body.adminCode || body.admin_access_code;
+        const nextCtv = body.ctvCode || body.ctv_access_code;
+        if(nextAdmin) dynamicAdminCode = String(nextAdmin).trim();
+        if(nextCtv) dynamicCtvCode = String(nextCtv).trim();
+        dynamicPinsUpdatedAt = new Date().toISOString();
+        return send(res, 200, {
+          ok: true,
+          message: "Đã cập nhật mã PIN Admin và CTV thành công!",
+          data: {
+            adminCode: dynamicAdminCode,
+            ctvCode: dynamicCtvCode,
+            updatedAt: dynamicPinsUpdatedAt
+          }
+        });
+      } catch(err) {
+        return send(res, 400, { ok: false, error: err.message });
+      }
+    }
+    return send(res, 405, { ok: false, error: "Method Not Allowed" });
+  }
   if(url.pathname==="/api/admin-login") {
     if(req.method==="GET") {
       const currentRole = getAuthRole(req);
@@ -658,11 +695,11 @@ http.createServer(async (req,res)=>{
         let role = null;
         let token = "";
         let message = "";
-        if (inputCode === adminCode) {
+        if (inputCode === dynamicAdminCode || inputCode === adminCode) {
           role = "admin";
           token = previewAdminToken;
           message = "Đã mở toàn quyền Quản trị viên.";
-        } else if (inputCode === ctvCode) {
+        } else if (inputCode === dynamicCtvCode || inputCode === ctvCode) {
           role = "ctv";
           token = previewCtvToken;
           message = "Đã mở quyền Cộng tác viên (Xem trọn vẹn địa chỉ nhà).";

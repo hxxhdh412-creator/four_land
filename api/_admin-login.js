@@ -1,4 +1,5 @@
 const { createSession, getAuthRole, safeEqual, secrets, sessionCookie } = require("./_admin");
+const { getDynamicPins } = require("./_admin-pin-settings");
 const { sendError } = require("./_supabase");
 
 module.exports = async function handler(req, res) {
@@ -14,7 +15,11 @@ module.exports = async function handler(req, res) {
     if (req.method !== "POST") return res.status(405).json({ ok: false, error: "Method Not Allowed" });
 
     const inputCode = String(req.body?.code || "").trim();
-    const { code: adminCode, ctvCode } = secrets();
+    const dynamicPins = await getDynamicPins().catch(() => ({}));
+    const envPins = secrets();
+
+    const adminCode = dynamicPins.adminCode || envPins.code;
+    const ctvCode = dynamicPins.ctvCode || envPins.ctvCode;
 
     let authenticatedRole = null;
     let successMessage = "";
@@ -33,4 +38,5 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({ ok: true, authenticated: true, role: authenticatedRole, message: successMessage });
   } catch (error) { sendError(res, error); }
 };
+
 

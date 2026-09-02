@@ -1128,6 +1128,7 @@ async function loadUsers() {
   byId('userLoading').hidden = false;
   byId('userTableWrapper').hidden = true;
   byId('userError').hidden = true;
+  loadAccessPins();
   try {
     const result = await cmsApi('/api/admin/v1/users');
     cmsState.usersLoaded = true;
@@ -1147,6 +1148,139 @@ async function loadUsers() {
     byId('userError').textContent = `${error.code || 'REQUEST_FAILED'} · ${error.message}`;
   }
 }
+
+// ==========================================================================
+// QUICK ACCESS PINS MANAGEMENT (ADMIN & CTV)
+// ==========================================================================
+
+async function loadAccessPins() {
+  const alertBox = byId('pinSettingsAlert');
+  const successBox = byId('pinSettingsSuccess');
+  const lastUpdatedEl = byId('pinLastUpdated');
+  const adminInput = byId('inputAdminPin');
+  const ctvInput = byId('inputCtvPin');
+  if (!adminInput || !ctvInput) return;
+
+  if (alertBox) alertBox.hidden = true;
+  if (successBox) successBox.hidden = true;
+  if (lastUpdatedEl) lastUpdatedEl.textContent = 'Đang tải…';
+
+  try {
+    const result = await cmsApi('/api/admin/v1/access-pins');
+    const { adminCode, ctvCode, updatedAt } = result.data || {};
+    adminInput.value = adminCode || '246810';
+    ctvInput.value = ctvCode || '135790';
+    if (lastUpdatedEl) {
+      if (updatedAt && updatedAt !== new Date(0).toISOString()) {
+        const d = new Date(updatedAt);
+        lastUpdatedEl.textContent = `Cập nhật: ${d.toLocaleTimeString('vi-VN')} ${d.toLocaleDateString('vi-VN')}`;
+      } else {
+        lastUpdatedEl.textContent = 'Mã mặc định';
+      }
+    }
+  } catch (error) {
+    if (lastUpdatedEl) lastUpdatedEl.textContent = 'Chưa tải được';
+    if (alertBox) {
+      alertBox.textContent = `Không thể tải mã PIN: ${error.message}`;
+      alertBox.hidden = false;
+    }
+  }
+}
+
+async function handleSaveAccessPins(event) {
+  if (event) event.preventDefault();
+  const alertBox = byId('pinSettingsAlert');
+  const successBox = byId('pinSettingsSuccess');
+  const submitBtn = byId('btnSavePins');
+  const lastUpdatedEl = byId('pinLastUpdated');
+  const adminInput = byId('inputAdminPin');
+  const ctvInput = byId('inputCtvPin');
+
+  if (alertBox) alertBox.hidden = true;
+  if (successBox) successBox.hidden = true;
+
+  const adminCode = (adminInput?.value || '').trim();
+  const ctvCode = (ctvInput?.value || '').trim();
+
+  if (!adminCode || adminCode.length < 4) {
+    if (alertBox) {
+      alertBox.textContent = 'Mã PIN Quản trị viên phải từ 4 ký tự trở lên';
+      alertBox.hidden = false;
+    }
+    adminInput?.focus();
+    return;
+  }
+  if (!ctvCode || ctvCode.length < 4) {
+    if (alertBox) {
+      alertBox.textContent = 'Mã PIN Cộng tác viên phải từ 4 ký tự trở lên';
+      alertBox.hidden = false;
+    }
+    ctvInput?.focus();
+    return;
+  }
+
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.querySelector('span').textContent = 'Đang lưu…';
+  }
+
+  try {
+    const result = await cmsApi('/api/admin/v1/access-pins', {
+      method: 'PATCH',
+      body: { adminCode, ctvCode }
+    });
+
+    if (successBox) {
+      successBox.textContent = result.message || 'Đã cập nhật mã PIN Admin và CTV thành công!';
+      successBox.hidden = false;
+    }
+    if (lastUpdatedEl) {
+      const d = new Date();
+      lastUpdatedEl.textContent = `Vừa xong (${d.toLocaleTimeString('vi-VN')})`;
+    }
+    showToast('✅ Đã lưu thay đổi mã PIN Admin & CTV!');
+  } catch (error) {
+    if (alertBox) {
+      alertBox.textContent = `Lỗi: ${error.message}`;
+      alertBox.hidden = false;
+    }
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.querySelector('span').textContent = 'Lưu thay đổi mã PIN';
+    }
+  }
+}
+
+if (byId('pinSettingsForm')) {
+  byId('pinSettingsForm').addEventListener('submit', handleSaveAccessPins);
+}
+
+document.querySelectorAll('.btn-toggle-pin').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const targetId = btn.dataset.target;
+    const input = byId(targetId);
+    if (!input) return;
+    const isPass = input.type === 'password';
+    input.type = isPass ? 'text' : 'password';
+    btn.innerHTML = isPass
+      ? `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`
+      : `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+  });
+});
+
+if (byId('btnRandomPins')) {
+  byId('btnRandomPins').addEventListener('click', () => {
+    const generate6Digits = () => Math.floor(100000 + Math.random() * 900000).toString();
+    const ctvInput = byId('inputCtvPin');
+    if (ctvInput) {
+      ctvInput.value = generate6Digits();
+      ctvInput.type = 'text';
+      showToast('🎲 Đã tạo ngẫu nhiên mã CTV mới!');
+    }
+  });
+}
+
 
 function createUserRow(user) {
   const tr = document.createElement('tr');
