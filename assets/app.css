@@ -2154,5 +2154,45 @@ body.selection-mode-active .card-select-wrap,
   }
 }
 
+/* CTV & Admin Role Enhancements */
+.profile {
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s, background 0.2s;
+}
+.profile:hover {
+  transform: scale(1.05);
+}
+.profile.admin-active {
+  border: 2px solid #ef6509 !important;
+  background: #283d34 !important;
+  color: #fff !important;
+  box-shadow: 0 0 0 4px rgba(239, 101, 9, 0.25) !important;
+}
+.profile.ctv-active {
+  border: 2px solid #0284c7 !important;
+  background: #0369a1 !important;
+  color: #fff !important;
+  box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.25) !important;
+}
+.phone-ctv-masked {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 3px;
+  color: #1e293b;
+  font-weight: 700;
+  font-size: 15px;
+}
+.phone-ctv-badge {
+  display: inline-block;
+  width: fit-content;
+  font-size: 10px;
+  font-weight: 600;
+  color: #0369a1;
+  background: #e0f2fe;
+  padding: 2px 7px;
+  border-radius: 4px;
+  letter-spacing: 0.02em;
+}
+
 
 

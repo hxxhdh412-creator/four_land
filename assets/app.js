@@ -1,4 +1,4 @@
-const state={page:1,pageSize:24,total:0,rows:[],facets:null,requestId:0,adminUnlocked:false,currentPropertyId:null,filterTab:'all',selectedIds:new Set()};const $=id=>document.getElementById(id);const escapeHtml=value=>String(value||'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+const state={page:1,pageSize:24,total:0,rows:[],facets:null,requestId:0,authRole:null,adminUnlocked:false,ctvUnlocked:false,canViewFullAddress:false,currentPropertyId:null,filterTab:'all',selectedIds:new Set()};const $=id=>document.getElementById(id);const escapeHtml=value=>String(value||'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const phoneHref=value=>String(value||'').replace(/[^\d+]/g,'');
 const slugify=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/gi,'d').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,90)||'ho-so-bat-dong-san';
 function stripHouseNumber(address){
@@ -8,7 +8,7 @@ function stripHouseNumber(address){
   return addr.replace(/^(?:(?:số|căn|phòng|p\.?|lô|kho|nhà|hẻm|hxh|hbt)\s+)?(?:[\dA-Za-z]+[\/\.-])*[\dA-Za-z]+[a-zA-Z]?\s+/i,'').trim();
 }
 function formatPublicAddress(property,isAdmin=false){
-  if(isAdmin||state.adminUnlocked){
+  if(isAdmin||state.adminUnlocked||state.authRole==='ctv'||state.canViewFullAddress){
     return property.address||property.property_id;
   }
   const strippedAddr=stripHouseNumber(property.address);
@@ -383,7 +383,7 @@ function maskTextPhones(text){
 function maskDescriptionText(text,address,street,isAdmin=false){
   if(!text)return'Chưa có nội dung mô tả.';
   let output=maskTextPhones(text);
-  if(isAdmin||state.adminUnlocked)return output;
+  if(isAdmin||state.adminUnlocked||state.authRole==='ctv'||state.canViewFullAddress)return output;
   if(address){
     const rawAddr=String(address).trim();
     const streetName=stripHouseNumber(rawAddr)||String(street||'').trim();
@@ -462,10 +462,21 @@ async function openDetail(id,seoPath=''){
     const updatedRel = formatVietnamRelativeTime(p.received_at || p.updated_at || p.created_at);
     const updatedFull = formatVietnamFullDateTime(p.received_at || p.updated_at || p.created_at);
     const updatedBadgeHtml = updatedRel ? `<span class="detail-header-sep">·</span><span class="detail-header-time" title="Thời gian cập nhật: ${escapeHtml(updatedFull)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>${escapeHtml(updatedRel)}</span>` : '';
-    $('detailId').innerHTML=`<span class="detail-header-id">${escapeHtml(id)}</span>${updatedBadgeHtml}<span class="detail-header-sep">·</span><span class="detail-header-views" title="${views} lượt xem"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>${views}</span>`;
-    const phoneCellContent=state.adminUnlocked
-      ?(customerPhone?`<a href="tel:${escapeHtml(phoneHref(customerPhone))}" class="phone-link-call" title="Bấm để gọi số khách / chủ nhà">${escapeHtml(customerPhone)}</a>`:'—')
-      :(customerPhone?`<button type="button" class="phone-link-unlock" id="unlockPhoneInline" title="Bấm để nhập mã Admin xem SĐT">${escapeHtml(maskPhone(customerPhone))}</button>`:'—');
+    const isCtv = state.authRole === 'ctv';
+    let phoneCellContent = '—';
+    if (state.adminUnlocked) {
+      phoneCellContent = customerPhone
+        ? `<a href="tel:${escapeHtml(phoneHref(customerPhone))}" class="phone-link-call" title="Bấm để gọi số khách / chủ nhà">${escapeHtml(customerPhone)}</a>`
+        : '—';
+    } else if (isCtv) {
+      phoneCellContent = customerPhone
+        ? `<span class="phone-ctv-masked" title="Tài khoản Cộng tác viên được xem trọn vẹn địa chỉ nhà nhưng được bảo mật số điện thoại">${escapeHtml(maskPhone(customerPhone))}<small class="phone-ctv-badge">Quyền CTV: Ẩn SĐT</small></span>`
+        : '—';
+    } else {
+      phoneCellContent = customerPhone
+        ? `<button type="button" class="phone-link-unlock" id="unlockPhoneInline" title="Bấm để nhập mã truy cập xem SĐT">${escapeHtml(maskPhone(customerPhone))}</button>`
+        : '—';
+    }
     const displayRawText=maskDescriptionText(p.raw_text||p.notes||'Chưa có nội dung mô tả.',p.address,p.street,state.adminUnlocked);
     const propNameAlt=`${p.property_type||'Nhà'} ${displayAddress}`;
     const thumbsHtml=images.map((src,index)=>`<img class="${index===0?'active':''}" referrerpolicy="no-referrer" src="${escapeHtml(src)}" alt="${escapeHtml(propNameAlt)} - Ảnh ${index+1}" onerror="this.style.display='none';">`).join('')+
@@ -662,25 +673,53 @@ async function deletePropertyPermanent(propertyId){
 }
 async function logoutAdmin(){
   try{await api('/api/admin-login',{method:'DELETE'})}catch(_){}
-  setAdminState(false);
-  showToast('🔒 Đã thoát quyền Quản trị');
+  setAdminState(false, null);
+  showToast('🔒 Đã thoát quyền truy cập');
 }
-function setAdminState(unlocked){
-  state.adminUnlocked=Boolean(unlocked);
+function setAdminState(unlocked, role = null){
+  if (role) {
+    state.authRole = role;
+  } else if (unlocked) {
+    state.authRole = 'admin';
+  } else {
+    state.authRole = null;
+  }
+  state.adminUnlocked = state.authRole === 'admin';
+  state.ctvUnlocked = state.authRole === 'ctv';
+  state.canViewFullAddress = state.adminUnlocked || state.ctvUnlocked;
+
   if(!state.adminUnlocked){
     state.selectedIds.clear();
   }
   const profile=document.querySelector('.profile'),toggle=$('archivedToggle');
   profile.classList.toggle('admin-active',state.adminUnlocked);
-  profile.setAttribute('aria-label',state.adminUnlocked?'Đang là Quản trị viên (Bấm để thoát Admin)':'Mở quyền quản trị');
-  profile.title=state.adminUnlocked?'Đang là Quản trị viên (Bấm để thoát Admin)':'Mở quyền quản trị';
+  profile.classList.toggle('ctv-active',state.ctvUnlocked);
+
+  if (state.adminUnlocked) {
+    profile.setAttribute('aria-label','Đang là Quản trị viên (Bấm để thoát Admin)');
+    profile.title='Đang là Quản trị viên (Bấm để thoát Admin)';
+  } else if (state.ctvUnlocked) {
+    profile.setAttribute('aria-label','Đang là Cộng tác viên (Bấm để thoát CTV)');
+    profile.title='Đang là Cộng tác viên (Xem trọn vẹn địa chỉ - Bấm để thoát)';
+  } else {
+    profile.setAttribute('aria-label','Mở quyền truy cập');
+    profile.title='Mở quyền truy cập (Admin / CTV)';
+  }
+
   toggle.hidden=!state.adminUnlocked;
   if(!state.adminUnlocked&&state.viewArchived){state.viewArchived=false;toggle.classList.remove('active');load()}
   if(state.currentPropertyId&&$('detail').open){openDetail(state.currentPropertyId)}
   render();
   updateBulkBar();
 }
-async function checkAdminSession(){try{const result=await api('/api/admin-login');setAdminState(result.authenticated)}catch{setAdminState(false)}}
+async function checkAdminSession(){
+  try{
+    const result=await api('/api/admin-login');
+    setAdminState(result.authenticated, result.role);
+  }catch{
+    setAdminState(false, null);
+  }
+}
 
 const bulkSelectAllBtn=$('bulkSelectAll');
 if(bulkSelectAllBtn){
@@ -765,6 +804,12 @@ document.querySelector('.profile').onclick=()=>{
     }
     return;
   }
+  if(state.ctvUnlocked){
+    if(confirm('Bạn đang ở chế độ Cộng tác viên (Xem trọn vẹn địa chỉ). Bạn có muốn THOÁT quyền CTV không?')){
+      logoutAdmin();
+    }
+    return;
+  }
   const dialog=$('adminAccess');
   $('adminAccessStatus').textContent='';
   $('adminCode').value='';
@@ -773,7 +818,35 @@ document.querySelector('.profile').onclick=()=>{
 };
 $('closeAdminAccess').onclick=()=>$('adminAccess').close();
 $('adminAccess').onclick=event=>{if(event.target===$('adminAccess'))$('adminAccess').close()};
-$('adminAccessForm').onsubmit=async event=>{event.preventDefault();const status=$('adminAccessStatus'),button=event.currentTarget.querySelector('.access-submit');button.disabled=true;button.textContent='Đang kiểm tra…';status.className='access-status';status.textContent='';try{await api('/api/admin-login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:$('adminCode').value.trim()})});setAdminState(true);status.className='access-status success-text';status.textContent='Đã mở quyền quản trị.';setTimeout(()=>{$('adminAccess').close();if(state.currentPropertyId&&$('detail').open)openDetail(state.currentPropertyId)},300)}catch(error){status.className='access-status error-text';status.textContent=error.message;$('adminCode').select()}finally{button.disabled=false;button.textContent='Mở quyền chỉnh sửa'}};
+$('adminAccessForm').onsubmit=async event=>{
+  event.preventDefault();
+  const status=$('adminAccessStatus'),button=event.currentTarget.querySelector('.access-submit');
+  button.disabled=true;
+  button.textContent='Đang kiểm tra…';
+  status.className='access-status';
+  status.textContent='';
+  try{
+    const result=await api('/api/admin-login',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({code:$('adminCode').value.trim()})
+    });
+    setAdminState(true, result.role);
+    status.className='access-status success-text';
+    status.textContent=result.message || (result.role==='ctv'?'Đã mở quyền Cộng tác viên (Xem địa chỉ).':'Đã mở toàn quyền Quản trị viên.');
+    setTimeout(()=>{
+      $('adminAccess').close();
+      if(state.currentPropertyId&&$('detail').open)openDetail(state.currentPropertyId);
+    },300);
+  }catch(error){
+    status.className='access-status error-text';
+    status.textContent=error.message;
+    $('adminCode').select();
+  }finally{
+    button.disabled=false;
+    button.textContent='Mở quyền truy cập';
+  }
+};
 $('archivedToggle').onclick=()=>{state.viewArchived=!state.viewArchived;state.page=1;state.selectedIds.clear();$('archivedToggle').classList.toggle('active',state.viewArchived);$('archivedToggle').textContent=state.viewArchived?'Quay lại kho nhà':'Hồ sơ đã ẩn';load();updateBulkBar()};
 let searchTimer;const scheduleLoad=(delay=250)=>{clearTimeout(searchTimer);state.page=1;searchTimer=setTimeout(load,delay)};$('q').addEventListener('input',()=>scheduleLoad(320));['district','ward','street','type','timeRange','rentalStatus','sortBy','minPrice','maxPrice','minArea','maxArea'].forEach(id=>{const el=$(id);if(el)el.addEventListener('change',()=>scheduleLoad(0))});$('searchForm').onsubmit=event=>{event.preventDefault();scheduleLoad(0)};$('reset').onclick=()=>{$('searchForm').reset();scheduleLoad(0)};$('prev').onclick=()=>{if(state.page>1){state.page--;load();scrollTo({top:0,behavior:'smooth'})}};$('next').onclick=()=>{if(state.page*state.pageSize<state.total){state.page++;load();scrollTo({top:0,behavior:'smooth'})}};$('filterToggle').onclick=()=>{const open=$('filters').classList.toggle('open');$('searchForm').classList.toggle('filter-open',open);$('filterToggle').setAttribute('aria-expanded',open)};
 

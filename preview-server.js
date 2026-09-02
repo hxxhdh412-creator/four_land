@@ -32,10 +32,18 @@ const rows = [
   {property_id:"BDS-DEMO-002",price_text:"18 tỷ",address:"1C Tống Văn Hên",street:"Tống Văn Hên",ward:"Phường 15",district:"Tân Bình",area_text:"4 × 17m",bedrooms:2,bathrooms:2,structure:"Trệt, lầu",phone:"0913922733",property_type:"Nhà",raw_text:"Nhà Tân Bình 4x17m, trệt lầu, 2 phòng ngủ, 2 WC.",image_count:1,received_at:new Date(Date.now()-3600000).toISOString(),property_images:[{position:1,public_url:sampleImages[1]}]},
   {property_id:"BDS-DEMO-003",price_text:"39tr/th",address:"119 Phổ Quang",street:"Phổ Quang",ward:"Phường 9",district:"Phú Nhuận",area_text:"92.8 m²",bedrooms:5,bathrooms:4,structure:"Trệt 2 lầu 1 tum",phone:"0523825888",property_type:"Biệt thự nguyên căn",raw_text:"Nhà nguyên căn phù hợp kinh doanh, gần trường học và trung tâm thương mại.",image_count:1,received_at:new Date(Date.now()-7200000).toISOString(),property_images:[{position:1,public_url:sampleImages[2]}]}
 ];
-const inquiries = [];
 const adminCode = env.ADMIN_ACCESS_CODE || process.env.ADMIN_ACCESS_CODE || "246810";
+const ctvCode = env.CTV_ACCESS_CODE || process.env.CTV_ACCESS_CODE || "135790";
 const previewAdminToken = "fourland-preview-admin";
-const isAdmin = req => String(req.headers.cookie||"").split(";").map(v=>v.trim()).includes(`fourland_admin=${previewAdminToken}`);
+const previewCtvToken = "fourland-preview-ctv";
+const getAuthRole = req => {
+  const cookies = String(req.headers.cookie||"").split(";").map(v=>v.trim());
+  if (cookies.includes(`fourland_admin=${previewAdminToken}`)) return "admin";
+  if (cookies.includes(`fourland_admin=${previewCtvToken}`)) return "ctv";
+  return null;
+};
+const isAdmin = req => getAuthRole(req) === "admin";
+const isCtv = req => getAuthRole(req) === "ctv";
 
 // High-Speed In-Memory Cache for CMS Admin
 let cachedDashboardSummary = null;
@@ -610,7 +618,7 @@ http.createServer(async (req,res)=>{
               method: "PATCH",
               body: { raw_text: content, notes: null, updated_at: new Date().toISOString() }
             }).catch(err => console.warn("Update property content notice:", err.message));
-          } else {
+        } else {
             const target = rows.find(item => item.property_id === propertyId);
             if (target) {
               target.raw_text = content;
@@ -634,13 +642,40 @@ http.createServer(async (req,res)=>{
     }
   }
   if(url.pathname==="/api/admin-login") {
-    if(req.method==="GET") return send(res,200,{ok:true,authenticated:isAdmin(req)});
+    if(req.method==="GET") {
+      const currentRole = getAuthRole(req);
+      return send(res,200,{ok:true,authenticated:Boolean(currentRole),role:currentRole});
+    }
     if(req.method==="DELETE") {
       res.setHeader("Set-Cookie","fourland_admin=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0");
-      return send(res,200,{ok:true,authenticated:false,message:"Đã thoát quyền quản trị"});
+      return send(res,200,{ok:true,authenticated:false,role:null,message:"Đã thoát quyền truy cập"});
     }
     if(req.method!=="POST") return send(res,405,{ok:false,error:"Method Not Allowed"});
-    let raw="";req.on("data",chunk=>raw+=chunk);req.on("end",()=>{try{const body=JSON.parse(raw||"{}");if(String(body.code||"").trim()!==adminCode)return send(res,401,{ok:false,error:"Mã truy cập không đúng"});res.setHeader("Set-Cookie",`fourland_admin=${previewAdminToken}; Path=/; HttpOnly; SameSite=Strict; Max-Age=28800`);return send(res,200,{ok:true,authenticated:true})}catch{return send(res,400,{ok:false,error:"Dữ liệu không hợp lệ"})}});return;
+    let raw="";req.on("data",chunk=>raw+=chunk);req.on("end",()=>{
+      try{
+        const body=JSON.parse(raw||"{}");
+        const inputCode = String(body.code||"").trim();
+        let role = null;
+        let token = "";
+        let message = "";
+        if (inputCode === adminCode) {
+          role = "admin";
+          token = previewAdminToken;
+          message = "Đã mở toàn quyền Quản trị viên.";
+        } else if (inputCode === ctvCode) {
+          role = "ctv";
+          token = previewCtvToken;
+          message = "Đã mở quyền Cộng tác viên (Xem trọn vẹn địa chỉ nhà).";
+        } else {
+          return send(res,401,{ok:false,error:"Mã truy cập không đúng"});
+        }
+        res.setHeader("Set-Cookie",`fourland_admin=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=28800`);
+        return send(res,200,{ok:true,authenticated:true,role,message});
+      }catch{
+        return send(res,400,{ok:false,error:"Dữ liệu không hợp lệ"});
+      }
+    });
+    return;
   }
   if(url.pathname==="/api/admin-archive") {
     if(req.method!=="PATCH") return send(res,405,{ok:false,error:"Method Not Allowed"});
