@@ -2143,6 +2143,29 @@ if (byId('facebookPostDialog')) {
   });
 }
 
+// Create Property Modal Events
+if (byId('btnCreatePropertyDashboard')) byId('btnCreatePropertyDashboard').addEventListener('click', openCreatePropertyModal);
+if (byId('btnCreatePropertyPage')) byId('btnCreatePropertyPage').addEventListener('click', openCreatePropertyModal);
+if (byId('createDialogClose')) byId('createDialogClose').addEventListener('click', closeCreatePropertyModal);
+if (byId('createCancelBtn')) byId('createCancelBtn').addEventListener('click', closeCreatePropertyModal);
+if (byId('createPropertyForm')) byId('createPropertyForm').addEventListener('submit', handleCreateProperty);
+if (byId('createPropertyDialog')) {
+  byId('createPropertyDialog').addEventListener('click', event => {
+    if (event.target === byId('createPropertyDialog')) closeCreatePropertyModal();
+  });
+}
+
+// User Modal Events
+if (byId('btnCreateUser')) byId('btnCreateUser').addEventListener('click', () => openUserModal());
+if (byId('userDialogClose')) byId('userDialogClose').addEventListener('click', closeUserModal);
+if (byId('userCancelBtn')) byId('userCancelBtn').addEventListener('click', closeUserModal);
+if (byId('userForm')) byId('userForm').addEventListener('submit', handleSaveUser);
+if (byId('userDialog')) {
+  byId('userDialog').addEventListener('click', event => {
+    if (event.target === byId('userDialog')) closeUserModal();
+  });
+}
+
 // Sidebar Navigation Events & Deep-Linking Routing
 document.querySelectorAll('[data-page]').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -2162,3 +2185,4 @@ window.addEventListener('popstate', () => {
 });
 
 bootstrapCms();
+
