@@ -20,7 +20,7 @@ test('CMS shell exposes loading, auth error and empty states', () => {
   assert.match(html, /id="authGate"/);
   assert.match(html, /id="authError"/);
   assert.match(html, /cms-empty/);
-  assert.match(html, /BẢN LOCAL ĐANG PHÁT TRIỂN/);
+  assert.match(html, /id="cmsContent"/);
   assert.match(css, /\[hidden\]\{display:none!important\}/);
 });
 
