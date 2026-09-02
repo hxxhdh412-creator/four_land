@@ -2157,6 +2157,35 @@ if (byId('createPropertyDialog')) {
   });
 }
 
+// Property Detail Modal Events
+function closePropertyDetail() {
+  const dialog = byId('propertyDetail');
+  if (dialog && dialog.open) dialog.close();
+}
+
+if (byId('detailClose')) byId('detailClose').addEventListener('click', closePropertyDetail);
+if (byId('detailEdit')) byId('detailEdit').addEventListener('click', () => setEditFormVisible(true));
+if (byId('editCancel')) byId('editCancel').addEventListener('click', () => setEditFormVisible(false));
+if (byId('editSave')) byId('editSave').addEventListener('click', handleSavePropertyEdit);
+if (byId('detailEditForm')) byId('detailEditForm').addEventListener('submit', validateEditPreview);
+if (byId('btnWorkflowPublish')) byId('btnWorkflowPublish').addEventListener('click', () => handlePropertyWorkflow('publish'));
+if (byId('btnWorkflowArchive')) byId('btnWorkflowArchive').addEventListener('click', () => handlePropertyWorkflow('archive'));
+if (byId('btnWorkflowRestore')) byId('btnWorkflowRestore').addEventListener('click', () => handlePropertyWorkflow('restore'));
+if (byId('propertyDetail')) {
+  byId('propertyDetail').addEventListener('click', event => {
+    if (event.target === byId('propertyDetail')) closePropertyDetail();
+  });
+}
+
+// Profile Modal Events
+if (byId('profileButton')) byId('profileButton').addEventListener('click', openProfileDialog);
+if (byId('profileDialogClose')) byId('profileDialogClose').addEventListener('click', closeProfileDialog);
+if (byId('profileDialog')) {
+  byId('profileDialog').addEventListener('click', event => {
+    if (event.target === byId('profileDialog')) closeProfileDialog();
+  });
+}
+
 // User Modal Events
 if (byId('btnCreateUser')) byId('btnCreateUser').addEventListener('click', () => openUserModal());
 if (byId('userDialogClose')) byId('userDialogClose').addEventListener('click', closeUserModal);
@@ -2167,6 +2196,7 @@ if (byId('userDialog')) {
     if (event.target === byId('userDialog')) closeUserModal();
   });
 }
+
 
 // Sidebar Navigation Events & Deep-Linking Routing
 document.querySelectorAll('[data-page]').forEach(btn => {
