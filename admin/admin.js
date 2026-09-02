@@ -21,7 +21,7 @@ const byId = id => document.getElementById(id);
 function getPageFromUrl() {
   const params = new URLSearchParams(window.location.search);
   const tab = params.get('tab') || params.get('page');
-  const validPages = ['dashboard', 'match', 'properties', 'editor', 'users', 'sync'];
+  const validPages = ['dashboard', 'match', 'properties', 'editor', 'web-pins', 'users', 'sync'];
   if (tab && validPages.includes(tab.toLowerCase())) return tab.toLowerCase();
 
   const hash = window.location.hash.replace(/^#\/?/, '').toLowerCase();
@@ -31,7 +31,7 @@ function getPageFromUrl() {
 }
 
 function setActivePage(page, updateUrl = true) {
-  const validPages = ['dashboard', 'match', 'properties', 'editor', 'users', 'sync'];
+  const validPages = ['dashboard', 'match', 'properties', 'editor', 'web-pins', 'users', 'sync'];
   const targetPage = validPages.includes(page) ? page : 'dashboard';
 
   document.querySelectorAll('[data-page-panel]').forEach(panel => panel.classList.toggle('active', panel.dataset.pagePanel === targetPage));
@@ -52,6 +52,7 @@ function setActivePage(page, updateUrl = true) {
     }
   }
 
+  if (targetPage === 'web-pins') loadAccessPins();
   if (targetPage === 'properties' && cmsState.user && !cmsState.propertiesLoaded) loadProperties();
   if (targetPage === 'match' && cmsState.user && !cmsState.matchLoaded) {
     const queryInput = byId('smartMatchQuery');
@@ -64,6 +65,7 @@ function setActivePage(page, updateUrl = true) {
   if (targetPage === 'users' && cmsState.user && !cmsState.usersLoaded) loadUsers();
   if (targetPage === 'sync' && cmsState.user && !cmsState.healthLoaded) loadSystemHealth();
 }
+
 
 async function cmsApi(path, options = {}) {
   const response = await fetch(path, {
