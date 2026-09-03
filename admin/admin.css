@@ -4612,6 +4612,102 @@ body:not(.authenticated) .cms-sidebar,
 }
 
 /* ==========================================================================
+   FACEBOOK PAGES MODULE STYLING
+   ========================================================================== */
+
+.cms-fb-pages-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+  margin-top: 14px;
+}
+
+.cms-fb-page-card {
+  padding: 18px 20px;
+  background: #ffffff;
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 14px rgba(24, 43, 36, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.cms-fb-page-card:hover {
+  border-color: var(--forest);
+  box-shadow: 0 8px 24px rgba(24, 43, 36, 0.08);
+}
+
+.cms-fb-page-card.is-default {
+  border-color: rgba(40, 61, 52, 0.4);
+  background: linear-gradient(180deg, #fbfdf9 0%, #ffffff 100%);
+  position: relative;
+}
+
+.cms-fb-page-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.cms-fb-page-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 2px solid var(--line);
+  object-fit: cover;
+  flex-shrink: 0;
+  background: #f0f3ed;
+}
+
+.cms-fb-page-meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.cms-fb-page-meta strong {
+  display: block;
+  font-size: 15px;
+  color: var(--forest);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cms-fb-page-meta span {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  font-family: monospace;
+  margin-top: 2px;
+}
+
+.cms-fb-page-badges {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.cms-fb-page-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line-light);
+  margin-top: auto;
+}
+
+.cms-fb-page-actions button {
+  height: 34px;
+  padding: 0 12px;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 6px;
+}
+
+/* ==========================================================================
    CONSOLIDATED PREMIUM PHONE EXPERIENCE
    Kept last intentionally: this replaces historical mobile overrides with one
    predictable contract for 360–600 px screens.
@@ -6484,5 +6580,26 @@ body:not(.authenticated) .cms-sidebar-toggle,
     min-height: 42px;
     border-radius: 8px;
     font-size: 11px;
+  }
+
+  /* Mobile Facebook Pages */
+  .cms-fb-pages-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  .cms-fb-page-card {
+    padding: 14px !important;
+  }
+
+  .cms-fb-page-actions {
+    flex-wrap: wrap !important;
+    justify-content: stretch !important;
+  }
+
+  .cms-fb-page-actions button {
+    flex: 1 !important;
+    min-height: 40px !important;
+    justify-content: center !important;
   }
 }

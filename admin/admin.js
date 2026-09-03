@@ -21,7 +21,7 @@ const byId = id => document.getElementById(id);
 function getPageFromUrl() {
   const params = new URLSearchParams(window.location.search);
   const tab = params.get('tab') || params.get('page');
-  const validPages = ['dashboard', 'match', 'properties', 'editor', 'web-pins', 'users', 'sync'];
+  const validPages = ['dashboard', 'match', 'properties', 'editor', 'web-pins', 'users', 'sync', 'facebook-pages'];
   if (tab && validPages.includes(tab.toLowerCase())) return tab.toLowerCase();
 
   const hash = window.location.hash.replace(/^#\/?/, '').toLowerCase();
@@ -31,7 +31,7 @@ function getPageFromUrl() {
 }
 
 function setActivePage(page, updateUrl = true) {
-  const validPages = ['dashboard', 'match', 'properties', 'editor', 'web-pins', 'users', 'sync'];
+  const validPages = ['dashboard', 'match', 'properties', 'editor', 'web-pins', 'users', 'sync', 'facebook-pages'];
   const targetPage = validPages.includes(page) ? page : 'dashboard';
 
   document.querySelectorAll('[data-page-panel]').forEach(panel => panel.classList.toggle('active', panel.dataset.pagePanel === targetPage));
@@ -53,6 +53,7 @@ function setActivePage(page, updateUrl = true) {
   }
 
   if (targetPage === 'web-pins') loadAccessPins();
+  if (targetPage === 'facebook-pages') loadFacebookPages();
   if (targetPage === 'properties' && cmsState.user && !cmsState.propertiesLoaded) loadProperties();
   if (targetPage === 'match' && cmsState.user && !cmsState.matchLoaded) {
     const queryInput = byId('smartMatchQuery');
@@ -1943,7 +1944,9 @@ const fbState = {
   content: '',
   allImages: [],
   selectedImages: new Set(),
-  pageName: 'Ngọc Ngà Tốt'
+  selectedPageId: '106656702112510',
+  pageName: 'Ngọc Nhà Tốt',
+  pages: []
 };
 
 async function openFacebookStudio(propertyId) {
@@ -1953,10 +1956,10 @@ async function openFacebookStudio(propertyId) {
 
   byId('fbPublishStatus').textContent = 'Đang chuẩn bị bài viết…';
   byId('fbSubmitBtn').disabled = false;
-  byId('fbSubmitBtn').innerHTML = `<svg class="cms-btn-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg><span>Đăng lên Fanpage Ngọc Ngà Tốt</span>`;
+  byId('fbSubmitBtn').innerHTML = `<svg class="cms-btn-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg><span>Đăng lên Fanpage ${escapeHtml(fbState.pageName)}</span>`;
 
   dialog.showModal();
-  await loadFacebookDraft(propertyId, fbState.tone);
+  await loadFacebookDraft(propertyId, fbState.tone, fbState.selectedPageId);
 }
 
 function closeFacebookStudio() {
@@ -1964,8 +1967,10 @@ function closeFacebookStudio() {
   if (dialog) dialog.close();
 }
 
-async function loadFacebookDraft(propertyId, tone = 'hot') {
+async function loadFacebookDraft(propertyId, tone = 'hot', pageId = null) {
   fbState.tone = tone;
+  if (pageId) fbState.selectedPageId = pageId;
+
   const contentInput = byId('fbPostContent');
   const previewText = byId('fbPreviewText');
   contentInput.value = 'Đang sinh nội dung bài viết với AI…';
@@ -1982,6 +1987,7 @@ async function loadFacebookDraft(propertyId, tone = 'hot') {
       body: {
         propertyId,
         tone,
+        pageId: fbState.selectedPageId,
         includeLink: byId('fbIncludeLink')?.checked !== false
       }
     });
@@ -1989,7 +1995,39 @@ async function loadFacebookDraft(propertyId, tone = 'hot') {
     const data = result.data;
     fbState.content = data.content;
     fbState.allImages = data.images || [];
-    fbState.pageName = data.pageName || 'Ngọc Ngà Tốt';
+    fbState.selectedPageId = data.pageId || fbState.selectedPageId;
+    fbState.pageName = data.pageName || 'Ngọc Nhà Tốt';
+    fbState.pages = data.pages || fbState.pages;
+
+    // Populate and sync #fbPageSelect
+    const select = byId('fbPageSelect');
+    if (select && Array.isArray(fbState.pages) && fbState.pages.length > 0) {
+      select.innerHTML = fbState.pages.map(p => `
+        <option value="${p.pageId}" ${String(p.pageId) === String(fbState.selectedPageId) ? 'selected' : ''}>
+          ${escapeHtml(p.name)} ${p.isDefault ? '⭐ (Mặc định)' : ''}
+        </option>
+      `).join('');
+      select.value = fbState.selectedPageId;
+    }
+
+    // Update Mock Head in Preview
+    const avatarImg = document.querySelector('.fb-mock-avatar img');
+    if (avatarImg) {
+      avatarImg.src = `https://graph.facebook.com/${fbState.selectedPageId}/picture?type=large`;
+      avatarImg.alt = `Avatar ${fbState.pageName}`;
+      avatarImg.style.display = 'block';
+    }
+    const nameEl = document.querySelector('.fb-mock-name strong');
+    if (nameEl) nameEl.textContent = fbState.pageName;
+
+    // Update Dialog Title and Submit Button Label
+    const titleEl = byId('fbDialogTitle');
+    if (titleEl) titleEl.textContent = `Đăng bài lên Fanpage ${fbState.pageName}`;
+    const submitBtn = byId('fbSubmitBtn');
+    if (submitBtn) {
+      const span = submitBtn.querySelector('span');
+      if (span) span.textContent = `Đăng lên Fanpage ${fbState.pageName}`;
+    }
 
     contentInput.value = data.content;
     previewText.textContent = data.content;
@@ -2047,35 +2085,58 @@ function renderFacebookPreviewGallery() {
   const gallery = byId('fbPreviewGallery');
   if (!gallery) return;
 
-  const images = Array.from(fbState.selectedImages);
-  gallery.className = `fb-mock-gallery layout-${Math.min(images.length, 4)}`;
   gallery.innerHTML = '';
+  const selectedList = Array.from(fbState.selectedImages);
 
-  if (!images.length) {
+  if (selectedList.length === 0) {
     gallery.style.display = 'none';
     return;
   }
 
   gallery.style.display = 'grid';
-  images.slice(0, 4).forEach((imgUrl, index) => {
-    const img = document.createElement('img');
-    img.src = imgUrl;
-    img.alt = `Facebook Preview Photo ${index + 1}`;
-    gallery.appendChild(img);
+  gallery.className = 'fb-mock-gallery';
+
+  if (selectedList.length === 1) {
+    gallery.classList.add('grid-1');
+  } else if (selectedList.length === 2) {
+    gallery.classList.add('grid-2');
+  } else if (selectedList.length === 3) {
+    gallery.classList.add('grid-3');
+  } else {
+    gallery.classList.add('grid-4');
+  }
+
+  const showImages = selectedList.slice(0, 4);
+  const remainingCount = selectedList.length - 4;
+
+  showImages.forEach((url, index) => {
+    const box = document.createElement('div');
+    box.className = 'fb-mock-img-box';
+    box.innerHTML = `<img src="${url}" alt="Ảnh preview" loading="lazy">`;
+
+    if (index === 3 && remainingCount > 0) {
+      const moreOverlay = document.createElement('div');
+      moreOverlay.className = 'fb-more-overlay';
+      moreOverlay.textContent = `+${remainingCount}`;
+      box.appendChild(moreOverlay);
+    }
+
+    gallery.appendChild(box);
   });
 }
 
 async function handlePublishFacebook() {
-  const content = (byId('fbPostContent')?.value || '').trim();
+  const submitBtn = byId('fbSubmitBtn');
+  const statusNote = byId('fbPublishStatus');
+  const content = byId('fbPostContent')?.value.trim();
+
   if (!content) {
-    alert('Vui lòng nhập nội dung bài viết');
+    alert('Nội dung bài viết không được để trống');
     return;
   }
 
-  const submitBtn = byId('fbSubmitBtn');
-  const statusNote = byId('fbPublishStatus');
   submitBtn.disabled = true;
-  submitBtn.innerHTML = `<span>Đang đăng lên Facebook…</span>`;
+  submitBtn.innerHTML = `<svg class="cms-btn-icon spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg><span>Đang xuất bản lên Facebook…</span>`;
   statusNote.textContent = 'Đang xuất bản bài viết…';
 
   try {
@@ -2085,6 +2146,7 @@ async function handlePublishFacebook() {
         propertyId: fbState.propertyId,
         content,
         images: Array.from(fbState.selectedImages),
+        pageId: fbState.selectedPageId,
         pageName: fbState.pageName
       }
     });
@@ -2104,7 +2166,7 @@ async function handlePublishFacebook() {
 
     // Show toast with Facebook link
     if (result.data?.postUrl) {
-      if (confirm(`${result.message || 'Đã xuất bản thành công lên Fanpage Ngọc Nhà Tốt!'}\n\nBạn có muốn mở xem bài viết trên Facebook không?`)) {
+      if (confirm(`${result.message || `Đã xuất bản thành công lên Fanpage ${fbState.pageName}!`}\n\nBạn có muốn mở xem bài viết trên Facebook không?`)) {
         window.open(result.data.postUrl, '_blank');
       }
     } else {
@@ -2125,11 +2187,28 @@ if (byId('fbDialogClose')) byId('fbDialogClose').addEventListener('click', close
 if (byId('fbCancelBtn')) byId('fbCancelBtn').addEventListener('click', closeFacebookStudio);
 if (byId('fbSubmitBtn')) byId('fbSubmitBtn').addEventListener('click', handlePublishFacebook);
 
+if (byId('fbPageSelect')) {
+  byId('fbPageSelect').addEventListener('change', function() {
+    const newPageId = this.value;
+    if (fbState.propertyId && newPageId) {
+      loadFacebookDraft(fbState.propertyId, fbState.tone, newPageId);
+    }
+  });
+}
+
+if (byId('linkManageFbPages')) {
+  byId('linkManageFbPages').addEventListener('click', (e) => {
+    e.preventDefault();
+    closeFacebookStudio();
+    setActivePage('facebook-pages');
+  });
+}
+
 document.querySelectorAll('[data-fb-tone]').forEach(chip => {
   chip.addEventListener('click', () => {
     const tone = chip.dataset.fbTone;
     if (fbState.propertyId) {
-      loadFacebookDraft(fbState.propertyId, tone);
+      loadFacebookDraft(fbState.propertyId, tone, fbState.selectedPageId);
     }
   });
 });
@@ -2152,6 +2231,207 @@ if (byId('fbIncludeLink')) {
 if (byId('facebookPostDialog')) {
   byId('facebookPostDialog').addEventListener('click', event => {
     if (event.target === byId('facebookPostDialog')) closeFacebookStudio();
+  });
+}
+
+// ==========================================================================
+// FACEBOOK PAGES MANAGEMENT
+// ==========================================================================
+
+let fbPagesCache = [];
+
+async function loadFacebookPages(force = false) {
+  const grid = byId('fbPagesGrid');
+  const alertEl = byId('fbPagesAlert');
+  if (!grid) return;
+
+  if (alertEl) alertEl.hidden = true;
+  grid.innerHTML = '<div class="cms-empty" style="grid-column:1/-1;"><b>Đang tải danh sách Fanpage…</b></div>';
+
+  try {
+    const res = await cmsApi('/api/admin/v1/facebook/pages');
+    fbPagesCache = res.data || [];
+
+    const totalEl = byId('fbTotalPages');
+    if (totalEl) totalEl.textContent = fbPagesCache.length;
+    const defaultPage = fbPagesCache.find(p => p.isDefault) || fbPagesCache[0];
+    const defaultEl = byId('fbDefaultPageName');
+    if (defaultEl && defaultPage) defaultEl.textContent = defaultPage.name;
+
+    renderFacebookPagesGrid(fbPagesCache);
+  } catch (err) {
+    if (alertEl) {
+      alertEl.textContent = `Lỗi nạp Fanpage: ${err.message}`;
+      alertEl.hidden = false;
+    }
+    grid.innerHTML = `<div class="cms-empty" style="grid-column:1/-1;"><b>Lỗi tải dữ liệu</b><span>${err.message}</span></div>`;
+  }
+}
+
+function renderFacebookPagesGrid(pages) {
+  const grid = byId('fbPagesGrid');
+  if (!grid) return;
+
+  if (!pages || pages.length === 0) {
+    grid.innerHTML = `
+      <div class="cms-empty" style="grid-column:1/-1; padding:30px 20px;">
+        <b>Chưa có Fanpage nào được cấu hình</b>
+        <span>Bấm nút "+ Thêm Fanpage mới" để liên kết trang Facebook đăng tin.</span>
+      </div>
+    `;
+    return;
+  }
+
+  grid.innerHTML = pages.map(p => `
+    <div class="cms-fb-page-card ${p.isDefault ? 'is-default' : ''}">
+      <div class="cms-fb-page-header">
+        <img class="cms-fb-page-avatar" src="https://graph.facebook.com/${p.pageId}/picture?type=large" alt="${escapeHtml(p.name)}" onerror="this.src='https://graph.facebook.com/106656702112510/picture?type=large'">
+        <div class="cms-fb-page-meta">
+          <strong>${escapeHtml(p.name)}</strong>
+          <span>ID: ${escapeHtml(p.pageId)}</span>
+        </div>
+      </div>
+      <div class="cms-fb-page-badges">
+        ${p.isDefault ? '<span class="cms-badge ok">⭐ Fanpage Mặc định</span>' : '<span class="cms-badge">Phụ</span>'}
+        <span class="cms-badge" style="background:#f0f4ec;color:var(--forest);">Graph API v19.0</span>
+      </div>
+      <div class="cms-fb-page-actions">
+        ${!p.isDefault ? `<button type="button" class="cms-page-btn btn-set-default" data-page-id="${p.pageId}" style="color:var(--forest);font-weight:700;">⭐ Đặt mặc định</button>` : ''}
+        <button type="button" class="cms-page-btn btn-edit-page" data-page-id="${p.pageId}">✏️ Sửa</button>
+        ${pages.length > 1 && !p.isDefault ? `<button type="button" class="cms-page-btn btn-delete-page" data-page-id="${p.pageId}" style="color:#d9534f;">🗑️ Xóa</button>` : ''}
+      </div>
+    </div>
+  `).join('');
+
+  // Attach action handlers
+  grid.querySelectorAll('.btn-set-default').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const pageId = btn.dataset.pageId;
+      try {
+        btn.disabled = true;
+        btn.textContent = 'Đang lưu…';
+        await cmsApi('/api/admin/v1/facebook/pages', {
+          method: 'PATCH',
+          body: { pageId, isDefault: true }
+        });
+        showToast('Đã đặt Fanpage làm mặc định thành công!');
+        await loadFacebookPages(true);
+      } catch (err) {
+        alert('Lỗi: ' + err.message);
+        btn.disabled = false;
+        btn.textContent = '⭐ Đặt mặc định';
+      }
+    });
+  });
+
+  grid.querySelectorAll('.btn-edit-page').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const pageId = btn.dataset.pageId;
+      const page = fbPagesCache.find(p => p.pageId === pageId);
+      if (page) openFbPageModal(page);
+    });
+  });
+
+  grid.querySelectorAll('.btn-delete-page').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const pageId = btn.dataset.pageId;
+      const page = fbPagesCache.find(p => p.pageId === pageId);
+      const name = page ? page.name : pageId;
+      if (!confirm(`Bạn có chắc chắn muốn xóa Fanpage "${name}" không?`)) return;
+
+      try {
+        await cmsApi(`/api/admin/v1/facebook/pages?id=${encodeURIComponent(pageId)}`, {
+          method: 'DELETE'
+        });
+        showToast('Đã xóa Fanpage thành công!');
+        await loadFacebookPages(true);
+      } catch (err) {
+        alert('Lỗi: ' + err.message);
+      }
+    });
+  });
+}
+
+function openFbPageModal(editingPage = null) {
+  const dialog = byId('fbPageDialog');
+  const alertEl = byId('fbPageAlert');
+  if (!dialog) return;
+
+  if (alertEl) alertEl.hidden = true;
+  byId('fbPageDialogTitle').textContent = editingPage ? 'Chỉnh sửa Fanpage Facebook' : 'Thêm Fanpage Facebook';
+  byId('inputFbPageName').value = editingPage ? editingPage.name : '';
+  byId('inputFbPageId').value = editingPage ? editingPage.pageId : '';
+  byId('inputFbPageId').readOnly = Boolean(editingPage);
+  byId('inputFbPageToken').value = '';
+  byId('inputFbPageDefault').checked = editingPage ? Boolean(editingPage.isDefault) : false;
+
+  dialog.dataset.mode = editingPage ? 'edit' : 'create';
+  dialog.dataset.targetId = editingPage ? editingPage.pageId : '';
+  dialog.showModal();
+}
+
+function closeFbPageModal() {
+  const dialog = byId('fbPageDialog');
+  if (dialog) dialog.close();
+}
+
+// Modal and Page Event Listeners
+if (byId('btnCreateFbPage')) byId('btnCreateFbPage').addEventListener('click', () => openFbPageModal(null));
+if (byId('btnRefreshFbPages')) byId('btnRefreshFbPages').addEventListener('click', () => loadFacebookPages(true));
+if (byId('fbPageDialogClose')) byId('fbPageDialogClose').addEventListener('click', closeFbPageModal);
+if (byId('fbPageCancel')) byId('fbPageCancel').addEventListener('click', closeFbPageModal);
+
+if (byId('fbPageForm')) {
+  byId('fbPageForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const dialog = byId('fbPageDialog');
+    const alertEl = byId('fbPageAlert');
+    const saveBtn = byId('fbPageSave');
+    const mode = dialog?.dataset.mode || 'create';
+    const targetId = dialog?.dataset.targetId || '';
+
+    const name = byId('inputFbPageName')?.value.trim();
+    const pageId = byId('inputFbPageId')?.value.trim();
+    const token = byId('inputFbPageToken')?.value.trim();
+    const isDefault = byId('inputFbPageDefault')?.checked;
+
+    if (!name || !pageId) {
+      if (alertEl) {
+        alertEl.textContent = 'Vui lòng nhập đầy đủ Tên Fanpage và Page ID';
+        alertEl.hidden = false;
+      }
+      return;
+    }
+
+    try {
+      saveBtn.disabled = true;
+      saveBtn.querySelector('span').textContent = 'Đang lưu…';
+
+      if (mode === 'create') {
+        await cmsApi('/api/admin/v1/facebook/pages', {
+          method: 'POST',
+          body: { name, pageId, token, isDefault }
+        });
+        showToast('Đã thêm Fanpage mới thành công!');
+      } else {
+        await cmsApi('/api/admin/v1/facebook/pages', {
+          method: 'PATCH',
+          body: { pageId: targetId, name, token: token || undefined, isDefault }
+        });
+        showToast('Đã cập nhật Fanpage thành công!');
+      }
+
+      closeFbPageModal();
+      await loadFacebookPages(true);
+    } catch (err) {
+      if (alertEl) {
+        alertEl.textContent = err.message || 'Lỗi khi lưu Fanpage';
+        alertEl.hidden = false;
+      }
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.querySelector('span').textContent = 'Lưu Fanpage';
+    }
   });
 }
 

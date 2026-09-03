@@ -5,6 +5,11 @@
 const { requireCms } = require("./_cms-auth");
 const { ACTIONS } = require("../server/cms-authorization");
 const { generateFacebookPost, publishToComposioFacebook } = require("../server/cms-facebook");
+const {
+  getFacebookPages,
+  getFacebookPageById,
+  getDefaultFacebookPage
+} = require("../server/cms-facebook-pages");
 const { sendError, supabaseRequest } = require("./_supabase");
 
 function createHandler({ requireCmsImpl = requireCms, request = supabaseRequest } = {}) {
@@ -36,12 +41,16 @@ function createHandler({ requireCmsImpl = requireCms, request = supabaseRequest 
           return res.status(404).json({ ok: false, error: { message: "Không tìm thấy bất động sản" } });
         }
 
+        // Resolve Target Facebook Page
+        const targetPage = (body.pageId ? await getFacebookPageById(body.pageId) : null) || await getDefaultFacebookPage();
+        const availablePages = await getFacebookPages();
+
         const tone = body.tone || "hot";
         const postContent = generateFacebookPost(property, {
           tone,
           includeLink: body.includeLink !== false,
           hotline: body.hotline || process.env.FACEBOOK_HOTLINE || "037.6789.808",
-          pageName: process.env.FACEBOOK_PAGE_NAME || "Ngọc Nhà Tốt"
+          pageName: targetPage?.name || "Ngọc Nhà Tốt"
         });
 
         const images = (property.property_images || []).map(img => img.public_url).filter(Boolean);
@@ -53,7 +62,9 @@ function createHandler({ requireCmsImpl = requireCms, request = supabaseRequest 
             tone,
             content: postContent,
             images,
-            pageName: process.env.FACEBOOK_PAGE_NAME || "Ngọc Nhà Tốt"
+            pageId: targetPage?.pageId,
+            pageName: targetPage?.name,
+            pages: availablePages
           }
         });
       }
@@ -74,15 +85,20 @@ function createHandler({ requireCmsImpl = requireCms, request = supabaseRequest 
           }).catch(err => console.warn("Update property content notice:", err.message));
         }
 
+        // Resolve Target Facebook Page for Publishing
+        const targetPage = (body.pageId ? await getFacebookPageById(body.pageId) : null) || await getDefaultFacebookPage();
         const photoUrls = Array.isArray(body.images) ? body.images : [];
-        const pageName = body.pageName || process.env.FACEBOOK_PAGE_NAME || "Ngọc Nhà Tốt";
+        const pageName = body.pageName || targetPage?.name || "Ngọc Nhà Tốt";
+        const pageId = targetPage?.pageId || process.env.FACEBOOK_PAGE_ID || "106656702112510";
+        const pageToken = targetPage?.token || "";
 
         const publishResult = await publishToComposioFacebook({
           content,
           imageUrls: photoUrls,
           pageName,
-          apiKey: process.env.COMPOSIO_API_KEY || "ck_e4AHzIDYFZKwFT8XrkwX",
-          pageId: process.env.FACEBOOK_PAGE_ID || "106656702112510"
+          pageId,
+          pageToken,
+          apiKey: process.env.COMPOSIO_API_KEY || "ck_e4AHzIDYFZKwFT8XrkwX"
         });
 
         return res.status(200).json({

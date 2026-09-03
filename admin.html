@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex,nofollow">
   <meta name="theme-color" content="#283d34">
   <title>FOURLAND · Trung tâm quản trị</title>
-  <link rel="stylesheet" href="/admin/admin.css?v=20260903-mobile-deep-polish-v90">
+  <link rel="stylesheet" href="/admin/admin.css?v=20260903-fb-pages-v91">
 </head>
 <body>
   <div id="cmsApp" class="cms-app" aria-busy="true">
@@ -67,6 +67,10 @@
         <button class="cms-nav-item" data-page="sync" type="button">
           <span class="cms-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></span>
           <span class="cms-nav-text">Đồng bộ & Dữ liệu</span>
+        </button>
+        <button class="cms-nav-item" data-page="facebook-pages" type="button">
+          <span class="cms-nav-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg></span>
+          <span class="cms-nav-text">Kênh Facebook</span>
         </button>
         <a class="cms-nav-item cms-public-link" href="/" target="_blank" rel="noopener">
           <span class="cms-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></span>
@@ -641,6 +645,47 @@
               <section class="cms-surface"><header><strong>Điều kiện còn thiếu</strong><span>Rollout gate</span></header><div id="healthBlockers" class="cms-health-list large"></div></section>
             </div>
           </section>
+
+          <!-- Phân hệ Kênh Facebook -->
+          <section class="cms-page" data-page-panel="facebook-pages">
+            <div class="cms-heading">
+              <div>
+                <p class="cms-eyebrow">Marketing & Mạng Xã Hội</p>
+                <h1>Quản lý Kênh Facebook</h1>
+                <p>Danh sách các Fanpage Facebook được kết nối để đăng tin bất động sản tự động.</p>
+              </div>
+              <div style="display: flex; gap: 10px;">
+                <button id="btnCreateFbPage" class="cms-primary" type="button">
+                  <svg class="cms-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  <span>Thêm Fanpage mới</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Queue Summary Metrics -->
+            <div class="cms-queue-summary">
+              <article><span>Tổng Fanpage</span><strong id="fbTotalPages">1</strong></article>
+              <article><span>Trang Mặc Định</span><strong id="fbDefaultPageName" style="font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Ngọc Nhà Tốt</strong></article>
+              <article><span>Graph API</span><strong style="color:var(--forest);font-size:15px;">Sẵn sàng</strong></article>
+              <article><span>Đăng Tự Động</span><strong style="color:var(--forest);font-size:15px;">Hoạt động</strong></article>
+            </div>
+
+            <div id="fbPagesAlert" class="cms-alert" hidden></div>
+
+            <!-- List of Fanpages -->
+            <div class="cms-surface" style="padding: 20px;">
+              <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; border-bottom: 1px solid var(--line); padding-bottom: 12px;">
+                <div>
+                  <strong style="font-size: 16px; color: var(--forest);">Danh sách Fanpage đang hoạt động</strong>
+                  <span style="display: block; font-size: 13px; color: var(--muted); margin-top: 2px;">Các Fanpage này sẽ xuất hiện trong menu chọn đăng bài ở kho bất động sản.</span>
+                </div>
+                <button id="btnRefreshFbPages" class="cms-page-btn" type="button" title="Tải lại danh sách Fanpage">🔄 Làm mới</button>
+              </header>
+              <div id="fbPagesGrid" class="cms-fb-pages-grid">
+                <!-- Dynamic cards injected via JS -->
+              </div>
+            </div>
+          </section>
         </div>
       </main>
     </div>
@@ -669,6 +714,10 @@
       <button data-page="users" type="button">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         <span>Nhân sự</span>
+      </button>
+      <button data-page="facebook-pages" type="button">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+        <span>Fanpage</span>
       </button>
       <button data-page="sync" type="button">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
@@ -982,6 +1031,18 @@
         </header>
         <div class="cms-fb-studio-body">
           <div class="cms-fb-editor-col">
+            <div class="cms-fb-page-section" style="margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px solid var(--line);">
+              <label class="cms-fb-field" style="margin-bottom: 0;">
+                <span class="cms-fb-label" style="display:flex; justify-content:space-between; align-items:center;">
+                  <span>Đăng lên Fanpage:</span>
+                  <a href="#" id="linkManageFbPages" style="font-size:11.5px; color:var(--forest); font-weight:700; text-decoration:none;">⚙️ Cấu hình Fanpage</a>
+                </span>
+                <select id="fbPageSelect" class="cms-select" style="width: 100%; height: 42px; font-weight: 700; color: var(--forest); background: #fff; border: 1.5px solid var(--line); border-radius: var(--radius-sm); padding: 0 12px; font-size: 14px; margin-top: 4px;">
+                  <option value="106656702112510">Ngọc Nhà Tốt (Mặc định)</option>
+                </select>
+              </label>
+            </div>
+
             <div class="cms-fb-tone-section">
               <span class="cms-fb-label">Chọn phong cách bài viết:</span>
               <div class="cms-fb-tone-chips">
@@ -1079,6 +1140,54 @@
       </div>
     </dialog>
 
+    <dialog id="fbPageDialog" class="cms-detail-dialog" aria-labelledby="fbPageDialogTitle">
+      <div class="cms-detail-shell">
+        <header>
+          <div>
+            <p class="cms-eyebrow">Facebook Marketing</p>
+            <h1 id="fbPageDialogTitle">Thêm Fanpage Facebook</h1>
+          </div>
+          <div class="cms-detail-actions">
+            <button id="fbPageDialogClose" class="cms-close-btn" type="button" aria-label="Đóng bảng Fanpage">
+              <svg class="cms-close-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+        </header>
+        <div class="cms-detail-body-pad">
+          <form id="fbPageForm" class="cms-create-form">
+            <div id="fbPageAlert" class="cms-alert" hidden></div>
+            <div class="cms-create-grid">
+              <label class="wide">
+                <span>Tên Fanpage hiển thị <strong style="color:var(--orange)">*</strong></span>
+                <input id="inputFbPageName" name="name" required placeholder="VD: Fourland - Bất Động Sản Sài Gòn" maxlength="100">
+              </label>
+              <label class="wide">
+                <span>Page ID Facebook <strong style="color:var(--orange)">*</strong></span>
+                <input id="inputFbPageId" name="pageId" required placeholder="VD: 106656702112510" maxlength="40">
+                <small style="color:var(--muted);font-size:11.5px;margin-top:4px;display:block;">Lấy trong mục Giới thiệu (About) của Fanpage trên Facebook.</small>
+              </label>
+              <label class="wide">
+                <span>Page Access Token (Tùy chọn)</span>
+                <input id="inputFbPageToken" name="token" type="password" placeholder="Để trống nếu muốn dùng Token hệ thống mặc định" maxlength="500">
+                <small style="color:var(--muted);font-size:11.5px;margin-top:4px;display:block;">Token riêng của Page hoặc để trống để sử dụng Token hệ thống chung.</small>
+              </label>
+              <label class="wide" style="display:flex;align-items:center;gap:10px;cursor:pointer;margin-top:6px;">
+                <input id="inputFbPageDefault" name="isDefault" type="checkbox" style="width:18px;height:18px;">
+                <span style="font-weight:700;color:var(--forest);">Đặt làm Fanpage mặc định khi xuất bản</span>
+              </label>
+            </div>
+            <div class="cms-edit-footer" style="margin-top: 20px;">
+              <button id="fbPageCancel" type="button">Hủy</button>
+              <button id="fbPageSave" class="cms-primary" type="submit">
+                <svg class="cms-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Lưu Fanpage</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </dialog>
+
     <dialog id="imageLightbox" class="cms-lightbox-dialog" aria-label="Xem ảnh phóng to">
       <div class="cms-lightbox-shell">
         <button id="lightboxClose" class="cms-lightbox-close" type="button" aria-label="Đóng">
@@ -1130,6 +1239,6 @@
 
     <div id="toastContainer" class="cms-toast-container" aria-live="polite"></div>
   </div>
-  <script src="/admin/admin.js?v=20260903-mobile-deep-polish-v90" defer></script>
+  <script src="/admin/admin.js?v=20260903-fb-pages-v91" defer></script>
 </body>
 </html>

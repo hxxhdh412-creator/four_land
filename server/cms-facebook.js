@@ -111,6 +111,7 @@ async function publishToComposioFacebook({
   imageUrls = [],
   pageId = process.env.FACEBOOK_PAGE_ID || "106656702112510",
   pageName = process.env.FACEBOOK_PAGE_NAME || "Ngọc Nhà Tốt",
+  pageToken: customPageToken = "",
   apiKey = process.env.COMPOSIO_API_KEY || "",
   sessionId = "fourland_session_" + Date.now(),
   fetchImpl = fetch
@@ -128,9 +129,9 @@ async function publishToComposioFacebook({
         return url;
       });
 
-      // Page Access Token for Fanpage Ngọc Nhà Tốt
+      // Page Access Token for Fanpage
       const DEFAULT_PAGE_TOKEN = "EAAM4uULUpAUBSU9xH13NOrCzer4tEqkAWJHV3PGIZAd9pZBjViOBMBTbm8e7OscvgBbXpCQiZC7hyrwURaPrkZCoBo03MXWLXn6vWVZA1i23bZCZCwZBlZAimnrtVyHBDd1eTvc8O50b4ZAK9nukLumlvYkkcTAfBeNIDRbyCVhsiwz36ZCN2SkjaSyeYbNxnpfDusasdAB4sux9FBL3dHiTZCsZD";
-      let pageToken = process.env.FACEBOOK_PAGE_ACCESS_TOKEN || DEFAULT_PAGE_TOKEN;
+      let pageToken = customPageToken || process.env.FACEBOOK_PAGE_ACCESS_TOKEN || DEFAULT_PAGE_TOKEN;
 
       // If token not set, attempt retrieval from Composio
       if (!pageToken) {
