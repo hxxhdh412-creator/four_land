@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex,nofollow">
   <meta name="theme-color" content="#283d34">
   <title>FOURLAND · Trung tâm quản trị</title>
-  <link rel="stylesheet" href="/admin/admin.css?v=20260903-luxury-icons-v94">
+  <link rel="stylesheet" href="/admin/admin.css?v=20260903-modal-polish-v95">
 </head>
 <body>
   <div id="cmsApp" class="cms-app" aria-busy="true">
@@ -1166,11 +1166,11 @@
       </div>
     </dialog>
 
-    <dialog id="fbPageDialog" class="cms-detail-dialog" aria-labelledby="fbPageDialogTitle">
+    <dialog id="fbPageDialog" class="cms-detail-dialog cms-fb-page-modal" aria-labelledby="fbPageDialogTitle">
       <div class="cms-detail-shell">
         <header>
           <div>
-            <p class="cms-eyebrow">Facebook Marketing</p>
+            <p class="cms-eyebrow">Marketing & Mạng Xã Hội</p>
             <h1 id="fbPageDialogTitle">Thêm Fanpage Facebook</h1>
           </div>
           <div class="cms-detail-actions">
@@ -1182,28 +1182,30 @@
         <div class="cms-detail-body-pad">
           <form id="fbPageForm" class="cms-create-form">
             <div id="fbPageAlert" class="cms-alert" hidden></div>
-            <div class="cms-create-grid">
-              <label class="wide">
-                <span>Tên Fanpage hiển thị <strong style="color:var(--orange)">*</strong></span>
-                <input id="inputFbPageName" name="name" required placeholder="VD: Fourland - Bất Động Sản Sài Gòn" maxlength="100">
-              </label>
-              <label class="wide">
-                <span>Page ID Facebook <strong style="color:var(--orange)">*</strong></span>
-                <input id="inputFbPageId" name="pageId" required placeholder="VD: 106656702112510" maxlength="40">
-                <small style="color:var(--muted);font-size:11.5px;margin-top:4px;display:block;">Lấy trong mục Giới thiệu (About) của Fanpage trên Facebook.</small>
-              </label>
-              <label class="wide">
-                <span>Page Access Token (Tùy chọn)</span>
-                <input id="inputFbPageToken" name="token" type="password" placeholder="Để trống nếu muốn dùng Token hệ thống mặc định" maxlength="500">
-                <small style="color:var(--muted);font-size:11.5px;margin-top:4px;display:block;">Token riêng của Page hoặc để trống để sử dụng Token hệ thống chung.</small>
-              </label>
-              <label class="wide" style="display:flex;align-items:center;gap:10px;cursor:pointer;margin-top:6px;">
-                <input id="inputFbPageDefault" name="isDefault" type="checkbox" style="width:18px;height:18px;">
-                <span style="font-weight:700;color:var(--forest);">Đặt làm Fanpage mặc định khi xuất bản</span>
-              </label>
+            <div class="cms-form-section">
+              <div class="cms-edit-grid">
+                <label class="wide">
+                  <span>Tên Fanpage hiển thị <strong class="req">*</strong></span>
+                  <input id="inputFbPageName" name="name" required placeholder="VD: Fourland - Bất Động Sản Sài Gòn" maxlength="100">
+                </label>
+                <label class="wide">
+                  <span>Page ID Facebook <strong class="req">*</strong></span>
+                  <input id="inputFbPageId" name="pageId" required placeholder="VD: 106656702112510" maxlength="40">
+                  <small style="color:var(--muted);font-size:12px;margin-top:4px;display:block;line-height:1.4;">Lấy trong mục Giới thiệu (About) của Fanpage trên Facebook hoặc từ thanh địa chỉ trình duyệt.</small>
+                </label>
+                <label class="wide">
+                  <span>Page Access Token (Tùy chọn)</span>
+                  <input id="inputFbPageToken" name="token" type="password" placeholder="Để trống nếu muốn dùng Token kết nối chung" maxlength="500">
+                  <small style="color:var(--muted);font-size:12px;margin-top:4px;display:block;line-height:1.4;">Token riêng của Page. Nếu để trống, hệ thống sẽ tự động dùng Token kết nối Composio.</small>
+                </label>
+                <label class="wide cms-fb-default-checkbox">
+                  <input id="inputFbPageDefault" name="isDefault" type="checkbox">
+                  <span>Đặt làm Fanpage mặc định khi xuất bản bài viết</span>
+                </label>
+              </div>
             </div>
-            <div class="cms-edit-footer" style="margin-top: 20px;">
-              <button id="fbPageCancel" type="button">Hủy</button>
+            <div class="cms-edit-footer">
+              <button id="fbPageCancel" type="button">Hủy bỏ</button>
               <button id="fbPageSave" class="cms-primary" type="submit">
                 <svg class="cms-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                 <span>Lưu Fanpage</span>
@@ -1265,6 +1267,6 @@
 
     <div id="toastContainer" class="cms-toast-container" aria-live="polite"></div>
   </div>
-  <script src="/admin/admin.js?v=20260903-luxury-icons-v94" defer></script>
+  <script src="/admin/admin.js?v=20260903-modal-polish-v95" defer></script>
 </body>
 </html>
