@@ -4007,8 +4007,17 @@ body:not(.authenticated) .cms-sidebar,
 }
 
 .cms-nav-badge.count {
-  background: rgba(40, 61, 52, 0.1);
-  color: var(--forest);
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.cms-nav-item.active .cms-nav-badge.count {
+  background: rgba(239, 101, 9, 0.32);
+  color: #ffffff;
+  border-color: rgba(239, 101, 9, 0.5);
+  box-shadow: 0 2px 5px rgba(239, 101, 9, 0.2);
 }
 
 .cms-nav-badge.warn {
@@ -6982,6 +6991,39 @@ body:not(.authenticated) .cms-sidebar-toggle,
 }
 
 /* ==========================================================================
+   FORM CONTROLS & SELECT STYLING
+   ========================================================================== */
+.cms-select,
+.cms-input {
+  height: 38px;
+  padding: 0 12px;
+  font-family: inherit;
+  font-size: 13.5px;
+  color: var(--forest);
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.cms-select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 32px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%234a5d4e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  cursor: pointer;
+}
+
+.cms-select:focus,
+.cms-input:focus {
+  border-color: var(--forest);
+  box-shadow: 0 0 0 3px rgba(40, 61, 52, 0.12);
+}
+
+/* ==========================================================================
    OWNERS DIRECTORY CRM STYLES
    ========================================================================== */
 .cms-owners-grid {
@@ -7023,7 +7065,7 @@ body:not(.authenticated) .cms-sidebar-toggle,
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background: #edf3ee;
+  background: linear-gradient(135deg, #edf5ef 0%, #d8eadc 100%);
   color: var(--forest);
   display: flex;
   align-items: center;
@@ -7031,7 +7073,13 @@ body:not(.authenticated) .cms-sidebar-toggle,
   font-weight: 700;
   font-size: 15px;
   flex-shrink: 0;
-  border: 1px solid #dbe8dc;
+  border: 1.5px solid #cce2cf;
+  box-shadow: 0 2px 5px rgba(40, 61, 52, 0.05);
+}
+
+.cms-owner-avatar svg {
+  color: var(--forest);
+  opacity: 0.9;
 }
 
 .cms-owner-meta {

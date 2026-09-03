@@ -1216,9 +1216,31 @@ async function loadOwners(force = false) {
   }
 }
 
+function formatPhoneDisplay(raw) {
+  if (!raw) return '';
+  const cleaned = String(raw).replace(/\D/g, '');
+  if (cleaned.length === 10) {
+    return `${cleaned.slice(0, 4)} ${cleaned.slice(4, 7)} ${cleaned.slice(7)}`;
+  }
+  if (cleaned.length === 11) {
+    return `${cleaned.slice(0, 5)} ${cleaned.slice(5, 8)} ${cleaned.slice(8)}`;
+  }
+  return raw;
+}
+
 function createOwnerCard(owner) {
   const card = document.createElement('article');
   card.className = 'cms-owner-card';
+
+  // Format phone
+  const rawPhone = owner.rawPhone || owner.phone || '';
+  const formattedPhone = formatPhoneDisplay(rawPhone);
+
+  // Check if owner name is default fallback (e.g. "Chủ nhà (0797156570)" or starts with "Chủ nhà")
+  const isDefaultOwnerName = !owner.name || owner.name.startsWith('Chủ nhà (') || owner.name.startsWith('Chủ nhà') || owner.name.startsWith('Chưa có');
+  const displayName = isDefaultOwnerName
+    ? (formattedPhone ? `Chủ sở hữu · ${formattedPhone}` : 'Chủ sở hữu BĐS')
+    : owner.name;
 
   // Header: Avatar, Name, Role badge
   const header = document.createElement('div');
@@ -1229,20 +1251,32 @@ function createOwnerCard(owner) {
 
   const avatar = document.createElement('div');
   avatar.className = 'cms-owner-avatar';
-  const initials = (owner.name || 'CN')
-    .split(' ')
-    .filter(Boolean)
-    .slice(-2)
-    .map(w => w[0].toUpperCase())
-    .join('');
-  avatar.textContent = initials || 'CN';
+
+  if (!isDefaultOwnerName) {
+    const cleanWords = String(owner.name)
+      .replace(/[()0-9_.-]/g, '')
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean);
+    if (cleanWords.length >= 2) {
+      const w1 = cleanWords[cleanWords.length - 2][0].toUpperCase();
+      const w2 = cleanWords[cleanWords.length - 1][0].toUpperCase();
+      avatar.textContent = `${w1}${w2}`;
+    } else if (cleanWords.length === 1 && cleanWords[0].length > 0) {
+      avatar.textContent = cleanWords[0].slice(0, 2).toUpperCase();
+    } else {
+      avatar.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
+    }
+  } else {
+    avatar.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
+  }
 
   const meta = document.createElement('div');
   meta.className = 'cms-owner-meta';
 
   const name = document.createElement('h3');
   name.className = 'cms-owner-name';
-  name.textContent = owner.name;
+  name.textContent = displayName;
 
   const roleBadge = document.createElement('span');
   let roleClass = 'cms-owner-role-direct';
@@ -1259,28 +1293,31 @@ function createOwnerCard(owner) {
   const contact = document.createElement('div');
   contact.className = 'cms-owner-contact';
 
-  const phoneSpan = document.createElement('span');
-  phoneSpan.className = 'cms-owner-phone';
-  phoneSpan.textContent = owner.phone;
-  contact.append(phoneSpan);
+  const phoneBox = document.createElement('div');
+  phoneBox.style.cssText = 'display: flex; align-items: center; gap: 8px; flex: 1;';
+  phoneBox.innerHTML = `
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--forest); opacity: 0.85; flex-shrink: 0;"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+    <span class="cms-owner-phone">${escapeHtml(formattedPhone || owner.phone || 'Chưa cập nhật')}</span>
+  `;
+  contact.append(phoneBox);
 
   const canSeeSensitive = ['super_admin', 'manager', 'editor', 'sales'].includes(cmsState.user?.role);
-  if (canSeeSensitive && owner.rawPhone) {
+  if (canSeeSensitive && rawPhone) {
     const actions = document.createElement('div');
     actions.className = 'cms-owner-contact-actions';
 
     const callBtn = document.createElement('a');
-    callBtn.className = 'cms-owner-icon-btn';
-    callBtn.href = `tel:${owner.rawPhone}`;
-    callBtn.title = `Gọi điện thoại ${owner.rawPhone}`;
+    callBtn.className = 'cms-owner-icon-btn call-action';
+    callBtn.href = `tel:${rawPhone}`;
+    callBtn.title = `Gọi điện thoại ${formattedPhone}`;
     callBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`;
 
     const zaloBtn = document.createElement('a');
-    zaloBtn.className = 'cms-owner-icon-btn';
-    zaloBtn.href = `https://zalo.me/${owner.rawPhone}`;
+    zaloBtn.className = 'cms-owner-icon-btn zalo-action';
+    zaloBtn.href = `https://zalo.me/${rawPhone}`;
     zaloBtn.target = '_blank';
     zaloBtn.rel = 'noopener';
-    zaloBtn.title = `Nhắn tin Zalo ${owner.rawPhone}`;
+    zaloBtn.title = `Nhắn tin Zalo ${formattedPhone}`;
     zaloBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>`;
 
     actions.append(callBtn, zaloBtn);
@@ -1303,13 +1340,17 @@ function createOwnerCard(owner) {
     const chip = document.createElement('div');
     chip.className = 'cms-owner-prop-chip';
     const isSale = p.listingType === 'sale';
+    const displayAddr = (!p.address || p.address === 'Chưa có địa chỉ')
+      ? (p.district ? `BĐS tại ${p.ward ? p.ward + ', ' : ''}${p.district}` : 'Bất động sản')
+      : p.address;
+
     chip.innerHTML = `
-      <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px;">
-        <span style="font-weight: 600; color: var(--forest);">${escapeHtml(p.address)}</span>
+      <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 210px;">
+        <span style="font-weight: 600; color: var(--forest);">${escapeHtml(displayAddr)}</span>
       </div>
       <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
-        <span class="cms-badge ${isSale ? 'cms-badge-sale' : 'cms-badge-rent'}" style="font-size: 9.5px; padding: 1px 5px;">${isSale ? 'Bán' : 'Thuê'}</span>
-        <span style="font-weight: 700; font-size: 11.5px; color: var(--orange);">${escapeHtml(p.price)}</span>
+        <span class="cms-badge ${isSale ? 'cms-badge-sale' : 'cms-badge-rent'}" style="font-size: 10px; padding: 2px 6px;">${isSale ? 'Bán' : 'Thuê'}</span>
+        <span style="font-weight: 700; font-size: 12px; color: var(--orange);">${escapeHtml(p.price)}</span>
       </div>
     `;
     chip.onclick = () => openPropertyDetail(p.id);
@@ -1318,7 +1359,7 @@ function createOwnerCard(owner) {
 
   if (owner.properties.length > 3) {
     const moreChip = document.createElement('div');
-    moreChip.style.cssText = 'font-size: 11.5px; color: var(--muted); text-align: center; padding: 2px;';
+    moreChip.style.cssText = 'font-size: 11.5px; color: var(--muted); text-align: center; padding: 4px;';
     moreChip.textContent = `+ và ${owner.properties.length - 3} căn nhà khác`;
     propsList.append(moreChip);
   }
@@ -1331,13 +1372,13 @@ function createOwnerCard(owner) {
   viewAllBtn.type = 'button';
   viewAllBtn.className = 'cms-owner-view-btn';
   viewAllBtn.innerHTML = `
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-    <span>Mở kho BĐS của chủ này (${owner.propertyCount} căn)</span>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+    <span>Xem toàn bộ giỏ hàng (${owner.propertyCount} căn)</span>
   `;
   viewAllBtn.onclick = () => {
     const searchInput = byId('propertySearch');
     if (searchInput) {
-      searchInput.value = owner.rawPhone || owner.name;
+      searchInput.value = owner.rawPhone || owner.phone || owner.name;
       if (byId('propertySearchClear')) byId('propertySearchClear').hidden = false;
     }
     setActivePage('properties');
