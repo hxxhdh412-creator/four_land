@@ -1960,7 +1960,7 @@ async function openFacebookStudio(propertyId) {
   if (select && Array.isArray(fbPagesCache) && fbPagesCache.length > 0) {
     select.innerHTML = fbPagesCache.map(p => `
       <option value="${p.pageId}" ${String(p.pageId) === String(fbState.selectedPageId) ? 'selected' : ''}>
-        ${escapeHtml(p.name)} ${p.isDefault ? '⭐ (Mặc định)' : ''}
+        ${escapeHtml(p.name)} ${p.isDefault ? '[Mặc định]' : ''}
       </option>
     `).join('');
     select.value = fbState.selectedPageId;
@@ -2016,7 +2016,7 @@ async function loadFacebookDraft(propertyId, tone = 'hot', pageId = null) {
     if (select && Array.isArray(fbState.pages) && fbState.pages.length > 0) {
       select.innerHTML = fbState.pages.map(p => `
         <option value="${p.pageId}" ${String(p.pageId) === String(fbState.selectedPageId) ? 'selected' : ''}>
-          ${escapeHtml(p.name)} ${p.isDefault ? '⭐ (Mặc định)' : ''}
+          ${escapeHtml(p.name)} ${p.isDefault ? '[Mặc định]' : ''}
         </option>
       `).join('');
       select.value = fbState.selectedPageId;
@@ -2289,7 +2289,7 @@ function renderFacebookPagesGrid(pages) {
     grid.innerHTML = `
       <div class="cms-empty" style="grid-column:1/-1; padding:30px 20px;">
         <b>Chưa có Fanpage nào được kết nối</b>
-        <span>Bấm nút "⚡ Đồng bộ từ Composio" để tải về các Fanpage quản trị.</span>
+        <span>Bấm nút "Đồng bộ từ Composio" để tải về các Fanpage quản trị.</span>
       </div>
     `;
     return;
@@ -2298,32 +2298,46 @@ function renderFacebookPagesGrid(pages) {
   grid.innerHTML = pages.map(p => `
     <div class="cms-fb-page-card ${p.isDefault ? 'is-default' : ''}">
       <div class="cms-fb-page-header">
-        <div class="cms-fb-page-avatar-wrap">
-          <img class="cms-fb-page-avatar" src="https://graph.facebook.com/${p.pageId}/picture?type=large" alt="${escapeHtml(p.name)}" onerror="this.src='https://graph.facebook.com/106656702112510/picture?type=large'">
-          <div class="cms-fb-page-badge-icon" title="Fanpage Facebook">
-            <svg viewBox="0 0 24 24" width="10" height="10" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-          </div>
-        </div>
+        <img class="cms-fb-page-avatar" src="https://graph.facebook.com/${p.pageId}/picture?type=large" alt="${escapeHtml(p.name)}" onerror="this.src='https://graph.facebook.com/106656702112510/picture?type=large'">
         <div class="cms-fb-page-meta">
           <div class="cms-fb-page-title-row">
             <strong>${escapeHtml(p.name)}</strong>
-            <svg class="fb-verified-badge" viewBox="0 0 24 24" width="15" height="15" fill="#1877f2" title="Đã liên kết Composio"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+            <svg class="cms-fb-verified-icon" viewBox="0 0 24 24" width="15" height="15" fill="#1877f2" title="Đã xác thực Facebook"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
           </div>
-          <span class="cms-fb-page-id-pill" title="Bấm để sao chép Page ID" data-copy-id="${p.pageId}">
-            📋 ID: ${escapeHtml(p.pageId)}
+          <span class="cms-fb-id-pill" title="Bấm để sao chép Page ID" data-copy-id="${p.pageId}">
+            <span>ID: ${escapeHtml(p.pageId)}</span>
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
           </span>
         </div>
       </div>
       <div class="cms-fb-page-badges">
-        ${p.isDefault ? '<span class="cms-fb-tag-default">⭐ Mặc định khi đăng</span>' : ''}
-        <span class="cms-fb-tag-composio">⚡ Composio MCP</span>
-        <span class="cms-fb-tag-category">${escapeHtml(p.category || 'Trang Facebook')}</span>
+        ${p.isDefault ? '<span class="cms-fb-badge default"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Trang mặc định</span>' : ''}
+        <span class="cms-fb-badge composio"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>Composio MCP</span>
+        <span class="cms-fb-badge category">${escapeHtml(p.category || 'Trang Facebook')}</span>
       </div>
       <div class="cms-fb-page-actions">
-        ${!p.isDefault ? `<button type="button" class="btn-set-default" data-page-id="${p.pageId}">⭐ Đặt mặc định</button>` : ''}
-        <a href="https://facebook.com/${p.pageId}" target="_blank" rel="noopener noreferrer" class="btn-view-fb" title="Mở xem trên Facebook">🔗 Xem Page</a>
-        <button type="button" class="cms-page-btn btn-edit-page" data-page-id="${p.pageId}">✏️ Sửa</button>
-        ${pages.length > 1 && !p.isDefault ? `<button type="button" class="cms-page-btn btn-delete-page" data-page-id="${p.pageId}" style="color:#d9534f;">🗑️ Xóa</button>` : ''}
+        <div class="cms-fb-action-left">
+          <a href="https://facebook.com/${p.pageId}" target="_blank" rel="noopener noreferrer" class="cms-fb-link-btn" title="Mở trang trên Facebook">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+            <span>Xem trang</span>
+          </a>
+        </div>
+        <div class="cms-fb-action-right">
+          ${!p.isDefault ? `
+            <button type="button" class="cms-fb-btn-default btn-set-default" data-page-id="${p.pageId}" title="Đặt làm Fanpage mặc định khi xuất bản">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+              <span>Đặt mặc định</span>
+            </button>
+          ` : ''}
+          <button type="button" class="cms-fb-btn-icon btn-edit-page" data-page-id="${p.pageId}" title="Chỉnh sửa thông tin">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+          </button>
+          ${pages.length > 1 && !p.isDefault ? `
+            <button type="button" class="cms-fb-btn-icon danger btn-delete-page" data-page-id="${p.pageId}" title="Xóa Fanpage">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+            </button>
+          ` : ''}
+        </div>
       </div>
     </div>
   `).join('');
@@ -2343,7 +2357,7 @@ function renderFacebookPagesGrid(pages) {
       const pageId = btn.dataset.pageId;
       try {
         btn.disabled = true;
-        btn.textContent = 'Đang lưu…';
+        btn.innerHTML = '<svg class="cms-btn-icon spin" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg><span>Đang lưu…</span>';
         await cmsApi('/api/admin/v1/facebook/pages', {
           method: 'PATCH',
           body: { pageId, isDefault: true }
@@ -2353,7 +2367,7 @@ function renderFacebookPagesGrid(pages) {
       } catch (err) {
         alert('Lỗi: ' + err.message);
         btn.disabled = false;
-        btn.textContent = '⭐ Đặt mặc định';
+        btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg><span>Đặt mặc định</span>';
       }
     });
   });
