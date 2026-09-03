@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex,nofollow">
   <meta name="theme-color" content="#283d34">
   <title>FOURLAND · Trung tâm quản trị</title>
-  <link rel="stylesheet" href="/admin/admin.css?v=20260903-owner-management-v100">
+  <link rel="stylesheet" href="/admin/admin.css?v=20260903-owner-crm-v101">
 </head>
 <body>
   <div id="cmsApp" class="cms-app" aria-busy="true">
@@ -49,6 +49,11 @@
           <span class="cms-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>
           <span class="cms-nav-text">Kho bất động sản</span>
           <span id="navBadgeProperties" class="cms-nav-badge count" hidden>0</span>
+        </button>
+        <button class="cms-nav-item" data-page="owners" type="button">
+          <span class="cms-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg></span>
+          <span class="cms-nav-text">Danh bạ Chủ nhà</span>
+          <span id="navBadgeOwners" class="cms-nav-badge count" hidden>0</span>
         </button>
         <button class="cms-nav-item" data-page="editor" type="button">
           <span class="cms-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></span>
@@ -490,6 +495,54 @@
             </div>
           </section>
 
+          <section class="cms-page" data-page-panel="owners" hidden>
+            <div class="cms-heading">
+              <div>
+                <p class="cms-eyebrow">Quản lý mạng lưới chủ sở hữu</p>
+                <h1>Danh bạ Chủ nhà & Đầu chủ</h1>
+                <p>Tổng hợp danh bạ người liên hệ, vai trò và toàn bộ giỏ hàng bất động sản ký gửi trong kho Fourland.</p>
+              </div>
+              <button id="ownersRefresh" class="cms-primary" type="button">
+                <svg class="cms-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                <span>Làm mới</span>
+              </button>
+            </div>
+
+            <div class="cms-queue-summary">
+              <article><span>Tổng chủ sở hữu</span><strong id="ownersStatTotal">—</strong></article>
+              <article><span>Chủ nhà trực tiếp (F0)</span><strong id="ownersStatDirect">—</strong></article>
+              <article><span>Đầu chủ & Môi giới</span><strong id="ownersStatBroker">—</strong></article>
+              <article><span>Ký gửi nhiều căn (>1)</span><strong id="ownersStatMulti">—</strong></article>
+            </div>
+
+            <!-- Filters -->
+            <div class="cms-surface" style="padding: 14px 18px; margin-bottom: 20px; display: flex; gap: 12px; flex-wrap: wrap; align-items: center; justify-content: space-between;">
+              <div style="display: flex; gap: 10px; flex: 1; min-width: 260px; max-width: 450px; position: relative;">
+                <input id="ownersSearchInput" type="text" class="cms-input" placeholder="Tìm theo tên, SĐT, quận, địa chỉ nhà…" style="width: 100%; height: 38px; padding-left: 36px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position: absolute; left: 12px; top: 11px; color: var(--muted); pointer-events: none;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              </div>
+              <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <select id="ownersRoleFilter" class="cms-select" style="height: 38px; min-width: 160px;">
+                  <option value="all">Tất cả vai trò</option>
+                  <option value="Chủ nhà trực tiếp">Chủ nhà trực tiếp</option>
+                  <option value="Đầu chủ / Nguồn nội bộ">Đầu chủ / Nguồn nội bộ</option>
+                  <option value="Môi giới F1">Môi giới F1</option>
+                  <option value="Quản lý / Người trông coi">Quản lý / Người trông coi</option>
+                </select>
+                <select id="ownersSortSelect" class="cms-select" style="height: 38px;">
+                  <option value="properties_desc">Nhiều căn nhất trước</option>
+                  <option value="newest">Mới cập nhật nhất</option>
+                  <option value="name_asc">Tên chủ nhà (A - Z)</option>
+                </select>
+              </div>
+            </div>
+
+            <div id="ownersError" class="cms-alert" hidden></div>
+            <div id="ownersLoading" class="cms-surface"><div class="cms-empty"><b>Đang tải danh bạ chủ nhà…</b><span>Tổng hợp dữ liệu liên hệ từ kho bất động sản.</span></div></div>
+            <div id="ownersEmpty" class="cms-surface" hidden><div class="cms-empty"><b>Không tìm thấy chủ nhà phù hợp</b><span>Hãy thử thay đổi từ khóa tìm kiếm hoặc bỏ chọn bộ lọc.</span></div></div>
+            <div id="ownersContainer" class="cms-owners-grid" hidden></div>
+          </section>
+
           <section class="cms-page" data-page-panel="editor">
             <div class="cms-heading">
               <div>
@@ -752,6 +805,10 @@
       <button data-page="properties" type="button">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
         <span>Kho nhà</span>
+      </button>
+      <button data-page="owners" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+        <span>Chủ nhà</span>
       </button>
       <button data-page="editor" type="button">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
@@ -1340,6 +1397,6 @@
 
     <div id="toastContainer" class="cms-toast-container" aria-live="polite"></div>
   </div>
-  <script src="/admin/admin.js?v=20260903-owner-management-v100" defer></script>
+  <script src="/admin/admin.js?v=20260903-owner-crm-v101" defer></script>
 </body>
 </html>

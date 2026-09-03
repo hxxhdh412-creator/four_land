@@ -41,7 +41,7 @@ function getPageFromUrl() {
 }
 
 function setActivePage(page, updateUrl = true) {
-  const validPages = ['dashboard', 'match', 'properties', 'editor', 'web-pins', 'users', 'sync', 'facebook-pages'];
+  const validPages = ['dashboard', 'match', 'properties', 'owners', 'editor', 'web-pins', 'users', 'sync', 'facebook-pages'];
   const targetPage = validPages.includes(page) ? page : 'dashboard';
 
   document.querySelectorAll('[data-page-panel]').forEach(panel => panel.classList.toggle('active', panel.dataset.pagePanel === targetPage));
@@ -69,6 +69,7 @@ function setActivePage(page, updateUrl = true) {
   if (targetPage === 'web-pins') loadAccessPins();
   if (targetPage === 'facebook-pages') loadFacebookPages();
   if (targetPage === 'properties' && cmsState.user && !cmsState.propertiesLoaded) loadProperties();
+  if (targetPage === 'owners' && cmsState.user && !cmsState.ownersLoaded) loadOwners();
   if (targetPage === 'match' && cmsState.user && !cmsState.matchLoaded) {
     const queryInput = byId('smartMatchQuery');
     if (queryInput && !queryInput.value.trim()) {
@@ -1153,6 +1154,199 @@ async function loadSystemHealth() {
     byId('healthError').hidden = false;
     byId('healthError').textContent = `${error.code || 'REQUEST_FAILED'} · ${error.message}`;
   }
+}
+
+async function loadOwners(force = false) {
+  if (cmsState.ownersLoaded && !force) return;
+  const loading = byId('ownersLoading');
+  const errorBox = byId('ownersError');
+  const emptyBox = byId('ownersEmpty');
+  const container = byId('ownersContainer');
+  if (!container) return;
+
+  if (loading) loading.hidden = false;
+  if (errorBox) errorBox.hidden = true;
+  if (emptyBox) emptyBox.hidden = true;
+  container.hidden = true;
+
+  const search = (byId('ownersSearchInput')?.value || '').trim();
+  const role = byId('ownersRoleFilter')?.value || 'all';
+  const sort = byId('ownersSortSelect')?.value || 'properties_desc';
+
+  const params = new URLSearchParams({
+    q: search,
+    role,
+    sort
+  });
+
+  try {
+    const res = await cmsApi(`/api/admin/v1/owners?${params}`);
+    cmsState.ownersLoaded = true;
+    cmsState.ownersData = res.data || { items: [], summary: {} };
+
+    const summary = res.data?.summary || {};
+    if (byId('ownersStatTotal')) byId('ownersStatTotal').textContent = summary.total ?? 0;
+    if (byId('ownersStatDirect')) byId('ownersStatDirect').textContent = summary.directCount ?? 0;
+    if (byId('ownersStatBroker')) byId('ownersStatBroker').textContent = summary.brokerCount ?? 0;
+    if (byId('ownersStatMulti')) byId('ownersStatMulti').textContent = summary.multiCount ?? 0;
+
+    const navBadge = byId('navBadgeOwners');
+    if (navBadge) {
+      navBadge.textContent = summary.total || 0;
+      navBadge.hidden = false;
+    }
+
+    const items = res.data?.items || [];
+    if (loading) loading.hidden = true;
+    if (items.length === 0) {
+      if (emptyBox) emptyBox.hidden = false;
+      container.hidden = true;
+      return;
+    }
+
+    if (emptyBox) emptyBox.hidden = true;
+    container.hidden = false;
+    container.replaceChildren(...items.map(createOwnerCard));
+  } catch (err) {
+    if (loading) loading.hidden = true;
+    if (errorBox) {
+      errorBox.hidden = false;
+      errorBox.textContent = `Lỗi tải danh bạ chủ nhà: ${err.message || 'Không thể kết nối'}`;
+    }
+  }
+}
+
+function createOwnerCard(owner) {
+  const card = document.createElement('article');
+  card.className = 'cms-owner-card';
+
+  // Header: Avatar, Name, Role badge
+  const header = document.createElement('div');
+  header.className = 'cms-owner-header';
+
+  const avatarGroup = document.createElement('div');
+  avatarGroup.className = 'cms-owner-avatar-group';
+
+  const avatar = document.createElement('div');
+  avatar.className = 'cms-owner-avatar';
+  const initials = (owner.name || 'CN')
+    .split(' ')
+    .filter(Boolean)
+    .slice(-2)
+    .map(w => w[0].toUpperCase())
+    .join('');
+  avatar.textContent = initials || 'CN';
+
+  const meta = document.createElement('div');
+  meta.className = 'cms-owner-meta';
+
+  const name = document.createElement('h3');
+  name.className = 'cms-owner-name';
+  name.textContent = owner.name;
+
+  const roleBadge = document.createElement('span');
+  let roleClass = 'cms-owner-role-direct';
+  if (owner.role.includes('Môi giới')) roleClass = 'cms-owner-role-broker';
+  else if (owner.role.includes('Đầu chủ')) roleClass = 'cms-owner-role-internal';
+  roleBadge.className = `cms-owner-role-badge ${roleClass}`;
+  roleBadge.textContent = owner.role;
+
+  meta.append(name, roleBadge);
+  avatarGroup.append(avatar, meta);
+  header.append(avatarGroup);
+
+  // Contact box (Phone & Quick Action buttons)
+  const contact = document.createElement('div');
+  contact.className = 'cms-owner-contact';
+
+  const phoneSpan = document.createElement('span');
+  phoneSpan.className = 'cms-owner-phone';
+  phoneSpan.textContent = owner.phone;
+  contact.append(phoneSpan);
+
+  const canSeeSensitive = ['super_admin', 'manager', 'editor', 'sales'].includes(cmsState.user?.role);
+  if (canSeeSensitive && owner.rawPhone) {
+    const actions = document.createElement('div');
+    actions.className = 'cms-owner-contact-actions';
+
+    const callBtn = document.createElement('a');
+    callBtn.className = 'cms-owner-icon-btn';
+    callBtn.href = `tel:${owner.rawPhone}`;
+    callBtn.title = `Gọi điện thoại ${owner.rawPhone}`;
+    callBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`;
+
+    const zaloBtn = document.createElement('a');
+    zaloBtn.className = 'cms-owner-icon-btn';
+    zaloBtn.href = `https://zalo.me/${owner.rawPhone}`;
+    zaloBtn.target = '_blank';
+    zaloBtn.rel = 'noopener';
+    zaloBtn.title = `Nhắn tin Zalo ${owner.rawPhone}`;
+    zaloBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>`;
+
+    actions.append(callBtn, zaloBtn);
+    contact.append(actions);
+  }
+
+  // Summary of properties
+  const summary = document.createElement('div');
+  summary.className = 'cms-owner-props-summary';
+  summary.innerHTML = `
+    <span>Khu vực: <strong>${escapeHtml(owner.districtLabel || 'Chưa rõ')}</strong></span>
+    <span>Ký gửi: <strong style="color: var(--forest);">${owner.propertyCount} căn</strong></span>
+  `;
+
+  // Mini Property List
+  const propsList = document.createElement('div');
+  propsList.className = 'cms-owner-props-list';
+
+  owner.properties.slice(0, 3).forEach(p => {
+    const chip = document.createElement('div');
+    chip.className = 'cms-owner-prop-chip';
+    const isSale = p.listingType === 'sale';
+    chip.innerHTML = `
+      <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px;">
+        <span style="font-weight: 600; color: var(--forest);">${escapeHtml(p.address)}</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
+        <span class="cms-badge ${isSale ? 'cms-badge-sale' : 'cms-badge-rent'}" style="font-size: 9.5px; padding: 1px 5px;">${isSale ? 'Bán' : 'Thuê'}</span>
+        <span style="font-weight: 700; font-size: 11.5px; color: var(--orange);">${escapeHtml(p.price)}</span>
+      </div>
+    `;
+    chip.onclick = () => openPropertyDetail(p.id);
+    propsList.append(chip);
+  });
+
+  if (owner.properties.length > 3) {
+    const moreChip = document.createElement('div');
+    moreChip.style.cssText = 'font-size: 11.5px; color: var(--muted); text-align: center; padding: 2px;';
+    moreChip.textContent = `+ và ${owner.properties.length - 3} căn nhà khác`;
+    propsList.append(moreChip);
+  }
+
+  // Footer Button: View all properties of this owner
+  const footer = document.createElement('div');
+  footer.className = 'cms-owner-card-footer';
+
+  const viewAllBtn = document.createElement('button');
+  viewAllBtn.type = 'button';
+  viewAllBtn.className = 'cms-owner-view-btn';
+  viewAllBtn.innerHTML = `
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    <span>Mở kho BĐS của chủ này (${owner.propertyCount} căn)</span>
+  `;
+  viewAllBtn.onclick = () => {
+    const searchInput = byId('propertySearch');
+    if (searchInput) {
+      searchInput.value = owner.rawPhone || owner.name;
+      if (byId('propertySearchClear')) byId('propertySearchClear').hidden = false;
+    }
+    setActivePage('properties');
+    loadProperties(1);
+  };
+  footer.append(viewAllBtn);
+
+  card.append(header, contact, summary, propsList, footer);
+  return card;
 }
 
 function openCreatePropertyModal() {
@@ -2673,6 +2867,18 @@ window.addEventListener('popstate', () => {
   const page = getPageFromUrl();
   setActivePage(page, false);
 });
+
+// Owners Directory CRM Events
+if (byId('ownersRefresh')) byId('ownersRefresh').addEventListener('click', () => loadOwners(true));
+if (byId('ownersSearchInput')) {
+  let timer;
+  byId('ownersSearchInput').addEventListener('input', () => {
+    clearTimeout(timer);
+    timer = setTimeout(() => loadOwners(true), 300);
+  });
+}
+if (byId('ownersRoleFilter')) byId('ownersRoleFilter').addEventListener('change', () => loadOwners(true));
+if (byId('ownersSortSelect')) byId('ownersSortSelect').addEventListener('change', () => loadOwners(true));
 
 bootstrapCms();
 

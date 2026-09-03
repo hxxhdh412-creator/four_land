@@ -47,6 +47,7 @@ const javascriptFiles = [
   "server/cms-review-queue.js",
   "server/cms-system-health.js",
   "server/cms-mutations.js",
+  "server/cms-owners.js",
   "server/smart-matcher.js",
   "admin/admin.js"
 ];

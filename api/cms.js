@@ -16,6 +16,7 @@ const cmsUsers = require("./_cms-users");
 const cmsSmartMatch = require("./_cms-smart-match");
 const cmsFacebook = require("./_cms-facebook");
 const cmsFacebookPages = require("./_cms-facebook-pages");
+const cmsOwners = require("./_cms-owners");
 
 // Classic In-Page Admin Handlers
 const adminLogin = require("./_admin-login");
@@ -83,6 +84,11 @@ module.exports = async function handler(req, res) {
     if (pathname === "/api/admin/v1/properties" || pathname === "/api/cms-properties") {
       if (req.method === "POST") return cmsPropertyCreate(req, res);
       return cmsProperties(req, res);
+    }
+
+    // 7.1. Owners Directory CRM
+    if (pathname === "/api/admin/v1/owners" || pathname === "/api/cms-owners") {
+      return cmsOwners(req, res);
     }
 
     // 8. Single Property Sub-routes
