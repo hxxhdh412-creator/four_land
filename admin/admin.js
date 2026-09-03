@@ -20,13 +20,22 @@ const byId = id => document.getElementById(id);
 const escapeHtml = value => String(value || '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
 
 function getPageFromUrl() {
-  const params = new URLSearchParams(window.location.search);
-  const tab = params.get('tab') || params.get('page');
-  const validPages = ['dashboard', 'match', 'properties', 'editor', 'web-pins', 'users', 'sync', 'facebook-pages'];
-  if (tab && validPages.includes(tab.toLowerCase())) return tab.toLowerCase();
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get('tab') || params.get('page');
+    const validPages = ['dashboard', 'match', 'properties', 'editor', 'web-pins', 'users', 'sync', 'facebook-pages'];
+    if (tab && validPages.includes(tab.toLowerCase())) return tab.toLowerCase();
 
-  const hash = window.location.hash.replace(/^#\/?/, '').toLowerCase();
-  if (validPages.includes(hash)) return hash;
+    const hash = window.location.hash.replace(/^#\/?/, '').toLowerCase();
+    if (validPages.includes(hash)) return hash;
+
+    const pathParts = window.location.pathname.split('/').filter(Boolean);
+    const lastPart = pathParts[pathParts.length - 1]?.toLowerCase();
+    if (lastPart && validPages.includes(lastPart)) return lastPart;
+
+    const savedTab = localStorage.getItem('fourland_cms_last_tab');
+    if (savedTab && validPages.includes(savedTab)) return savedTab;
+  } catch (_) {}
 
   return 'dashboard';
 }
@@ -37,6 +46,10 @@ function setActivePage(page, updateUrl = true) {
 
   document.querySelectorAll('[data-page-panel]').forEach(panel => panel.classList.toggle('active', panel.dataset.pagePanel === targetPage));
   document.querySelectorAll('[data-page]').forEach(item => item.classList.toggle('active', item.dataset.page === targetPage));
+
+  try {
+    localStorage.setItem('fourland_cms_last_tab', targetPage);
+  } catch (_) {}
 
   if (updateUrl) {
     const url = new URL(window.location.href);
@@ -159,7 +172,9 @@ async function handleLogin(credentials = {}) {
     updateHeaderUser();
     byId('cmsApp').setAttribute('aria-busy', 'false');
     showToast(`Chào mừng ${user.displayName} đã đăng nhập!`);
-    await loadDashboard();
+    const initialPage = getPageFromUrl();
+    setActivePage(initialPage, false);
+    loadDashboard().catch(() => {});
   } catch (error) {
     errorBox.hidden = false;
     errorBox.textContent = error.message || 'Đăng nhập thất bại';
@@ -229,9 +244,9 @@ async function bootstrapCms() {
     document.body.classList.add('authenticated');
     updateHeaderUser();
     byId('cmsApp').setAttribute('aria-busy', 'false');
-    await loadDashboard();
     const initialPage = getPageFromUrl();
     setActivePage(initialPage, false);
+    loadDashboard().catch(err => console.warn('Dashboard summary error:', err));
   } catch (error) {
     cmsState.accessToken = '';
     localStorage.removeItem('fourland_cms_access_token');
@@ -1472,7 +1487,6 @@ async function handleSwitchRole(newRole) {
   }
 }
 
-document.querySelectorAll('[data-page]').forEach(item => item.addEventListener('click', () => setActivePage(item.dataset.page)));
 byId('retryAuth').addEventListener('click', bootstrapCms);
 
 // Property Filters & Live Reactive Search

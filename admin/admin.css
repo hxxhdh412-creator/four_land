@@ -4998,30 +4998,41 @@ body:not(.authenticated) .cms-sidebar,
   box-shadow: 0 0 0 3px rgba(40, 61, 52, 0.12) !important;
 }
 
-.cms-fb-default-checkbox {
+.cms-fb-checkbox-row,
+.cms-fb-page-modal .cms-edit-grid label.cms-fb-checkbox-row {
+  display: flex !important;
   flex-direction: row !important;
   align-items: center !important;
-  gap: 10px !important;
-  padding: 12px 14px !important;
+  justify-content: flex-start !important;
+  gap: 12px !important;
+  padding: 13px 16px !important;
   background: #f7faf5 !important;
-  border: 1px solid rgba(40, 61, 52, 0.12) !important;
+  border: 1px solid rgba(40, 61, 52, 0.14) !important;
   border-radius: var(--radius-sm) !important;
   cursor: pointer !important;
   margin-top: 4px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
 }
 
-.cms-fb-default-checkbox input[type="checkbox"] {
+.cms-fb-checkbox-row input[type="checkbox"],
+.cms-fb-page-modal .cms-edit-grid label.cms-fb-checkbox-row input[type="checkbox"] {
   width: 18px !important;
+  min-width: 18px !important;
   height: 18px !important;
+  margin: 0 !important;
+  flex-shrink: 0 !important;
   accent-color: var(--forest) !important;
   cursor: pointer !important;
-  margin: 0 !important;
 }
 
-.cms-fb-default-checkbox span {
+.cms-fb-checkbox-row span,
+.cms-fb-page-modal .cms-edit-grid label.cms-fb-checkbox-row span {
   font-size: 13.5px !important;
   font-weight: 700 !important;
   color: var(--forest) !important;
+  text-align: left !important;
+  user-select: none !important;
 }
 
 /* ==========================================================================
