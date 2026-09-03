@@ -1877,44 +1877,10 @@ if (byId('propertyResetFilters')) {
     if (byId('propertySort')) byId('propertySort').value = 'newest';
     cmsState.currentListingType = 'all';
     document.querySelectorAll('.cms-listing-seg-btn').forEach(b => b.classList.toggle('active', (b.dataset.listingFilter || 'all') === 'all'));
-    document.querySelectorAll('[data-filter-chip]').forEach(c => c.classList.toggle('active', c.dataset.filterChip === 'all'));
     updateMobilePropertyFilters();
     loadProperties(1);
   });
 }
-
-document.querySelectorAll('[data-filter-chip]').forEach(chip => {
-  chip.addEventListener('click', () => {
-    document.querySelectorAll('[data-filter-chip]').forEach(c => c.classList.remove('active'));
-    chip.classList.add('active');
-    const type = chip.dataset.filterChip;
-    if (type === 'all') {
-      cmsState.currentListingType = 'all';
-      document.querySelectorAll('.cms-listing-seg-btn').forEach(b => b.classList.toggle('active', (b.dataset.listingFilter || 'all') === 'all'));
-      if (byId('propertyDistrict')) byId('propertyDistrict').value = '';
-      if (byId('propertyTypeFilter')) byId('propertyTypeFilter').value = '';
-      if (byId('propertyPriceRange')) byId('propertyPriceRange').value = '';
-      if (byId('propertyStatus')) byId('propertyStatus').value = 'active';
-      if (byId('propertyQuality')) byId('propertyQuality').value = 'all';
-    } else if (type === 'rent') {
-      cmsState.currentListingType = 'rent';
-      document.querySelectorAll('.cms-listing-seg-btn').forEach(b => b.classList.toggle('active', (b.dataset.listingFilter || 'all') === 'rent'));
-    } else if (type === 'sale') {
-      cmsState.currentListingType = 'sale';
-      document.querySelectorAll('.cms-listing-seg-btn').forEach(b => b.classList.toggle('active', (b.dataset.listingFilter || 'all') === 'sale'));
-    } else if (type === 'mat_bang') {
-      if (byId('propertyTypeFilter')) byId('propertyTypeFilter').value = 'Mặt bằng';
-    } else if (type === 'nha_pho') {
-      if (byId('propertyTypeFilter')) byId('propertyTypeFilter').value = 'Nhà phố';
-    } else if (type === 'has_images') {
-      if (byId('propertyQuality')) byId('propertyQuality').value = 'all';
-    } else if (type === 'today') {
-      if (byId('propertyStatus')) byId('propertyStatus').value = 'active';
-    }
-    updateMobilePropertyFilters();
-    loadProperties(1);
-  });
-});
 
 updateMobilePropertyFilters();
 
