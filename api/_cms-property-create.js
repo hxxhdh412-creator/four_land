@@ -61,7 +61,14 @@ function createHandler({ requireCmsImpl = requireCms, request = supabaseRequest 
           source: "manual_cms",
           created_by: principal.displayName || principal.id,
           created_at: now,
-          listing_type: text(body.listing_type, 30) || (String(body.price_text || "").includes("tỷ") ? "sale" : "rent")
+          listing_type: text(body.listing_type, 30) || (String(body.price_text || "").includes("tỷ") ? "sale" : "rent"),
+          owner_name: text(body.owner_name, 120) || null,
+          owner_role: text(body.owner_role, 80) || "Chủ nhà trực tiếp",
+          owner: {
+            name: text(body.owner_name, 120) || null,
+            role: text(body.owner_role, 80) || "Chủ nhà trực tiếp",
+            phone: text(body.phone, 30) || null
+          }
         }
       };
 

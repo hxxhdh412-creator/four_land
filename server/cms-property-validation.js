@@ -1,9 +1,9 @@
 const EDITABLE_FIELDS = Object.freeze([
-  "address", "district", "ward", "street", "property_type", "listing_type", "price_text", "area_text",
+  "address", "district", "ward", "street", "property_type", "listing_type", "owner_name", "owner_role", "price_text", "area_text",
   "dimensions", "bedrooms", "bathrooms", "structure", "legal", "commission", "notes", "phone"
 ]);
 
-const FIELD_LIMITS = Object.freeze({ address: 300, district: 120, ward: 120, street: 160, property_type: 120, listing_type: 30, price_text: 100, area_text: 100, dimensions: 100, structure: 1000, legal: 500, commission: 300, notes: 2000, phone: 30 });
+const FIELD_LIMITS = Object.freeze({ address: 300, district: 120, ward: 120, street: 160, property_type: 120, listing_type: 30, owner_name: 120, owner_role: 80, price_text: 100, area_text: 100, dimensions: 100, structure: 1000, legal: 500, commission: 300, notes: 2000, phone: 30 });
 
 function normalizeValue(field, value) {
   if (field === "bedrooms" || field === "bathrooms") {

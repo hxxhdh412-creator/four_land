@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex,nofollow">
   <meta name="theme-color" content="#283d34">
   <title>FOURLAND · Trung tâm quản trị</title>
-  <link rel="stylesheet" href="/admin/admin.css?v=20260903-listing-type-v99">
+  <link rel="stylesheet" href="/admin/admin.css?v=20260903-owner-management-v100">
 </head>
 <body>
   <div id="cmsApp" class="cms-app" aria-busy="true">
@@ -801,7 +801,11 @@
           <div id="detailGallery" class="cms-detail-gallery"></div>
           <div class="cms-detail-columns">
             <section class="cms-detail-section"><h2>Thông tin bất động sản</h2><dl id="detailFacts"></dl></section>
-            <section class="cms-detail-section"><h2>Thông tin vận hành</h2><dl id="detailOperations"></dl></section>
+            <section class="cms-detail-section">
+              <h2>Thông tin chủ nhà & Vận hành</h2>
+              <dl id="detailOperations"></dl>
+              <div id="detailOwnerRelated" hidden></div>
+            </section>
           </div>
           <section id="detailSourceSection" class="cms-detail-section" hidden><h2>Nội dung nguồn</h2><p id="detailSource"></p></section>
           <form id="detailEditForm" class="cms-detail-edit" hidden>
@@ -820,6 +824,19 @@
               <label><span>Diện tích</span><input name="area_text" maxlength="100"></label>
               <label><span>Kích thước</span><input name="dimensions" maxlength="100"></label>
               <label><span>Số điện thoại</span><input name="phone" maxlength="30" inputmode="tel"></label>
+              <label>
+                <span>Tên chủ nhà / Người liên hệ</span>
+                <input name="owner_name" placeholder="Ví dụ: Chị Mai, Anh Tuấn…" maxlength="120">
+              </label>
+              <label>
+                <span>Vai trò liên hệ</span>
+                <select name="owner_role">
+                  <option value="Chủ nhà trực tiếp">Chủ nhà trực tiếp</option>
+                  <option value="Đầu chủ / Nguồn nội bộ">Đầu chủ / Nguồn nội bộ</option>
+                  <option value="Môi giới F1">Môi giới F1</option>
+                  <option value="Quản lý / Người trông coi">Quản lý / Người trông coi</option>
+                </select>
+              </label>
               <label><span>Phòng ngủ</span><input name="bedrooms" type="number" min="0" max="50"></label>
               <label><span>Phòng tắm</span><input name="bathrooms" type="number" min="0" max="50"></label>
               <label class="wide"><span>Pháp lý</span><input name="legal" maxlength="150"></label>
@@ -933,6 +950,19 @@
             <div class="cms-form-section">
               <h2 class="cms-form-section-title">3. Liên hệ & Vận hành</h2>
               <div class="cms-edit-grid">
+                <label>
+                  <span>Tên chủ nhà / Người liên hệ</span>
+                  <input name="owner_name" placeholder="Ví dụ: Anh Tuấn, Chị Mai…" maxlength="120">
+                </label>
+                <label>
+                  <span>Vai trò liên hệ</span>
+                  <select name="owner_role">
+                    <option value="Chủ nhà trực tiếp">Chủ nhà trực tiếp</option>
+                    <option value="Đầu chủ / Nguồn nội bộ">Đầu chủ / Nguồn nội bộ</option>
+                    <option value="Môi giới F1">Môi giới F1</option>
+                    <option value="Quản lý / Người trông coi">Quản lý / Người trông coi</option>
+                  </select>
+                </label>
                 <label>
                   <span>Số điện thoại chủ nhà</span>
                   <input name="phone" placeholder="09xxxxxxxx" maxlength="30" inputmode="tel">
@@ -1310,6 +1340,6 @@
 
     <div id="toastContainer" class="cms-toast-container" aria-live="polite"></div>
   </div>
-  <script src="/admin/admin.js?v=20260903-listing-type-v99" defer></script>
+  <script src="/admin/admin.js?v=20260903-owner-management-v100" defer></script>
 </body>
 </html>

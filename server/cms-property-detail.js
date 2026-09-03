@@ -53,6 +53,8 @@ function normalizePropertyDetail(row, { includeSensitive = false } = {}) {
     detail.phone = row?.phone || "";
     detail.commission = row?.commission || "";
     detail.rawText = row?.raw_text || "";
+    detail.ownerName = row?.owner_name || row?.data_json?.owner_name || row?.data_json?.owner?.name || "";
+    detail.ownerRole = row?.owner_role || row?.data_json?.owner_role || row?.data_json?.owner?.role || "Chủ nhà trực tiếp";
   }
   return detail;
 }

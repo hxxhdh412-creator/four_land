@@ -655,11 +655,58 @@ async function openPropertyDetail(id) {
       ? (item.phone || 'Chưa cập nhật')
       : (item.phone ? String(item.phone).slice(0, 3) + '******* (Ẩn)' : 'Chưa cập nhật');
 
+    const displayOwnerName = canSeeSensitive ? (item.ownerName || 'Chưa cập nhật tên') : 'Chủ nhà';
+    const displayOwnerRole = canSeeSensitive ? (item.ownerRole || 'Chủ nhà trực tiếp') : 'Bảo mật';
+
     byId('detailOperations').replaceChildren(
-      detailRow('Trạng thái', statusLabel(item.status)), detailRow('Số ảnh', item.imageCount),
-      detailRow('Ngày tiếp nhận', formatDate(item.receivedAt)), detailRow('Cập nhật', formatDate(item.updatedAt)),
-      detailRow('Điện thoại', displayPhone), detailRow('Hoa hồng', item.commission), detailRow('Ghi chú', item.notes)
+      detailRow('Tên chủ nhà', displayOwnerName),
+      detailRow('Vai trò', displayOwnerRole),
+      detailRow('Điện thoại', displayPhone),
+      detailRow('Hoa hồng', item.commission),
+      detailRow('Trạng thái', statusLabel(item.status)),
+      detailRow('Số ảnh', item.imageCount),
+      detailRow('Ngày tiếp nhận', formatDate(item.receivedAt)),
+      detailRow('Cập nhật', formatDate(item.updatedAt)),
+      detailRow('Ghi chú', item.notes)
     );
+
+    // Cross-Property Linking: Giỏ hàng cùng chủ nhà
+    const relatedBox = byId('detailOwnerRelated');
+    if (relatedBox) {
+      if (canSeeSensitive && item.phone && item.phone.length >= 8) {
+        relatedBox.hidden = false;
+        relatedBox.innerHTML = `
+          <div style="margin-top: 14px; padding: 12px 14px; background: #f6f9f6; border: 1px solid #dce8dd; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
+            <div style="font-size: 13px; color: var(--forest);">
+              <strong style="display: flex; align-items: center; gap: 6px;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                <span>Giỏ hàng cùng chủ:</span>
+              </strong>
+              <span style="color: var(--muted); font-size: 12px;">Tra cứu các căn khác cùng SĐT này</span>
+            </div>
+            <button type="button" class="cms-page-btn" id="btnFindOwnerProperties" style="height: 32px; padding: 0 12px; font-size: 12px; font-weight: 600;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <span>Xem các căn cùng SĐT</span>
+            </button>
+          </div>
+        `;
+        const btnFind = byId('btnFindOwnerProperties');
+        if (btnFind) {
+          btnFind.onclick = () => {
+            byId('propertyDetail').close();
+            const searchInput = byId('propertySearch');
+            if (searchInput) {
+              searchInput.value = item.phone;
+              if (byId('propertySearchClear')) byId('propertySearchClear').hidden = false;
+            }
+            setActivePage('properties');
+            loadProperties(1);
+          };
+        }
+      } else {
+        relatedBox.hidden = true;
+      }
+    }
     const hasSource = Boolean(item.rawText) && canSeeSensitive;
     byId('detailSourceSection').hidden = !hasSource;
     byId('detailSource').textContent = hasSource ? item.rawText : '';
@@ -692,6 +739,7 @@ function setEditFormVisible(visible) {
   for (const [name, value] of Object.entries({
     address: item.address, property_type: item.propertyType,
     listing_type: item.listingType || (String(item.price || '').includes('tỷ') ? 'sale' : 'rent'),
+    owner_name: item.ownerName, owner_role: item.ownerRole,
     price_text: item.price, area_text: item.area, dimensions: item.dimensions, phone: item.phone,
     bedrooms: item.bedrooms, bathrooms: item.bathrooms, legal: item.legal, structure: item.structure, notes: item.notes
   })) {

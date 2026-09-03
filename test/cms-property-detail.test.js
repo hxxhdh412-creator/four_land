@@ -11,12 +11,15 @@ test("validates bounded property identifiers", () => {
 });
 
 test("detail DTO masks sensitive data by default", () => {
-  const row = { property_id: "BDS-1", phone: "0900", commission: "1 tháng", raw_text: "nguồn", property_images: [{ position: 2, public_url: "b" }, { position: 1, public_url: "a" }] };
+  const row = { property_id: "BDS-1", phone: "0900", commission: "1 tháng", raw_text: "nguồn", owner_name: "Chị Mai", owner_role: "Chủ nhà trực tiếp", property_images: [{ position: 2, public_url: "b" }, { position: 1, public_url: "a" }] };
   const safe = normalizePropertyDetail(row);
   assert.equal(Object.hasOwn(safe, "phone"), false);
+  assert.equal(Object.hasOwn(safe, "ownerName"), false);
   assert.deepEqual(safe.images.map(image => image.url), ["a", "b"]);
   const sensitive = normalizePropertyDetail(row, { includeSensitive: true });
   assert.equal(sensitive.phone, "0900");
+  assert.equal(sensitive.ownerName, "Chị Mai");
+  assert.equal(sensitive.ownerRole, "Chủ nhà trực tiếp");
 });
 
 test("detail endpoint masks PII for viewer", async () => {
