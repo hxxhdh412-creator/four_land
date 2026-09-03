@@ -22,8 +22,9 @@ function createHandler({ requireCmsImpl = requireCms } = {}) {
 
     try {
       if (req.method === "GET") {
-        const pages = await getFacebookPages();
-        return res.status(200).json({ ok: true, data: pages });
+        const forceRefresh = req.query?.sync === "true" || req.query?.refresh === "1";
+        const pages = await getFacebookPages({ forceRefresh });
+        return res.status(200).json({ ok: true, data: pages, total: pages.length });
       }
 
       if (req.method === "POST") {

@@ -1955,6 +1955,17 @@ async function openFacebookStudio(propertyId) {
   const dialog = byId('facebookPostDialog');
   if (!dialog) return;
 
+  // Pre-populate select from fbPagesCache if available
+  const select = byId('fbPageSelect');
+  if (select && Array.isArray(fbPagesCache) && fbPagesCache.length > 0) {
+    select.innerHTML = fbPagesCache.map(p => `
+      <option value="${p.pageId}" ${String(p.pageId) === String(fbState.selectedPageId) ? 'selected' : ''}>
+        ${escapeHtml(p.name)} ${p.isDefault ? '⭐ (Mặc định)' : ''}
+      </option>
+    `).join('');
+    select.value = fbState.selectedPageId;
+  }
+
   byId('fbPublishStatus').textContent = 'Đang chuẩn bị bài viết…';
   byId('fbSubmitBtn').disabled = false;
   byId('fbSubmitBtn').innerHTML = `<svg class="cms-btn-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg><span>Đăng lên Fanpage ${escapeHtml(fbState.pageName)}</span>`;
@@ -2247,10 +2258,11 @@ async function loadFacebookPages(force = false) {
   if (!grid) return;
 
   if (alertEl) alertEl.hidden = true;
-  grid.innerHTML = '<div class="cms-empty" style="grid-column:1/-1;"><b>Đang tải danh sách Fanpage…</b></div>';
+  grid.innerHTML = '<div class="cms-empty" style="grid-column:1/-1;"><b>Đang tải danh sách Fanpage từ Composio…</b></div>';
 
   try {
-    const res = await cmsApi('/api/admin/v1/facebook/pages');
+    const url = force ? '/api/admin/v1/facebook/pages?sync=true' : '/api/admin/v1/facebook/pages';
+    const res = await cmsApi(url);
     fbPagesCache = res.data || [];
 
     const totalEl = byId('fbTotalPages');
@@ -2276,8 +2288,8 @@ function renderFacebookPagesGrid(pages) {
   if (!pages || pages.length === 0) {
     grid.innerHTML = `
       <div class="cms-empty" style="grid-column:1/-1; padding:30px 20px;">
-        <b>Chưa có Fanpage nào được cấu hình</b>
-        <span>Bấm nút "+ Thêm Fanpage mới" để liên kết trang Facebook đăng tin.</span>
+        <b>Chưa có Fanpage nào được kết nối</b>
+        <span>Bấm nút "⚡ Đồng bộ từ Composio" để tải về các Fanpage quản trị.</span>
       </div>
     `;
     return;
@@ -2286,23 +2298,44 @@ function renderFacebookPagesGrid(pages) {
   grid.innerHTML = pages.map(p => `
     <div class="cms-fb-page-card ${p.isDefault ? 'is-default' : ''}">
       <div class="cms-fb-page-header">
-        <img class="cms-fb-page-avatar" src="https://graph.facebook.com/${p.pageId}/picture?type=large" alt="${escapeHtml(p.name)}" onerror="this.src='https://graph.facebook.com/106656702112510/picture?type=large'">
+        <div class="cms-fb-page-avatar-wrap">
+          <img class="cms-fb-page-avatar" src="https://graph.facebook.com/${p.pageId}/picture?type=large" alt="${escapeHtml(p.name)}" onerror="this.src='https://graph.facebook.com/106656702112510/picture?type=large'">
+          <div class="cms-fb-page-badge-icon" title="Fanpage Facebook">
+            <svg viewBox="0 0 24 24" width="10" height="10" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+          </div>
+        </div>
         <div class="cms-fb-page-meta">
-          <strong>${escapeHtml(p.name)}</strong>
-          <span>ID: ${escapeHtml(p.pageId)}</span>
+          <div class="cms-fb-page-title-row">
+            <strong>${escapeHtml(p.name)}</strong>
+            <svg class="fb-verified-badge" viewBox="0 0 24 24" width="15" height="15" fill="#1877f2" title="Đã liên kết Composio"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+          </div>
+          <span class="cms-fb-page-id-pill" title="Bấm để sao chép Page ID" data-copy-id="${p.pageId}">
+            📋 ID: ${escapeHtml(p.pageId)}
+          </span>
         </div>
       </div>
       <div class="cms-fb-page-badges">
-        ${p.isDefault ? '<span class="cms-badge ok">⭐ Fanpage Mặc định</span>' : '<span class="cms-badge">Phụ</span>'}
-        <span class="cms-badge" style="background:#f0f4ec;color:var(--forest);">Graph API v19.0</span>
+        ${p.isDefault ? '<span class="cms-fb-tag-default">⭐ Mặc định khi đăng</span>' : ''}
+        <span class="cms-fb-tag-composio">⚡ Composio MCP</span>
+        <span class="cms-fb-tag-category">${escapeHtml(p.category || 'Trang Facebook')}</span>
       </div>
       <div class="cms-fb-page-actions">
-        ${!p.isDefault ? `<button type="button" class="cms-page-btn btn-set-default" data-page-id="${p.pageId}" style="color:var(--forest);font-weight:700;">⭐ Đặt mặc định</button>` : ''}
+        ${!p.isDefault ? `<button type="button" class="btn-set-default" data-page-id="${p.pageId}">⭐ Đặt mặc định</button>` : ''}
+        <a href="https://facebook.com/${p.pageId}" target="_blank" rel="noopener noreferrer" class="btn-view-fb" title="Mở xem trên Facebook">🔗 Xem Page</a>
         <button type="button" class="cms-page-btn btn-edit-page" data-page-id="${p.pageId}">✏️ Sửa</button>
         ${pages.length > 1 && !p.isDefault ? `<button type="button" class="cms-page-btn btn-delete-page" data-page-id="${p.pageId}" style="color:#d9534f;">🗑️ Xóa</button>` : ''}
       </div>
     </div>
   `).join('');
+
+  // Copy ID handlers
+  grid.querySelectorAll('[data-copy-id]').forEach(pill => {
+    pill.addEventListener('click', () => {
+      const id = pill.dataset.copyId;
+      navigator.clipboard?.writeText(id);
+      showToast(`Đã sao chép Page ID: ${id}`);
+    });
+  });
 
   // Attach action handlers
   grid.querySelectorAll('.btn-set-default').forEach(btn => {
@@ -2316,7 +2349,7 @@ function renderFacebookPagesGrid(pages) {
           body: { pageId, isDefault: true }
         });
         showToast('Đã đặt Fanpage làm mặc định thành công!');
-        await loadFacebookPages(true);
+        await loadFacebookPages(false);
       } catch (err) {
         alert('Lỗi: ' + err.message);
         btn.disabled = false;
@@ -2345,7 +2378,7 @@ function renderFacebookPagesGrid(pages) {
           method: 'DELETE'
         });
         showToast('Đã xóa Fanpage thành công!');
-        await loadFacebookPages(true);
+        await loadFacebookPages(false);
       } catch (err) {
         alert('Lỗi: ' + err.message);
       }
@@ -2381,6 +2414,26 @@ if (byId('btnCreateFbPage')) byId('btnCreateFbPage').addEventListener('click', (
 if (byId('btnRefreshFbPages')) byId('btnRefreshFbPages').addEventListener('click', () => loadFacebookPages(true));
 if (byId('fbPageDialogClose')) byId('fbPageDialogClose').addEventListener('click', closeFbPageModal);
 if (byId('fbPageCancel')) byId('fbPageCancel').addEventListener('click', closeFbPageModal);
+
+if (byId('btnSyncComposio')) {
+  byId('btnSyncComposio').addEventListener('click', async () => {
+    const btn = byId('btnSyncComposio');
+    const origHtml = btn.innerHTML;
+    try {
+      btn.disabled = true;
+      btn.innerHTML = `<svg class="cms-btn-icon spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg><span>Đang đồng bộ Composio…</span>`;
+      const res = await cmsApi('/api/admin/v1/facebook/pages?sync=true');
+      fbPagesCache = res.data || [];
+      showToast(`Đã đồng bộ thành công ${fbPagesCache.length} Fanpage từ Composio!`);
+      await loadFacebookPages(false);
+    } catch (err) {
+      alert('Lỗi đồng bộ: ' + err.message);
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = origHtml;
+    }
+  });
+}
 
 if (byId('fbPageForm')) {
   byId('fbPageForm').addEventListener('submit', async (e) => {
@@ -2423,7 +2476,7 @@ if (byId('fbPageForm')) {
       }
 
       closeFbPageModal();
-      await loadFacebookPages(true);
+      await loadFacebookPages(false);
     } catch (err) {
       if (alertEl) {
         alertEl.textContent = err.message || 'Lỗi khi lưu Fanpage';

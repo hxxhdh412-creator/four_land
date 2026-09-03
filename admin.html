@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex,nofollow">
   <meta name="theme-color" content="#283d34">
   <title>FOURLAND · Trung tâm quản trị</title>
-  <link rel="stylesheet" href="/admin/admin.css?v=20260903-fb-pages-v92">
+  <link rel="stylesheet" href="/admin/admin.css?v=20260903-composio-sync-v93">
 </head>
 <body>
   <div id="cmsApp" class="cms-app" aria-busy="true">
@@ -652,29 +652,47 @@
               <div>
                 <p class="cms-eyebrow">Marketing & Mạng Xã Hội</p>
                 <h1>Quản lý Kênh Facebook</h1>
-                <p>Danh sách các Fanpage Facebook được kết nối để đăng tin bất động sản tự động.</p>
+                <p>Danh sách các Fanpage Facebook được kết nối qua Composio MCP Gateway & Facebook Graph API v19.0.</p>
               </div>
-              <div style="display: flex; gap: 10px;">
-                <button id="btnCreateFbPage" class="cms-primary" type="button">
-                  <svg class="cms-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                  <span>Thêm Fanpage mới</span>
+              <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button id="btnSyncComposio" class="cms-primary" type="button" style="background: linear-gradient(135deg, var(--forest) 0%, #1e3328 100%); box-shadow: 0 4px 14px rgba(40, 61, 52, 0.2);">
+                  <svg class="cms-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                  <span>⚡ Đồng bộ từ Composio</span>
                 </button>
+                <button id="btnCreateFbPage" class="cms-page-btn" type="button">
+                  <svg class="cms-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  <span>+ Thêm thủ công</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Composio Live Integration Banner -->
+            <div class="cms-fb-composio-banner">
+              <div class="cms-fb-composio-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="#1877f2"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+              </div>
+              <div class="cms-fb-composio-text">
+                <strong>
+                  <span>Kết nối trực tiếp tài khoản Facebook Composio</span>
+                  <span class="cms-fb-tag-composio">Active · Multi-Pages</span>
+                </strong>
+                <p>Tất cả Fanpage bạn quản trị trên Composio được tự động tải về đầy đủ token. Bạn có thể chọn bất kỳ Page nào khi xuất bản bài viết BĐS trong Facebook Studio.</p>
               </div>
             </div>
 
             <!-- Queue Summary Metrics -->
             <div class="cms-queue-summary">
-              <article><span>Tổng Fanpage</span><strong id="fbTotalPages">1</strong></article>
+              <article><span>Tổng Fanpage</span><strong id="fbTotalPages">13</strong></article>
               <article><span>Trang Mặc Định</span><strong id="fbDefaultPageName" style="font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Ngọc Nhà Tốt</strong></article>
-              <article><span>Graph API</span><strong style="color:var(--forest);font-size:15px;">Sẵn sàng</strong></article>
-              <article><span>Đăng Tự Động</span><strong style="color:var(--forest);font-size:15px;">Hoạt động</strong></article>
+              <article><span>Composio MCP</span><strong style="color:var(--forest);font-size:15px;">Đã kết nối</strong></article>
+              <article><span>Graph API</span><strong style="color:var(--forest);font-size:15px;">v19.0 Sẵn sàng</strong></article>
             </div>
 
             <div id="fbPagesAlert" class="cms-alert" hidden></div>
 
             <!-- List of Fanpages -->
             <div class="cms-surface" style="padding: 20px;">
-              <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; border-bottom: 1px solid var(--line); padding-bottom: 12px;">
+              <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; border-bottom: 1px solid var(--line); padding-bottom: 12px; flex-wrap: wrap; gap: 10px;">
                 <div>
                   <strong style="font-size: 16px; color: var(--forest);">Danh sách Fanpage đang hoạt động</strong>
                   <span style="display: block; font-size: 13px; color: var(--muted); margin-top: 2px;">Các Fanpage này sẽ xuất hiện trong menu chọn đăng bài ở kho bất động sản.</span>
@@ -1239,6 +1257,6 @@
 
     <div id="toastContainer" class="cms-toast-container" aria-live="polite"></div>
   </div>
-  <script src="/admin/admin.js?v=20260903-fb-pages-v92" defer></script>
+  <script src="/admin/admin.js?v=20260903-composio-sync-v93" defer></script>
 </body>
 </html>
