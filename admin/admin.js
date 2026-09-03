@@ -835,10 +835,14 @@ async function loadProperties(page = cmsState.propertyPage) {
   }
 
   const districtFilter = byId('propertyDistrict')?.value || '';
-  const listingTypeFilter = cmsState.currentListingType || byId('propertyListingType')?.value || 'all';
+  const propertyTypeFilter = byId('propertyTypeFilter')?.value || '';
+  const priceRangeFilter = byId('propertyPriceRange')?.value || '';
+  const listingTypeFilter = cmsState.currentListingType || 'all';
   const params = new URLSearchParams({
     q: (byId('propertySearch')?.value || '').trim(),
     district: districtFilter,
+    propertyType: propertyTypeFilter,
+    priceRange: priceRangeFilter,
     listingType: listingTypeFilter,
     status: byId('propertyStatus')?.value || 'active',
     quality: byId('propertyQuality')?.value || 'all',
@@ -1798,6 +1802,8 @@ function updateMobilePropertyFilters() {
 
   const activeCount = [
     byId('propertyDistrict')?.value,
+    byId('propertyTypeFilter')?.value,
+    byId('propertyPriceRange')?.value,
     byId('propertyStatus')?.value !== 'active' ? byId('propertyStatus')?.value : '',
     byId('propertyQuality')?.value !== 'all' ? byId('propertyQuality')?.value : ''
   ].filter(Boolean).length;
@@ -1818,7 +1824,7 @@ if (searchInput) {
   searchInput.addEventListener('input', () => {
     if (clearBtn) clearBtn.hidden = !searchInput.value;
     clearTimeout(searchDebounceTimer);
-    searchDebounceTimer = setTimeout(() => loadProperties(1), 280);
+    searchDebounceTimer = setTimeout(() => loadProperties(1), 320);
   });
 }
 
@@ -1838,43 +1844,39 @@ if (byId('propertyFilters')) {
 }
 
 if (byId('propertyDistrict')) byId('propertyDistrict').addEventListener('change', () => { updateMobilePropertyFilters(); loadProperties(1); });
-if (byId('propertyListingType')) {
-  byId('propertyListingType').addEventListener('change', (e) => {
-    const val = e.target.value;
-    cmsState.currentListingType = val;
-    document.querySelectorAll('.cms-listing-seg-btn').forEach(b => {
-      b.classList.toggle('active', (b.dataset.listingFilter || 'all') === val);
-    });
-    updateMobilePropertyFilters();
-    loadProperties(1);
-  });
-}
+if (byId('propertyTypeFilter')) byId('propertyTypeFilter').addEventListener('change', () => { updateMobilePropertyFilters(); loadProperties(1); });
+if (byId('propertyPriceRange')) byId('propertyPriceRange').addEventListener('change', () => { updateMobilePropertyFilters(); loadProperties(1); });
+if (byId('propertyStatus')) byId('propertyStatus').addEventListener('change', () => { updateMobilePropertyFilters(); loadProperties(1); });
+if (byId('propertyQuality')) byId('propertyQuality').addEventListener('change', () => { updateMobilePropertyFilters(); loadProperties(1); });
+if (byId('propertySort')) byId('propertySort').addEventListener('change', () => loadProperties(1));
 
 document.querySelectorAll('.cms-listing-seg-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     const val = btn.dataset.listingFilter || 'all';
     cmsState.currentListingType = val;
     document.querySelectorAll('.cms-listing-seg-btn').forEach(b => b.classList.toggle('active', b === btn));
-    if (byId('propertyListingType')) byId('propertyListingType').value = val;
+    document.querySelectorAll('[data-filter-chip]').forEach(c => {
+      if (['rent', 'sale', 'all'].includes(c.dataset.filterChip)) {
+        c.classList.toggle('active', c.dataset.filterChip === val);
+      }
+    });
     updateMobilePropertyFilters();
     loadProperties(1);
   });
 });
-if (byId('propertyStatus')) byId('propertyStatus').addEventListener('change', () => { updateMobilePropertyFilters(); loadProperties(1); });
-if (byId('propertyQuality')) byId('propertyQuality').addEventListener('change', () => { updateMobilePropertyFilters(); loadProperties(1); });
-if (byId('propertySort')) byId('propertySort').addEventListener('change', () => loadProperties(1));
 
 if (byId('propertyResetFilters')) {
   byId('propertyResetFilters').addEventListener('click', () => {
     if (searchInput) searchInput.value = '';
     if (clearBtn) clearBtn.hidden = true;
     if (byId('propertyDistrict')) byId('propertyDistrict').value = '';
-    if (byId('propertyListingType')) byId('propertyListingType').value = 'all';
-    cmsState.currentListingType = 'all';
-    document.querySelectorAll('.cms-listing-seg-btn').forEach(b => b.classList.toggle('active', (b.dataset.listingFilter || 'all') === 'all'));
+    if (byId('propertyTypeFilter')) byId('propertyTypeFilter').value = '';
+    if (byId('propertyPriceRange')) byId('propertyPriceRange').value = '';
     if (byId('propertyStatus')) byId('propertyStatus').value = 'active';
     if (byId('propertyQuality')) byId('propertyQuality').value = 'all';
     if (byId('propertySort')) byId('propertySort').value = 'newest';
+    cmsState.currentListingType = 'all';
+    document.querySelectorAll('.cms-listing-seg-btn').forEach(b => b.classList.toggle('active', (b.dataset.listingFilter || 'all') === 'all'));
     document.querySelectorAll('[data-filter-chip]').forEach(c => c.classList.toggle('active', c.dataset.filterChip === 'all'));
     updateMobilePropertyFilters();
     loadProperties(1);
@@ -1887,49 +1889,28 @@ document.querySelectorAll('[data-filter-chip]').forEach(chip => {
     chip.classList.add('active');
     const type = chip.dataset.filterChip;
     if (type === 'all') {
-      if (searchInput) searchInput.value = '';
+      cmsState.currentListingType = 'all';
+      document.querySelectorAll('.cms-listing-seg-btn').forEach(b => b.classList.toggle('active', (b.dataset.listingFilter || 'all') === 'all'));
       if (byId('propertyDistrict')) byId('propertyDistrict').value = '';
+      if (byId('propertyTypeFilter')) byId('propertyTypeFilter').value = '';
+      if (byId('propertyPriceRange')) byId('propertyPriceRange').value = '';
       if (byId('propertyStatus')) byId('propertyStatus').value = 'active';
       if (byId('propertyQuality')) byId('propertyQuality').value = 'all';
-    } else if (type === 'today') {
-      if (searchInput) searchInput.value = '';
-      if (byId('propertyDistrict')) byId('propertyDistrict').value = '';
-      if (byId('propertyStatus')) byId('propertyStatus').value = 'active';
-      if (byId('propertyQuality')) byId('propertyQuality').value = 'all';
+    } else if (type === 'rent') {
+      cmsState.currentListingType = 'rent';
+      document.querySelectorAll('.cms-listing-seg-btn').forEach(b => b.classList.toggle('active', (b.dataset.listingFilter || 'all') === 'rent'));
+    } else if (type === 'sale') {
+      cmsState.currentListingType = 'sale';
+      document.querySelectorAll('.cms-listing-seg-btn').forEach(b => b.classList.toggle('active', (b.dataset.listingFilter || 'all') === 'sale'));
+    } else if (type === 'mat_bang') {
+      if (byId('propertyTypeFilter')) byId('propertyTypeFilter').value = 'Mặt bằng';
+    } else if (type === 'nha_pho') {
+      if (byId('propertyTypeFilter')) byId('propertyTypeFilter').value = 'Nhà phố';
     } else if (type === 'has_images') {
       if (byId('propertyQuality')) byId('propertyQuality').value = 'all';
-    } else if (type === 'mat_bang') {
-      if (searchInput) searchInput.value = 'Mặt bằng';
-      if (byId('propertyDistrict')) byId('propertyDistrict').value = '';
-    } else if (type === 'nha_pho') {
-      if (searchInput) searchInput.value = 'Nhà phố';
-      if (byId('propertyDistrict')) byId('propertyDistrict').value = '';
-    } else if (type === 'under_15m') {
-      if (searchInput) searchInput.value = '10 triệu';
-      if (byId('propertyDistrict')) byId('propertyDistrict').value = '';
-    } else if (type === '15_30m') {
-      if (searchInput) searchInput.value = '20 triệu';
-      if (byId('propertyDistrict')) byId('propertyDistrict').value = '';
-    } else if (type === 'above_30m') {
-      if (searchInput) searchInput.value = '50 triệu';
-      if (byId('propertyDistrict')) byId('propertyDistrict').value = '';
-    } else if (type === 'tan_binh') {
-      if (byId('propertyDistrict')) byId('propertyDistrict').value = 'Tân Bình';
-      if (searchInput) searchInput.value = '';
-    } else if (type === 'binh_thanh') {
-      if (byId('propertyDistrict')) byId('propertyDistrict').value = 'Bình Thạnh';
-      if (searchInput) searchInput.value = '';
-    } else if (type === 'phu_nhuan') {
-      if (byId('propertyDistrict')) byId('propertyDistrict').value = 'Phú Nhuận';
-      if (searchInput) searchInput.value = '';
-    } else if (type === 'go_vap') {
-      if (byId('propertyDistrict')) byId('propertyDistrict').value = 'Gò Vấp';
-      if (searchInput) searchInput.value = '';
-    } else if (type === 'quan_1') {
-      if (byId('propertyDistrict')) byId('propertyDistrict').value = 'Quận 1';
-      if (searchInput) searchInput.value = '';
+    } else if (type === 'today') {
+      if (byId('propertyStatus')) byId('propertyStatus').value = 'active';
     }
-    if (clearBtn && searchInput) clearBtn.hidden = !searchInput.value;
     updateMobilePropertyFilters();
     loadProperties(1);
   });

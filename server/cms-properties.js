@@ -51,6 +51,8 @@ function parsePropertyListQuery(searchParams) {
     quality: ["all", "missing_data", "without_images"].includes(params.get("quality")) ? params.get("quality") : "all",
     listingType: ["rent", "sale", "all"].includes(listingTypeParam) ? listingTypeParam : "all",
     district: safeSearch(params.get("district")),
+    propertyType: safeSearch(params.get("propertyType") || params.get("property_type")),
+    priceRange: safeSearch(params.get("priceRange") || params.get("price_range")),
     page: boundedInteger(params.get("page"), 1, 1, 100000),
     pageSize: boundedInteger(params.get("pageSize"), 12, 1, 50)
   };
@@ -67,6 +69,7 @@ function buildPropertyListRoute(filters) {
   if (filters.status === "active") query.set("status", "neq.archived");
   if (filters.status === "archived") query.set("status", "eq.archived");
   if (filters.district) query.set("district", `ilike.*${filters.district}*`);
+  if (filters.propertyType) query.set("property_type", `ilike.*${filters.propertyType}*`);
   if (filters.quality === "without_images") query.set("image_count", "eq.0");
   if (filters.quality === "missing_data") disjunctions.push("(address.is.null,price_text.is.null,image_count.lt.2)");
 
@@ -76,9 +79,27 @@ function buildPropertyListRoute(filters) {
     disjunctions.push("(price_text.ilike.*tháng*,price_text.ilike.*triệu*,price_text.ilike.*\/th*,price_text.ilike.*\/thg*)");
   }
 
+  if (filters.priceRange) {
+    if (filters.priceRange === "under_15m") {
+      disjunctions.push("(price_text.ilike.*1 triệu*,price_text.ilike.*2 triệu*,price_text.ilike.*3 triệu*,price_text.ilike.*4 triệu*,price_text.ilike.*5 triệu*,price_text.ilike.*6 triệu*,price_text.ilike.*7 triệu*,price_text.ilike.*8 triệu*,price_text.ilike.*9 triệu*,price_text.ilike.*10 triệu*,price_text.ilike.*11 triệu*,price_text.ilike.*12 triệu*,price_text.ilike.*13 triệu*,price_text.ilike.*14 triệu*)");
+    } else if (filters.priceRange === "15_30m") {
+      disjunctions.push("(price_text.ilike.*15 triệu*,price_text.ilike.*16 triệu*,price_text.ilike.*17 triệu*,price_text.ilike.*18 triệu*,price_text.ilike.*19 triệu*,price_text.ilike.*20 triệu*,price_text.ilike.*22 triệu*,price_text.ilike.*25 triệu*,price_text.ilike.*28 triệu*,price_text.ilike.*30 triệu*)");
+    } else if (filters.priceRange === "above_30m") {
+      disjunctions.push("(price_text.ilike.*35 triệu*,price_text.ilike.*40 triệu*,price_text.ilike.*45 triệu*,price_text.ilike.*50 triệu*,price_text.ilike.*60 triệu*,price_text.ilike.*70 triệu*,price_text.ilike.*80 triệu*,price_text.ilike.*100 triệu*)");
+    } else if (filters.priceRange === "under_5b") {
+      disjunctions.push("(price_text.ilike.*1 tỷ*,price_text.ilike.*2 tỷ*,price_text.ilike.*3 tỷ*,price_text.ilike.*4 tỷ*)");
+    } else if (filters.priceRange === "5_10b") {
+      disjunctions.push("(price_text.ilike.*5 tỷ*,price_text.ilike.*6 tỷ*,price_text.ilike.*7 tỷ*,price_text.ilike.*8 tỷ*,price_text.ilike.*9 tỷ*,price_text.ilike.*10 tỷ*)");
+    } else if (filters.priceRange === "above_10b") {
+      disjunctions.push("(price_text.ilike.*11 tỷ*,price_text.ilike.*12 tỷ*,price_text.ilike.*15 tỷ*,price_text.ilike.*20 tỷ*,price_text.ilike.*25 tỷ*,price_text.ilike.*30 tỷ*,price_text.ilike.*50 tỷ*)");
+    }
+  }
+
   if (filters.q) {
     const pattern = `*${filters.q}*`;
-    disjunctions.push(`(address.ilike.${pattern},district.ilike.${pattern},ward.ilike.${pattern},street.ilike.${pattern},property_type.ilike.${pattern},price_text.ilike.${pattern})`);
+    const cleanDigits = String(filters.q).replace(/\D/g, "");
+    const phoneCond = cleanDigits.length >= 6 ? `,phone.ilike.*${cleanDigits}*` : "";
+    disjunctions.push(`(address.ilike.${pattern},district.ilike.${pattern},ward.ilike.${pattern},street.ilike.${pattern},property_type.ilike.${pattern},price_text.ilike.${pattern},phone.ilike.${pattern}${phoneCond})`);
   }
   if (disjunctions.length === 1) query.set("or", disjunctions[0]);
   if (disjunctions.length > 1) query.set("and", `(${disjunctions.map(value => `or${value}`).join(",")})`);

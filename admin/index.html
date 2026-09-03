@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex,nofollow">
   <meta name="theme-color" content="#283d34">
   <title>FOURLAND · Trung tâm quản trị</title>
-  <link rel="stylesheet" href="/admin/admin.css?v=20260903-ui-polish-v102">
+  <link rel="stylesheet" href="/admin/admin.css?v=20260903-filter-redesign-v103">
 </head>
 <body>
   <div id="cmsApp" class="cms-app" aria-busy="true">
@@ -279,7 +279,7 @@
                 <div class="cms-filter-row-primary">
                   <div class="cms-search-box">
                     <svg class="cms-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                    <input id="propertySearch" type="search" placeholder="Địa chỉ, quận, tên đường, loại nhà, mức giá (vd: 15tr)..." autocomplete="off">
+                    <input id="propertySearch" type="search" placeholder="Nhập SĐT chủ nhà (vd: 0933...), địa chỉ, tên đường, loại BĐS, giá..." autocomplete="off">
                     <button id="propertySearchClear" type="button" class="cms-clear-btn" aria-label="Xóa tìm kiếm" title="Xóa" hidden>
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                     </button>
@@ -292,9 +292,10 @@
                   </button>
                   
                   <div id="propertyAdvancedFilters" class="cms-filter-selects">
+                    <!-- Khu vực -->
                     <div class="cms-select-wrapper">
                       <svg class="cms-select-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                      <select id="propertyDistrict" aria-label="Quận / Huyện">
+                      <select id="propertyDistrict" aria-label="Khu vực">
                         <option value="">Tất cả khu vực</option>
                         <option value="Quận 1">Quận 1</option>
                         <option value="Quận 3">Quận 3</option>
@@ -319,15 +320,35 @@
                       </select>
                     </div>
 
+                    <!-- Loại BĐS -->
                     <div class="cms-select-wrapper">
-                      <svg class="cms-select-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                      <select id="propertyListingType" aria-label="Hình thức giao dịch">
-                        <option value="all">Tất cả (Thuê & Bán)</option>
-                        <option value="rent">Cho thuê</option>
-                        <option value="sale">Cần bán</option>
+                      <svg class="cms-select-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                      <select id="propertyTypeFilter" aria-label="Loại BĐS">
+                        <option value="">Tất cả loại BĐS</option>
+                        <option value="Mặt bằng">Mặt bằng kinh doanh</option>
+                        <option value="Nhà phố">Nhà phố / Nguyên căn</option>
+                        <option value="Căn hộ">Căn hộ / Chung cư</option>
+                        <option value="Tòa nhà">Tòa nhà / Văn phòng</option>
+                        <option value="Biệt thự">Biệt thự / Villa</option>
+                        <option value="Kho xưởng">Kho xưởng / Đất</option>
                       </select>
                     </div>
 
+                    <!-- Mức giá -->
+                    <div class="cms-select-wrapper">
+                      <svg class="cms-select-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                      <select id="propertyPriceRange" aria-label="Mức giá">
+                        <option value="">Tất cả mức giá</option>
+                        <option value="under_15m">&lt; 15 triệu/tháng</option>
+                        <option value="15_30m">15 - 30 triệu/tháng</option>
+                        <option value="above_30m">&gt; 30 triệu/tháng</option>
+                        <option value="under_5b">&lt; 5 tỷ (Nhà bán)</option>
+                        <option value="5_10b">5 - 10 tỷ (Nhà bán)</option>
+                        <option value="above_10b">&gt; 10 tỷ (Nhà bán)</option>
+                      </select>
+                    </div>
+
+                    <!-- Trạng thái -->
                     <div class="cms-select-wrapper">
                       <svg class="cms-select-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                       <select id="propertyStatus" aria-label="Trạng thái">
@@ -337,21 +358,22 @@
                       </select>
                     </div>
 
+                    <!-- Tùy chọn chất lượng -->
                     <div class="cms-select-wrapper">
                       <svg class="cms-select-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                      <select id="propertyQuality" aria-label="Chất lượng">
-                        <option value="all">Tất cả chất lượng</option>
-                        <option value="missing_data">Cần bổ sung thông tin</option>
+                      <select id="propertyQuality" aria-label="Dữ liệu">
+                        <option value="all">Tất cả dữ liệu</option>
                         <option value="without_images">Chưa có hình ảnh</option>
+                        <option value="missing_data">Cần bổ sung thông tin</option>
                       </select>
                     </div>
 
                     <div class="cms-filter-buttons">
                       <button class="cms-primary cms-btn-filter" type="submit">
-                        <svg class="cms-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-                        <span>Lọc</span>
+                        <svg class="cms-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        <span>Tìm kiếm</span>
                       </button>
-                      <button id="propertyResetFilters" class="cms-btn-reset" type="button" title="Đặt lại toàn bộ bộ lọc" aria-label="Đặt lại">
+                      <button id="propertyResetFilters" class="cms-btn-reset" type="button" title="Đặt lại bộ lọc về mặc định" aria-label="Đặt lại">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><polyline points="3 3 3 8 8 8"/></svg>
                         <span>Đặt lại</span>
                       </button>
@@ -365,13 +387,13 @@
                     <svg class="cms-chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg>
                     <span>Tất cả</span>
                   </button>
-                  <button type="button" class="cms-filter-chip" data-filter-chip="today">
-                    <svg class="cms-chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                    <span>Mới hôm nay</span>
+                  <button type="button" class="cms-filter-chip" data-filter-chip="rent">
+                    <span style="width: 7px; height: 7px; border-radius: 50%; background: #2e7d32; display: inline-block;"></span>
+                    <span>Cho thuê</span>
                   </button>
-                  <button type="button" class="cms-filter-chip" data-filter-chip="has_images">
-                    <svg class="cms-chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                    <span>Có hình ảnh</span>
+                  <button type="button" class="cms-filter-chip" data-filter-chip="sale">
+                    <span style="width: 7px; height: 7px; border-radius: 50%; background: #1565c0; display: inline-block;"></span>
+                    <span>Cần bán</span>
                   </button>
                   <button type="button" class="cms-filter-chip" data-filter-chip="mat_bang">
                     <svg class="cms-chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M3 7v14M21 7v14M6 7V3h12v4M9 21v-4h6v4"/></svg>
@@ -379,39 +401,15 @@
                   </button>
                   <button type="button" class="cms-filter-chip" data-filter-chip="nha_pho">
                     <svg class="cms-chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                    <span>Nhà phố / Căn</span>
+                    <span>Nhà phố</span>
                   </button>
-                  <button type="button" class="cms-filter-chip" data-filter-chip="under_15m">
-                    <svg class="cms-chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                    <span>&lt; 15 triệu</span>
+                  <button type="button" class="cms-filter-chip" data-filter-chip="has_images">
+                    <svg class="cms-chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                    <span>Có hình ảnh</span>
                   </button>
-                  <button type="button" class="cms-filter-chip" data-filter-chip="15_30m">
-                    <svg class="cms-chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                    <span>15 - 30 triệu</span>
-                  </button>
-                  <button type="button" class="cms-filter-chip" data-filter-chip="above_30m">
-                    <svg class="cms-chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                    <span>&gt; 30 triệu</span>
-                  </button>
-                  <button type="button" class="cms-filter-chip" data-filter-chip="tan_binh">
-                    <svg class="cms-chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                    <span>Tân Bình</span>
-                  </button>
-                  <button type="button" class="cms-filter-chip" data-filter-chip="binh_thanh">
-                    <svg class="cms-chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                    <span>Bình Thạnh</span>
-                  </button>
-                  <button type="button" class="cms-filter-chip" data-filter-chip="phu_nhuan">
-                    <svg class="cms-chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                    <span>Phú Nhuận</span>
-                  </button>
-                  <button type="button" class="cms-filter-chip" data-filter-chip="go_vap">
-                    <svg class="cms-chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                    <span>Gò Vấp</span>
-                  </button>
-                  <button type="button" class="cms-filter-chip" data-filter-chip="quan_1">
-                    <svg class="cms-chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                    <span>Quận 1 / 3</span>
+                  <button type="button" class="cms-filter-chip" data-filter-chip="today">
+                    <svg class="cms-chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    <span>Mới hôm nay</span>
                   </button>
                 </div>
               </form>
@@ -1397,6 +1395,6 @@
 
     <div id="toastContainer" class="cms-toast-container" aria-live="polite"></div>
   </div>
-  <script src="/admin/admin.js?v=20260903-ui-polish-v102" defer></script>
+  <script src="/admin/admin.js?v=20260903-filter-redesign-v103" defer></script>
 </body>
 </html>
