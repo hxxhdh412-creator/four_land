@@ -564,7 +564,17 @@ function detailRow(label, value) {
   const term = document.createElement('dt');
   const description = document.createElement('dd');
   term.textContent = label;
-  description.textContent = value === null || value === undefined || value === '' ? 'Chưa cập nhật' : String(value);
+  const textVal = value === null || value === undefined || value === '' ? 'Chưa cập nhật' : String(value);
+  if (label === 'Điện thoại' && textVal !== 'Chưa cập nhật' && !textVal.includes('*')) {
+    const cleanNum = textVal.replace(/[^0-9+]/g, '');
+    const callLink = document.createElement('a');
+    callLink.href = `tel:${cleanNum}`;
+    callLink.className = 'cms-phone-call-link';
+    callLink.innerHTML = `📞 <strong>${textVal}</strong> <span class="cms-phone-badge">Gọi ngay</span>`;
+    description.appendChild(callLink);
+  } else {
+    description.textContent = textVal;
+  }
   wrapper.append(term, description);
   return wrapper;
 }
