@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex,nofollow">
   <meta name="theme-color" content="#283d34">
   <title>FOURLAND · Trung tâm quản trị</title>
-  <link rel="stylesheet" href="/admin/admin.css?v=20260903-hide-call-btn-desktop-v106">
+  <link rel="stylesheet" href="/admin/admin.css?v=20260903-multi-channel-v107">
 </head>
 <body>
   <div id="cmsApp" class="cms-app" aria-busy="true">
@@ -1152,21 +1152,21 @@
         </header>
         <div class="cms-fb-studio-body">
           <div class="cms-fb-editor-col">
-            <div class="cms-fb-page-section" style="margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px solid var(--line);">
-              <label class="cms-fb-field" style="margin-bottom: 0;">
-                <span class="cms-fb-label" style="display:flex; justify-content:space-between; align-items:center;">
-                  <span>Đăng lên Fanpage:</span>
-                  <a href="#" id="linkManageFbPages" style="font-size:12px; color:var(--forest); font-weight:700; text-decoration:none; display:inline-flex; align-items:center; gap:5px;">
+            <div class="cms-fb-page-section">
+              <div class="cms-fb-channel-header">
+                <span class="cms-fb-label">Chọn các kênh Fanpage đăng bài:</span>
+                <div class="cms-fb-channel-quick-actions">
+                  <button type="button" id="btnFbSelectAllPages" class="cms-fb-action-link">Chọn tất cả</button>
+                  <span class="cms-fb-divider">·</span>
+                  <a href="#" id="linkManageFbPages" class="cms-fb-action-link">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-                    <span>Cấu hình Fanpage</span>
+                    <span>Cấu hình kênh</span>
                   </a>
-                </span>
-                <div class="cms-fb-select-wrapper">
-                  <select id="fbPageSelect" class="cms-select cms-fb-select">
-                    <option value="106656702112510">Ngọc Nhà Tốt [Mặc định]</option>
-                  </select>
                 </div>
-              </label>
+              </div>
+              <div id="fbChannelList" class="cms-fb-channel-list">
+                <!-- Được render động từ danh sách Fanpage -->
+              </div>
             </div>
 
             <div class="cms-fb-tone-section">
@@ -1367,6 +1367,6 @@
 
     <div id="toastContainer" class="cms-toast-container" aria-live="polite"></div>
   </div>
-  <script src="/admin/admin.js?v=20260903-hide-call-btn-desktop-v106" defer></script>
+  <script src="/admin/admin.js?v=20260903-multi-channel-v107" defer></script>
 </body>
 </html>

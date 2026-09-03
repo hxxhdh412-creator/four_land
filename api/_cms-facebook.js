@@ -85,26 +85,74 @@ function createHandler({ requireCmsImpl = requireCms, request = supabaseRequest 
           }).catch(err => console.warn("Update property content notice:", err.message));
         }
 
-        // Resolve Target Facebook Page for Publishing
-        const targetPage = (body.pageId ? await getFacebookPageById(body.pageId) : null) || await getDefaultFacebookPage();
-        const photoUrls = Array.isArray(body.images) ? body.images : [];
-        const pageName = body.pageName || targetPage?.name || "Ngọc Nhà Tốt";
-        const pageId = targetPage?.pageId || process.env.FACEBOOK_PAGE_ID || "106656702112510";
-        const pageToken = targetPage?.token || "";
+        // Resolve Target Facebook Pages for Publishing (Single or Multiple)
+        const rawPageIds = Array.isArray(body.pageIds) && body.pageIds.length > 0
+          ? body.pageIds
+          : (body.pageId ? [body.pageId] : []);
 
-        const publishResult = await publishToComposioFacebook({
-          content,
-          imageUrls: photoUrls,
-          pageName,
-          pageId,
-          pageToken,
-          apiKey: process.env.COMPOSIO_API_KEY || "ck_e4AHzIDYFZKwFT8XrkwX"
-        });
+        const photoUrls = Array.isArray(body.images) ? body.images : [];
+        const apiKey = process.env.COMPOSIO_API_KEY || "ck_e4AHzIDYFZKwFT8XrkwX";
+
+        let targetPages = [];
+        if (rawPageIds.length > 0) {
+          for (const pid of rawPageIds) {
+            const page = await getFacebookPageById(pid);
+            if (page) targetPages.push(page);
+          }
+        }
+        if (targetPages.length === 0) {
+          const defaultPage = await getDefaultFacebookPage();
+          if (defaultPage) targetPages.push(defaultPage);
+        }
+
+        // Publish across all target pages
+        const publishResults = [];
+        for (const page of targetPages) {
+          try {
+            const resPublish = await publishToComposioFacebook({
+              content,
+              imageUrls: photoUrls,
+              pageName: page.name || body.pageName || "Ngọc Nhà Tốt",
+              pageId: page.pageId || process.env.FACEBOOK_PAGE_ID || "106656702112510",
+              pageToken: page.token || "",
+              apiKey
+            });
+            publishResults.push({
+              pageId: page.pageId,
+              pageName: page.name,
+              success: true,
+              postUrl: resPublish.postUrl,
+              message: resPublish.message
+            });
+          } catch (err) {
+            publishResults.push({
+              pageId: page.pageId,
+              pageName: page.name,
+              success: false,
+              error: err.message
+            });
+          }
+        }
+
+        const successCount = publishResults.filter(r => r.success).length;
+        const failedCount = publishResults.length - successCount;
+        const primaryPostUrl = publishResults.find(r => r.success && r.postUrl)?.postUrl || null;
+
+        const summaryMsg = publishResults.length === 1
+          ? `${publishResults[0].message || "Đã xuất bản bài viết thành công"} (Đã lưu nội dung vào kho nhà)`
+          : `Đã xuất bản thành công lên ${successCount}/${publishResults.length} Fanpage! (Đã lưu nội dung vào kho nhà)`;
 
         return res.status(200).json({
-          ok: true,
-          data: publishResult,
-          message: `${publishResult.message} (Đã lưu nội dung vào kho nhà)`
+          ok: successCount > 0,
+          data: {
+            ...(publishResults[0] || {}),
+            total: publishResults.length,
+            successCount,
+            failedCount,
+            postUrl: primaryPostUrl,
+            results: publishResults
+          },
+          message: summaryMsg
         });
       }
 

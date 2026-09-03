@@ -2176,7 +2176,7 @@ function fallbackCopy(text) {
   document.body.appendChild(input);
   input.select();
   document.execCommand('copy');
-  document.body.removeChild(input);
+document.body.removeChild(input);
   showToast('Đã sao chép tin nhắn Zalo gửi khách thành công!');
 }
 
@@ -2229,33 +2229,131 @@ const fbState = {
   content: '',
   allImages: [],
   selectedImages: new Set(),
+  selectedPageIds: new Set(['106656702112510']),
   selectedPageId: '106656702112510',
   pageName: 'Ngọc Nhà Tốt',
   pages: []
 };
+
+function renderFacebookChannels() {
+  const container = byId('fbChannelList');
+  if (!container) return;
+  const pages = Array.isArray(fbState.pages) && fbState.pages.length > 0
+    ? fbState.pages
+    : (Array.isArray(fbPagesCache) && fbPagesCache.length > 0 ? fbPagesCache : [{
+        pageId: '106656702112510',
+        name: 'Ngọc Nhà Tốt',
+        isDefault: true,
+        category: 'Trang BĐS Fourland'
+      }]);
+
+  if (fbState.selectedPageIds.size === 0 && pages.length > 0) {
+    const defaultPage = pages.find(p => p.isDefault) || pages[0];
+    fbState.selectedPageIds.add(String(defaultPage.pageId));
+  }
+
+  container.innerHTML = pages.map(p => {
+    const pid = String(p.pageId);
+    const isChecked = fbState.selectedPageIds.has(pid);
+    return `
+      <label class="cms-fb-channel-card ${isChecked ? 'checked' : ''}" data-fb-channel-id="${escapeHtml(pid)}">
+        <input type="checkbox" name="fbChannel" value="${escapeHtml(pid)}" ${isChecked ? 'checked' : ''}>
+        <img class="cms-fb-card-avatar" src="https://graph.facebook.com/${escapeHtml(pid)}/picture?type=large" alt="${escapeHtml(p.name)}" onerror="this.src='https://graph.facebook.com/106656702112510/picture?type=large'">
+        <div class="cms-fb-card-info">
+          <div class="cms-fb-card-name">
+            <strong>${escapeHtml(p.name)}</strong>
+            ${p.isDefault ? '<span class="cms-fb-badge default" style="font-size:10px; padding:1px 5px; background:var(--sage); color:var(--forest); border-radius:4px; font-weight:700;">Mặc định</span>' : ''}
+          </div>
+          <span class="cms-fb-card-id">${escapeHtml(p.category || 'Fanpage Facebook')} · ID: ${escapeHtml(pid)}</span>
+        </div>
+        <span class="cms-fb-check-indicator">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+        </span>
+      </label>
+    `;
+  }).join('');
+
+  container.querySelectorAll('.cms-fb-channel-card').forEach(card => {
+    card.addEventListener('click', (e) => {
+      e.preventDefault();
+      const pid = card.dataset.fbChannelId;
+      if (fbState.selectedPageIds.has(pid)) {
+        fbState.selectedPageIds.delete(pid);
+      } else {
+        fbState.selectedPageIds.add(pid);
+      }
+      card.classList.toggle('checked', fbState.selectedPageIds.has(pid));
+      const checkbox = card.querySelector('input[type="checkbox"]');
+      if (checkbox) checkbox.checked = fbState.selectedPageIds.has(pid);
+      updatePublishButtonState();
+      updatePreviewFromChannels();
+    });
+  });
+
+  updatePublishButtonState();
+  updatePreviewFromChannels();
+}
+
+function updatePublishButtonState() {
+  const submitBtn = byId('fbSubmitBtn');
+  if (!submitBtn) return;
+  const count = fbState.selectedPageIds.size;
+  const span = submitBtn.querySelector('span');
+
+  if (count === 0) {
+    submitBtn.disabled = true;
+    if (span) span.textContent = 'Vui lòng chọn ít nhất 1 Fanpage';
+  } else if (count === 1) {
+    submitBtn.disabled = false;
+    const selectedPid = Array.from(fbState.selectedPageIds)[0];
+    const pageObj = (fbState.pages || []).find(p => String(p.pageId) === selectedPid);
+    const pName = pageObj?.name || fbState.pageName || 'Fanpage';
+    if (span) span.textContent = `Đăng lên Fanpage ${pName}`;
+  } else {
+    submitBtn.disabled = false;
+    if (span) span.textContent = `Đăng đồng thời lên ${count} Fanpage đã chọn`;
+  }
+
+  const btnSelectAll = byId('btnFbSelectAllPages');
+  if (btnSelectAll) {
+    const total = (fbState.pages || []).length || 1;
+    btnSelectAll.textContent = (count === total && total > 0) ? 'Bỏ chọn tất cả' : 'Chọn tất cả';
+  }
+}
+
+function updatePreviewFromChannels() {
+  const selectedPid = Array.from(fbState.selectedPageIds)[0];
+  if (!selectedPid) return;
+  const pageObj = (fbState.pages || []).find(p => String(p.pageId) === selectedPid);
+  const pName = pageObj?.name || 'Ngọc Nhà Tốt';
+
+  const avatarImg = document.querySelector('.fb-mock-avatar img');
+  if (avatarImg) {
+    avatarImg.src = `https://graph.facebook.com/${selectedPid}/picture?type=large`;
+    avatarImg.alt = `Avatar ${pName}`;
+    avatarImg.style.display = 'block';
+  }
+  const nameEl = document.querySelector('.fb-mock-name strong');
+  if (nameEl) nameEl.textContent = pName;
+
+  const titleEl = byId('fbDialogTitle');
+  if (titleEl) {
+    const count = fbState.selectedPageIds.size;
+    titleEl.textContent = count > 1 
+      ? `Đăng bài đồng thời lên ${count} Fanpage Facebook`
+      : `Đăng bài lên Fanpage ${pName}`;
+  }
+}
 
 async function openFacebookStudio(propertyId) {
   fbState.propertyId = propertyId;
   const dialog = byId('facebookPostDialog');
   if (!dialog) return;
 
-  // Pre-populate select from fbPagesCache if available
-  const select = byId('fbPageSelect');
-  if (select && Array.isArray(fbPagesCache) && fbPagesCache.length > 0) {
-    select.innerHTML = fbPagesCache.map(p => `
-      <option value="${p.pageId}" ${String(p.pageId) === String(fbState.selectedPageId) ? 'selected' : ''}>
-        ${escapeHtml(p.name)} ${p.isDefault ? '[Mặc định]' : ''}
-      </option>
-    `).join('');
-    select.value = fbState.selectedPageId;
-  }
-
+  renderFacebookChannels();
   byId('fbPublishStatus').textContent = 'Đang chuẩn bị bài viết…';
-  byId('fbSubmitBtn').disabled = false;
-  byId('fbSubmitBtn').innerHTML = `<svg class="cms-btn-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg><span>Đăng lên Fanpage ${escapeHtml(fbState.pageName)}</span>`;
-
   dialog.showModal();
-  await loadFacebookDraft(propertyId, fbState.tone, fbState.selectedPageId);
+  await loadFacebookDraft(propertyId, fbState.tone);
 }
 
 function closeFacebookStudio() {
@@ -2263,9 +2361,8 @@ function closeFacebookStudio() {
   if (dialog) dialog.close();
 }
 
-async function loadFacebookDraft(propertyId, tone = 'hot', pageId = null) {
+async function loadFacebookDraft(propertyId, tone = 'hot') {
   fbState.tone = tone;
-  if (pageId) fbState.selectedPageId = pageId;
 
   const contentInput = byId('fbPostContent');
   const previewText = byId('fbPreviewText');
@@ -2278,12 +2375,13 @@ async function loadFacebookDraft(propertyId, tone = 'hot', pageId = null) {
   });
 
   try {
+    const selectedPid = Array.from(fbState.selectedPageIds)[0] || '106656702112510';
     const result = await cmsApi('/api/admin/v1/facebook/draft', {
       method: 'POST',
       body: {
         propertyId,
         tone,
-        pageId: fbState.selectedPageId,
+        pageId: selectedPid,
         includeLink: byId('fbIncludeLink')?.checked !== false
       }
     });
@@ -2291,39 +2389,10 @@ async function loadFacebookDraft(propertyId, tone = 'hot', pageId = null) {
     const data = result.data;
     fbState.content = data.content;
     fbState.allImages = data.images || [];
-    fbState.selectedPageId = data.pageId || fbState.selectedPageId;
     fbState.pageName = data.pageName || 'Ngọc Nhà Tốt';
     fbState.pages = data.pages || fbState.pages;
 
-    // Populate and sync #fbPageSelect
-    const select = byId('fbPageSelect');
-    if (select && Array.isArray(fbState.pages) && fbState.pages.length > 0) {
-      select.innerHTML = fbState.pages.map(p => `
-        <option value="${p.pageId}" ${String(p.pageId) === String(fbState.selectedPageId) ? 'selected' : ''}>
-          ${escapeHtml(p.name)} ${p.isDefault ? '[Mặc định]' : ''}
-        </option>
-      `).join('');
-      select.value = fbState.selectedPageId;
-    }
-
-    // Update Mock Head in Preview
-    const avatarImg = document.querySelector('.fb-mock-avatar img');
-    if (avatarImg) {
-      avatarImg.src = `https://graph.facebook.com/${fbState.selectedPageId}/picture?type=large`;
-      avatarImg.alt = `Avatar ${fbState.pageName}`;
-      avatarImg.style.display = 'block';
-    }
-    const nameEl = document.querySelector('.fb-mock-name strong');
-    if (nameEl) nameEl.textContent = fbState.pageName;
-
-    // Update Dialog Title and Submit Button Label
-    const titleEl = byId('fbDialogTitle');
-    if (titleEl) titleEl.textContent = `Đăng bài lên Fanpage ${fbState.pageName}`;
-    const submitBtn = byId('fbSubmitBtn');
-    if (submitBtn) {
-      const span = submitBtn.querySelector('span');
-      if (span) span.textContent = `Đăng lên Fanpage ${fbState.pageName}`;
-    }
+    renderFacebookChannels();
 
     contentInput.value = data.content;
     previewText.textContent = data.content;
@@ -2333,7 +2402,10 @@ async function loadFacebookDraft(propertyId, tone = 'hot', pageId = null) {
     renderFacebookPhotoGrid();
     renderFacebookPreviewGallery();
 
-    byId('fbPublishStatus').textContent = `Sẵn sàng đăng lên Fanpage ${fbState.pageName}`;
+    const count = fbState.selectedPageIds.size;
+    byId('fbPublishStatus').textContent = count > 1 
+      ? `Sẵn sàng đăng đồng thời lên ${count} Fanpage`
+      : `Sẵn sàng đăng lên Fanpage ${fbState.pageName}`;
   } catch (error) {
     contentInput.value = '';
     previewText.textContent = `Lỗi: ${error.message}`;
@@ -2343,37 +2415,42 @@ async function loadFacebookDraft(propertyId, tone = 'hot', pageId = null) {
 
 function renderFacebookPhotoGrid() {
   const grid = byId('fbPhotoGrid');
-  const countLabel = byId('fbPhotoCount');
+  const countEl = byId('fbPhotoCount');
   if (!grid) return;
 
   grid.innerHTML = '';
-  countLabel.textContent = `Đã chọn ${fbState.selectedImages.size}/${fbState.allImages.length} ảnh`;
+  countEl.textContent = `Đã chọn ${fbState.selectedImages.size}/${fbState.allImages.length} ảnh`;
 
-  if (!fbState.allImages.length) {
-    grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--muted); font-size: 12px; padding: 10px;">Căn nhà này chưa có hình ảnh</div>';
+  if (fbState.allImages.length === 0) {
+    grid.innerHTML = '<p class="cms-meta-empty">Hồ sơ này chưa có hình ảnh đính kèm</p>';
     return;
   }
 
-  fbState.allImages.forEach((imgUrl, index) => {
-    const isSelected = fbState.selectedImages.has(imgUrl);
-    const item = document.createElement('div');
-    item.className = `cms-fb-photo-item ${isSelected ? 'selected' : ''}`;
-    item.innerHTML = `
-      <img src="${imgUrl}" alt="Ảnh ${index + 1}" loading="lazy">
-      <div class="check-badge">${isSelected ? '✓' : ''}</div>
+  fbState.allImages.forEach((url, index) => {
+    const box = document.createElement('div');
+    const isSelected = fbState.selectedImages.has(url);
+    box.className = `cms-fb-photo-item ${isSelected ? 'selected' : ''}`;
+    box.innerHTML = `
+      <img src="${escapeHtml(driveImage(url))}" alt="Ảnh ${index + 1}" onerror="this.src='/assets/brand/fourland-logo.png'">
+      <span class="cms-fb-photo-check">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+      </span>
+      ${index === 0 ? '<span class="cms-fb-photo-badge">Bìa</span>' : ''}
     `;
-
-    item.onclick = () => {
-      if (fbState.selectedImages.has(imgUrl)) {
-        fbState.selectedImages.delete(imgUrl);
+    box.addEventListener('click', () => {
+      if (fbState.selectedImages.has(url)) {
+        if (fbState.selectedImages.size === 1) {
+          alert('Bài viết phải có ít nhất 1 hình ảnh');
+          return;
+        }
+        fbState.selectedImages.delete(url);
       } else {
-        fbState.selectedImages.add(imgUrl);
+        fbState.selectedImages.add(url);
       }
       renderFacebookPhotoGrid();
       renderFacebookPreviewGallery();
-    };
-
-    grid.appendChild(item);
+    });
+    grid.appendChild(box);
   });
 }
 
@@ -2382,41 +2459,24 @@ function renderFacebookPreviewGallery() {
   if (!gallery) return;
 
   gallery.innerHTML = '';
-  const selectedList = Array.from(fbState.selectedImages);
+  const selectedArr = fbState.allImages.filter(url => fbState.selectedImages.has(url));
 
-  if (selectedList.length === 0) {
+  if (selectedArr.length === 0) {
     gallery.style.display = 'none';
     return;
   }
 
   gallery.style.display = 'grid';
-  gallery.className = 'fb-mock-gallery';
+  gallery.className = `fb-mock-gallery count-${Math.min(selectedArr.length, 5)}`;
 
-  if (selectedList.length === 1) {
-    gallery.classList.add('grid-1');
-  } else if (selectedList.length === 2) {
-    gallery.classList.add('grid-2');
-  } else if (selectedList.length === 3) {
-    gallery.classList.add('grid-3');
-  } else {
-    gallery.classList.add('grid-4');
-  }
-
-  const showImages = selectedList.slice(0, 4);
-  const remainingCount = selectedList.length - 4;
-
-  showImages.forEach((url, index) => {
+  selectedArr.slice(0, 4).forEach((url, i) => {
     const box = document.createElement('div');
-    box.className = 'fb-mock-img-box';
-    box.innerHTML = `<img src="${url}" alt="Ảnh preview" loading="lazy">`;
-
-    if (index === 3 && remainingCount > 0) {
-      const moreOverlay = document.createElement('div');
-      moreOverlay.className = 'fb-more-overlay';
-      moreOverlay.textContent = `+${remainingCount}`;
-      box.appendChild(moreOverlay);
-    }
-
+    box.className = 'fb-mock-photo';
+    const remaining = selectedArr.length - 4;
+    box.innerHTML = `
+      <img src="${escapeHtml(driveImage(url))}" alt="Xem trước ${i + 1}" onerror="this.src='/assets/brand/fourland-logo.png'">
+      ${i === 3 && remaining > 0 ? `<div class="fb-mock-more">+${remaining}</div>` : ''}
+    `;
     gallery.appendChild(box);
   });
 }
@@ -2431,9 +2491,15 @@ async function handlePublishFacebook() {
     return;
   }
 
+  const pageIds = Array.from(fbState.selectedPageIds);
+  if (pageIds.length === 0) {
+    alert('Vui lòng chọn ít nhất một Fanpage để đăng bài!');
+    return;
+  }
+
   submitBtn.disabled = true;
-  submitBtn.innerHTML = `<svg class="cms-btn-icon spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg><span>Đang xuất bản lên Facebook…</span>`;
-  statusNote.textContent = 'Đang xuất bản bài viết…';
+  submitBtn.innerHTML = `<svg class="cms-btn-icon spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg><span>Đang xuất bản lên ${pageIds.length} Fanpage…</span>`;
+  statusNote.textContent = `Đang xuất bản bài viết lên ${pageIds.length} Fanpage…`;
 
   try {
     const result = await cmsApi('/api/admin/v1/facebook/publish', {
@@ -2442,15 +2508,13 @@ async function handlePublishFacebook() {
         propertyId: fbState.propertyId,
         content,
         images: Array.from(fbState.selectedImages),
-        pageId: fbState.selectedPageId,
-        pageName: fbState.pageName
+        pageIds: pageIds
       }
     });
 
     statusNote.textContent = result.message || 'Đã đăng thành công!';
     submitBtn.innerHTML = `<svg class="cms-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span>Đã xuất bản & Lưu thành công</span>`;
 
-    // Auto-update current property detail in UI
     if (fbState.propertyId) {
       if (cmsState.currentProperty && cmsState.currentProperty.id === fbState.propertyId) {
         cmsState.currentProperty.raw_text = content;
@@ -2460,13 +2524,20 @@ async function handlePublishFacebook() {
       openPropertyDetail(fbState.propertyId);
     }
 
-    // Show toast with Facebook link
-    if (result.data?.postUrl) {
-      if (confirm(`${result.message || `Đã xuất bản thành công lên Fanpage ${fbState.pageName}!`}\n\nBạn có muốn mở xem bài viết trên Facebook không?`)) {
-        window.open(result.data.postUrl, '_blank');
+    const results = result.data?.results || [];
+    const successfulPages = results.filter(r => r.success);
+    if (successfulPages.length > 0) {
+      let reportMsg = result.message || `Đã xuất bản thành công lên ${successfulPages.length} Fanpage!\n`;
+      if (successfulPages.length === 1 && successfulPages[0].postUrl) {
+        if (confirm(`${reportMsg}\n\nBạn có muốn mở xem bài viết trên Facebook không?`)) {
+          window.open(successfulPages[0].postUrl, '_blank');
+        }
+      } else {
+        const links = successfulPages.map(p => `• ${p.pageName}: ${p.postUrl || 'Thành công'}`).join('\n');
+        alert(`${reportMsg}\n\nChi tiết bài đăng:\n${links}`);
       }
     } else {
-      alert(result.message || 'Đã đăng bài thành công lên Facebook!');
+      alert(result.message || 'Đã xuất bản bài viết!');
     }
 
     setTimeout(closeFacebookStudio, 1500);

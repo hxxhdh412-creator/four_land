@@ -2877,6 +2877,154 @@ strong.req {
   gap: 16px;
 }
 
+.cms-fb-page-section {
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+}
+
+.cms-fb-channel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.cms-fb-channel-header .cms-fb-label {
+  margin-bottom: 0;
+}
+
+.cms-fb-channel-quick-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.cms-fb-action-link {
+  background: transparent;
+  border: none;
+  color: var(--forest);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.cms-fb-action-link:hover {
+  text-decoration: underline;
+  color: var(--orange);
+}
+
+.cms-fb-divider {
+  color: var(--line);
+  font-weight: 700;
+}
+
+.cms-fb-channel-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 180px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.cms-fb-channel-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border: 1.5px solid var(--line);
+  border-radius: 8px;
+  background: #fafbfa;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.cms-fb-channel-card:hover {
+  background: #ffffff;
+  border-color: #cbd5e1;
+}
+
+.cms-fb-channel-card.checked {
+  background: #f0f7ff;
+  border-color: #1877f2;
+}
+
+.cms-fb-channel-card input[type="checkbox"] {
+  display: none;
+}
+
+.cms-fb-card-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.cms-fb-card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.cms-fb-card-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.cms-fb-card-name strong {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cms-fb-card-id {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.cms-fb-check-indicator {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1.5px solid #cbd5e1;
+  background: #ffffff;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.cms-fb-check-indicator svg {
+  width: 12px;
+  height: 12px;
+  stroke: #ffffff;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.cms-fb-channel-card.checked .cms-fb-check-indicator {
+  background: #1877f2;
+  border-color: #1877f2;
+}
+
+.cms-fb-channel-card.checked .cms-fb-check-indicator svg {
+  opacity: 1;
+}
+
 .cms-fb-label {
   display: block;
   font-size: 12px;
