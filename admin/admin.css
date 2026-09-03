@@ -1257,6 +1257,11 @@ body:not(.authenticated) .cms-main {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.03em;
+  white-space: nowrap;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .cms-badge.warn {
@@ -5470,10 +5475,64 @@ body:not(.authenticated) .cms-sidebar-toggle,
   /* Web PINs: phone-optimized stacked layout */
   [data-page-panel="web-pins"] .cms-heading {
     margin-bottom: 12px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
   }
 
   [data-page-panel="web-pins"] .cms-heading h1 {
     font-size: 22px !important;
+    line-height: 1.2 !important;
+  }
+
+  [data-page-panel="web-pins"] #btnRandomPins {
+    width: 100% !important;
+    min-height: 42px !important;
+    justify-content: center !important;
+    font-size: 13px !important;
+    border-radius: 8px !important;
+    margin: 0 !important;
+  }
+
+  [data-page-panel="web-pins"] .cms-surface[style*="border-left"] {
+    padding: 12px 14px !important;
+    gap: 10px !important;
+    margin-bottom: 16px !important;
+  }
+
+  [data-page-panel="web-pins"] .cms-surface[style*="border-left"] > div:last-child {
+    font-size: 12.5px !important;
+    line-height: 1.5 !important;
+  }
+
+  [data-page-panel="web-pins"] .cms-surface {
+    padding: 14px !important;
+    border-radius: 12px !important;
+  }
+
+  [data-page-panel="web-pins"] .cms-surface > header {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 6px !important;
+    margin-bottom: 14px !important;
+    padding-bottom: 12px !important;
+  }
+
+  [data-page-panel="web-pins"] .cms-surface > header strong {
+    font-size: 15px !important;
+    line-height: 1.3 !important;
+  }
+
+  [data-page-panel="web-pins"] .cms-surface > header span {
+    font-size: 12px !important;
+    line-height: 1.4 !important;
+  }
+
+  [data-page-panel="web-pins"] #pinLastUpdated {
+    margin-top: 2px !important;
+    font-size: 10.5px !important;
+    white-space: nowrap !important;
   }
 
   [data-page-panel="web-pins"] form > div:first-child {
@@ -5481,9 +5540,40 @@ body:not(.authenticated) .cms-sidebar-toggle,
     gap: 14px !important;
   }
 
-  [data-page-panel="web-pins"] .cms-surface {
-    padding: 16px !important;
-    border-radius: 12px !important;
+  [data-page-panel="web-pins"] .cms-surface .cms-surface > div:first-child {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    gap: 6px !important;
+    margin-bottom: 12px !important;
+  }
+
+  [data-page-panel="web-pins"] .cms-surface .cms-surface > div:first-child strong {
+    font-size: 13.5px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  [data-page-panel="web-pins"] .cms-surface .cms-surface > div:first-child .cms-badge {
+    font-size: 10px !important;
+    padding: 2px 7px !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+  }
+
+  [data-page-panel="web-pins"] .cms-health-list div {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 5px 0 !important;
+    font-size: 12px !important;
+  }
+
+  [data-page-panel="web-pins"] .cms-health-list b {
+    font-size: 11px !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
   }
 
   [data-page-panel="web-pins"] input {
