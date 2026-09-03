@@ -1854,12 +1854,12 @@ body.selection-mode-active .card-select-wrap,
 }
 
 .fb-portal-photo-add {
+  display: none !important; /* Ẩn hoàn toàn trên giao diện máy tính */
   position: relative;
   aspect-ratio: 1;
   border-radius: 4px;
   border: 1.5px dashed #94a3b8;
   background: #ffffff;
-  display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
@@ -2151,6 +2151,9 @@ body.selection-mode-active .card-select-wrap,
     font-size: 13px !important;
     border-radius: 7px !important;
     padding: 0 10px !important;
+  }
+  .fb-portal-photo-add {
+    display: flex !important; /* Giữ nguyên 100% trên giao diện điện thoại */
   }
 }
 
