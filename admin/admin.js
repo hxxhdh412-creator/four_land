@@ -17,6 +17,7 @@ const cmsState = {
   usersLoaded: false
 };
 const byId = id => document.getElementById(id);
+const escapeHtml = value => String(value || '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
 
 function getPageFromUrl() {
   const params = new URLSearchParams(window.location.search);
