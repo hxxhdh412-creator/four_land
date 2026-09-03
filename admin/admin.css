@@ -1678,15 +1678,21 @@ body:not(.authenticated) .cms-main {
 }
 
 .cms-phone-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 3px 8px;
-  background: var(--forest);
-  color: #ffffff;
-  border-radius: 6px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
+  display: none; /* Ẩn hoàn toàn trên giao diện máy tính */
+}
+
+@media (max-width: 768px) {
+  .cms-phone-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 6px;
+    background: var(--forest);
+    color: #ffffff;
+    border-radius: 4px;
+    font-size: 10.5px;
+    font-weight: 700;
+    margin-left: 4px;
+  }
 }
 
 /* ==========================================================================
