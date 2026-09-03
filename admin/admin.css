@@ -1269,6 +1269,55 @@ body:not(.authenticated) .cms-main {
   color: #a85b20;
 }
 
+.cms-badge.cms-badge-rent {
+  background: #e8f5e9;
+  color: #1b5e20;
+  border: 1px solid #c8e6c9;
+}
+
+.cms-badge.cms-badge-sale {
+  background: #e3f2fd;
+  color: #0d47a1;
+  border: 1px solid #bbdefb;
+}
+
+.cms-listing-segmented {
+  display: inline-flex;
+  align-items: center;
+  background: #f0f4f1;
+  padding: 3px;
+  border-radius: 9px;
+  gap: 3px;
+  border: 1px solid var(--line);
+}
+
+.cms-listing-seg-btn {
+  border: 0;
+  background: transparent;
+  padding: 6px 14px;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.cms-listing-seg-btn:hover {
+  color: var(--forest);
+}
+
+.cms-listing-seg-btn.active {
+  background: #ffffff;
+  color: var(--forest);
+  font-weight: 700;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
 .cms-property-body h2 {
   min-height: 42px;
   margin: 0;

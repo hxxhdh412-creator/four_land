@@ -405,6 +405,11 @@ function createPropertyCard(item) {
   body.className = 'cms-property-body';
   const badges = document.createElement('div');
   badges.className = 'cms-property-badges';
+  const typeBadge = document.createElement('span');
+  const isSale = item.listingType === 'sale';
+  typeBadge.className = isSale ? 'cms-badge cms-badge-sale' : 'cms-badge cms-badge-rent';
+  typeBadge.textContent = isSale ? 'Cần bán' : 'Cho thuê';
+  badges.append(typeBadge);
   const status = document.createElement('span');
   status.className = 'cms-badge';
   status.textContent = statusLabel(item.status);
@@ -528,7 +533,11 @@ function createPropertyTableRow(item) {
 
   // Type
   const tdType = document.createElement('td');
-  tdType.textContent = item.propertyType || 'Chưa rõ';
+  const isSaleRow = item.listingType === 'sale';
+  tdType.innerHTML = `
+    <div>${escapeHtml(item.propertyType || 'Chưa rõ')}</div>
+    <span class="cms-badge ${isSaleRow ? 'cms-badge-sale' : 'cms-badge-rent'}" style="font-size: 10.5px; padding: 2px 7px; margin-top: 4px; display: inline-block;">${isSaleRow ? 'Cần bán' : 'Cho thuê'}</span>
+  `;
 
   // Specs
   const tdSpecs = document.createElement('td');
@@ -632,6 +641,7 @@ async function openPropertyDetail(id) {
       gallery.replaceChildren(empty);
     }
     byId('detailFacts').replaceChildren(
+      detailRow('Hình thức', item.listingType === 'sale' ? 'Cần bán' : 'Cho thuê'),
       detailRow('Loại bất động sản', item.propertyType), detailRow('Giá', item.price),
       detailRow('Diện tích', item.area), detailRow('Kích thước', item.dimensions),
       detailRow('Phòng ngủ', item.bedrooms), detailRow('Phòng tắm', item.bathrooms),
@@ -680,9 +690,10 @@ function setEditFormVisible(visible) {
   if (!visible || !cmsState.currentProperty) return;
   const item = cmsState.currentProperty;
   for (const [name, value] of Object.entries({
-    address: item.address, property_type: item.propertyType, price_text: item.price,
-    area_text: item.area, dimensions: item.dimensions, phone: item.phone, bedrooms: item.bedrooms, bathrooms: item.bathrooms,
-    legal: item.legal, structure: item.structure, notes: item.notes
+    address: item.address, property_type: item.propertyType,
+    listing_type: item.listingType || (String(item.price || '').includes('tỷ') ? 'sale' : 'rent'),
+    price_text: item.price, area_text: item.area, dimensions: item.dimensions, phone: item.phone,
+    bedrooms: item.bedrooms, bathrooms: item.bathrooms, legal: item.legal, structure: item.structure, notes: item.notes
   })) {
     if (form.elements[name]) form.elements[name].value = value ?? '';
   }
@@ -775,9 +786,11 @@ async function loadProperties(page = cmsState.propertyPage) {
   }
 
   const districtFilter = byId('propertyDistrict')?.value || '';
+  const listingTypeFilter = cmsState.currentListingType || byId('propertyListingType')?.value || 'all';
   const params = new URLSearchParams({
     q: (byId('propertySearch')?.value || '').trim(),
     district: districtFilter,
+    listingType: listingTypeFilter,
     status: byId('propertyStatus')?.value || 'active',
     quality: byId('propertyQuality')?.value || 'all',
     page: String(page),
@@ -1542,6 +1555,28 @@ if (byId('propertyFilters')) {
 }
 
 if (byId('propertyDistrict')) byId('propertyDistrict').addEventListener('change', () => { updateMobilePropertyFilters(); loadProperties(1); });
+if (byId('propertyListingType')) {
+  byId('propertyListingType').addEventListener('change', (e) => {
+    const val = e.target.value;
+    cmsState.currentListingType = val;
+    document.querySelectorAll('.cms-listing-seg-btn').forEach(b => {
+      b.classList.toggle('active', (b.dataset.listingFilter || 'all') === val);
+    });
+    updateMobilePropertyFilters();
+    loadProperties(1);
+  });
+}
+
+document.querySelectorAll('.cms-listing-seg-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const val = btn.dataset.listingFilter || 'all';
+    cmsState.currentListingType = val;
+    document.querySelectorAll('.cms-listing-seg-btn').forEach(b => b.classList.toggle('active', b === btn));
+    if (byId('propertyListingType')) byId('propertyListingType').value = val;
+    updateMobilePropertyFilters();
+    loadProperties(1);
+  });
+});
 if (byId('propertyStatus')) byId('propertyStatus').addEventListener('change', () => { updateMobilePropertyFilters(); loadProperties(1); });
 if (byId('propertyQuality')) byId('propertyQuality').addEventListener('change', () => { updateMobilePropertyFilters(); loadProperties(1); });
 if (byId('propertySort')) byId('propertySort').addEventListener('change', () => loadProperties(1));
@@ -1551,6 +1586,9 @@ if (byId('propertyResetFilters')) {
     if (searchInput) searchInput.value = '';
     if (clearBtn) clearBtn.hidden = true;
     if (byId('propertyDistrict')) byId('propertyDistrict').value = '';
+    if (byId('propertyListingType')) byId('propertyListingType').value = 'all';
+    cmsState.currentListingType = 'all';
+    document.querySelectorAll('.cms-listing-seg-btn').forEach(b => b.classList.toggle('active', (b.dataset.listingFilter || 'all') === 'all'));
     if (byId('propertyStatus')) byId('propertyStatus').value = 'active';
     if (byId('propertyQuality')) byId('propertyQuality').value = 'all';
     if (byId('propertySort')) byId('propertySort').value = 'newest';

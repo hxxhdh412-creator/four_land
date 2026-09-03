@@ -21,12 +21,35 @@ test("property list route applies pagination and server filters", () => {
 });
 
 test("normalizes a safe CMS list item without contact or raw source", () => {
-  const item = normalizePropertyListItem({ property_id: "BDS-1", address: "123 Lê Lợi", phone: "0900", raw_text: "secret", image_count: 1, property_images: [{ position: 1, public_url: "https://img" }] });
+  const item = normalizePropertyListItem({ property_id: "BDS-1", address: "123 Lê Lợi", price_text: "35 triệu/tháng", phone: "0900", raw_text: "secret", image_count: 1, property_images: [{ position: 1, public_url: "https://img" }] });
   assert.equal(item.id, "BDS-1");
   assert.equal(item.coverImage, "https://img");
   assert.equal(item.bedrooms, null);
+  assert.equal(item.listingType, "rent");
+  assert.equal(item.listingTypeLabel, "Cho thuê");
   assert.equal(Object.hasOwn(item, "phone"), false);
   assert.equal(Object.hasOwn(item, "raw_text"), false);
+});
+
+test("infers listing type correctly for rent and sale", () => {
+  const { inferListingType } = require("../server/cms-properties");
+  assert.equal(inferListingType({ price_text: "35 triệu/tháng" }), "rent");
+  assert.equal(inferListingType({ price_text: "15.5 tỷ" }), "sale");
+  assert.equal(inferListingType({ price_text: "Thỏa thuận", raw_text: "Cần bán gấp nhà mặt tiền" }), "sale");
+  assert.equal(inferListingType({ listing_type: "sale" }), "sale");
+  assert.equal(inferListingType({ data_json: { listing_type: "rent" } }), "rent");
+});
+
+test("filters query supports listingType param and route builder applies it", () => {
+  const parsedRent = parsePropertyListQuery("listingType=rent");
+  assert.equal(parsedRent.listingType, "rent");
+  const routeRent = buildPropertyListRoute(parsedRent);
+  assert.match(decodeURIComponent(routeRent), /triệu/);
+
+  const parsedSale = parsePropertyListQuery("listingType=sale");
+  assert.equal(parsedSale.listingType, "sale");
+  const routeSale = buildPropertyListRoute(parsedSale);
+  assert.match(decodeURIComponent(routeSale), /tỷ/);
 });
 
 test("property list endpoint is permission guarded and paginated", async () => {

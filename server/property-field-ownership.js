@@ -2,7 +2,7 @@ const LEGACY_CMS_STATUSES = new Set(["ready", "featured", "rented", "archived"])
 
 const OVERRIDABLE_FIELDS = new Set([
   "address", "district", "ward", "street",
-  "property_type", "area_text", "area_number", "dimensions",
+  "property_type", "listing_type", "area_text", "area_number", "dimensions",
   "bedrooms", "bathrooms", "structure", "legal",
   "price_text", "price_number", "commission",
   "phone", "notes", "raw_text", "normalized_text"

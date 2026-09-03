@@ -60,7 +60,8 @@ function createHandler({ requireCmsImpl = requireCms, request = supabaseRequest 
         data_json: {
           source: "manual_cms",
           created_by: principal.displayName || principal.id,
-          created_at: now
+          created_at: now,
+          listing_type: text(body.listing_type, 30) || (String(body.price_text || "").includes("tỷ") ? "sale" : "rent")
         }
       };
 

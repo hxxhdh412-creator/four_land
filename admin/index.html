@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex,nofollow">
   <meta name="theme-color" content="#283d34">
   <title>FOURLAND · Trung tâm quản trị</title>
-  <link rel="stylesheet" href="/admin/admin.css?v=20260903-luxury-web-pins-v98">
+  <link rel="stylesheet" href="/admin/admin.css?v=20260903-listing-type-v99">
 </head>
 <body>
   <div id="cmsApp" class="cms-app" aria-busy="true">
@@ -249,10 +249,25 @@
                 <h1>Quản lý hồ sơ</h1>
                 <p>Tìm kiếm, quản lý và thêm mới bất động sản vào kho dữ liệu.</p>
               </div>
-              <button id="btnCreatePropertyPage" class="cms-primary" type="button">
-                <svg class="cms-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                <span>Thêm hồ sơ</span>
-              </button>
+              <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                <div class="cms-listing-segmented" role="tablist" aria-label="Loại giao dịch">
+                  <button type="button" class="cms-listing-seg-btn active" data-listing-filter="all">
+                    <span>Tất cả</span>
+                  </button>
+                  <button type="button" class="cms-listing-seg-btn" data-listing-filter="rent">
+                    <span style="width: 8px; height: 8px; border-radius: 50%; background: #2e7d32; display: inline-block;"></span>
+                    <span>Cho thuê</span>
+                  </button>
+                  <button type="button" class="cms-listing-seg-btn" data-listing-filter="sale">
+                    <span style="width: 8px; height: 8px; border-radius: 50%; background: #1565c0; display: inline-block;"></span>
+                    <span>Cần bán</span>
+                  </button>
+                </div>
+                <button id="btnCreatePropertyPage" class="cms-primary" type="button">
+                  <svg class="cms-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  <span>Thêm hồ sơ</span>
+                </button>
+              </div>
             </div>
             <div class="cms-filter-card">
               <form id="propertyFilters" class="cms-filterbar">
@@ -296,6 +311,15 @@
                         <option value="Nhà Bè">Huyện Nhà Bè</option>
                         <option value="Hóc Môn">Huyện Hóc Môn</option>
                         <option value="Bình Chánh">Huyện Bình Chánh</option>
+                      </select>
+                    </div>
+
+                    <div class="cms-select-wrapper">
+                      <svg class="cms-select-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                      <select id="propertyListingType" aria-label="Hình thức giao dịch">
+                        <option value="all">Tất cả (Thuê & Bán)</option>
+                        <option value="rent">Cho thuê</option>
+                        <option value="sale">Cần bán</option>
                       </select>
                     </div>
 
@@ -785,6 +809,13 @@
             <div class="cms-edit-grid">
               <label class="wide"><span>Địa chỉ</span><input name="address" maxlength="300"></label>
               <label><span>Loại bất động sản</span><input name="property_type" maxlength="120"></label>
+              <label>
+                <span>Hình thức giao dịch</span>
+                <select name="listing_type">
+                  <option value="rent">Cho thuê</option>
+                  <option value="sale">Cần bán</option>
+                </select>
+              </label>
               <label><span>Giá</span><input name="price_text" maxlength="100"></label>
               <label><span>Diện tích</span><input name="area_text" maxlength="100"></label>
               <label><span>Kích thước</span><input name="dimensions" maxlength="100"></label>
@@ -853,6 +884,13 @@
                     <option value="Đất thổ cư">Đất thổ cư</option>
                     <option value="Kho xưởng">Kho xưởng</option>
                     <option value="Khác">Khác</option>
+                  </select>
+                </label>
+                <label>
+                  <span>Hình thức giao dịch</span>
+                  <select name="listing_type">
+                    <option value="rent">Cho thuê</option>
+                    <option value="sale">Cần bán</option>
                   </select>
                 </label>
               </div>
@@ -1272,6 +1310,6 @@
 
     <div id="toastContainer" class="cms-toast-container" aria-live="polite"></div>
   </div>
-  <script src="/admin/admin.js?v=20260903-luxury-web-pins-v98" defer></script>
+  <script src="/admin/admin.js?v=20260903-listing-type-v99" defer></script>
 </body>
 </html>

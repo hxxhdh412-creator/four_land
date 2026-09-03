@@ -1,8 +1,10 @@
+const { inferListingType } = require("./cms-properties");
+
 const DETAIL_FIELDS = [
   "property_id", "status", "property_type", "address", "district", "ward", "street",
   "area_text", "area_number", "dimensions", "bedrooms", "bathrooms", "structure",
   "price_text", "legal", "commission", "notes", "phone", "raw_text", "image_count",
-  "received_at", "updated_at", "property_images(position,public_url)"
+  "received_at", "updated_at", "data_json", "property_images(position,public_url)"
 ].join(",");
 
 function validPropertyId(value) {
@@ -32,9 +34,13 @@ function normalizePropertyDetail(row, { includeSensitive = false } = {}) {
         .map(image => ({ position: Number(image.position), url: driveImage(image.public_url || image.source_url) }))
         .filter(image => image.url)
     : [];
+  const listingType = inferListingType(row);
   const detail = {
     id: String(row?.property_id || ""), status: String(row?.status || "partial"),
-    propertyType: row?.property_type || "Bất động sản", address: row?.address || "Chưa có địa chỉ",
+    propertyType: row?.property_type || "Bất động sản",
+    listingType,
+    listingTypeLabel: listingType === "sale" ? "Bán" : "Cho thuê",
+    address: row?.address || "Chưa có địa chỉ",
     district: row?.district || "", ward: row?.ward || "", street: row?.street || "",
     area: row?.area_text || "", areaNumber: row?.area_number ?? null, dimensions: row?.dimensions || "",
     bedrooms: Number(row?.bedrooms) > 0 ? Number(row.bedrooms) : null,
@@ -52,3 +58,4 @@ function normalizePropertyDetail(row, { includeSensitive = false } = {}) {
 }
 
 module.exports = { DETAIL_FIELDS, buildPropertyDetailRoute, normalizePropertyDetail, validPropertyId };
+
