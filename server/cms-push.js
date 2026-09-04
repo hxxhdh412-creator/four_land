@@ -157,14 +157,15 @@ async function handlePushApi(req, res) {
 
   // Auth check
   const { isAdmin } = require("../api/_admin");
-  const { requireCms } = require("../api/_cms-auth");
-  const { ACTIONS } = require("./cms-authorization");
+  const { cmsPrincipal } = require("../api/_cms-auth");
 
   let authorized = isAdmin(req);
   if (!authorized) {
     try {
-      const principal = await requireCms(req, res, ACTIONS.PROPERTY_MUTATE);
-      if (principal) authorized = true;
+      const principal = await cmsPrincipal(req);
+      if (principal && ["super_admin", "manager", "editor", "sales"].includes(principal.role)) {
+        authorized = true;
+      }
     } catch (_) {}
   }
 
