@@ -80,9 +80,11 @@ async function sendPushNotification({ title, message, url, imageUrl, propertyId 
       en: cleanMessage,
       vi: cleanMessage
     },
-    url: targetUrl,
     web_url: targetUrl,
-    app_url: targetUrl
+    app_url: targetUrl,
+    data: {
+      url: targetUrl
+    }
   };
 
   if (targetImage && targetImage.startsWith("http")) {

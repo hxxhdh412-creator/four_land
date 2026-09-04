@@ -60,8 +60,10 @@ test("sendPushNotification normalizes #q=BDS-... URLs to direct canonical proper
 
     assert.equal(res.ok, true);
     assert.ok(sentPayload);
-    assert.equal(sentPayload.url, "https://www.fourland.vn/bat-dong-san/bds--BDS-20260904-410EBD11");
+    assert.equal(sentPayload.url, undefined);
     assert.equal(sentPayload.web_url, "https://www.fourland.vn/bat-dong-san/bds--BDS-20260904-410EBD11");
+    assert.equal(sentPayload.app_url, "https://www.fourland.vn/bat-dong-san/bds--BDS-20260904-410EBD11");
+    assert.equal(sentPayload.data?.url, "https://www.fourland.vn/bat-dong-san/bds--BDS-20260904-410EBD11");
   } finally {
     globalThis.fetch = originalFetch;
   }
