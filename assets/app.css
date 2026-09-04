@@ -2658,6 +2658,218 @@ body.selection-mode-active .card-select-wrap,
   }
 }
 
+/* ========================================================================== */
+/* FLOATING CONTACT WIDGET (SPEED DIAL) */
+/* ========================================================================== */
+.floating-contact-widget {
+  position: fixed;
+  bottom: 26px;
+  right: 24px;
+  z-index: 990;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+  pointer-events: none;
+}
 
+body.detail-modal-open .floating-contact-widget,
+dialog#detail[open] ~ .floating-contact-widget {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
 
+.floating-contact-trigger {
+  position: relative;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--forest, #123c32) 0%, #1a4d40 100%);
+  border: 1.5px solid rgba(239, 101, 9, 0.45);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 20px rgba(18, 60, 50, 0.35);
+  cursor: pointer;
+  pointer-events: auto;
+  transition: transform 0.24s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.24s ease;
+  user-select: none;
+  padding: 0;
+}
 
+.floating-contact-trigger:hover {
+  transform: scale(1.08);
+  box-shadow: 0 10px 28px rgba(18, 60, 50, 0.45);
+  border-color: var(--orange, #ef6509);
+}
+
+.floating-contact-trigger:active {
+  transform: scale(0.94);
+}
+
+.floating-trigger-pulse {
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 2px solid rgba(239, 101, 9, 0.5);
+  animation: floatingPulse 2.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite;
+  pointer-events: none;
+}
+
+@keyframes floatingPulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  60% {
+    transform: scale(1.4);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.4);
+    opacity: 0;
+  }
+}
+
+.floating-icon-state {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  transition: transform 0.25s cubic-bezier(0.2, 0, 0.2, 1), opacity 0.22s ease;
+}
+
+.floating-icon-state.icon-open {
+  opacity: 1;
+  transform: rotate(0deg) scale(1);
+}
+
+.floating-icon-state.icon-close {
+  opacity: 0;
+  transform: rotate(-90deg) scale(0.6);
+}
+
+.floating-contact-widget.active .floating-icon-state.icon-open {
+  opacity: 0;
+  transform: rotate(90deg) scale(0.6);
+}
+
+.floating-contact-widget.active .floating-icon-state.icon-close {
+  opacity: 1;
+  transform: rotate(0deg) scale(1);
+}
+
+.floating-contact-widget.active .floating-trigger-pulse {
+  animation: none;
+  opacity: 0;
+}
+
+/* Floating Menu Items */
+.floating-contact-menu {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.floating-contact-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  opacity: 0;
+  transform: translateY(14px) scale(0.85);
+  transition: transform 0.22s cubic-bezier(0.34, 1.4, 0.64, 1), opacity 0.18s ease;
+  pointer-events: none;
+}
+
+.floating-contact-widget.active .floating-contact-item {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.floating-contact-widget.active .floating-contact-item:nth-child(1) {
+  transition-delay: 0.08s;
+}
+.floating-contact-widget.active .floating-contact-item:nth-child(2) {
+  transition-delay: 0.04s;
+}
+.floating-contact-widget.active .floating-contact-item:nth-child(3) {
+  transition-delay: 0s;
+}
+
+.floating-item-label {
+  background: rgba(18, 60, 50, 0.94);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: #ffffff;
+  font-family: var(--font-sans, "Manrope", sans-serif);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: 20px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+  white-space: nowrap;
+  letter-spacing: -0.01em;
+  transition: background 0.18s ease, transform 0.18s ease;
+}
+
+.floating-contact-item:hover .floating-item-label {
+  background: var(--forest, #123c32);
+  transform: translateX(-3px);
+}
+
+.floating-item-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+  transition: transform 0.2s cubic-bezier(0.34, 1.5, 0.64, 1), box-shadow 0.2s ease;
+  flex-shrink: 0;
+}
+
+.floating-contact-item:hover .floating-item-icon {
+  transform: scale(1.1);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+}
+
+.floating-contact-item.item-zalo .floating-item-icon {
+  background: #0068ff;
+}
+
+.floating-contact-item.item-phone .floating-item-icon {
+  background: linear-gradient(135deg, #ef6509 0%, #d85705 100%);
+}
+
+.floating-contact-item.item-fb .floating-item-icon {
+  background: #1877f2;
+}
+
+@media (max-width: 760px) {
+  .floating-contact-widget {
+    bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+    right: 16px;
+    gap: 10px;
+  }
+  .floating-contact-trigger {
+    width: 48px;
+    height: 48px;
+  }
+  .floating-item-icon {
+    width: 40px;
+    height: 40px;
+  }
+  .floating-item-label {
+    font-size: 11.5px;
+    padding: 4px 10px;
+  }
+}

@@ -609,6 +609,9 @@ function renderSimilarPropertiesHtml(similarList) {
 
 async function openDetail(id,seoPath=''){
   const dialog=$('detail');state.currentPropertyId=id;$('detailId').textContent=id;
+  document.body.classList.add('detail-modal-open');
+  const floatingWidget = $('floatingContactWidget');
+  if (floatingWidget) floatingWidget.classList.remove('active');
   $('detailBody').innerHTML=`
     <div class="detail-loader">
       <div class="luxury-spinner-wrap">
@@ -1046,6 +1049,7 @@ let searchTimer;const scheduleLoad=(delay=250)=>{clearTimeout(searchTimer);state
 
 function closeDetailModal(){
   $('detail').close();
+  document.body.classList.remove('detail-modal-open');
   state.currentPropertyId=null;
   document.title=DEFAULT_PAGE_TITLE;
   const script=$('propertyJsonLd');
@@ -1054,6 +1058,24 @@ function closeDetailModal(){
 }
 $('closeDetail').onclick=closeDetailModal;
 $('detail').onclick=event=>{if(event.target===$('detail'))closeDetailModal()};
+$('detail').addEventListener('close',()=>document.body.classList.remove('detail-modal-open'));
+
+// Floating Contact Speed Dial Widget
+const floatingWidget = $('floatingContactWidget');
+const floatingTrigger = $('floatingContactTrigger');
+if (floatingWidget && floatingTrigger) {
+  floatingTrigger.onclick = (e) => {
+    e.stopPropagation();
+    const isActive = floatingWidget.classList.toggle('active');
+    floatingTrigger.setAttribute('aria-expanded', String(isActive));
+  };
+  document.addEventListener('click', (e) => {
+    if (floatingWidget.classList.contains('active') && !floatingWidget.contains(e.target)) {
+      floatingWidget.classList.remove('active');
+      floatingTrigger.setAttribute('aria-expanded', 'false');
+    }
+  });
+}
 
 function handleSearchFromHash(){
   const hash=window.location.hash;
