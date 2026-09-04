@@ -30,9 +30,21 @@ function createHandler({ request = supabaseRequest, render = renderPropertyPage 
       const canonicalSlug = canonicalPath.slice(canonicalPath.lastIndexOf("/") + 1);
       if (value(requestSlug) !== canonicalSlug) return res.redirect(308, canonicalPath);
 
+      let similarProperties = [];
+      try {
+        const districtFilter = property.district ? `district=eq.${encodeURIComponent(property.district)}&` : "";
+        const simQuery = `properties?select=property_id,address,street,ward,district,price_text,area_text,dimensions,structure,property_type,property_images(position,public_url,source_url)&${districtFilter}property_id=neq.${encodeURIComponent(property.property_id)}&status=neq.archived&order=updated_at.desc&limit=4`;
+        const simResult = await request(simQuery);
+        similarProperties = simResult.data || [];
+        if (similarProperties.length < 2) {
+          const fallbackRes = await request(`properties?select=property_id,address,street,ward,district,price_text,area_text,dimensions,structure,property_type,property_images(position,public_url,source_url)&property_id=neq.${encodeURIComponent(property.property_id)}&status=neq.archived&order=updated_at.desc&limit=4`);
+          similarProperties = fallbackRes.data || [];
+        }
+      } catch (_) {}
+
       res.setHeader("Content-Type", "text/html; charset=utf-8");
       res.setHeader("Cache-Control", "public, s-maxage=120, stale-while-revalidate=600");
-      return res.status(200).send(render(property));
+      return res.status(200).send(render(property, { similarProperties }));
     } catch (error) {
       return sendError(res, error);
     }

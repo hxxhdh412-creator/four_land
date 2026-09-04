@@ -975,7 +975,21 @@ http.createServer(async (req,res)=>{
       if(databaseEnabled){const result=await dbRequest(`properties?select=*,property_images(*)&property_id=eq.${encodeURIComponent(id)}&status=neq.archived&limit=1`);property=result.data[0]}
       else property=rows.find(item=>item.property_id===id&&item.status!=="archived");
       if(!property)return send(res,404,"Không tìm thấy hồ sơ","text/plain; charset=utf-8");
-      res.writeHead(200,{"Content-Type":"text/html; charset=utf-8","Cache-Control":"no-cache"});res.end(renderPropertyPage(property));return;
+      let similarProperties = [];
+      if(databaseEnabled){
+        try {
+          const districtFilter = property.district ? `district=eq.${encodeURIComponent(property.district)}&` : "";
+          const simResult = await dbRequest(`properties?select=property_id,address,street,ward,district,price_text,area_text,dimensions,structure,property_type,property_images(*)&${districtFilter}property_id=neq.${encodeURIComponent(id)}&status=neq.archived&order=updated_at.desc&limit=4`);
+          similarProperties = simResult.data || [];
+          if(similarProperties.length < 2) {
+            const fallbackRes = await dbRequest(`properties?select=property_id,address,street,ward,district,price_text,area_text,dimensions,structure,property_type,property_images(*)&property_id=neq.${encodeURIComponent(id)}&status=neq.archived&order=updated_at.desc&limit=4`);
+            similarProperties = fallbackRes.data || [];
+          }
+        } catch (_) {}
+      } else {
+        similarProperties = rows.filter(item => item.property_id !== id && item.status !== "archived").slice(0, 4);
+      }
+      res.writeHead(200,{"Content-Type":"text/html; charset=utf-8","Cache-Control":"no-cache"});res.end(renderPropertyPage(property, { similarProperties }));return;
     } catch(error) { return send(res,500,error.message,"text/plain; charset=utf-8") }
   }
   const requestPath=url.pathname==="/"?"/index.html":(url.pathname==="/admin"||url.pathname==="/admin/"?"/admin/index.html":url.pathname);
