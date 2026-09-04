@@ -1736,39 +1736,88 @@ function initOneSignalPush() {
         serviceWorkerPath: "OneSignalSDKWorker.js"
       });
 
-      console.log("[OneSignal] Sẵn sàng nhận thông báo Fourland:", ONE_SIGNAL_APP_ID);
-
-      // Nếu trình duyệt chưa cấp quyền, kích hoạt hiển thị lời nhắc
-      setTimeout(async () => {
-        try {
-          if (typeof Notification !== "undefined" && Notification.permission === "default") {
-            try {
-              await OneSignal.Slidedown.promptPush({ force: true });
-            } catch (err) {
-              await OneSignal.Notifications.requestPermission();
-            }
-          }
-        } catch (e) {
-          console.warn("[OneSignal] Auto prompt note:", e);
-        }
-      }, 2000);
+      console.log("[OneSignal] Khởi tạo OneSignal thành công cho Fourland");
     } catch (err) {
       console.warn("[OneSignal] Init warning:", err);
     }
   });
+
+  // Tự động hiển thị giao diện Luxury Soft Prompt nếu chưa cấp quyền
+  setupLuxuryPushPrompt();
 }
 
-window.triggerPushNotification = async function() {
-  if (typeof window.OneSignal !== "undefined") {
-    try {
-      await window.OneSignal.Slidedown.promptPush({ force: true });
-    } catch (e) {
-      try {
-        await window.OneSignal.Notifications.requestPermission();
-      } catch (err) {}
+function setupLuxuryPushPrompt() {
+  const modal = $('fourlandPushModal');
+  const btnAccept = $('pushSheetAccept');
+  const btnDismiss = $('pushSheetDismiss');
+  const btnClose = $('pushSheetClose');
+  const backdrop = $('pushSheetBackdrop');
+  if (!modal) return;
+
+  const hideModal = () => {
+    modal.classList.remove('active');
+    modal.setAttribute('aria-hidden', 'true');
+  };
+
+  const showModal = () => {
+    modal.classList.add('active');
+    modal.setAttribute('aria-hidden', 'false');
+  };
+
+  // Kiểm tra trạng thái cấp quyền hiện tại của trình duyệt
+  if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
+    const lastDismissed = Number(localStorage.getItem('fourland_push_dismissed') || 0);
+    const threeDays = 3 * 24 * 60 * 60 * 1000;
+    if (!lastDismissed || (Date.now() - lastDismissed > threeDays)) {
+      setTimeout(() => {
+        if (Notification.permission === 'default') {
+          showModal();
+        }
+      }, 2000);
     }
-  } else {
-    showToast("Đang kích hoạt hệ thống thông báo...", 2000);
+  }
+
+  if (btnAccept) {
+    btnAccept.onclick = async () => {
+      hideModal();
+      localStorage.setItem('fourland_push_dismissed', Date.now());
+
+      if (window.OneSignal && window.OneSignal.Notifications) {
+        try {
+          await window.OneSignal.Notifications.requestPermission();
+          if (Notification.permission === 'granted') {
+            showToast('✓ Cảm ơn bạn! Đã bật nhận thông báo Fourland thành công.', 3200);
+          }
+        } catch (e) {
+          console.warn('[OneSignal] Request permission error:', e);
+        }
+      } else if (typeof Notification !== 'undefined') {
+        Notification.requestPermission().then(permission => {
+          if (permission === 'granted') {
+            showToast('✓ Cảm ơn bạn! Đã bật nhận thông báo Fourland thành công.', 3200);
+          }
+        });
+      }
+    };
+  }
+
+  const dismissPrompt = () => {
+    hideModal();
+    localStorage.setItem('fourland_push_dismissed', Date.now());
+  };
+
+  if (btnDismiss) btnDismiss.onclick = dismissPrompt;
+  if (btnClose) btnClose.onclick = dismissPrompt;
+  if (backdrop) backdrop.onclick = dismissPrompt;
+}
+
+window.triggerPushNotification = function() {
+  const modal = $('fourlandPushModal');
+  if (modal) {
+    modal.classList.add('active');
+    modal.setAttribute('aria-hidden', 'false');
+  } else if (window.OneSignal && window.OneSignal.Notifications) {
+    window.OneSignal.Notifications.requestPermission();
   }
 };
 
