@@ -1732,32 +1732,45 @@ function initOneSignalPush() {
       await OneSignal.init({
         appId: ONE_SIGNAL_APP_ID,
         allowLocalhostAsSecureOrigin: true,
-        notifyButton: {
-          enable: false,
-        },
-        slidedown: {
-          prompts: [
-            {
-              type: "push",
-              autoPrompt: true,
-              text: {
-                actionMessage: "Nhận thông báo khi có căn nhà mới ký gửi hoặc chủ hạ giá gấp tại Fourland?",
-                acceptButton: "Nhận tin mới",
-                cancelButton: "Để sau"
-              },
-              delay: {
-                pageViews: 1,
-                timeDelay: 4
-              }
-            }
-          ]
-        }
+        serviceWorkerParam: { scope: "/" },
+        serviceWorkerPath: "OneSignalSDKWorker.js"
       });
+
+      console.log("[OneSignal] Sẵn sàng nhận thông báo Fourland:", ONE_SIGNAL_APP_ID);
+
+      // Nếu trình duyệt chưa cấp quyền, kích hoạt hiển thị lời nhắc
+      setTimeout(async () => {
+        try {
+          if (typeof Notification !== "undefined" && Notification.permission === "default") {
+            try {
+              await OneSignal.Slidedown.promptPush({ force: true });
+            } catch (err) {
+              await OneSignal.Notifications.requestPermission();
+            }
+          }
+        } catch (e) {
+          console.warn("[OneSignal] Auto prompt note:", e);
+        }
+      }, 2000);
     } catch (err) {
-      console.warn("[OneSignal] Push warning:", err);
+      console.warn("[OneSignal] Init warning:", err);
     }
   });
 }
+
+window.triggerPushNotification = async function() {
+  if (typeof window.OneSignal !== "undefined") {
+    try {
+      await window.OneSignal.Slidedown.promptPush({ force: true });
+    } catch (e) {
+      try {
+        await window.OneSignal.Notifications.requestPermission();
+      } catch (err) {}
+    }
+  } else {
+    showToast("Đang kích hoạt hệ thống thông báo...", 2000);
+  }
+};
 
 initOneSignalPush();
 
