@@ -301,7 +301,7 @@ function renderPropertyPage(property, { similarProperties = [] } = {}) {
   const similarList = Array.isArray(similarProperties) ? similarProperties : [];
   const similarCardsHtml = similarList.map(renderSimilarCard).join("");
 
-  return `<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><!-- Google tag (gtag.js) --><script async src="https://www.googletagmanager.com/gtag/js?id=G-BS0X1F8NSD"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-BS0X1F8NSD');</script><title>${escapeHtml(pageTitle)}</title><meta name="description" content="${escapeHtml(description)}"><meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1"><link rel="canonical" href="${escapeHtml(canonical)}"><meta property="og:type" content="article"><meta property="og:locale" content="vi_VN"><meta property="og:site_name" content="Fourland"><meta property="og:title" content="${escapeHtml(pageTitle)}"><meta property="og:description" content="${escapeHtml(description)}"><meta property="og:url" content="${escapeHtml(canonical)}"><meta property="og:image" content="${escapeHtml(hero)}"><meta property="og:image:alt" content="${escapeHtml(presentation.headline)}"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${escapeHtml(pageTitle)}"><meta name="twitter:description" content="${escapeHtml(description)}"><meta name="twitter:image" content="${escapeHtml(hero)}"><link rel="icon" href="/assets/brand/fourland-logo.png"><link rel="stylesheet" href="/assets/property.css?v=20260905-warehouse-match-v1"><script type="application/ld+json">${jsonLd(schema)}</script></head><body>` +
+  return `<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><!-- Google tag (gtag.js) --><script async src="https://www.googletagmanager.com/gtag/js?id=G-BS0X1F8NSD"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-BS0X1F8NSD');</script><title>${escapeHtml(pageTitle)}</title><meta name="description" content="${escapeHtml(description)}"><meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1"><link rel="canonical" href="${escapeHtml(canonical)}"><meta property="og:type" content="article"><meta property="og:locale" content="vi_VN"><meta property="og:site_name" content="Fourland"><meta property="og:title" content="${escapeHtml(pageTitle)}"><meta property="og:description" content="${escapeHtml(description)}"><meta property="og:url" content="${escapeHtml(canonical)}"><meta property="og:image" content="${escapeHtml(hero)}"><meta property="og:image:alt" content="${escapeHtml(presentation.headline)}"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${escapeHtml(pageTitle)}"><meta name="twitter:description" content="${escapeHtml(description)}"><meta name="twitter:image" content="${escapeHtml(hero)}"><link rel="icon" href="/assets/brand/fourland-logo.png"><link rel="stylesheet" href="/assets/property.css?v=20260905-gallery-fix-v1"><script type="application/ld+json">${jsonLd(schema)}</script></head><body>` +
     `<header class="top">` +
       `<div class="top-inner">` +
         `<a href="/" class="top-brand" aria-label="Về kho Fourland">` +
@@ -335,8 +335,32 @@ function renderPropertyPage(property, { similarProperties = [] } = {}) {
           `<div>${escapeHtml(presentation.location)}</div>` +
           (updated ? `<small>Cập nhật <time datetime="${escapeHtml(updated.iso)}">${escapeHtml(updated.label)}</time></small>` : "") +
         `</header>` +
-        `<section class="gallery">` +
-          (images.length ? `<img class="hero" src="${escapeHtml(hero)}" width="1200" height="900" alt="${escapeHtml(presentation.headline)}" fetchpriority="high"><div class="thumbs">${images.slice(1, 8).map((url, index) => `<img src="${escapeHtml(url)}" width="180" height="135" loading="lazy" alt="Ảnh ${index + 2} của ${escapeHtml(presentation.headline)}">`).join("")}</div>` : `<div class="empty-photo">Hồ sơ chưa có hình ảnh</div>`) +
+        `<section class="gallery" id="propertyGallery">` +
+          (images.length ?
+            `<div class="gallery-hero-wrap" title="Bấm để phóng to xem trọn bộ ảnh">` +
+              `<img class="hero" id="mainHeroImage" src="${escapeHtml(hero)}" width="1200" height="900" alt="${escapeHtml(presentation.headline)}" fetchpriority="high">` +
+              (images.length > 1 ?
+                `<button type="button" class="gallery-nav gallery-prev" id="galleryPrevBtn" aria-label="Ảnh trước">` +
+                  `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>` +
+                `</button>` +
+                `<button type="button" class="gallery-nav gallery-next" id="galleryNextBtn" aria-label="Ảnh kế tiếp">` +
+                  `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>` +
+                `</button>` +
+                `<span class="gallery-counter"><span id="galleryCurrentIdx">1</span> / ${images.length}</span>` +
+                `<button type="button" class="gallery-zoom-btn" id="galleryZoomBtn" aria-label="Xem toàn màn hình" title="Phóng to ảnh">` +
+                  `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>` +
+                  `<span>Phóng to</span>` +
+                `</button>` : "") +
+            `</div>` +
+            (images.length > 1 ?
+              `<div class="thumbs" id="galleryThumbs">` +
+                images.map((url, index) =>
+                  `<button type="button" class="thumb-btn ${index === 0 ? "active" : ""}" data-idx="${index}" aria-label="Ảnh ${index + 1}">` +
+                    `<img src="${escapeHtml(url)}" width="180" height="135" loading="lazy" alt="Thumbnail ${index + 1}">` +
+                  `</button>`
+                ).join("") +
+              `</div>` : "")
+            : `<div class="empty-photo">Hồ sơ chưa có hình ảnh</div>`) +
         `</section>` +
         `<section class="content">` +
           `<div>` +
@@ -354,6 +378,30 @@ function renderPropertyPage(property, { similarProperties = [] } = {}) {
       `</article>` +
       renderSystemFooter() +
     `</main>` +
+    (images.length ?
+      `<div id="lightboxModal" class="lightbox-modal" aria-hidden="true" role="dialog" aria-label="Xem ảnh phóng to">` +
+        `<div class="lightbox-backdrop" id="lightboxBackdrop"></div>` +
+        `<div class="lightbox-content">` +
+          `<button type="button" class="lightbox-close" id="lightboxCloseBtn" aria-label="Đóng">` +
+            `<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>` +
+          `</button>` +
+          (images.length > 1 ?
+            `<button type="button" class="lightbox-nav lightbox-prev" id="lightboxPrevBtn" aria-label="Ảnh trước">` +
+              `<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>` +
+            `</button>` : "") +
+          `<div class="lightbox-image-wrap">` +
+            `<img id="lightboxImage" src="${escapeHtml(hero)}" alt="${escapeHtml(presentation.headline)}">` +
+          `</div>` +
+          (images.length > 1 ?
+            `<button type="button" class="lightbox-nav lightbox-next" id="lightboxNextBtn" aria-label="Ảnh kế tiếp">` +
+              `<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>` +
+            `</button>` : "") +
+          `<div class="lightbox-footer">` +
+            `<span class="lightbox-counter"><span id="lightboxCurrentIdx">1</span> / ${images.length}</span>` +
+            `<span class="lightbox-title">${escapeHtml(presentation.headline)}</span>` +
+          `</div>` +
+        `</div>` +
+      `</div>` : "") +
     `<aside class="floating-contact-pills" aria-label="Liên hệ nhanh">` +
       `<a href="https://zalo.me/${COMPANY_PHONE_HREF}" target="_blank" rel="noopener noreferrer" class="float-pill pill-zalo" title="Chat Zalo tư vấn">` +
         `<span>Zalo</span>` +
@@ -364,6 +412,65 @@ function renderPropertyPage(property, { similarProperties = [] } = {}) {
     `</aside>` +
     `<script>` +
       `(()=>{` +
+        `const images=${JSON.stringify(images)};` +
+        `if(images&&images.length){` +
+          `let currentIdx=0;` +
+          `const mainImg=document.getElementById("mainHeroImage");` +
+          `const currentIdxEl=document.getElementById("galleryCurrentIdx");` +
+          `const thumbs=document.querySelectorAll(".thumb-btn");` +
+          `const prevBtn=document.getElementById("galleryPrevBtn");` +
+          `const nextBtn=document.getElementById("galleryNextBtn");` +
+          `const zoomBtn=document.getElementById("galleryZoomBtn");` +
+          `const heroWrap=document.querySelector(".gallery-hero-wrap");` +
+          `const lightbox=document.getElementById("lightboxModal");` +
+          `const lbImg=document.getElementById("lightboxImage");` +
+          `const lbCurrentIdxEl=document.getElementById("lightboxCurrentIdx");` +
+          `const lbPrevBtn=document.getElementById("lightboxPrevBtn");` +
+          `const lbNextBtn=document.getElementById("lightboxNextBtn");` +
+          `const lbCloseBtn=document.getElementById("lightboxCloseBtn");` +
+          `const lbBackdrop=document.getElementById("lightboxBackdrop");` +
+          `function showImage(idx,scroll=true){` +
+            `currentIdx=(idx+images.length)%images.length;` +
+            `const src=images[currentIdx];` +
+            `if(mainImg)mainImg.src=src;` +
+            `if(currentIdxEl)currentIdxEl.textContent=currentIdx+1;` +
+            `if(lbImg)lbImg.src=src;` +
+            `if(lbCurrentIdxEl)lbCurrentIdxEl.textContent=currentIdx+1;` +
+            `thumbs.forEach((btn,i)=>{` +
+              `const active=i===currentIdx;` +
+              `btn.classList.toggle("active",active);` +
+              `if(active&&scroll)btn.scrollIntoView({behavior:"smooth",block:"nearest",inline:"center"});` +
+            `});` +
+          `}` +
+          `thumbs.forEach((btn,i)=>btn.addEventListener("click",(e)=>{e.preventDefault();showImage(i);}));` +
+          `if(prevBtn)prevBtn.addEventListener("click",(e)=>{e.preventDefault();showImage(currentIdx-1);});` +
+          `if(nextBtn)nextBtn.addEventListener("click",(e)=>{e.preventDefault();showImage(currentIdx+1);});` +
+          `function openLightbox(idx){if(!lightbox)return;showImage(idx,false);lightbox.classList.add("open");lightbox.setAttribute("aria-hidden","false");document.body.style.overflow="hidden";}` +
+          `function closeLightbox(){if(!lightbox)return;lightbox.classList.remove("open");lightbox.setAttribute("aria-hidden","true");document.body.style.overflow="";}` +
+          `if(heroWrap)heroWrap.addEventListener("click",(e)=>{if(e.target.closest(".gallery-nav")||e.target.closest(".gallery-zoom-btn"))return;openLightbox(currentIdx);});` +
+          `if(zoomBtn)zoomBtn.addEventListener("click",(e)=>{e.stopPropagation();openLightbox(currentIdx);});` +
+          `if(lbCloseBtn)lbCloseBtn.addEventListener("click",closeLightbox);` +
+          `if(lbBackdrop)lbBackdrop.addEventListener("click",closeLightbox);` +
+          `if(lbPrevBtn)lbPrevBtn.addEventListener("click",(e)=>{e.stopPropagation();showImage(currentIdx-1);});` +
+          `if(lbNextBtn)lbNextBtn.addEventListener("click",(e)=>{e.stopPropagation();showImage(currentIdx+1);});` +
+          `window.addEventListener("keydown",(e)=>{` +
+            `if(lightbox&&lightbox.classList.contains("open")){` +
+              `if(e.key==="Escape")closeLightbox();` +
+              `if(e.key==="ArrowLeft")showImage(currentIdx-1);` +
+              `if(e.key==="ArrowRight")showImage(currentIdx+1);` +
+            `}else{` +
+              `if(e.key==="ArrowLeft")showImage(currentIdx-1);` +
+              `if(e.key==="ArrowRight")showImage(currentIdx+1);` +
+            `}` +
+          `});` +
+          `function addSwipe(el,onL,onR){` +
+            `if(!el)return;let sx=0,sy=0;` +
+            `el.addEventListener("touchstart",(e)=>{sx=e.changedTouches[0].screenX;sy=e.changedTouches[0].screenY;},{passive:true});` +
+            `el.addEventListener("touchend",(e)=>{const dx=e.changedTouches[0].screenX-sx,dy=e.changedTouches[0].screenY-sy;if(Math.abs(dx)>45&&Math.abs(dx)>Math.abs(dy)*1.5){if(dx<0)onL();else onR();}},{passive:true});` +
+          `}` +
+          `addSwipe(heroWrap,()=>showImage(currentIdx+1),()=>showImage(currentIdx-1));` +
+          `addSwipe(lightbox,()=>showImage(currentIdx+1),()=>showImage(currentIdx-1));` +
+        `}` +
         `const carousel=document.getElementById("similarCarousel");` +
         `if(!carousel||carousel.children.length>0)return;` +
         `const curId=${JSON.stringify(value(property.property_id))};` +
