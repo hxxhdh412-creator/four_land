@@ -141,102 +141,110 @@ function renderSimilarCard(item) {
   if (!item || !value(item.property_id)) return "";
   const cardPath = propertyPath(item);
   const cardImages = publicImages(item);
-  const heroImg = cardImages[0] || `${SITE_ORIGIN}/assets/brand/fourland-logo.png`;
-  const action = inferListingAction(item) || value(item.property_type) || "Bất động sản";
+  const heroImg = cardImages[0] || "";
   const price = value(item.price_text) || "Liên hệ";
-  const address = formatPublicAddress(item);
-  const location = [item.ward, item.district].map(value).filter(Boolean).join(", ");
-  const specs = [item.area_text, item.dimensions, item.structure].map(value).filter(Boolean).slice(0, 2).join(" · ");
+  const dispAddr = formatPublicAddress(item);
+  const loc = [item.street, item.ward, item.district].map(value).filter(Boolean).join(" · ");
+  const specs = [item.dimensions || item.area_text, item.structure, item.bedrooms ? `${item.bedrooms} PN` : ""].map(value).filter(Boolean).join(" · ");
+  const badgeText = value(item.badge) || value(item.district) || inferListingAction(item) || "Gần đây";
+  const isRented = Boolean(item.is_rented || String(item.status).toLowerCase() === "rented");
 
-  return `<a href="${escapeHtml(cardPath)}" class="similar-card" title="${escapeHtml(address)}">` +
-    `<div class="similar-card-thumb">` +
-      `<img src="${escapeHtml(heroImg)}" alt="${escapeHtml(address)}" loading="lazy" width="360" height="270">` +
-      `<span class="similar-badge-action">${escapeHtml(action)}</span>` +
-      `<span class="similar-badge-price">${escapeHtml(price)}</span>` +
+  return `<a href="${escapeHtml(cardPath)}" class="similar-card" data-similar-id="${escapeHtml(item.property_id)}" title="Xem chi tiết: ${escapeHtml(dispAddr)}">` +
+    `<div class="similar-card-thumb ${!heroImg ? "no-photo" : ""}">` +
+      (heroImg ? `<img src="${escapeHtml(heroImg)}" alt="${escapeHtml(dispAddr)}" loading="lazy" width="360" height="225" onerror="this.parentElement.classList.add('no-photo');this.remove();">` : "") +
+      `<span class="similar-card-badge">${escapeHtml(badgeText)}</span>` +
+      (isRented ? `<span class="similar-rented-tag">Đã thuê</span>` : "") +
     `</div>` +
-    `<div class="similar-card-body">` +
-      `<h3 class="similar-card-title">${escapeHtml(address)}</h3>` +
-      `<div class="similar-card-loc">${escapeHtml(location || "TP. Hồ Chí Minh")}</div>` +
+    `<div class="similar-card-info">` +
+      `<div class="similar-card-price">${escapeHtml(price)}</div>` +
+      `<h4 class="similar-card-title">${escapeHtml(dispAddr)}</h4>` +
+      `<div class="similar-card-loc">${escapeHtml(loc || "TP. Hồ Chí Minh")}</div>` +
       (specs ? `<div class="similar-card-specs">${escapeHtml(specs)}</div>` : "") +
     `</div>` +
   `</a>`;
 }
 
+function renderSimilarPropertiesSection(similarCardsHtml, count = 0) {
+  const countBadge = count > 0
+    ? `<span class="similar-header-count" id="similarHeaderCount">${count} căn phù hợp</span>`
+    : `<span class="similar-header-count" id="similarHeaderCount" style="display:none"></span>`;
+
+  return `<section class="similar-properties-section" id="similarPropertiesSection">` +
+    `<div class="similar-section-header">` +
+      `<div class="similar-header-title">` +
+        `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>` +
+        `<h3>BĐS tương tự cùng khu vực</h3>` +
+      `</div>` +
+      countBadge +
+    `</div>` +
+    `<div class="similar-carousel" id="similarCarousel">` +
+      similarCardsHtml +
+    `</div>` +
+    `<div class="similar-cta">` +
+      `<a href="/" class="btn-more-properties">` +
+        `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>` +
+        `<span>Mở kho BĐS Fourland xem thêm</span>` +
+        `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>` +
+      `</a>` +
+    `</div>` +
+  `</section>`;
+}
+
 function renderSystemFooter() {
-  return `<footer class="system-footer">` +
-    `<div class="footer-container">` +
-      `<div class="footer-grid">` +
-        `<div class="footer-col brand-col">` +
-          `<a href="/" class="footer-brand" aria-label="Fourland Trang Chủ">` +
-            `<img src="/assets/brand/fourland-logo.png" width="68" height="63" alt="Fourland" class="footer-logo">` +
-            `<div class="footer-brand-text">` +
-              `<strong class="brand-title">FOURLAND</strong>` +
-              `<span class="brand-sub">PROPERTY INTELLIGENCE</span>` +
-            `</div>` +
-          `</a>` +
-          `<p class="brand-desc">Nền tảng tra cứu và phân phối kho bất động sản chọn lọc hàng đầu TP.HCM. Cập nhật nhà phố, biệt thự, mặt tiền kinh doanh chính chủ 24/7.</p>` +
-          `<div class="footer-contacts">` +
-            `<div class="contact-row">` +
-              `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>` +
-              `<a href="tel:${COMPANY_PHONE_HREF}">Hotline: ${COMPANY_PHONE} (24/7)</a>` +
-            `</div>` +
-            `<div class="contact-row">` +
-              `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>` +
-              `<a href="mailto:contact@fourland.vn">contact@fourland.vn</a>` +
-            `</div>` +
-            `<div class="contact-row">` +
-              `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>` +
-              `<span>Phục vụ toàn bộ Quận / Huyện TP. Hồ Chí Minh</span>` +
-            `</div>` +
-          `</div>` +
-        `</div>` +
-        `<div class="footer-col links-col">` +
-          `<h4 class="footer-heading">Kho Bất Động Sản</h4>` +
-          `<ul class="footer-menu">` +
-            `<li><a href="/#q=cho-thue">Nhà thuê & Mặt bằng kinh doanh</a></li>` +
-            `<li><a href="/#q=nha-ban">Nhà phố chính chủ cần bán</a></li>` +
-            `<li><a href="/#q=mat-tien">Mặt tiền kinh doanh sầm uất</a></li>` +
-            `<li><a href="/#q=toa-nha">Tòa nhà văn phòng & CHDV</a></li>` +
-            `<li><a href="/#q=biet-thu">Biệt thự & Shophouse đẳng cấp</a></li>` +
-          `</ul>` +
-        `</div>` +
-        `<div class="footer-col links-col">` +
-          `<h4 class="footer-heading">Khu Vực Trọng Điểm</h4>` +
-          `<ul class="footer-menu">` +
-            `<li><a href="/#q=Tan+Binh">Bất động sản Tân Bình</a></li>` +
-            `<li><a href="/#q=Binh+Thanh">Bất động sản Bình Thạnh</a></li>` +
-            `<li><a href="/#q=Go+Vap">Bất động sản Gò Vấp</a></li>` +
-            `<li><a href="/#q=Phu+Nhuan">Bất động sản Phú Nhuận</a></li>` +
-            `<li><a href="/#q=Quan+1">Bất động sản Quận 1 & Quận 3</a></li>` +
-            `<li><a href="/#q=Quan+10">Bất động sản Quận 10 & Quận 11</a></li>` +
-          `</ul>` +
-        `</div>` +
-        `<div class="footer-col action-col">` +
-          `<h4 class="footer-heading">Kết Nối Với Fourland</h4>` +
-          `<p class="action-desc">Cần hỗ trợ khảo sát thực tế hoặc đàm phán giá tốt nhất?</p>` +
-          `<div class="footer-buttons">` +
-            `<a href="https://zalo.me/${COMPANY_PHONE_HREF}" target="_blank" rel="noopener noreferrer" class="btn-footer btn-zalo">` +
-              `<span>Chat Zalo tư vấn 24/7</span>` +
-            `</a>` +
-            `<a href="https://www.facebook.com/profile.php?id=100066639715025" target="_blank" rel="noopener noreferrer" class="btn-footer btn-facebook">` +
-              `<span>Theo dõi Fanpage Fourland</span>` +
-            `</a>` +
-          `</div>` +
-          `<div class="footer-hotline-card">` +
-            `<span class="hotline-badge">TỔNG ĐÀI HỖ TRỢ</span>` +
-            `<a href="tel:${COMPANY_PHONE_HREF}" class="hotline-number">${COMPANY_PHONE}</a>` +
+  return `<footer class="site-footer">` +
+    `<div class="footer-card">` +
+      `<div class="footer-header">` +
+        `<div class="footer-brand-wrap">` +
+          `<img class="footer-logo" src="/assets/brand/fourland-logo.png" alt="Fourland">` +
+          `<div class="footer-titles">` +
+            `<span class="footer-name">FOURLAND</span>` +
+            `<span class="footer-subtitle">PROPERTY INTELLIGENCE</span>` +
           `</div>` +
         `</div>` +
       `</div>` +
-      `<div class="footer-bottom">` +
-        `<p class="copyright">© 2026 FOURLAND Property Intelligence. Tất cả các quyền được bảo lưu.</p>` +
-        `<div class="bottom-links">` +
-          `<a href="/">Trang chủ kho nhà</a>` +
-          `<span>·</span>` +
-          `<a href="/sitemap.xml">Sitemap</a>` +
-          `<span>·</span>` +
-          `<a href="tel:${COMPANY_PHONE_HREF}">Liên hệ hỗ trợ</a>` +
+      `<p class="footer-intro">` +
+        `Nền tảng tra cứu và phân phối kho bất động sản chọn lọc — Đồng bộ dữ liệu chuẩn xác, tối ưu hiệu quả nguồn hàng cho đội ngũ kinh doanh.` +
+      `</p>` +
+      `<div class="footer-grid">` +
+        `<div class="footer-info-block">` +
+          `<span class="footer-block-label">Liên hệ & Trụ sở</span>` +
+          `<div class="footer-contact-items">` +
+            `<div class="footer-item">` +
+              `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>` +
+              `<span>TP. Hồ Chí Minh, Việt Nam</span>` +
+            `</div>` +
+            `<div class="footer-item">` +
+              `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" /></svg>` +
+              `<a href="tel:${COMPANY_PHONE_HREF}" class="footer-link-hotline">Hotline: ${COMPANY_PHONE}</a>` +
+            `</div>` +
+            `<div class="footer-item">` +
+              `<svg viewBox="0 0 24 24" aria-hidden="true"><rect width="20" height="16" x="2" y="4" rx="2" /><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" /></svg>` +
+              `<a href="mailto:contact@fourland.vn">contact@fourland.vn</a>` +
+            `</div>` +
+            `<div class="footer-item">` +
+              `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" /></svg>` +
+              `<a href="https://www.facebook.com/profile.php?id=100066639715025" target="_blank" rel="noopener noreferrer">Facebook: Fourland</a>` +
+            `</div>` +
+            `<div class="footer-item">` +
+              `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>` +
+              `<span>08:00 – 18:00 (Thứ 2 – Thứ 7)</span>` +
+            `</div>` +
+          `</div>` +
         `</div>` +
+        `<div class="footer-tags-block">` +
+          `<span class="footer-block-label">Phân loại kho nhà</span>` +
+          `<div class="footer-pill-tags">` +
+            `<a href="/#q=Nhà+phố">Nhà phố TP.HCM</a>` +
+            `<a href="/#q=Biệt+thự">Biệt thự & Villa</a>` +
+            `<a href="/#q=Mặt+tiền">Mặt tiền kinh doanh</a>` +
+            `<a href="/#q=Căn+hộ">Căn hộ cao cấp</a>` +
+            `<a href="/#q=Thuê">Nhà cho thuê</a>` +
+          `</div>` +
+        `</div>` +
+      `</div>` +
+      `<div class="footer-meta-strip">` +
+        `<span>© 2026 FOURLAND. All rights reserved.</span>` +
+        `<span>Nền tảng nội bộ Fourland</span>` +
       `</div>` +
     `</div>` +
   `</footer>`;
@@ -290,10 +298,10 @@ function renderPropertyPage(property, { similarProperties = [] } = {}) {
     ]
   };
 
-  const similarCardsHtml = (Array.isArray(similarProperties) ? similarProperties : []).map(renderSimilarCard).join("");
-  const locationName = value(property.district) || value(property.ward) || "TP.HCM";
+  const similarList = Array.isArray(similarProperties) ? similarProperties : [];
+  const similarCardsHtml = similarList.map(renderSimilarCard).join("");
 
-  return `<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><!-- Google tag (gtag.js) --><script async src="https://www.googletagmanager.com/gtag/js?id=G-BS0X1F8NSD"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-BS0X1F8NSD');</script><title>${escapeHtml(pageTitle)}</title><meta name="description" content="${escapeHtml(description)}"><meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1"><link rel="canonical" href="${escapeHtml(canonical)}"><meta property="og:type" content="article"><meta property="og:locale" content="vi_VN"><meta property="og:site_name" content="Fourland"><meta property="og:title" content="${escapeHtml(pageTitle)}"><meta property="og:description" content="${escapeHtml(description)}"><meta property="og:url" content="${escapeHtml(canonical)}"><meta property="og:image" content="${escapeHtml(hero)}"><meta property="og:image:alt" content="${escapeHtml(presentation.headline)}"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${escapeHtml(pageTitle)}"><meta name="twitter:description" content="${escapeHtml(description)}"><meta name="twitter:image" content="${escapeHtml(hero)}"><link rel="icon" href="/assets/brand/fourland-logo.png"><link rel="stylesheet" href="/assets/property.css?v=20260905-similar-footer-v92"><script type="application/ld+json">${jsonLd(schema)}</script></head><body>` +
+  return `<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><!-- Google tag (gtag.js) --><script async src="https://www.googletagmanager.com/gtag/js?id=G-BS0X1F8NSD"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-BS0X1F8NSD');</script><title>${escapeHtml(pageTitle)}</title><meta name="description" content="${escapeHtml(description)}"><meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1"><link rel="canonical" href="${escapeHtml(canonical)}"><meta property="og:type" content="article"><meta property="og:locale" content="vi_VN"><meta property="og:site_name" content="Fourland"><meta property="og:title" content="${escapeHtml(pageTitle)}"><meta property="og:description" content="${escapeHtml(description)}"><meta property="og:url" content="${escapeHtml(canonical)}"><meta property="og:image" content="${escapeHtml(hero)}"><meta property="og:image:alt" content="${escapeHtml(presentation.headline)}"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${escapeHtml(pageTitle)}"><meta name="twitter:description" content="${escapeHtml(description)}"><meta name="twitter:image" content="${escapeHtml(hero)}"><link rel="icon" href="/assets/brand/fourland-logo.png"><link rel="stylesheet" href="/assets/property.css?v=20260905-warehouse-match-v1"><script type="application/ld+json">${jsonLd(schema)}</script></head><body>` +
     `<header class="top">` +
       `<div class="top-inner">` +
         `<a href="/" class="top-brand" aria-label="Về kho Fourland">` +
@@ -317,7 +325,7 @@ function renderPropertyPage(property, { similarProperties = [] } = {}) {
         `</div>` +
       `</div>` +
     `</header>` +
-    `<main>` +
+    `<main class="shell">` +
       `<nav aria-label="Đường dẫn" class="breadcrumbs"><a href="/">Kho nhà</a><span>›</span><span>${escapeHtml(presentation.headline)}</span></nav>` +
       `<article>` +
         `<header class="property-head">` +
@@ -342,26 +350,10 @@ function renderPropertyPage(property, { similarProperties = [] } = {}) {
             `<a class="call" href="tel:${COMPANY_PHONE_HREF}">Gọi Fourland · ${COMPANY_PHONE}</a>` +
           `</aside>` +
         `</section>` +
-        `<section class="similar-section" id="similarSection">` +
-          `<div class="similar-head">` +
-            `<span class="similar-badge">GỢI Ý DÀNH CHO BẠN</span>` +
-            `<h2>Bất động sản tương tự tại ${escapeHtml(locationName)}</h2>` +
-            `<p>Các bất động sản chọn lọc khác cùng khu vực và phân khúc có thể bạn quan tâm</p>` +
-          `</div>` +
-          `<div class="similar-grid" id="similarGrid">` +
-            similarCardsHtml +
-          `</div>` +
-          `<div class="similar-cta">` +
-            `<a href="/" class="btn-more-properties">` +
-              `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>` +
-              `<span>Xem thêm hàng ngàn BĐS khác trong Kho Fourland</span>` +
-              `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>` +
-            `</a>` +
-          `</div>` +
-        `</section>` +
+        renderSimilarPropertiesSection(similarCardsHtml, similarList.length) +
       `</article>` +
+      renderSystemFooter() +
     `</main>` +
-    renderSystemFooter() +
     `<aside class="floating-contact-pills" aria-label="Liên hệ nhanh">` +
       `<a href="https://zalo.me/${COMPANY_PHONE_HREF}" target="_blank" rel="noopener noreferrer" class="float-pill pill-zalo" title="Chat Zalo tư vấn">` +
         `<span>Zalo</span>` +
@@ -372,24 +364,35 @@ function renderPropertyPage(property, { similarProperties = [] } = {}) {
     `</aside>` +
     `<script>` +
       `(()=>{` +
-        `const grid=document.getElementById("similarGrid");` +
-        `if(!grid||grid.children.length>0)return;` +
+        `const carousel=document.getElementById("similarCarousel");` +
+        `if(!carousel||carousel.children.length>0)return;` +
         `const curId=${JSON.stringify(value(property.property_id))};` +
         `fetch("/api/properties?limit=6")` +
           `.then(r=>r.json())` +
           `.then(res=>{` +
             `const items=(res.data||[]).filter(i=>i.property_id!==curId).slice(0,4);` +
             `if(!items.length)return;` +
-            `grid.innerHTML=items.map(i=>{` +
-              `const img=(i.property_images&&i.property_images[0]&&i.property_images[0].public_url)||"/assets/brand/fourland-logo.png";` +
+            `const countEl=document.getElementById("similarHeaderCount");` +
+            `if(countEl){countEl.textContent=items.length+" căn phù hợp";countEl.style.display="";}` +
+            `carousel.innerHTML=items.map(i=>{` +
+              `const rawThumb=(i.property_images&&i.property_images[0]&&(i.property_images[0].public_url||i.property_images[0].source_url))||"";` +
               `const addr=i.address||i.street||"Bất động sản chọn lọc";` +
               `const price=i.price_text||"Liên hệ";` +
-              `const loc=[i.ward,i.district].filter(Boolean).join(", ");` +
-              `const specs=[i.area_text,i.structure].filter(Boolean).join(" · ");` +
+              `const loc=[i.street,i.ward,i.district].filter(Boolean).join(" · ");` +
+              `const specs=[i.dimensions||i.area_text,i.structure].filter(Boolean).join(" · ");` +
+              `const badge=i.district||i.property_type||"Gần đây";` +
               `const path="/bat-dong-san/"+encodeURIComponent(i.property_id);` +
-              `return '<a href="'+path+'" class="similar-card">'+` +
-                `'<div class="similar-card-thumb"><img src="'+img+'" alt="'+addr+'" loading="lazy"><span class="similar-badge-price">'+price+'</span></div>'+` +
-                `'<div class="similar-card-body"><h3 class="similar-card-title">'+addr+'</h3><div class="similar-card-loc">'+(loc||"TP.HCM")+'</div>'+(specs?'<div class="similar-card-specs">'+specs+'</div>':'')+'</div>'+` +
+              `return '<a href="'+path+'" class="similar-card" title="Xem chi tiết: '+addr+'">'+` +
+                `'<div class="similar-card-thumb '+(rawThumb?'':'no-photo')+'">'+` +
+                  `(rawThumb?'<img src="'+rawThumb+'" alt="'+addr+'" loading="lazy">':'')+` +
+                  `'<span class="similar-card-badge">'+badge+'</span>'+` +
+                `'</div>'+` +
+                `'<div class="similar-card-info">'+` +
+                  `'<div class="similar-card-price">'+price+'</div>'+` +
+                  `'<h4 class="similar-card-title">'+addr+'</h4>'+` +
+                  `'<div class="similar-card-loc">'+(loc||"TP. Hồ Chí Minh")+'</div>'+` +
+                  `(specs?'<div class="similar-card-specs">'+specs+'</div>':'')+` +
+                `'</div>'+` +
               `'</a>';` +
             `}).join("");` +
           `}).catch(()=>{});` +

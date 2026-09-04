@@ -375,74 +375,90 @@ dd {
 }
 
 /* ==========================================================================
-   SIMILAR PROPERTIES SECTION (GỢI Ý NHÀ TƯƠNG TỰ)
+   SIMILAR PROPERTIES SECTION (EXACT AS WAREHOUSE APP)
    ========================================================================== */
-.similar-section {
-  margin-top: 48px;
-  padding-top: 36px;
-  border-top: 1px solid var(--line);
+.similar-properties-section {
+  width: 100%;
+  margin-top: 36px;
+  padding-top: 24px;
+  border-top: 1.5px dashed rgba(16, 32, 28, 0.12);
 }
 
-.similar-head {
-  margin-bottom: 24px;
+.similar-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
 }
 
-.similar-badge {
-  display: inline-block;
-  padding: 4px 12px;
-  border-radius: 99px;
-  background: rgba(239, 101, 9, 0.12);
-  color: var(--orange);
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  margin-bottom: 8px;
+.similar-header-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--forest, #123c32);
 }
 
-.similar-head h2 {
+.similar-header-title svg {
+  color: var(--forest, #123c32);
+  flex-shrink: 0;
+}
+
+.similar-header-title h3 {
   margin: 0;
-  font-size: clamp(22px, 3vw, 28px);
-  font-weight: 800;
-  color: var(--forest);
+  font: 800 17px/1.3 "Manrope", "Be Vietnam Pro", sans-serif;
+  letter-spacing: -0.01em;
+  color: var(--forest, #123c32);
+  white-space: nowrap;
 }
 
-.similar-head p {
-  margin: 6px 0 0;
-  color: var(--muted);
-  font-size: 14px;
+.similar-header-count {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--forest, #123c32);
+  background: #eaf1ed;
+  padding: 3px 10px;
+  border-radius: 20px;
+  border: 1px solid rgba(18, 60, 50, 0.12);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
-.similar-grid {
+.similar-carousel {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
 }
 
 .similar-card {
+  position: relative;
   display: flex;
   flex-direction: column;
   background: #ffffff;
-  border: 1px solid var(--line);
-  border-radius: 14px;
+  border: 1px solid var(--line, #e2e8f0);
+  border-radius: 8px;
   overflow: hidden;
+  cursor: pointer;
   text-decoration: none;
   color: inherit;
-  box-shadow: var(--card-shadow);
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.22s cubic-bezier(0.2, 0, 0.2, 1), box-shadow 0.22s, border-color 0.22s;
+  user-select: none;
 }
 
 .similar-card:hover {
-  transform: translateY(-5px);
-  box-shadow: var(--hover-shadow);
-  border-color: #bcd0c5;
+  transform: translateY(-4px);
+  border-color: #123c32;
+  box-shadow: 0 10px 24px rgba(18, 60, 50, 0.12);
 }
 
 .similar-card-thumb {
   position: relative;
-  aspect-ratio: 4 / 3;
   width: 100%;
+  aspect-ratio: 16 / 10;
+  background: #edf1ee;
   overflow: hidden;
-  background: #091913;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .similar-card-thumb img {
@@ -453,345 +469,300 @@ dd {
 }
 
 .similar-card:hover .similar-card-thumb img {
-  transform: scale(1.06);
+  transform: scale(1.05);
 }
 
-.similar-badge-action {
+.similar-card-thumb.no-photo {
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+}
+
+.similar-card-thumb.no-photo:before {
+  content: "";
   position: absolute;
-  top: 10px;
-  left: 10px;
-  padding: 4px 10px;
-  border-radius: 6px;
-  background: rgba(13, 35, 27, 0.88);
+  width: 24px;
+  height: 24px;
+  background: url('/assets/brand/fourland-logo.png') center/contain no-repeat;
+  opacity: 0.25;
+}
+
+.similar-card-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 2;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: rgba(10, 38, 31, 0.88);
   backdrop-filter: blur(6px);
   color: #ffffff;
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 700;
   letter-spacing: 0.02em;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
-.similar-badge-price {
+.similar-rented-tag {
   position: absolute;
-  bottom: 10px;
-  right: 10px;
-  padding: 5px 12px;
-  border-radius: 8px;
-  background: var(--orange);
-  color: #ffffff;
-  font-size: 13.5px;
-  font-weight: 900;
-  box-shadow: 0 4px 12px rgba(239, 101, 9, 0.4);
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+  padding: 3px 6px;
+  border-radius: 4px;
+  background: #fee2e2;
+  color: #991b1b;
+  font-size: 10px;
+  font-weight: 800;
 }
 
-.similar-card-body {
-  padding: 16px;
+.similar-card-info {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  flex-grow: 1;
+  padding: 10px 12px 12px;
+  gap: 4px;
+  flex: 1;
+}
+
+.similar-card-price {
+  font: 800 16px/1.2 "Manrope", sans-serif;
+  color: #ef6509;
 }
 
 .similar-card-title {
   margin: 0;
-  font-size: 14.5px;
-  font-weight: 700;
-  line-height: 1.35;
-  color: var(--ink);
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+  font: 700 13px/1.35 "Manrope", sans-serif;
+  color: var(--ink, #0f172a);
+  white-space: nowrap;
   overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .similar-card:hover .similar-card-title {
-  color: var(--forest);
+  color: #123c32;
 }
 
 .similar-card-loc {
-  font-size: 12.5px;
-  color: var(--muted);
+  font-size: 11.5px;
+  color: var(--muted, #64748b);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .similar-card-specs {
-  margin-top: auto;
-  padding: 4px 10px;
-  border-radius: 6px;
-  background: #edf4f0;
-  color: #235848;
-  font-size: 11.5px;
+  margin-top: 4px;
+  font-size: 11px;
   font-weight: 600;
+  color: #475569;
+  background: #f8fafc;
+  padding: 3px 6px;
+  border-radius: 4px;
   width: fit-content;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .similar-cta {
   display: flex;
   justify-content: center;
-  margin-top: 32px;
+  margin-top: 24px;
 }
 
 .btn-more-properties {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  padding: 14px 30px;
-  border-radius: 99px;
+  gap: 8px;
+  padding: 10px 22px;
+  border-radius: 6px;
   background: #ffffff;
-  border: 1.5px solid var(--forest);
-  color: var(--forest);
-  font-size: 14px;
+  border: 1.5px solid var(--forest, #123c32);
+  color: var(--forest, #123c32);
+  font-size: 13px;
   font-weight: 700;
   text-decoration: none;
-  box-shadow: 0 4px 14px rgba(23, 60, 49, 0.06);
   transition: all 0.2s ease;
 }
 
 .btn-more-properties:hover {
-  background: var(--forest);
+  background: var(--forest, #123c32);
   color: #ffffff;
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(23, 60, 49, 0.2);
+  box-shadow: 0 6px 18px rgba(18, 60, 50, 0.15);
 }
 
 /* ==========================================================================
-   SYSTEM FOOTER (HỆ THỐNG FOOTER CAO CẤP FOURLAND)
+   LUXURY COMPACT FOURLAND FOOTER (EXACT AS WAREHOUSE APP)
    ========================================================================== */
-.system-footer {
-  background: linear-gradient(180deg, #0f271f 0%, #081712 100%);
-  color: #e2ebe6;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  margin-top: 56px;
-  font-size: 13.5px;
+.site-footer {
+  display: block !important;
+  margin-top: 44px;
+  width: 100%;
 }
 
-.footer-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 56px 22px 24px;
+.footer-card {
+  background: linear-gradient(170deg, #12231d 0%, #0c1914 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 30px 34px 20px;
+  color: #c5d2cc;
+  box-shadow: 0 16px 45px rgba(10, 22, 17, 0.16);
+  font-family: var(--font-sans, "Manrope", sans-serif);
+  text-transform: none !important;
+  letter-spacing: normal !important;
+}
+
+.footer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.footer-brand-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.footer-logo {
+  width: 44px;
+  height: 40px;
+  object-fit: contain;
+}
+
+.footer-titles {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.footer-name {
+  font-size: 16px;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: 0.08em;
+  font-family: "Manrope", sans-serif;
+}
+
+.footer-subtitle {
+  font-size: 8px;
+  font-weight: 800;
+  color: var(--orange, #ef6509);
+  letter-spacing: 0.18em;
+}
+
+.footer-intro {
+  margin: 14px 0 18px;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 12.5px;
+  line-height: 1.6;
+  max-width: 680px;
+  text-transform: none !important;
 }
 
 .footer-grid {
   display: grid;
-  grid-template-columns: 1.4fr 1fr 1fr 1.2fr;
-  gap: 36px 24px;
-  padding-bottom: 44px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  grid-template-columns: 1.2fr 1fr;
+  gap: 28px;
+  padding: 18px 0 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.footer-brand {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  text-decoration: none;
-  margin-bottom: 16px;
-}
-
-.footer-brand-text {
-  display: flex;
-  flex-direction: column;
-}
-
-.brand-title {
-  font-size: 20px;
-  font-weight: 900;
-  color: #ffffff;
+.footer-block-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 800;
+  color: #fff;
+  text-transform: uppercase;
   letter-spacing: 0.08em;
-  line-height: 1.1;
+  margin-bottom: 12px;
 }
 
-.brand-sub {
-  font-size: 9.5px;
-  font-weight: 700;
-  color: var(--orange);
-  letter-spacing: 0.18em;
+.footer-contact-items {
+  display: grid;
+  gap: 9px;
 }
 
-.brand-desc {
-  margin: 0 0 20px;
-  color: #a4b8af;
-  line-height: 1.65;
-  font-size: 13px;
-}
-
-.footer-contacts {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.contact-row {
+.footer-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  color: #c4d6cd;
-  font-size: 13px;
+  gap: 9px;
+  font-size: 12.5px;
+  color: rgba(255, 255, 255, 0.78);
+  text-transform: none !important;
 }
 
-.contact-row svg {
-  color: var(--orange);
-  flex-shrink: 0;
+.footer-item svg {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
+  stroke: var(--orange, #ef6509);
+  stroke-width: 2;
+  fill: none;
 }
 
-.contact-row a {
-  color: #c4d6cd;
+.footer-item a {
+  color: #fff;
   text-decoration: none;
+  font-weight: 700;
   transition: color 0.18s ease;
 }
 
-.contact-row a:hover {
-  color: #ffffff;
-  text-decoration: underline;
+.footer-item a:hover {
+  color: var(--orange, #ef6509);
 }
 
-.footer-heading {
-  margin: 0 0 18px;
-  font-size: 14.5px;
+.footer-link-hotline {
+  color: var(--orange, #ef6509) !important;
   font-weight: 800;
-  color: #ffffff;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  position: relative;
-  padding-bottom: 8px;
 }
 
-.footer-heading::after {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 28px;
-  height: 2px;
-  background: var(--orange);
-  border-radius: 2px;
-}
-
-.footer-menu {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+.footer-tags-block {
   display: flex;
   flex-direction: column;
-  gap: 10px;
 }
 
-.footer-menu a {
-  color: #a4b8af;
-  text-decoration: none;
-  transition: all 0.18s ease;
-  display: inline-block;
-}
-
-.footer-menu a:hover {
-  color: #ffffff;
-  transform: translateX(4px);
-}
-
-.action-desc {
-  color: #a4b8af;
-  margin: 0 0 16px;
-  line-height: 1.55;
-  font-size: 13px;
-}
-
-.footer-buttons {
+.footer-pill-tags {
   display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-bottom: 18px;
+  flex-wrap: wrap;
+  gap: 7px;
 }
 
-.btn-footer {
-  display: flex;
+.footer-pill-tags a {
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 10px 16px;
-  border-radius: 8px;
-  text-decoration: none;
-  font-weight: 700;
-  font-size: 13px;
-  transition: all 0.2s ease;
-}
-
-.btn-zalo {
-  background: #0068ff;
-  color: #ffffff;
-}
-
-.btn-zalo:hover {
-  background: #0056d6;
-  transform: translateY(-1px);
-}
-
-.btn-facebook {
-  background: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-}
-
-.btn-facebook:hover {
-  background: rgba(255, 255, 255, 0.18);
-  transform: translateY(-1px);
-}
-
-.footer-hotline-card {
-  padding: 14px 18px;
+  padding: 5px 11px;
+  border-radius: 4px;
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.hotline-badge {
-  font-size: 10px;
-  font-weight: 800;
-  color: var(--gold);
-  letter-spacing: 0.12em;
-}
-
-.hotline-number {
-  font-size: 18px;
-  font-weight: 900;
-  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 11.5px;
+  font-weight: 600;
   text-decoration: none;
-  letter-spacing: 0.02em;
+  text-transform: none !important;
+  transition: all 0.18s ease;
 }
 
-.hotline-number:hover {
-  color: var(--orange);
+.footer-pill-tags a:hover {
+  background: rgba(239, 101, 9, 0.16);
+  border-color: var(--orange, #ef6509);
+  color: #fff;
+  transform: translateY(-1px);
 }
 
-.footer-bottom {
-  padding-top: 24px;
+.footer-meta-strip {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  flex-wrap: wrap;
   gap: 12px;
-  color: #7b9186;
-  font-size: 12.5px;
-}
-
-.footer-bottom p {
-  margin: 0;
-}
-
-.bottom-links {
-  display: flex;
-  gap: 10px;
-}
-
-.bottom-links a {
-  color: #8fa099;
-  text-decoration: none;
-}
-
-.bottom-links a:hover {
-  color: #ffffff;
+  margin-top: 16px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.45);
+  text-transform: none !important;
 }
 
 /* ==========================================================================
@@ -808,13 +779,13 @@ dd {
 }
 
 .float-pill {
-  width: 52px;
-  height: 52px;
+  width: 50px;
+  height: 50px;
   border-radius: 50%;
   display: grid;
   place-items: center;
   text-decoration: none;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.22);
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -825,8 +796,9 @@ dd {
 .pill-zalo {
   background: #0068ff;
   color: #ffffff;
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 900;
+  letter-spacing: 0.04em;
 }
 
 .pill-phone {
@@ -850,15 +822,6 @@ dd {
 /* ==========================================================================
    RESPONSIVE DESIGN (MOBILE & TABLET)
    ========================================================================== */
-@media (max-width: 992px) {
-  .similar-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  .footer-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
 @media (max-width: 768px) {
   .top {
     height: 64px;
@@ -887,7 +850,7 @@ dd {
     display: none;
   }
 
-  main {
+  main.shell {
     padding: 14px 14px 40px;
   }
   .property-head {
@@ -920,35 +883,66 @@ dd {
     min-height: 240px;
   }
 
-  .similar-section {
-    margin-top: 36px;
-    padding-top: 24px;
+  .similar-properties-section {
+    margin-top: 20px;
+    padding-top: 16px;
   }
-  .similar-grid {
-    grid-template-columns: 1fr;
-    gap: 14px;
+  .similar-section-header {
+    gap: 8px;
+    margin-bottom: 12px;
   }
-  .similar-card {
-    border-radius: 12px;
+  .similar-header-title {
+    gap: 6px;
+    min-width: 0;
+    flex: 1;
   }
-  .similar-card-body {
-    padding: 14px;
+  .similar-header-title h3 {
+    font-size: 14.5px;
+    white-space: normal;
+  }
+  .similar-carousel {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  .similar-card-info {
+    padding: 8px 10px 10px;
+    gap: 3px;
+  }
+  .similar-card-price {
+    font-size: 14px;
+  }
+  .similar-card-title {
+    font-size: 12px;
+  }
+  .similar-card-loc {
+    font-size: 11px;
+  }
+  .similar-card-specs {
+    font-size: 10px;
+    padding: 2px 5px;
   }
 
-  .system-footer {
-    margin-top: 40px;
+  .site-footer {
+    margin-top: 28px;
   }
-  .footer-container {
-    padding: 36px 16px 20px;
+  .footer-card {
+    padding: 20px 16px 16px;
+  }
+  .footer-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
   }
   .footer-grid {
     grid-template-columns: 1fr;
-    gap: 28px;
+    gap: 20px;
+    padding: 14px 0 16px;
   }
-  .footer-bottom {
+  .footer-meta-strip {
     flex-direction: column;
-    text-align: center;
-    gap: 8px;
+    align-items: flex-start;
+    gap: 4px;
+    font-size: 10px;
   }
 
   .floating-contact-pills {
