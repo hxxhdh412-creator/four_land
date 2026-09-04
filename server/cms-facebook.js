@@ -9,15 +9,41 @@ function stripHouseNumber(address) {
   return addr.replace(/^(?:(?:số|căn|phòng|p\.?|lô|kho|nhà|hẻm|hxh|hbt)\s+)?(?:[\dA-Za-z]+[\/\.-])*[\dA-Za-z]+[a-zA-Z]?\s+/i, "").trim();
 }
 
-function formatSafeLocation(property) {
+function extractWardDistrictFromAddress(address) {
+  if (!address) return { ward: "", district: "" };
+  const str = String(address).trim();
+  const wardMatch = str.match(/,\s*(?:phường|p\.)\s*([^,]+)/i);
+  const ward = wardMatch ? `P. ${wardMatch[1].trim()}` : "";
+
+  let district = "";
+  const districtMatch = str.match(/,\s*(?:quận|q\.)\s*([^,]+)/i);
+  if (districtMatch) {
+    district = districtMatch[1].trim();
+  } else {
+    const distNames = ["Tân Bình", "Bình Thạnh", "Gò Vấp", "Phú Nhuận", "Tân Phú", "Bình Tân", "Thủ Đức", "Nhà Bè", "Hóc Môn", "Củ Chi", "Bình Chánh", "Cần Giờ", "Quận 1", "Quận 3", "Quận 4", "Quận 5", "Quận 6", "Quận 7", "Quận 8", "Quận 10", "Quận 11", "Quận 12"];
+    for (const d of distNames) {
+      if (new RegExp(`\\b${d}\\b`, "i").test(str)) {
+        district = d;
+        break;
+      }
+    }
+  }
+  return { ward, district };
+}
+
+function formatSafeLocation(property = {}) {
   const streetOnly = stripHouseNumber(property.address) || property.street;
   const parts = [];
   if (streetOnly) {
-    const s = streetOnly.replace(/^(?:đường|phố)\s+/i, "");
+    const s = streetOnly.replace(/^(?:mặt tiền|mt|hẻm|hxh|đường|phố|đ\.)\s+/i, "");
     parts.push(`Đường ${s}`);
   }
-  if (property.ward) parts.push(property.ward.startsWith("P.") ? property.ward : `P. ${property.ward.replace(/^Phường\s+/i, "")}`);
-  if (property.district) parts.push(property.district);
+  const fallback = extractWardDistrictFromAddress(property.address);
+  const ward = property.ward || fallback.ward;
+  const district = property.district || fallback.district;
+
+  if (ward) parts.push(ward.startsWith("P.") ? ward : `P. ${ward.replace(/^Phường\s+/i, "")}`);
+  if (district) parts.push(district);
   return parts.join(", ") || "TP. Hồ Chí Minh";
 }
 
@@ -111,8 +137,12 @@ function buildCleanLocation(property = {}) {
     if (s) parts.push(s);
   }
 
-  if (property.ward) {
-    let w = String(property.ward).trim();
+  const fallback = extractWardDistrictFromAddress(property.address);
+  const rawWard = property.ward || fallback.ward;
+  const rawDistrict = property.district || fallback.district;
+
+  if (rawWard) {
+    let w = String(rawWard).trim();
     if (/^phường\s+/i.test(w)) {
       w = `P. ${w.replace(/^phường\s+/i, "")}`;
     } else if (!/^p\./i.test(w)) {
@@ -121,8 +151,8 @@ function buildCleanLocation(property = {}) {
     parts.push(w);
   }
 
-  if (property.district) {
-    let d = String(property.district).trim();
+  if (rawDistrict) {
+    let d = String(rawDistrict).trim();
     if (/^quận\s+(?!\d{1,2}\b)/i.test(d)) {
       d = d.replace(/^quận\s+/i, "");
     }
