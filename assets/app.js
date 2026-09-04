@@ -472,6 +472,141 @@ function injectPropertySchema(p, images){
   script.textContent=JSON.stringify(schema);
 }
 
+function extractClientPriceNumber(priceText) {
+  if (!priceText) return null;
+  const clean = String(priceText).toLowerCase().replace(',', '.');
+  const billionMatch = clean.match(/([\d.]+)\s*(?:ty|tỷ)/i);
+  if (billionMatch) return parseFloat(billionMatch[1]) * 1000000000;
+  const millionMatch = clean.match(/([\d.]+)\s*(?:trieu|triệu|tr)/i);
+  if (millionMatch) return parseFloat(millionMatch[1]) * 1000000;
+  const numberOnly = clean.replace(/[^\d.]/g, '');
+  const num = parseFloat(numberOnly);
+  return Number.isNaN(num) ? null : num;
+}
+
+function normalizeClientStreet(street) {
+  return String(street || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/gi, 'd')
+    .toLowerCase()
+    .replace(/^(?:duong|pho|hem|ngo)\s+/i, '')
+    .trim();
+}
+
+function findClientSimilarProperties(target, allRows) {
+  if (!Array.isArray(allRows) || allRows.length === 0) return [];
+  const targetStreet = normalizeClientStreet(target.street);
+  const targetWard = String(target.ward || '').trim().toLowerCase();
+  const targetDist = String(target.district || '').trim().toLowerCase();
+  const targetPrice = extractClientPriceNumber(target.price_text);
+  const targetType = String(target.property_type || '').trim().toLowerCase();
+
+  const scored = allRows
+    .filter(c => c && c.property_id !== target.property_id && c.status !== 'archived')
+    .map(c => {
+      let score = 0;
+      let badge = '';
+
+      const cStreet = normalizeClientStreet(c.street);
+      const cWard = String(c.ward || '').trim().toLowerCase();
+      const cDist = String(c.district || '').trim().toLowerCase();
+      const cPrice = extractClientPriceNumber(c.price_text);
+      const cType = String(c.property_type || '').trim().toLowerCase();
+
+      if (targetStreet && cStreet && (targetStreet === cStreet || targetStreet.includes(cStreet) || cStreet.includes(targetStreet))) {
+        score += 60;
+        badge = 'Cùng tuyến đường';
+      } else if (targetWard && cWard && targetDist === cDist && (targetWard === cWard || targetWard.includes(cWard) || cWard.includes(targetWard))) {
+        score += 40;
+        badge = `Cùng ${target.ward || 'phường'}`;
+      } else if (targetDist && cDist && targetDist === cDist) {
+        score += 20;
+        badge = c.district || 'Cùng khu vực';
+      }
+
+      if (targetPrice && cPrice) {
+        const ratio = Math.abs(cPrice - targetPrice) / targetPrice;
+        if (ratio <= 0.20) score += 25;
+        else if (ratio <= 0.40) score += 15;
+      }
+
+      if (targetType && cType && targetType === cType) {
+        score += 10;
+      }
+
+      const imgItem = (c.property_images || []).sort((a, b) => a.position - b.position)[0];
+      const thumbnail = imgItem ? (imgItem.public_url || imgItem.source_url) : null;
+
+      return {
+        property_id: c.property_id,
+        address: c.address || c.property_id,
+        street: c.street,
+        ward: c.ward,
+        district: c.district,
+        price_text: c.price_text || 'Thương lượng',
+        dimensions: c.dimensions || c.area_text,
+        area_text: c.area_text,
+        property_type: c.property_type,
+        bedrooms: c.bedrooms,
+        bathrooms: c.bathrooms,
+        structure: c.structure,
+        status: c.status,
+        is_rented: Boolean(c.is_rented || c.status === 'rented'),
+        thumbnail,
+        badge: badge || c.district || 'Gần đây',
+        score
+      };
+    });
+
+  return scored.sort((a, b) => b.score - a.score).filter(s => s.score > 0);
+}
+
+function renderSimilarPropertiesHtml(similarList) {
+  if (!Array.isArray(similarList) || similarList.length === 0) return '';
+
+  const cardsHtml = similarList.map(item => {
+    const rawThumb = item.thumbnail || (item.property_images?.[0]?.public_url) || (item.property_images?.[0]?.source_url);
+    const thumb = rawThumb ? driveImage(rawThumb) : '';
+    const dispAddr = formatPublicAddress(item, state.adminUnlocked);
+    const price = item.price_text || 'Liên hệ';
+    const specs = [item.dimensions || item.area_text, item.structure, item.bedrooms ? `${item.bedrooms} PN` : ''].filter(Boolean).join(' · ');
+    const loc = [item.street, item.ward, item.district].filter(Boolean).join(' · ');
+    const badgeText = item.badge || item.district || 'Gần đây';
+
+    return `
+      <article class="similar-card" data-similar-id="${escapeHtml(item.property_id)}" title="Xem chi tiết: ${escapeHtml(dispAddr)}">
+        <div class="similar-card-thumb ${!thumb ? 'no-photo' : ''}">
+          ${thumb ? `<img src="${escapeHtml(thumb)}" alt="${escapeHtml(dispAddr)}" onerror="this.parentElement.classList.add('no-photo');this.remove();">` : ''}
+          <span class="similar-card-badge">${escapeHtml(badgeText)}</span>
+          ${item.is_rented ? '<span class="similar-rented-tag">Đã thuê</span>' : ''}
+        </div>
+        <div class="similar-card-info">
+          <div class="similar-card-price">${escapeHtml(price)}</div>
+          <h4 class="similar-card-title">${escapeHtml(dispAddr)}</h4>
+          <div class="similar-card-loc">${escapeHtml(loc)}</div>
+          ${specs ? `<div class="similar-card-specs">${escapeHtml(specs)}</div>` : ''}
+        </div>
+      </article>
+    `;
+  }).join('');
+
+  return `
+    <section class="similar-properties-section" id="similarPropertiesSection">
+      <div class="similar-section-header">
+        <div class="similar-header-title">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          <h3>Bất động sản tương tự cùng khu vực</h3>
+        </div>
+        <span class="similar-header-count">${similarList.length} căn phù hợp</span>
+      </div>
+      <div class="similar-carousel" id="similarCarousel">
+        ${cardsHtml}
+      </div>
+    </section>
+  `;
+}
+
 async function openDetail(id,seoPath=''){
   const dialog=$('detail');state.currentPropertyId=id;$('detailId').textContent=id;
   $('detailBody').innerHTML=`
@@ -486,7 +621,12 @@ async function openDetail(id,seoPath=''){
   `;
   if(!dialog.open)dialog.showModal();
   try{
-    const {property:p}=await api('/api/property?id='+encodeURIComponent(id));
+    const {property:p, similar:serverSimilar=[]}=await api('/api/property?id='+encodeURIComponent(id));
+    let similarList = Array.isArray(serverSimilar) && serverSimilar.length > 0 ? serverSimilar : [];
+    if (similarList.length === 0 && Array.isArray(state.rows) && state.rows.length > 0) {
+      similarList = findClientSimilarProperties(p, state.rows).slice(0, 5);
+    }
+    const similarHtml = renderSimilarPropertiesHtml(similarList);
     const nextPath=seoPath||propertyPath(p);history.pushState({id},'',nextPath);
     const imageItems=(p.property_images||[]).filter(i=>(i.public_url||i.source_url)&&String(i.public_url||i.source_url).startsWith('http')).sort((a,b)=>a.position-b.position);
     const images=imageItems.map(i=>driveImage(i.public_url||i.source_url)).filter(Boolean);
@@ -559,7 +699,7 @@ async function openDetail(id,seoPath=''){
           <span>Chia sẻ</span>
         </button>
         ${state.adminUnlocked ? `
-        <button type="button" class="action-chip fb-chip" id="actionFbBtn" title="Đăng lên Fanpage Ngọc Nhà Tốt">
+        <button type="button" class="action-chip fb-chip" id="actionFbBtn" title="Đăng lên Facebook Studio">
           <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
           <span>Đăng Facebook</span>
         </button>
@@ -567,7 +707,20 @@ async function openDetail(id,seoPath=''){
       </div>
     `;
 
-    $('detailBody').innerHTML=`<div><div class="gallery-main ${!images[0]?'no-photo':''}">${images[0]?`<img id="mainImage" referrerpolicy="no-referrer" src="${escapeHtml(images[0])}" alt="${escapeHtml(propNameAlt)}" onerror="handleDetailImgError(this)">`:`<div class="placeholder-watermark watermark-detail"><img src="/assets/brand/fourland-logo.png" alt="Fourland" class="watermark-logo"><span class="watermark-text">Hình ảnh đang cập nhật</span></div>`}${galleryNavHtml}</div><div class="thumbs">${thumbsHtml}</div></div><div><section class="info-panel"><div class="price">${escapeHtml(p.price_text||'Liên hệ')}</div><h2>${escapeHtml(displayAddress)}</h2><div class="meta">${escapeHtml([p.street,p.ward,p.district].filter(Boolean).join(' · '))}</div>${quickActionsHtml}<div class="info-grid">${infoGridHtml}</div></section><section class="content-panel"><h3>Nội dung nhà</h3><p>${escapeHtml(displayRawText)}</p></section>${state.adminUnlocked?adminToolsHtml(p):''}<section class="direct-contact"><div><span>Hotline hỗ trợ Fourland</span><strong>${escapeHtml(COMPANY_HOTLINE)}</strong></div><a href="tel:${escapeHtml(phoneHref(COMPANY_HOTLINE))}" aria-label="Gọi Hotline Fourland"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.2 3.5 9.6 7c.35.5.28 1.18-.16 1.62l-1.3 1.3a14.5 14.5 0 0 0 5.94 5.94l1.3-1.3c.44-.44 1.12-.51 1.62-.16l3.5 2.4c.55.38.72 1.11.39 1.69l-1 1.75c-.34.59-.98.95-1.66.93C10.1 20.95 3.05 13.9 2.83 5.77c-.02-.68.34-1.32.93-1.66l1.75-1c.58-.33 1.31-.16 1.69.39Z"/></svg>Gọi ngay</a></section></div>`;
+    $('detailBody').innerHTML=`<div><div class="gallery-main ${!images[0]?'no-photo':''}">${images[0]?`<img id="mainImage" referrerpolicy="no-referrer" src="${escapeHtml(images[0])}" alt="${escapeHtml(propNameAlt)}" onerror="handleDetailImgError(this)">`:`<div class="placeholder-watermark watermark-detail"><img src="/assets/brand/fourland-logo.png" alt="Fourland" class="watermark-logo"><span class="watermark-text">Hình ảnh đang cập nhật</span></div>`}${galleryNavHtml}</div><div class="thumbs">${thumbsHtml}</div></div><div><section class="info-panel"><div class="price">${escapeHtml(p.price_text||'Liên hệ')}</div><h2>${escapeHtml(displayAddress)}</h2><div class="meta">${escapeHtml([p.street,p.ward,p.district].filter(Boolean).join(' · '))}</div>${quickActionsHtml}<div class="info-grid">${infoGridHtml}</div></section><section class="content-panel"><h3>Nội dung nhà</h3><p>${escapeHtml(displayRawText)}</p></section>${state.adminUnlocked?adminToolsHtml(p):''}<section class="direct-contact"><div><span>Hotline hỗ trợ Fourland</span><strong>${escapeHtml(COMPANY_HOTLINE)}</strong></div><a href="tel:${escapeHtml(phoneHref(COMPANY_HOTLINE))}" aria-label="Gọi Hotline Fourland"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.2 3.5 9.6 7c.35.5.28 1.18-.16 1.62l-1.3 1.3a14.5 14.5 0 0 0 5.94 5.94l1.3-1.3c.44-.44 1.12-.51 1.62-.16l3.5 2.4c.55.38.72 1.11.39 1.69l-1 1.75c-.34.59-.98.95-1.66.93C10.1 20.95 3.05 13.9 2.83 5.77c-.02-.68.34-1.32.93-1.66l1.75-1c.58-.33 1.31-.16 1.69.39Z"/></svg>Gọi ngay</a></section></div>${similarHtml}`;
+
+    // Event listener cho các thẻ gợi ý BĐS tương tự
+    document.querySelectorAll('.similar-card').forEach(card => {
+      card.onclick = (e) => {
+        e.preventDefault();
+        const propId = card.dataset.similarId;
+        if (propId) {
+          openDetail(propId);
+          const dialog = $('detail');
+          if (dialog) dialog.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      };
+    });
     
     let currentImgIdx=0;
     function setActiveImage(idx){
