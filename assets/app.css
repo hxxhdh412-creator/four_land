@@ -2563,6 +2563,73 @@ body.selection-mode-active .card-select-wrap,
   .similar-card-title {
     font-size: 12.5px;
   }
+
+  /* Mobile Sticky Bottom Contact Bar (Phương án 1) */
+  #detail .detail-body {
+    padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  #detail .direct-contact {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 99 !important;
+    margin: 0 !important;
+    padding: 10px 18px calc(10px + env(safe-area-inset-bottom, 0px)) !important;
+    background: rgba(255, 255, 255, 0.94) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    border: none !important;
+    border-top: 1px solid rgba(18, 60, 50, 0.12) !important;
+    border-radius: 0 !important;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 12px !important;
+  }
+
+  #detail .direct-contact > div {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 2px !important;
+    min-width: 0 !important;
+  }
+
+  #detail .direct-contact span {
+    font-size: 9.5px !important;
+    font-weight: 700 !important;
+    color: #64748b !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    white-space: nowrap !important;
+  }
+
+  #detail .direct-contact strong {
+    font-size: 17px !important;
+    font-weight: 800 !important;
+    color: var(--forest, #123c32) !important;
+    letter-spacing: -0.01em !important;
+    white-space: nowrap !important;
+  }
+
+  #detail .direct-contact a {
+    height: 42px !important;
+    min-width: 124px !important;
+    padding: 0 16px !important;
+    font-size: 13.5px !important;
+    font-weight: 800 !important;
+    border-radius: 8px !important;
+    background: var(--forest, #123c32) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(18, 60, 50, 0.28) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    flex-shrink: 0 !important;
+  }
 }
 
 
