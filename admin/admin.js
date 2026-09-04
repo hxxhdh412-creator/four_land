@@ -2667,11 +2667,19 @@ const pushState = {
 
 function updatePushPhoneTime() {
   const timeEl = byId('pushPhoneTime');
-  if (!timeEl) return;
+  const timeMini = byId('phoneTimeMini');
+  const dateEl = byId('pushPhoneDate');
   const now = new Date();
   const hh = String(now.getHours()).padStart(2, '0');
   const mm = String(now.getMinutes()).padStart(2, '0');
-  timeEl.textContent = `${hh}:${mm}`;
+  const timeStr = `${hh}:${mm}`;
+
+  if (timeEl) timeEl.textContent = timeStr;
+  if (timeMini) timeMini.textContent = timeStr;
+  if (dateEl) {
+    const days = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+    dateEl.textContent = `${days[now.getDay()]}, ${now.getDate()} tháng ${now.getMonth() + 1}`;
+  }
 }
 
 function updatePushPreview() {
@@ -2682,22 +2690,52 @@ function updatePushPreview() {
   const previewTitle = byId('pushPreviewTitle');
   const previewDesc = byId('pushPreviewDesc');
   const previewImg = byId('pushPreviewBigImg');
+  const imgWrap = byId('pushPreviewImgWrap');
+  const thumbWrap = byId('pushImgThumbWrap');
+  const thumbImg = byId('pushImgThumb');
 
+  // Character counters
+  const titleCounter = byId('pushTitleCounter');
+  if (titleCounter) {
+    titleCounter.textContent = `${title.length}/100`;
+    titleCounter.classList.toggle('is-limit', title.length >= 95);
+  }
+  const msgCounter = byId('pushMessageCounter');
+  if (msgCounter) {
+    msgCounter.textContent = `${message.length}/250`;
+    msgCounter.classList.toggle('is-limit', message.length >= 240);
+  }
+
+  // Live card text
   if (previewTitle) {
     previewTitle.textContent = title || 'Tiêu đề thông báo mẫu';
   }
   if (previewDesc) {
     previewDesc.textContent = message || 'Nội dung thông báo sẽ hiển thị ở đây trên màn hình khóa của khách hàng.';
   }
-  if (previewImg) {
-    if (image && (image.startsWith('http://') || image.startsWith('https://'))) {
+
+  // Image banner preview & miniature thumbnail
+  const hasValidImg = image && (image.startsWith('http://') || image.startsWith('https://'));
+  if (previewImg && imgWrap) {
+    if (hasValidImg) {
       previewImg.src = image;
-      previewImg.style.display = 'block';
+      imgWrap.style.display = 'block';
     } else {
-      previewImg.style.display = 'none';
+      imgWrap.style.display = 'none';
       previewImg.src = '';
     }
   }
+
+  if (thumbWrap && thumbImg) {
+    if (hasValidImg) {
+      thumbImg.src = image;
+      thumbWrap.hidden = false;
+    } else {
+      thumbWrap.hidden = true;
+      thumbImg.src = '';
+    }
+  }
+
   updatePushPhoneTime();
 }
 
@@ -2851,6 +2889,48 @@ if (byId('pushTitleInput')) byId('pushTitleInput').addEventListener('input', upd
 if (byId('pushMessageInput')) byId('pushMessageInput').addEventListener('input', updatePushPreview);
 if (byId('pushImageInput')) byId('pushImageInput').addEventListener('input', updatePushPreview);
 if (byId('pushNotificationForm')) byId('pushNotificationForm').addEventListener('submit', handleSendPushSubmit);
+
+// Quick Tag Chip Inserters
+document.querySelectorAll('[data-push-tag]').forEach(chip => {
+  chip.addEventListener('click', () => {
+    const tag = chip.dataset.pushTag;
+    const titleInput = byId('pushTitleInput');
+    if (!titleInput || !tag) return;
+    let current = titleInput.value.trim();
+    if (/^[\p{Emoji}\s]*\[.*?\]\s*/u.test(current)) {
+      current = current.replace(/^[\p{Emoji}\s]*\[.*?\]\s*/u, '');
+    }
+    titleInput.value = `${tag} ${current}`.trim().slice(0, 100);
+    updatePushPreview();
+    titleInput.focus();
+  });
+});
+
+// Clear Image Button
+if (byId('btnClearPushImg')) {
+  byId('btnClearPushImg').addEventListener('click', () => {
+    const imgInput = byId('pushImageInput');
+    if (imgInput) imgInput.value = '';
+    updatePushPreview();
+  });
+}
+
+// Refresh Push Status Button
+if (byId('btnRefreshPushStatus')) {
+  byId('btnRefreshPushStatus').addEventListener('click', () => {
+    checkPushStatus();
+  });
+}
+
+// Mobile Tab Switcher (Form vs Preview)
+document.querySelectorAll('[data-push-tab]').forEach(tabBtn => {
+  tabBtn.addEventListener('click', () => {
+    const tab = tabBtn.dataset.pushTab;
+    document.querySelectorAll('[data-push-tab]').forEach(b => b.classList.toggle('active', b === tabBtn));
+    const grid = byId('pushGrid');
+    if (grid) grid.dataset.activeTab = tab;
+  });
+});
 
 // ==========================================================================
 // FACEBOOK PAGES MANAGEMENT
