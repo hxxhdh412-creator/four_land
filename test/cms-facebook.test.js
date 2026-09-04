@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { generateFacebookPost, formatSafeLocation, stripHouseNumber, publishToComposioFacebook } = require("../server/cms-facebook");
+const { generateFacebookPost, buildKillerHeadline, formatSafeLocation, stripHouseNumber, publishToComposioFacebook } = require("../server/cms-facebook");
 const { createHandler } = require("../api/_cms-facebook");
 
 const fixtureProperty = {
@@ -47,6 +47,49 @@ test("generateFacebookPost generates 3 distinct tones for Vietnamese real estate
   const detailPost = generateFacebookPost(fixtureProperty, { tone: "detail", pageName: "Ngọc Ngà Tốt" });
   assert.match(detailPost, /🏡 \[BẤT ĐỘNG SẢN CHỌN LỌC\]/);
   assert.match(detailPost, /THÔNG TIN CHI TIẾT/);
+});
+
+test("buildKillerHeadline generates killer headline with exact real estate pattern", () => {
+  const nguyenXiProperty = {
+    address: "Mặt tiền Nguyễn Xí, Phường 26, Quận Bình Thạnh",
+    district: "Bình Thạnh",
+    ward: "Phường 26",
+    street: "Nguyễn Xí",
+    area_text: "50m²",
+    structure: "3 tầng",
+    bedrooms: 4,
+    bathrooms: 3,
+    price_text: "9.5 tỷ"
+  };
+  const headline = buildKillerHeadline(nguyenXiProperty, { tone: "hot" });
+  assert.match(headline, /🔥 MẶT TIỀN KINH DOANH • NGUYỄN XÍ, P\. 26, BÌNH THẠNH - 50M² ❌ 3 TẦNG • 4PN 3WC • 9\.5 TỶ 🔥/);
+
+  const post = generateFacebookPost(nguyenXiProperty, { tone: "hot", pageName: "Ngọc Nhà Tốt" });
+  assert.match(post, /MẶT TIỀN KINH DOANH • NGUYỄN XÍ/);
+  assert.match(post, /50M² ❌ 3 TẦNG • 4PN 3WC/);
+  assert.match(post, /9\.5 TỶ/);
+});
+
+test("generateFacebookPost differentiates rent and deduplicates identical dimensions", () => {
+  const rentalProperty = {
+    address: "1199 Hoàng Sa, Phường 5, Quận Tân Bình",
+    district: "Tân Bình",
+    ward: "Phường 5",
+    street: "Hoàng Sa",
+    area_text: "10x10",
+    dimensions: "10x10",
+    structure: "trệt lửng LDR",
+    price_text: "30 triệu",
+    property_type: "Nhà thuê",
+    notes: "Mặt tiền kinh doanh"
+  };
+
+  const post = generateFacebookPost(rentalProperty, { tone: "hot", pageName: "FourLand" });
+  assert.match(post, /MẶT TIỀN KINH DOANH • HOÀNG SA, P\. 5, TÂN BÌNH - 10x10m ❌ TRỆT LỬNG • 30 TRIỆU\/THÁNG/);
+  assert.doesNotMatch(post, /mua an cư hoặc đầu tư giữ tiền/);
+  assert.match(post, /nhận diện thương hiệu/);
+  const dimMatches = post.match(/10x10/g) || [];
+  assert.equal(dimMatches.length, 2);
 });
 
 test("publishToComposioFacebook provides clean simulation when API key is not configured", async () => {
