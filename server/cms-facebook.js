@@ -6,7 +6,7 @@ function stripHouseNumber(address) {
   let addr = String(address || "").trim();
   if (!addr) return "";
   addr = addr.split(/,(?:\s*(?:P\.?|Phường|Q\.?|Quận|H\.?|Huyện|TP\.?))/i)[0].trim();
-  return addr.replace(/^(?:(?:số|căn|phòng|p\.?|lô|kho|nhà|hẻm|hxh|hbt)\s+)?(?:[\dA-Za-z]+[\/\.-])*[\dA-Za-z]+[a-zA-Z]?\s+/i, "").trim();
+  return addr.replace(/^(?:(?:số|căn|phòng|p\.?|lô|kho|nhà|hẻm|hxh|hbt|mb)\s+)?(?:[\dA-Za-z]+[\/\.-])*[\dA-Za-z]+[a-zA-Z]?\s+/i, "").trim();
 }
 
 function extractWardDistrictFromAddress(address) {
@@ -56,22 +56,73 @@ function slugifyHashtag(text) {
 }
 
 function isRentalProperty(property = {}) {
+  // 1. Explicit listing type override
   const explicit = String(
     property.listing_type ||
     property.data_json?.listing_type ||
     property.data_json?.cms?.listing_type ||
     ""
   ).toLowerCase().trim();
-  if (explicit === "rent") return true;
-  if (explicit === "sale") return false;
+  if (explicit === "rent" || explicit === "thue" || explicit === "cho_thue") return true;
+  if (explicit === "sale" || explicit === "ban") return false;
 
-  const price = String(property.price_text || "").toLowerCase();
-  const raw = String(property.raw_text || property.property_type || property.notes || "").toLowerCase();
+  // 2. Property Type check (High priority database field)
+  const propType = String(
+    property.property_type ||
+    property.data_json?.property?.type ||
+    ""
+  ).toLowerCase().trim();
+  if (/(?:cho thuê|nhà thuê|\bthuê\b|mặt bằng|\bmb\b|mbkd|chdv|căn hộ dịch vụ|phòng trọ)/i.test(propType)) {
+    return true;
+  }
+  if (/(?:bán nhà|nhà bán|cần bán|bán gấp|đất nền|đất thổ cư)/i.test(propType)) {
+    return false;
+  }
 
-  if (/(?:cho thuê|thuê|tháng|\/th)/i.test(price)) return true;
-  if (/(?:tỷ|ty)/i.test(price)) return false;
-  if (/(?:cần bán|chuyển nhượng|bán gấp|bán nhà|\bbán\b)/i.test(raw)) return false;
-  if (/(?:cho thuê|thuê)/i.test(raw)) return true;
+  // 3. Source group name (e.g. "THUÊ 4 LAND TB- GV-TP")
+  const groupName = String(
+    property.group_name ||
+    property.data_json?.source?.groupName ||
+    ""
+  ).toLowerCase().trim();
+  if (/(?:cho thuê|\bthuê\b)/i.test(groupName) && !/(?:bán\b|mua bán)/i.test(groupName)) {
+    return true;
+  }
+
+  // 4. Price checks
+  const priceText = String(property.price_text || "").toLowerCase().trim();
+  const priceNumber = Number(property.price_number || property.data_json?.property?.price?.value) || 0;
+
+  // If price has per month or /th: 100% rent
+  if (/(?:tháng|\/th|\/thg|triệu\/|tr\/)/i.test(priceText)) return true;
+
+  // If price has 'tỷ' or 'ty': almost always sale (unless contains month/year)
+  if (/(?:tỷ|ty)/i.test(priceText) && !/(?:tháng|\/th)/i.test(priceText)) return false;
+
+  // In HCM City, any property priced <= 250 million VND (e.g. 30 triệu, 15tr, 50tr) without "tỷ" is rental
+  if (priceNumber > 0 && priceNumber <= 250000000) return true;
+  if (/^\s*\d+(?:[.,]\d+)?\s*(?:triệu|tr)\s*$/i.test(priceText)) return true;
+
+  // 5. Corpus inspection (address, raw_text, notes)
+  const addressText = String(property.address || "").toLowerCase();
+  if (/\b(?:mb|mặt bằng|cho thuê)\b/i.test(addressText)) return true;
+
+  const rawCorpus = [
+    property.raw_text,
+    property.data_json?.content?.rawText,
+    property.notes
+  ].filter(Boolean).join("\n").toLowerCase();
+
+  // Strip known broker signatures like "Ngọc Nhà Thuê Và Bán" before keyword matching
+  const cleanedRaw = rawCorpus.replace(/[\w\s\.-]+thuê\s+và\s+bán[\w\s\.-]*/gi, " ");
+
+  if (/(?:cho thuê|\bthuê\b|\bmb\b|mặt bằng|mbkd|sang nhượng|hhtt|cọc\s*\d+|hđ\s*\d+\s*năm)/i.test(cleanedRaw)) {
+    return true;
+  }
+
+  if (/(?:cần bán|bán gấp|bán nhà|chính chủ gửi bán|bán nhanh|chuyển nhượng quyền sử dụng|công chứng ngay|sổ sẵn công chứng)/i.test(cleanedRaw)) {
+    return false;
+  }
 
   return false;
 }
@@ -87,6 +138,40 @@ function buildFeatureTag(property = {}, isRent = false) {
     property.data_json?.raw_text
   ].filter(Boolean).join(" ").toLowerCase();
 
+  if (isRent) {
+    // Trường phái Nhà Thuê: Làm nổi bật ngay loại hình và công năng cho thuê
+    // 1. Mặt bằng kinh doanh / Mặt tiền cho thuê
+    if (/\b(?:mặt bằng|mb\b|mbkd)\b/i.test(textCorpus)) {
+      return "CHO THUÊ MẶT BẰNG KINH DOANH";
+    }
+    if (/\b(?:mặt tiền|mt\b|kinh doanh|kd\b|buôn bán)/i.test(textCorpus)) {
+      return "MẶT TIỀN KINH DOANH CHO THUÊ";
+    }
+
+    // 2. Tòa nhà / CHDV / Văn phòng
+    if (/\b(?:tòa nhà|chdv|căn hộ dịch vụ|văn phòng|vp\b)\b/i.test(textCorpus)) {
+      return "CHO THUÊ TÒA NHÀ NGUYÊN CĂN";
+    }
+
+    // 3. Biệt thự / Villa
+    if (/\b(?:biệt thự|villa)\b/i.test(textCorpus)) {
+      return "CHO THUÊ BIỆT THỰ CAO CẤP";
+    }
+
+    // 4. Shophouse
+    if (/shophouse/i.test(textCorpus)) {
+      return "CHO THUÊ SHOPHOUSE THƯƠNG MẠI";
+    }
+
+    // 5. Hẻm xe hơi
+    if (/\b(?:hẻm xe hơi|hxh\b|ô tô|xe hơi|xe tải|hẻm thông)\b/i.test(textCorpus)) {
+      return "CHO THUÊ NHÀ HẺM XE HƠI";
+    }
+
+    return "CHO THUÊ NHÀ NGUYÊN CĂN";
+  }
+
+  // Trường phái Nhà Bán: Tôn vinh đẳng cấp, tiềm năng tích sản, an cư
   // 1. Mặt tiền / Kinh doanh
   if (/\b(?:mặt tiền|mt\b|kinh doanh|kd\b|buôn bán)/i.test(textCorpus)) {
     return "MẶT TIỀN KINH DOANH";
@@ -94,7 +179,7 @@ function buildFeatureTag(property = {}, isRent = false) {
 
   // 2. Tòa nhà / CHDV / Dòng tiền
   if (/\b(?:tòa nhà|chdv|căn hộ dịch vụ|dòng tiền)\b/i.test(textCorpus)) {
-    return isRent ? "TÒA NHÀ KINH DOANH" : "TÒA NHÀ DÒNG TIỀN";
+    return "TÒA NHÀ DÒNG TIỀN ĐỈNH CAO";
   }
 
   // 3. Biệt thự / Villa
@@ -104,7 +189,7 @@ function buildFeatureTag(property = {}, isRent = false) {
 
   // 4. Hẻm xe hơi
   if (/\b(?:hẻm xe hơi|hxh\b|ô tô|xe hơi|xe tải|hẻm thông)\b/i.test(textCorpus)) {
-    return "HẺM XE HƠI TRÁNH";
+    return "HẺM XE HƠI TRÁNH NHAU";
   }
 
   // 5. Shophouse
@@ -113,16 +198,8 @@ function buildFeatureTag(property = {}, isRent = false) {
   }
 
   // 6. Đất nền
-  if (/\b(?:đất|lô đất|thổ cư)\b/i.test(textCorpus) && !isRent) {
-    return "ĐẤT THỔ CƯ ĐẸP";
-  }
-
-  // 7. Fallbacks
-  if (isRent) {
-    if (/mặt bằng/i.test(property.property_type || "")) {
-      return "CHO THUÊ MẶT BẰNG KINH DOANH";
-    }
-    return "CHO THUÊ NHÀ NGUYÊN CĂN";
+  if (/\b(?:đất|lô đất|thổ cư)\b/i.test(textCorpus)) {
+    return "ĐẤT THỔ CƯ VỊ TRÍ ĐẸP";
   }
 
   return "SIÊU PHẨM NHÀ PHỐ";
@@ -257,7 +334,12 @@ function generateFacebookPost(property = {}, options = {}) {
   const location = formatSafeLocation(property);
   const isRent = isRentalProperty(property);
 
-  const price = property.price_text || (isRent ? "Thỏa thuận thuê" : "Thỏa thuận trực tiếp");
+  const rawPrice = property.price_text || (isRent ? "Thỏa thuận thuê" : "Thỏa thuận trực tiếp");
+  let displayPrice = rawPrice;
+  if (isRent && rawPrice && !/(?:\/th|tháng)/i.test(rawPrice) && !/thỏa thuận/i.test(rawPrice)) {
+    displayPrice = `${rawPrice}/tháng`;
+  }
+
   const area = property.area_text || (property.dimensions ? `DT: ${property.dimensions}` : "Diện tích chuẩn đẹp");
 
   // Check if dimensions gives distinct useful info beyond area_text
@@ -266,9 +348,6 @@ function generateFacebookPost(property = {}, options = {}) {
   const hasDistinctDimensions = Boolean(cleanDimOnly && cleanDimOnly !== cleanAreaOnly);
 
   const structure = property.structure ? `🏗 Kết cấu: ${property.structure}` : "";
-  const legal = property.legal
-    ? `📜 Pháp lý: ${property.legal}`
-    : (isRent ? "📜 Pháp lý: Hợp đồng rõ ràng, làm việc chính chủ" : "📜 Pháp lý: Chuẩn chỉnh, rõ ràng");
   const bedrooms = Number(property.bedrooms) > 0 ? `🛏 Phòng ngủ: ${property.bedrooms} PN` : "";
   const bathrooms = Number(property.bathrooms) > 0 ? `🚿 Phòng tắm: ${property.bathrooms} WC` : "";
 
@@ -278,82 +357,151 @@ function generateFacebookPost(property = {}, options = {}) {
   let post = "";
 
   if (tone === "hot") {
-    // 1. TONE HOT / GIẬT TÍT HẤP DẪN CHUẨN BĐS CAO CẤP
-    const hookLine = isRent
-      ? "💥 Vị trí vàng đắc địa - Mặt tiền thông thoáng, nhận diện thương hiệu đỉnh cao!"
-      : "💥 Cơ hội hiếm có cho khách mua an cư hoặc đầu tư giữ tiền sinh lời cao!";
+    // ========================================================================
+    // TONE HOT: GIẬT TÍT THU HÚT, ĐÚNG 100% TRƯỜNG PHÁI
+    // ========================================================================
+    if (isRent) {
+      // --- TRƯỜNG PHÁI NHÀ THUÊ ---
+      const hookLine = "💥 Vị trí kinh doanh đắc địa - Mặt bằng đẹp thông thoáng, nhận diện thương hiệu vượt trội!";
+      const contract = property.legal
+        ? `📜 Hợp đồng: ${property.legal}`
+        : "📜 Hợp đồng thuê: Ký lâu dài ổn định, chủ nhà thiện chí hỗ trợ";
 
-    const highlights = isRent
-      ? `✨ Điểm nổi bật & Tiện ích kinh doanh:\n` +
-        `+ Vị trí trung tâm đắc địa, lưu lượng giao thông đông đúc ngày đêm.\n` +
-        `+ Không gian thông thoáng, tối ưu diện tích, dễ dàng setup mô hình kinh doanh.\n` +
-        `+ Phù hợp mở văn phòng đại diện, spa, thẩm mỹ, showroom, cửa hàng hoặc ở kết hợp.\n` +
-        `+ Hợp đồng thuê lâu dài, pháp lý chuẩn chỉnh, chủ nhà thiện chí hỗ trợ tối đa.`
-      : `✨ Điểm nổi bật:\n` +
+      const highlights =
+        `✨ LỢI THẾ KINH DOANH & CÔNG NĂNG KHAI THÁC:\n` +
+        `+ Vị trí trung tâm sầm uất, lưu lượng giao thông đông đúc ngày đêm, quảng bá thương hiệu cực đỉnh.\n` +
+        `+ Không gian vuông vức thông thoáng, tối ưu diện tích, dễ dàng thiết kế và setup theo nhận diện riêng.\n` +
+        `+ Vỉa hè rộng rãi, có chỗ để xe thuận tiện cho nhân viên và khách hàng đến giao dịch.\n` +
+        `+ Rất phù hợp mở showroom, văn phòng công ty, spa - thẩm mỹ, nha khoa, shop thời trang hoặc kinh doanh đa ngành nghề.\n` +
+        `+ Chủ nhà văn minh, tạo mọi điều kiện thuận lợi, hỗ trợ thời gian sửa chữa & setup kinh doanh.`;
+
+      const cta =
+        `📞 LIÊN HỆ XEM MẶT BẰNG & THƯƠNG LƯỢNG GIÁ THUÊ (24/7): ${hotline}\n` +
+        `👉 Đội ngũ ${pageName} hỗ trợ khảo sát thực tế miễn phí 100%, đàm phán giá thuê tốt nhất trực tiếp chủ nhà!`;
+
+      post = `${headlineHot}\n\n` +
+        `${hookLine}\n\n` +
+        `📍 Vị trí: ${location}\n` +
+        `💰 Giá thuê: ${displayPrice} (thương lượng chính chủ)\n` +
+        `📐 Diện tích: ${area}\n` +
+        (hasDistinctDimensions ? `📐 Kích thước: ${property.dimensions}\n` : "") +
+        (structure ? `${structure}\n` : "") +
+        (bedrooms ? `${bedrooms}\n` : "") +
+        (bathrooms ? `${bathrooms}\n` : "") +
+        `🔑 Hiện trạng: Nhà trống sẵn sàng bàn giao ngay, hỗ trợ thời gian setup\n` +
+        `${contract}\n\n` +
+        `${highlights}\n\n` +
+        `${cta}`;
+    } else {
+      // --- TRƯỜNG PHÁI NHÀ BÁN ---
+      const hookLine = "💥 Cơ hội hiếm có sở hữu bất động sản vị trí đắc địa - An cư lý tưởng hoặc đầu tư giữ tiền sinh lời cao!";
+      const legal = property.legal
+        ? `📜 Pháp lý: ${property.legal}`
+        : "📜 Pháp lý: Sổ hồng riêng chính chủ, hoàn công đầy đủ, chuẩn chỉnh công chứng ngay";
+
+      const highlights =
+        `✨ GIÁ TRỊ VÀNG BẤT ĐỘNG SẢN:\n` +
         `+ Khu vực dân trí cao, an ninh nghiêm ngặt, kết nối giao thông các quận trung tâm cực nhanh.\n` +
-        `+ Xung quanh đầy đủ tiện ích: trường học các cấp, siêu thị, chợ, ngân hàng, TTTM.\n` +
-        `+ Phong thủy vượng khí, thích hợp ở ngay, làm văn phòng hoặc khai thác dòng tiền ổn định.\n` +
-        `+ Pháp lý minh bạch, sổ sẵn sàng công chứng sang tên ngay trong ngày.`;
+        `+ Xung quanh đồng bộ đầy đủ tiện ích: trường học các cấp, siêu thị, chợ, bệnh viện, TTTM.\n` +
+        `+ Nhà xây kiên cố chắc chắn, phong thủy vượng khí, vào ở ngay hoặc khai thác dòng tiền cho thuê.\n` +
+        `+ Tiềm năng tăng giá vượt trội, thanh khoản cao, giữ tài sản bền vững theo thời gian.\n` +
+        `+ Pháp lý minh bạch chuẩn chỉnh, sổ cất két, sẵn sàng công chứng sang tên ngay trong ngày.`;
 
-    const cta = isRent
-      ? `📞 LIÊN HỆ XEM NHÀ & THƯƠNG LƯỢNG (24/7): ${hotline}\n` +
-        `👉 Đội ngũ ${pageName} hỗ trợ khảo sát thực tế miễn phí, đàm phán giá thuê tốt nhất!`
-      : `📞 LIÊN HỆ XEM NHÀ NGAY (24/7): ${hotline}\n` +
-        `👉 Đội ngũ ${pageName} hỗ trợ tận tâm, pháp lý an toàn, giá tốt nhất!`;
+      const cta =
+        `📞 LIÊN HỆ XEM NHÀ & THƯƠNG LƯỢNG CHÍNH CHỦ (24/7): ${hotline}\n` +
+        `👉 Đội ngũ ${pageName} hỗ trợ tận tâm, tư vấn pháp lý an toàn, đàm phán giá tốt nhất!`;
 
-    post = `${headlineHot}\n\n` +
-      `${hookLine}\n\n` +
-      `📍 Vị trí: ${location}\n` +
-      `💰 Mức giá cực tốt: ${price}\n` +
-      `📐 Diện tích: ${area}\n` +
-      (hasDistinctDimensions ? `📐 Kích thước: ${property.dimensions}\n` : "") +
-      (structure ? `${structure}\n` : "") +
-      (bedrooms ? `${bedrooms}\n` : "") +
-      (bathrooms ? `${bathrooms}\n` : "") +
-      `${legal}\n\n` +
-      `${highlights}\n\n` +
-      `${cta}`;
+      post = `${headlineHot}\n\n` +
+        `${hookLine}\n\n` +
+        `📍 Vị trí: ${location}\n` +
+        `💰 Mức giá cực tốt: ${displayPrice} (thương lượng chính chủ)\n` +
+        `📐 Diện tích: ${area}\n` +
+        (hasDistinctDimensions ? `📐 Kích thước: ${property.dimensions}\n` : "") +
+        (structure ? `${structure}\n` : "") +
+        (bedrooms ? `${bedrooms}\n` : "") +
+        (bathrooms ? `${bathrooms}\n` : "") +
+        `${legal}\n\n` +
+        `${highlights}\n\n` +
+        `${cta}`;
+    }
   } else if (tone === "quick") {
-    // 2. TONE QUICK / NGẮN GỌN CỌC GẤP
-    const quickTitle = isRent
-      ? `⚡ CHO THUÊ GẤP: ${headlineRaw}`
-      : `⚡ CHÍNH CHỦ GỬI BÁN: ${headlineRaw}`;
-
-    post = `${quickTitle}\n\n` +
-      `💵 Giá: ${price} (thương lượng chính chủ)\n` +
-      `📍 Khu vực: ${location}\n` +
-      `📐 Diện tích: ${area}\n` +
-      (hasDistinctDimensions ? `📐 Kích thước: ${property.dimensions}\n` : "") +
-      (structure ? `🏗 ${structure}\n` : "") +
-      (bedrooms ? `${bedrooms}\n` : "") +
-      (bathrooms ? `${bathrooms}\n` : "") +
-      `${legal}\n\n` +
-      `✅ Nhà đẹp sẵn vào ở ngay, vị trí siêu đắc địa.\n` +
-      `☎️ Hotline/Zalo: ${hotline} (Gặp ${pageName} xem nhà thực tế ngay)`;
+    // ========================================================================
+    // TONE QUICK: NGẮN GỌN, CHỐT CỌC NHANH
+    // ========================================================================
+    if (isRent) {
+      const quickTitle = `⚡ CHO THUÊ GẤP: ${headlineRaw}`;
+      post = `${quickTitle}\n\n` +
+        `💵 Giá thuê: ${displayPrice} (thương lượng chính chủ)\n` +
+        `📍 Khu vực: ${location}\n` +
+        `📐 Diện tích: ${area}\n` +
+        (hasDistinctDimensions ? `📐 Kích thước: ${property.dimensions}\n` : "") +
+        (structure ? `🏗 ${structure.replace(/^🏗\s*/, "")}\n` : "") +
+        (bedrooms ? `${bedrooms}\n` : "") +
+        (bathrooms ? `${bathrooms}\n` : "") +
+        `🔑 Hiện trạng: Bàn giao mặt bằng ngay, hỗ trợ thời gian setup kinh doanh\n` +
+        `📜 Hợp đồng thuê: Ký dài hạn ổn định, thủ tục minh bạch\n\n` +
+        `✅ Mặt bằng đẹp thông thoáng, trục đường sầm uất, nhận diện thương hiệu đỉnh cao.\n` +
+        `☎️ Hotline/Zalo: ${hotline} (Gặp ${pageName} xem thực tế & chốt thuê ngay)`;
+    } else {
+      const quickTitle = `⚡ CHÍNH CHỦ GỬI BÁN: ${headlineRaw}`;
+      const legal = property.legal || "Sổ hồng riêng, hoàn công đầy đủ, công chứng ngay";
+      post = `${quickTitle}\n\n` +
+        `💵 Giá bán: ${displayPrice} (thương lượng chính chủ)\n` +
+        `📍 Khu vực: ${location}\n` +
+        `📐 Diện tích: ${area}\n` +
+        (hasDistinctDimensions ? `📐 Kích thước: ${property.dimensions}\n` : "") +
+        (structure ? `🏗 ${structure.replace(/^🏗\s*/, "")}\n` : "") +
+        (bedrooms ? `${bedrooms}\n` : "") +
+        (bathrooms ? `${bathrooms}\n` : "") +
+        `📜 Pháp lý: ${legal}\n\n` +
+        `✅ Nhà đẹp kiên cố, vị trí đắc địa, mua an cư hoặc đầu tư giữ tiền sinh lời đều lý tưởng.\n` +
+        `☎️ Hotline/Zalo: ${hotline} (Gặp ${pageName} xem nhà thực tế ngay)`;
+    }
   } else {
-    // 3. TONE DETAIL / CHUYÊN NGHIỆP ĐẦY ĐỦ
-    post = `🏡 [BẤT ĐỘNG SẢN CHỌN LỌC] • ${headlineRaw}\n\n` +
-      `Kính gửi Quý khách hàng thông tin chi tiết bất động sản đang giao dịch:\n\n` +
-      `📌 THÔNG TIN CHI TIẾT:\n` +
-      `• Vị trí: ${location}\n` +
-      `• Giá chào: ${price}\n` +
-      `• Diện tích sử dụng: ${area}\n` +
-      (hasDistinctDimensions ? `• Kích thước: ${property.dimensions}\n` : "") +
-      (structure ? `• ${structure.replace("🏗 ", "")}\n` : "") +
-      (bedrooms ? `• ${bedrooms.replace("🛏 ", "")}\n` : "") +
-      (bathrooms ? `• ${bathrooms.replace("🚿 ", "")}\n` : "") +
-      `• ${legal.replace("📜 ", "")}\n\n` +
-      `📌 ĐÁNH GIÁ TIỆN ÍCH & CÔNG NĂNG:\n` +
-      (isRent
-        ? `• Trục đường thương mại đắc địa, lưu lượng giao thông tấp nập, nhận diện thương hiệu vượt trội.\n` +
-          `• Mặt bằng tối ưu công năng, phù hợp kinh doanh đa ngành nghề hoặc mở văn phòng công ty.\n` +
-          `• Hợp đồng thuê minh bạch, ổn định lâu dài, chủ nhà thiện chí hỗ trợ đối tác thuê.\n\n`
-        : `• Đường xá thông thoáng, khu vực văn minh dân trí cao, kết nối các quận trung tâm nhanh chóng.\n` +
-          `• Tiện ích ngoại khu đồng bộ trong bán kính 500m: trường học, siêu thị, chợ, bệnh viện.\n` +
-          `• Pháp lý chuẩn chỉnh, sổ hoàn công đầy đủ, công chứng giao dịch an toàn tuyệt đối.\n\n`
-      ) +
-      `🤝 ${pageName} - Tư vấn tận tâm & Đồng hành cùng Quý khách.\n` +
-      `☎️ Hotline hỗ trợ: ${hotline}`;
+    // ========================================================================
+    // TONE DETAIL: CHUYÊN NGHIỆP, CHI TIẾT ĐẦY ĐỦ
+    // ========================================================================
+    if (isRent) {
+      post = `🏢 [THÔNG TIN CHO THUÊ BẤT ĐỘNG SẢN] • ${headlineRaw}\n\n` +
+        `Kính gửi Quý khách hàng & Quý đối tác thông tin mặt bằng / bất động sản cho thuê đang tiếp nhận:\n\n` +
+        `📌 THÔNG TIN CHI TIẾT:\n` +
+        `• Vị trí: ${location}\n` +
+        `• Giá thuê: ${displayPrice} (thương lượng trực tiếp chính chủ)\n` +
+        `• Diện tích: ${area}\n` +
+        (hasDistinctDimensions ? `• Kích thước: ${property.dimensions}\n` : "") +
+        (structure ? `• ${structure.replace(/^🏗\s*/, "")}\n` : "") +
+        (bedrooms ? `• ${bedrooms.replace(/^🛏\s*/, "")}\n` : "") +
+        (bathrooms ? `• ${bathrooms.replace(/^🚿\s*/, "")}\n` : "") +
+        `• Hiện trạng: Sẵn sàng bàn giao ngay, hỗ trợ thời gian setup kinh doanh\n` +
+        `• Thời hạn hợp đồng: Ký dài hạn ổn định (từ 2 - 5 năm), chủ nhà thiện chí\n\n` +
+        `📌 ĐÁNH GIÁ TIỆN ÍCH & TIỀM NĂNG THƯƠNG MẠI:\n` +
+        `• Tuyến đường thương mại sầm uất, lưu lượng giao thông tấp nập ngày đêm, nhận diện thương hiệu vượt trội.\n` +
+        `• Mặt bằng vuông vức, hạ tầng điện nước hoàn chỉnh, thuận tiện bố trí quầy kệ, văn phòng, phòng chức năng.\n` +
+        `• Phù hợp đa dạng mô hình: Showroom, Văn phòng công ty, Spa - Thẩm mỹ, Nha khoa, Cửa hàng tiện lợi, Shop bán lẻ...\n` +
+        `• Pháp lý hợp đồng minh bạch rõ ràng, làm việc chính chủ, đảm bảo hoạt động kinh doanh bền vững dài lâu.\n\n` +
+        `🤝 ${pageName} - Tư vấn tận tâm & Đồng hành cùng Quý đối tác kinh doanh.\n` +
+        `☎️ Hotline hỗ trợ khảo sát: ${hotline}`;
+    } else {
+      const legal = property.legal ? property.legal : "Sổ hồng riêng chính chủ, hoàn công đầy đủ, công chứng giao dịch an toàn tuyệt đối";
+      post = `🏡 [BẤT ĐỘNG SẢN CHỌN LỌC] • ${headlineRaw}\n\n` +
+        `Kính gửi Quý khách hàng thông tin chi tiết bất động sản đang giao dịch:\n\n` +
+        `📌 THÔNG TIN CHI TIẾT:\n` +
+        `• Vị trí: ${location}\n` +
+        `• Giá chào bán: ${displayPrice} (thương lượng trực tiếp chính chủ)\n` +
+        `• Diện tích sử dụng: ${area}\n` +
+        (hasDistinctDimensions ? `• Kích thước: ${property.dimensions}\n` : "") +
+        (structure ? `• ${structure.replace(/^🏗\s*/, "")}\n` : "") +
+        (bedrooms ? `• ${bedrooms.replace(/^🛏\s*/, "")}\n` : "") +
+        (bathrooms ? `• ${bathrooms.replace(/^🚿\s*/, "")}\n` : "") +
+        `• Pháp lý: ${legal}\n\n` +
+        `📌 ĐÁNH GIÁ TIỆN ÍCH & GIÁ TRỊ GIA TĂNG:\n` +
+        `• Tuyến đường thông thoáng, khu vực văn minh dân trí cao, kết nối các quận trung tâm nhanh chóng.\n` +
+        `• Tiện ích ngoại khu đồng bộ trong bán kính 500m: trường học các cấp, siêu thị, chợ, bệnh viện, TTTM.\n` +
+        `• Kết cấu kiên cố chắc chắn, phong thủy vượng khí, vào ở ngay hoặc khai thác dòng tiền cho thuê ổn định.\n` +
+        `• Pháp lý chuẩn chỉnh minh bạch, sổ sẵn sàng công chứng sang tên giao dịch an toàn tuyệt đối.\n\n` +
+        `🤝 ${pageName} - Tư vấn tận tâm & Đồng hành cùng Quý khách.\n` +
+        `☎️ Hotline hỗ trợ xem nhà: ${hotline}`;
+    }
   }
 
   if (includeLink && property.property_id) {
@@ -361,8 +509,10 @@ function generateFacebookPost(property = {}, options = {}) {
   }
 
   const pageTag = slugifyHashtag(pageName) || "NgocNgaTot";
-  const categoryTag = isRent ? "#ChoThueNha #MatTienKinhDoanh" : "#BatDongSan #NhaDat";
-  post += `\n\n#Fourland #${pageTag} ${categoryTag} #NhaDepHCM`;
+  const categoryTag = isRent
+    ? "#ChoThueNha #ChoThueMatBang #ThueNhaKinhDoanh #MatBangChoThue #ThueNhaHCM"
+    : "#BatDongSan #NhaBanHCM #MuaBanNhaDat #NhaPhoDep";
+  post += `\n\n#Fourland #${pageTag} ${categoryTag}`;
 
   return post;
 }

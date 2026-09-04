@@ -85,11 +85,42 @@ test("generateFacebookPost differentiates rent and deduplicates identical dimens
   };
 
   const post = generateFacebookPost(rentalProperty, { tone: "hot", pageName: "FourLand" });
-  assert.match(post, /MẶT TIỀN KINH DOANH • HOÀNG SA, P\. 5, TÂN BÌNH - 10x10m ❌ TRỆT LỬNG • 30 TRIỆU\/THÁNG/);
+  assert.match(post, /MẶT TIỀN KINH DOANH CHO THUÊ • HOÀNG SA, P\. 5, TÂN BÌNH - 10x10m ❌ TRỆT LỬNG • 30 TRIỆU\/THÁNG/);
   assert.doesNotMatch(post, /mua an cư hoặc đầu tư giữ tiền/);
+  assert.doesNotMatch(post, /công chứng sang tên/);
+  assert.match(post, /Giá thuê: 30 triệu\/tháng/);
   assert.match(post, /nhận diện thương hiệu/);
+  assert.match(post, /#ChoThueNha/);
   const dimMatches = post.match(/10x10/g) || [];
   assert.equal(dimMatches.length, 2);
+});
+
+test("isRentalProperty correctly identifies raw Zalo rental post with broker signature", () => {
+  const zaloRental = {
+    property_id: "BDS-20260904-6E92FD54",
+    property_type: "Nhà thuê",
+    group_name: "THUÊ 4 LAND TB- GV-TP",
+    address: "MB 1199 Hoàng Sa",
+    street: "Hoàng Sa",
+    district: "Tân Bình",
+    ward: "Phường 5",
+    price_text: "30 triệu",
+    price_number: 30000000,
+    area_text: "10x10",
+    dimensions: "10x10",
+    structure: "trệt lửng LDR",
+    raw_text: "MB 1199 Hoàng Sa, P.5, Q.Tân Bình\n10x10 trệt lửng LDR \n30tr hhtt 0922570579\nNgọc Nhà Thuê Và Bán"
+  };
+
+  const post = generateFacebookPost(zaloRental, { tone: "hot", pageName: "Ngọc Nhà Tốt" });
+  assert.match(post, /🔥 CHO THUÊ MẶT BẰNG KINH DOANH • HOÀNG SA, P\. 5, TÂN BÌNH - 10x10m ❌ TRỆT LỬNG • 30 TRIỆU\/THÁNG 🔥/);
+  assert.match(post, /💥 Vị trí kinh doanh đắc địa - Mặt bằng đẹp thông thoáng/);
+  assert.match(post, /Giá thuê: 30 triệu\/tháng \(thương lượng chính chủ\)/);
+  assert.match(post, /Hợp đồng thuê: Ký lâu dài ổn định/);
+  assert.match(post, /THƯƠNG LƯỢNG GIÁ THUÊ/);
+  assert.doesNotMatch(post, /mua an cư/);
+  assert.doesNotMatch(post, /đầu tư giữ tiền/);
+  assert.doesNotMatch(post, /công chứng sang tên/);
 });
 
 test("publishToComposioFacebook provides clean simulation when API key is not configured", async () => {
