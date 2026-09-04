@@ -167,6 +167,8 @@ function cleanStructureForHeadline(structure) {
   let s = String(structure).trim();
   s = s.replace(/\([^)]*\)/g, "").trim();
   s = s.replace(/\b(?:ldr|btct|kiên cố|chắc chắn|mới đẹp|ở ngay)\b/gi, "").trim();
+  s = s.replace(/\b\d+\s*(?:pn|phòng ngủ|phong ngu)\b/gi, "").trim();
+  s = s.replace(/\b\d+\s*(?:wc|vệ sinh|tolet|toilet)\b/gi, "").trim();
   s = s.replace(/\s+/g, " ");
   return s.toUpperCase() || String(structure).trim().toUpperCase();
 }
