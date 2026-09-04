@@ -102,3 +102,28 @@ test("facebook pages API handler handles GET, POST, PATCH, and DELETE", async ()
   assert.equal(resDelete.statusCode, 200);
   assert.ok(resDelete.body.ok);
 });
+
+test("loadPersistentPages and savePersistentPages preserve custom default page", async () => {
+  const { loadPersistentPages, savePersistentPages, getDefaultFacebookPage } = require("../server/cms-facebook-pages");
+  const testPages = [
+    {
+      id: "106656702112510",
+      pageId: "106656702112510",
+      name: "Ngọc Nhà Tốt",
+      isDefault: false
+    },
+    {
+      id: "9999999999",
+      pageId: "9999999999",
+      name: "BĐS TP.HCM Mới",
+      isDefault: true
+    }
+  ];
+
+  await savePersistentPages(testPages);
+  const loaded = await loadPersistentPages();
+  assert.equal(loaded.length, 2);
+  const defPage = await getDefaultFacebookPage();
+  assert.equal(defPage.pageId, "9999999999");
+  assert.equal(defPage.name, "BĐS TP.HCM Mới");
+});

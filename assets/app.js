@@ -942,6 +942,7 @@ if (initUrlId && /^BDS-/i.test(initUrlId)) {
 }
 
 // ==========================================================================
+// ==========================================================================
 // PUBLIC PORTAL FACEBOOK STUDIO & COMPOSIO CLIENT
 // ==========================================================================
 const fbPortalState = {
@@ -950,8 +951,125 @@ const fbPortalState = {
   content: '',
   allImages: [],
   selectedImages: new Set(),
-  pageName: 'Ngọc Nhà Tốt'
+  selectedPageIds: new Set(),
+  selectedPageId: null,
+  pageName: '',
+  pages: []
 };
+
+function renderFacebookPortalChannels() {
+  const container = $('fbPortalChannelList');
+  if (!container) return;
+  const pages = Array.isArray(fbPortalState.pages) && fbPortalState.pages.length > 0
+    ? fbPortalState.pages
+    : [{
+        pageId: '106656702112510',
+        name: 'Ngọc Nhà Tốt',
+        isDefault: true,
+        category: 'Trang BĐS Fourland'
+      }];
+
+  if (fbPortalState.selectedPageIds.size === 0 && pages.length > 0) {
+    const defaultPage = pages.find(p => p.isDefault) || pages[0];
+    fbPortalState.selectedPageIds.add(String(defaultPage.pageId));
+    fbPortalState.selectedPageId = String(defaultPage.pageId);
+    fbPortalState.pageName = defaultPage.name;
+  }
+
+  container.innerHTML = pages.map(p => {
+    const pid = String(p.pageId);
+    const isChecked = fbPortalState.selectedPageIds.has(pid);
+    return `
+      <label class="fb-portal-channel-card ${isChecked ? 'checked' : ''}" data-fb-channel-id="${escapeHtml(pid)}">
+        <input type="checkbox" name="fbPortalChannel" value="${escapeHtml(pid)}" ${isChecked ? 'checked' : ''}>
+        <img class="fb-portal-card-avatar" src="https://graph.facebook.com/${escapeHtml(pid)}/picture?type=large" alt="${escapeHtml(p.name)}" onerror="this.src='https://graph.facebook.com/106656702112510/picture?type=large'">
+        <div class="fb-portal-card-info">
+          <div class="fb-portal-card-name">
+            <strong>${escapeHtml(p.name)}</strong>
+            ${p.isDefault ? '<span class="fb-portal-badge default">Mặc định</span>' : ''}
+          </div>
+          <span class="fb-portal-card-id">${escapeHtml(p.category || 'Fanpage Facebook')} · ID: ${escapeHtml(pid)}</span>
+        </div>
+        <span class="fb-portal-check-indicator">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+        </span>
+      </label>
+    `;
+  }).join('');
+
+  container.querySelectorAll('.fb-portal-channel-card').forEach(card => {
+    card.onclick = (e) => {
+      e.preventDefault();
+      const pid = card.dataset.fbChannelId;
+      if (fbPortalState.selectedPageIds.has(pid)) {
+        fbPortalState.selectedPageIds.delete(pid);
+      } else {
+        fbPortalState.selectedPageIds.add(pid);
+      }
+      card.classList.toggle('checked', fbPortalState.selectedPageIds.has(pid));
+      const checkbox = card.querySelector('input[type="checkbox"]');
+      if (checkbox) checkbox.checked = fbPortalState.selectedPageIds.has(pid);
+      updatePortalPublishButtonState();
+      updatePortalPreviewFromChannels();
+    };
+  });
+
+  updatePortalPublishButtonState();
+  updatePortalPreviewFromChannels();
+}
+
+function updatePortalPublishButtonState() {
+  const submitBtn = $('fbSubmitBtn');
+  if (!submitBtn) return;
+  const count = fbPortalState.selectedPageIds.size;
+  const span = submitBtn.querySelector('span');
+
+  if (count === 0) {
+    submitBtn.disabled = true;
+    if (span) span.textContent = 'Vui lòng chọn ít nhất 1 Fanpage';
+  } else if (count === 1) {
+    submitBtn.disabled = false;
+    const selectedPid = Array.from(fbPortalState.selectedPageIds)[0];
+    const pageObj = (fbPortalState.pages || []).find(p => String(p.pageId) === selectedPid);
+    const pName = pageObj?.name || fbPortalState.pageName || 'Fanpage';
+    if (span) span.textContent = `Đăng lên Fanpage ${pName}`;
+  } else {
+    submitBtn.disabled = false;
+    if (span) span.textContent = `Đăng đồng thời lên ${count} Fanpage đã chọn`;
+  }
+
+  const btnSelectAll = $('btnFbPortalSelectAll');
+  if (btnSelectAll) {
+    const total = (fbPortalState.pages || []).length || 1;
+    btnSelectAll.textContent = (count === total && total > 0) ? 'Bỏ chọn tất cả' : 'Chọn tất cả';
+  }
+}
+
+function updatePortalPreviewFromChannels() {
+  const selectedPid = Array.from(fbPortalState.selectedPageIds)[0];
+  if (!selectedPid) return;
+  const pageObj = (fbPortalState.pages || []).find(p => String(p.pageId) === selectedPid);
+  const pName = pageObj?.name || 'Fanpage Facebook';
+  fbPortalState.pageName = pName;
+  fbPortalState.selectedPageId = selectedPid;
+
+  const avatarImg = $('fbMockAvatar') || document.querySelector('.fb-mock-avatar img');
+  if (avatarImg) {
+    avatarImg.src = `https://graph.facebook.com/${selectedPid}/picture?type=large`;
+    avatarImg.alt = `Avatar ${pName}`;
+    avatarImg.style.display = 'block';
+  }
+  const nameEl = $('fbMockName') || document.querySelector('.fb-mock-name strong');
+  if (nameEl) nameEl.textContent = pName;
+
+  const titleEl = $('fbDialogTitle');
+  if (titleEl) {
+    const count = fbPortalState.selectedPageIds.size;
+    titleEl.textContent = count > 1 
+      ? `Đăng bài đồng thời lên ${count} Fanpage Facebook`
+      : `Đăng bài lên Fanpage ${pName}`;
+  }
+}
 
 async function openFacebookStudio(propertyId) {
   fbPortalState.propertyId = propertyId;
@@ -975,7 +1093,7 @@ function closeFacebookStudio() {
   if (dialog) dialog.close();
 }
 
-async function loadFacebookDraft(propertyId, tone = 'hot') {
+async function loadFacebookDraft(propertyId, tone = 'hot', targetPageId = null) {
   fbPortalState.tone = tone;
   const contentInput = $('fbPostContent');
   const previewText = $('fbPreviewText');
@@ -998,14 +1116,24 @@ async function loadFacebookDraft(propertyId, tone = 'hot') {
         action: 'draft',
         propertyId,
         tone,
-        includeLink
+        includeLink,
+        pageId: targetPageId || fbPortalState.selectedPageId || undefined
       })
     });
     const data = res.data || {};
 
     fbPortalState.content = data.content || '';
     fbPortalState.allImages = data.images || [];
-    fbPortalState.pageName = data.pageName || 'Ngọc Nhà Tốt';
+    fbPortalState.pages = Array.isArray(data.pages) && data.pages.length > 0 ? data.pages : [];
+
+    // Nếu chưa có page nào được chọn hoặc page ID từ server
+    if (data.pageId && fbPortalState.selectedPageIds.size === 0) {
+      fbPortalState.selectedPageIds.add(String(data.pageId));
+      fbPortalState.selectedPageId = String(data.pageId);
+    }
+    fbPortalState.pageName = data.pageName || 'Fanpage Facebook';
+
+    renderFacebookPortalChannels();
 
     // Default: select ALL images automatically
     fbPortalState.selectedImages = new Set(fbPortalState.allImages);
@@ -1017,7 +1145,10 @@ async function loadFacebookDraft(propertyId, tone = 'hot') {
     renderFacebookPreviewGallery();
 
     const statusNote = $('fbPublishStatus');
-    if (statusNote) statusNote.textContent = 'Sẵn sàng đăng lên Fanpage Ngọc Nhà Tốt';
+    if (statusNote) {
+      const pName = fbPortalState.pageName || 'Fanpage';
+      statusNote.textContent = `Sẵn sàng đăng lên Fanpage ${pName}`;
+    }
   } catch (error) {
     if (contentInput) contentInput.value = `Lỗi tải nội dung: ${error.message}`;
     if (previewText) previewText.textContent = `Lỗi tải nội dung: ${error.message}`;
@@ -1098,7 +1229,10 @@ function renderFacebookPhotoGrid() {
         }
       }
       showToast(`✅ Đã thêm ${files.length} ảnh vào hồ sơ nhà!`);
-      if (statusNote) statusNote.textContent = 'Sẵn sàng đăng lên Fanpage Ngọc Nhà Tốt';
+      if (statusNote) {
+        const pName = fbPortalState.pageName || 'Fanpage';
+        statusNote.textContent = `Sẵn sàng đăng lên Fanpage ${pName}`;
+      }
       renderFacebookPhotoGrid();
       renderFacebookPreviewGallery();
       await load();
@@ -1146,6 +1280,12 @@ async function handlePublishFacebook() {
     return;
   }
 
+  const selectedPages = Array.from(fbPortalState.selectedPageIds);
+  if (selectedPages.length === 0) {
+    alert('Vui lòng chọn ít nhất 1 Fanpage để đăng bài');
+    return;
+  }
+
   const submitBtn = $('fbSubmitBtn');
   const statusNote = $('fbPublishStatus');
   if (submitBtn) {
@@ -1167,6 +1307,8 @@ async function handlePublishFacebook() {
         propertyId: fbPortalState.propertyId,
         content,
         images: imagesToPublish,
+        pageIds: selectedPages,
+        pageId: selectedPages[0],
         pageName: fbPortalState.pageName
       })
     });
@@ -1180,7 +1322,8 @@ async function handlePublishFacebook() {
     }
 
     if (result.data?.postUrl) {
-      if (confirm(`${result.message || 'Đã xuất bản thành công lên Fanpage Ngọc Nhà Tốt!'}\n\nBạn có muốn mở xem bài viết trên Facebook không?`)) {
+      const reportMsg = result.message || 'Đã xuất bản bài viết thành công lên Facebook!';
+      if (confirm(`${reportMsg}\n\nBạn có muốn mở xem bài viết trên Facebook không?`)) {
         window.open(result.data.postUrl, '_blank');
       }
     } else {
@@ -1191,7 +1334,7 @@ async function handlePublishFacebook() {
   } catch (error) {
     if (submitBtn) {
       submitBtn.disabled = false;
-      submitBtn.innerHTML = `<span>Thử lại</span>`;
+      updatePortalPublishButtonState();
     }
     if (statusNote) statusNote.textContent = `Lỗi: ${error.message}`;
     alert(`Không thể đăng bài: ${error.message}`);
@@ -1203,11 +1346,28 @@ if ($('fbDialogClose')) $('fbDialogClose').onclick = closeFacebookStudio;
 if ($('fbCancelBtn')) $('fbCancelBtn').onclick = closeFacebookStudio;
 if ($('fbSubmitBtn')) $('fbSubmitBtn').onclick = handlePublishFacebook;
 
+const btnPortalSelectAll = $('btnFbPortalSelectAll');
+if (btnPortalSelectAll) {
+  btnPortalSelectAll.onclick = () => {
+    const pages = fbPortalState.pages || [];
+    if (!pages.length) return;
+    const allSelected = fbPortalState.selectedPageIds.size === pages.length;
+    if (allSelected) {
+      fbPortalState.selectedPageIds.clear();
+      const defaultPage = pages.find(p => p.isDefault) || pages[0];
+      if (defaultPage) fbPortalState.selectedPageIds.add(String(defaultPage.pageId));
+    } else {
+      pages.forEach(p => fbPortalState.selectedPageIds.add(String(p.pageId)));
+    }
+    renderFacebookPortalChannels();
+  };
+}
+
 document.querySelectorAll('[data-fb-tone]').forEach(chip => {
   chip.onclick = () => {
     const tone = chip.dataset.fbTone;
     if (fbPortalState.propertyId) {
-      loadFacebookDraft(fbPortalState.propertyId, tone);
+      loadFacebookDraft(fbPortalState.propertyId, tone, fbPortalState.selectedPageId);
     }
   };
 });
@@ -1222,7 +1382,7 @@ if ($('fbPostContent')) {
 if ($('fbIncludeLink')) {
   $('fbIncludeLink').onchange = () => {
     if (fbPortalState.propertyId) {
-      loadFacebookDraft(fbPortalState.propertyId, fbPortalState.tone);
+      loadFacebookDraft(fbPortalState.propertyId, fbPortalState.tone, fbPortalState.selectedPageId);
     }
   };
 }

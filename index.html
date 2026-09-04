@@ -52,7 +52,7 @@
   <link rel="manifest" href="/manifest.json">
   <link rel="icon" type="image/png" href="/assets/brand/fourland-icon-192.png">
   <link rel="apple-touch-icon" href="/assets/brand/fourland-icon-192.png">
-  <link rel="stylesheet" href="/assets/app.css?v=20260903-hide-fb-photo-add-desktop-v78">
+  <link rel="stylesheet" href="/assets/app.css?v=20260904-fb-channels-v79">
 
   <!-- Schema.org JSON-LD Structured Data -->
   <script type="application/ld+json">
@@ -339,7 +339,7 @@
       <header class="fb-portal-header">
         <div>
           <p class="fb-portal-eyebrow">Marketing & Mạng Xã Hội</p>
-          <h2 id="fbDialogTitle" class="fb-portal-title">Đăng bài lên Fanpage Ngọc Nhà Tốt</h2>
+          <h2 id="fbDialogTitle" class="fb-portal-title">Đăng bài lên Facebook Studio</h2>
         </div>
         <button id="fbDialogClose" class="fb-portal-close" type="button" aria-label="Đóng Facebook Studio">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -348,6 +348,21 @@
 
       <div class="fb-portal-body">
         <div class="fb-portal-editor">
+          <div class="fb-portal-channel-section">
+            <div class="fb-portal-channel-header">
+              <span class="fb-portal-label">Chọn kênh Fanpage đăng bài:</span>
+              <div class="fb-portal-channel-actions">
+                <button type="button" id="btnFbPortalSelectAll" class="fb-portal-action-link">Chọn tất cả</button>
+                <span class="fb-portal-divider">·</span>
+                <a href="/admin" target="_blank" rel="noopener noreferrer" class="fb-portal-action-link" title="Quản lý cấu hình Fanpage trong CMS">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                  <span>Cấu hình CMS</span>
+                </a>
+              </div>
+            </div>
+            <div id="fbPortalChannelList" class="fb-portal-channel-list"></div>
+          </div>
+
           <div class="fb-portal-tone-section">
             <span class="fb-portal-label">Chọn phong cách bài viết:</span>
             <div class="fb-portal-tone-chips">
@@ -396,11 +411,11 @@
           <div class="fb-mock-card">
             <div class="fb-mock-head">
               <div class="fb-mock-avatar">
-                <img src="https://graph.facebook.com/106656702112510/picture?type=large" alt="Avatar Ngọc Nhà Tốt" onerror="this.style.display='none';this.parentElement.textContent='NNT'">
+                <img id="fbMockAvatar" src="https://graph.facebook.com/106656702112510/picture?type=large" alt="Avatar Fanpage" onerror="this.style.display='none';this.parentElement.textContent='FB'">
               </div>
               <div class="fb-mock-meta">
                 <div class="fb-mock-name">
-                  <strong>Ngọc Nhà Tốt</strong>
+                  <strong id="fbMockName">Fanpage Facebook</strong>
                   <svg class="fb-verified-badge" viewBox="0 0 24 24" width="13" height="13" fill="#1877f2"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
                 </div>
                 <span class="fb-mock-time">Vừa xong · <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></span>
@@ -425,7 +440,7 @@
     </div>
   </dialog>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script src="/assets/app.js?v=20260902-hide-cms-btn-v77" defer></script>
+  <script src="/assets/app.js?v=20260904-fb-channels-v79" defer></script>
 </body>
 
 </html>
