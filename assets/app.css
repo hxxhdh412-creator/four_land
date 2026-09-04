@@ -144,12 +144,17 @@ input:focus,select:focus{border-color:var(--orange);box-shadow:0 0 0 3px rgba(23
 
 /* Refined single-surface search */
 .filter-card{padding:0;gap:0;border:0;border-radius:0;background:transparent;backdrop-filter:none;box-shadow:none}
-.search-input{height:54px;border:1px solid var(--line);border-radius:14px;background:#fff;box-shadow:0 10px 30px rgba(33,53,45,.08);transition:border-color .2s,box-shadow .2s}
+.search-input{position:relative;height:54px;border:1px solid var(--line);border-radius:14px;background:#fff;box-shadow:0 10px 30px rgba(33,53,45,.08);transition:border-color .2s,box-shadow .2s}
 .search-input:focus-within{border-color:rgba(239,101,9,.55);box-shadow:0 12px 36px rgba(33,53,45,.11),0 0 0 3px rgba(239,101,9,.08)}
-.quick input{height:52px;border:0;border-radius:14px;background:transparent;box-shadow:none}
+.quick input{height:52px;padding-right:88px;border:0;border-radius:14px;background:transparent;box-shadow:none}
 .quick input:focus{border:0;box-shadow:none}
 .quick input::placeholder{color:#8b948f}
 .search-input>.search-icon{left:17px;width:22px;height:22px}
+.search-clear-btn{position:absolute;right:52px;top:50%;transform:translateY(-50%);width:28px;height:28px;padding:0;border:0;border-radius:50%;background:rgba(29,41,37,.07);color:#5d6b63;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:3;transition:all .18s ease;line-height:0}
+.search-clear-btn:hover{background:rgba(239,101,9,.16);color:var(--orange);transform:translateY(-50%) scale(1.08)}
+.search-clear-btn:active{transform:translateY(-50%) scale(.92)}
+.search-clear-btn svg{width:13px;height:13px;display:block;stroke:currentColor}
+.search-clear-btn[hidden]{display:none!important}
 .search-input .filter-toggle{right:5px;top:50%;width:42px;height:42px;border-radius:10px;background:var(--sage);transform:translateY(-50%)}
 .search-input .filter-toggle:before{display:none}
 .search-input .filter-toggle:hover{background:#e2e8e0}
@@ -157,10 +162,16 @@ input:focus,select:focus{border-color:var(--orange);box-shadow:0 0 0 3px rgba(23
 .filter-card.filter-open{box-shadow:none}
 .filter-card.filter-open .filters{margin-top:9px;padding:14px 14px 5px;border:1px solid var(--line);border-bottom:0;border-radius:14px 14px 0 0;background:#fff;box-shadow:0 16px 42px rgba(33,53,45,.11)}
 .filter-card.filter-open .actions{margin-top:0;padding:8px 14px 14px;border:1px solid var(--line);border-top:0;border-radius:0 0 14px 14px;background:#fff;box-shadow:0 18px 42px rgba(33,53,45,.08)}
+#reset{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:0 18px;border-radius:9px;font-weight:600;font-size:13px;color:var(--forest);background:#f7f9f7;border:1px solid var(--line);transition:all .2s ease;cursor:pointer}
+#reset svg{width:15px;height:15px;stroke:currentColor;transition:transform .3s ease;flex-shrink:0}
+#reset:hover{background:#fff1eb;border-color:rgba(239,101,9,.35);color:var(--orange)}
+#reset:hover svg{transform:rotate(-45deg)}
+#reset:active{transform:scale(.98)}
 @media(max-width:760px){
   .filter-card{padding:0;box-shadow:none}
   .search-input{height:52px;border-radius:13px}
-  .quick input{height:50px;padding-left:50px;padding-right:60px;border-radius:13px}
+  .quick input{height:50px;padding-left:50px;padding-right:84px;border-radius:13px}
+  .search-clear-btn{right:48px;width:26px;height:26px}
   .search-input>.search-icon{left:16px;width:23px;height:23px}
   .search-input .filter-toggle{right:4px;top:50%;width:42px;height:42px;transform:translateY(-50%)}
   .search-input .filter-icon{width:23px;height:23px}

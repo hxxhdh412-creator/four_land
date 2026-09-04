@@ -23,7 +23,7 @@ function getPageFromUrl() {
   try {
     const params = new URLSearchParams(window.location.search);
     const tab = params.get('tab') || params.get('page');
-    const validPages = ['dashboard', 'match', 'properties', 'editor', 'web-pins', 'users', 'sync', 'facebook-pages'];
+    const validPages = ['dashboard', 'match', 'properties', 'owners', 'editor', 'web-pins', 'users', 'sync', 'facebook-pages'];
     if (tab && validPages.includes(tab.toLowerCase())) return tab.toLowerCase();
 
     const hash = window.location.hash.replace(/^#\/?/, '').toLowerCase();
@@ -1217,7 +1217,12 @@ async function loadOwners(force = false) {
     if (loading) loading.hidden = true;
     if (errorBox) {
       errorBox.hidden = false;
-      errorBox.textContent = `Lỗi tải danh bạ chủ nhà: ${err.message || 'Không thể kết nối'}`;
+      errorBox.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;flex-wrap:wrap;font-size:12.5px;">
+          <span>Lỗi tải danh bạ chủ nhà: ${escapeHtml(err.message || 'Không thể kết nối')}</span>
+          <button type="button" class="cms-page-btn" onclick="loadOwners(true)" style="height:28px;padding:0 8px;font-size:11.5px;">Thử lại</button>
+        </div>
+      `;
     }
   }
 }
@@ -1295,39 +1300,69 @@ function createOwnerCard(owner) {
   avatarGroup.append(avatar, meta);
   header.append(avatarGroup);
 
-  // Contact box (Phone & Quick Action buttons)
+  // Contact box (Phone & Touch-friendly Action buttons)
   const contact = document.createElement('div');
-  contact.className = 'cms-owner-contact';
+  contact.className = 'cms-owner-contact-block';
 
-  const phoneBox = document.createElement('div');
-  phoneBox.style.cssText = 'display: flex; align-items: center; gap: 8px; flex: 1;';
-  phoneBox.innerHTML = `
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--forest); opacity: 0.85; flex-shrink: 0;"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-    <span class="cms-owner-phone">${escapeHtml(formattedPhone || owner.phone || 'Chưa cập nhật')}</span>
+  const phoneRow = document.createElement('div');
+  phoneRow.className = 'cms-owner-phone-row';
+  phoneRow.innerHTML = `
+    <div class="cms-owner-phone-text">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="cms-phone-icon"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+      <span class="cms-owner-phone">${escapeHtml(formattedPhone || owner.phone || 'Chưa cập nhật')}</span>
+    </div>
   `;
-  contact.append(phoneBox);
 
   const canSeeSensitive = ['super_admin', 'manager', 'editor', 'sales'].includes(cmsState.user?.role);
   if (canSeeSensitive && rawPhone) {
-    const actions = document.createElement('div');
-    actions.className = 'cms-owner-contact-actions';
+    const copyBtn = document.createElement('button');
+    copyBtn.type = 'button';
+    copyBtn.className = 'cms-owner-copy-btn';
+    copyBtn.title = 'Sao chép số điện thoại';
+    copyBtn.setAttribute('aria-label', 'Sao chép số điện thoại');
+    copyBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span>Chép</span>`;
+    copyBtn.onclick = (e) => {
+      e.stopPropagation();
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(rawPhone);
+        copyBtn.classList.add('copied');
+        copyBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span>Đã chép</span>`;
+        setTimeout(() => {
+          copyBtn.classList.remove('copied');
+          copyBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span>Chép</span>`;
+        }, 1500);
+      }
+    };
+    phoneRow.append(copyBtn);
+  }
+  contact.append(phoneRow);
+
+  if (canSeeSensitive && rawPhone) {
+    const actionRow = document.createElement('div');
+    actionRow.className = 'cms-owner-action-row';
 
     const callBtn = document.createElement('a');
-    callBtn.className = 'cms-owner-icon-btn call-action';
+    callBtn.className = 'cms-owner-btn-call';
     callBtn.href = `tel:${rawPhone}`;
-    callBtn.title = `Gọi điện thoại ${formattedPhone}`;
-    callBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`;
+    callBtn.setAttribute('aria-label', `Gọi cho ${formattedPhone}`);
+    callBtn.innerHTML = `
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+      <span>Gọi ngay</span>
+    `;
 
     const zaloBtn = document.createElement('a');
-    zaloBtn.className = 'cms-owner-icon-btn zalo-action';
+    zaloBtn.className = 'cms-owner-btn-zalo';
     zaloBtn.href = `https://zalo.me/${rawPhone}`;
     zaloBtn.target = '_blank';
     zaloBtn.rel = 'noopener';
-    zaloBtn.title = `Nhắn tin Zalo ${formattedPhone}`;
-    zaloBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>`;
+    zaloBtn.setAttribute('aria-label', `Nhắn tin Zalo ${formattedPhone}`);
+    zaloBtn.innerHTML = `
+      <svg width="15" height="15" viewBox="0 0 40 40" fill="none"><path d="M20 3C10.61 3 3 10.16 3 19c0 3.4 1.13 6.54 3.06 9.1L4.1 36.1c-.24.78.48 1.5 1.26 1.26L13.1 34.9A17.2 17.2 0 0 0 20 35c9.39 0 17-7.16 17-16S29.39 3 20 3z" fill="#ffffff"/></svg>
+      <span>Chat Zalo</span>
+    `;
 
-    actions.append(callBtn, zaloBtn);
-    contact.append(actions);
+    actionRow.append(callBtn, zaloBtn);
+    contact.append(actionRow);
   }
 
   // Summary of properties
@@ -1335,7 +1370,7 @@ function createOwnerCard(owner) {
   summary.className = 'cms-owner-props-summary';
   summary.innerHTML = `
     <span>Khu vực: <strong>${escapeHtml(owner.districtLabel || 'Chưa rõ')}</strong></span>
-    <span>Ký gửi: <strong style="color: var(--forest);">${owner.propertyCount} căn</strong></span>
+    <span>Ký gửi: <strong class="cms-owner-count-highlight">${owner.propertyCount} căn</strong></span>
   `;
 
   // Mini Property List
@@ -1351,12 +1386,13 @@ function createOwnerCard(owner) {
       : p.address;
 
     chip.innerHTML = `
-      <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 210px;">
-        <span style="font-weight: 600; color: var(--forest);">${escapeHtml(displayAddr)}</span>
+      <div class="cms-owner-prop-main">
+        <span class="cms-owner-prop-addr">${escapeHtml(displayAddr)}</span>
       </div>
-      <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
-        <span class="cms-badge ${isSale ? 'cms-badge-sale' : 'cms-badge-rent'}" style="font-size: 10px; padding: 2px 6px;">${isSale ? 'Bán' : 'Thuê'}</span>
-        <span style="font-weight: 700; font-size: 12px; color: var(--orange);">${escapeHtml(p.price)}</span>
+      <div class="cms-owner-prop-meta">
+        <span class="cms-badge ${isSale ? 'cms-badge-sale' : 'cms-badge-rent'}">${isSale ? 'Bán' : 'Thuê'}</span>
+        <span class="cms-owner-prop-price">${escapeHtml(p.price)}</span>
+        <svg class="cms-owner-prop-arrow" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
     `;
     chip.onclick = () => openPropertyDetail(p.id);
@@ -1819,6 +1855,18 @@ if (byId('propertyMobileFilterToggle')) {
     const panel = byId('propertyAdvancedFilters');
     const isOpen = panel?.classList.toggle('mobile-open') || false;
     byId('propertyMobileFilterToggle').setAttribute('aria-expanded', String(isOpen));
+  });
+}
+
+if (byId('btnMobileResetFilters')) {
+  byId('btnMobileResetFilters').addEventListener('click', () => {
+    byId('propertyResetFilters')?.click();
+  });
+}
+
+if (byId('btnMobileApplyFilters')) {
+  byId('btnMobileApplyFilters').addEventListener('click', () => {
+    byId('propertyMobileFilterToggle')?.click();
   });
 }
 
@@ -2605,6 +2653,18 @@ if (byId('facebookPostDialog')) {
 // FACEBOOK PAGES MANAGEMENT
 // ==========================================================================
 
+const DEFAULT_FALLBACK_PAGES = [
+  {
+    id: "106656702112510",
+    pageId: "106656702112510",
+    name: "Ngọc Nhà Tốt",
+    isDefault: true,
+    source: "composio",
+    category: "Bất động sản",
+    avatarUrl: "https://graph.facebook.com/106656702112510/picture?type=large"
+  }
+];
+
 let fbPagesCache = [];
 
 async function loadFacebookPages(force = false) {
@@ -2618,7 +2678,7 @@ async function loadFacebookPages(force = false) {
   try {
     const url = force ? '/api/admin/v1/facebook/pages?sync=true' : '/api/admin/v1/facebook/pages';
     const res = await cmsApi(url);
-    fbPagesCache = res.data || [];
+    fbPagesCache = (res && Array.isArray(res.data) && res.data.length > 0) ? res.data : DEFAULT_FALLBACK_PAGES;
 
     const totalEl = byId('fbTotalPages');
     if (totalEl) totalEl.textContent = fbPagesCache.length;
@@ -2628,11 +2688,24 @@ async function loadFacebookPages(force = false) {
 
     renderFacebookPagesGrid(fbPagesCache);
   } catch (err) {
+    console.warn("loadFacebookPages notice:", err.message);
+    fbPagesCache = DEFAULT_FALLBACK_PAGES;
+    const totalEl = byId('fbTotalPages');
+    if (totalEl) totalEl.textContent = fbPagesCache.length;
+    const defaultEl = byId('fbDefaultPageName');
+    if (defaultEl) defaultEl.textContent = "Ngọc Nhà Tốt";
+
+    renderFacebookPagesGrid(fbPagesCache);
+
     if (alertEl) {
-      alertEl.textContent = `Lỗi nạp Fanpage: ${err.message}`;
+      alertEl.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;flex-wrap:wrap;font-size:12.5px;">
+          <span>Kết nối API Fanpage: Đang hiển thị danh sách đệm.</span>
+          <button type="button" class="cms-page-btn" onclick="loadFacebookPages(true)" style="height:28px;padding:0 8px;font-size:11.5px;">Thử lại</button>
+        </div>
+      `;
       alertEl.hidden = false;
     }
-    grid.innerHTML = `<div class="cms-empty" style="grid-column:1/-1;"><b>Lỗi tải dữ liệu</b><span>${err.message}</span></div>`;
   }
 }
 
@@ -2933,10 +3006,24 @@ window.addEventListener('popstate', () => {
 if (byId('ownersRefresh')) byId('ownersRefresh').addEventListener('click', () => loadOwners(true));
 if (byId('ownersSearchInput')) {
   let timer;
-  byId('ownersSearchInput').addEventListener('input', () => {
+  const searchInput = byId('ownersSearchInput');
+  const clearBtn = byId('ownersSearchClear');
+  const updateClearState = () => {
+    if (clearBtn) clearBtn.hidden = !searchInput.value.trim();
+  };
+  searchInput.addEventListener('input', () => {
+    updateClearState();
     clearTimeout(timer);
     timer = setTimeout(() => loadOwners(true), 300);
   });
+  if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+      searchInput.value = '';
+      updateClearState();
+      searchInput.focus();
+      loadOwners(true);
+    });
+  }
 }
 if (byId('ownersRoleFilter')) byId('ownersRoleFilter').addEventListener('change', () => loadOwners(true));
 if (byId('ownersSortSelect')) byId('ownersSortSelect').addEventListener('change', () => loadOwners(true));

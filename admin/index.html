@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex,nofollow">
   <meta name="theme-color" content="#283d34">
   <title>FOURLAND · Trung tâm quản trị</title>
-  <link rel="stylesheet" href="/admin/admin.css?v=20260903-multi-channel-v107">
+  <link rel="stylesheet" href="/admin/admin.css?v=20260904-props-v116">
 </head>
 <body>
   <div id="cmsApp" class="cms-app" aria-busy="true">
@@ -248,29 +248,29 @@
           </section>
 
           <section class="cms-page" data-page-panel="properties">
-            <div class="cms-heading">
-              <div>
-                <p class="cms-eyebrow">Kho bất động sản</p>
-                <h1>Quản lý hồ sơ</h1>
-                <p>Tìm kiếm, quản lý và thêm mới bất động sản vào kho dữ liệu.</p>
-              </div>
-              <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
-                <div class="cms-listing-segmented" role="tablist" aria-label="Loại giao dịch">
-                  <button type="button" class="cms-listing-seg-btn active" data-listing-filter="all">
-                    <span>Tất cả</span>
-                  </button>
-                  <button type="button" class="cms-listing-seg-btn" data-listing-filter="rent">
-                    <span style="width: 8px; height: 8px; border-radius: 50%; background: #2e7d32; display: inline-block;"></span>
-                    <span>Cho thuê</span>
-                  </button>
-                  <button type="button" class="cms-listing-seg-btn" data-listing-filter="sale">
-                    <span style="width: 8px; height: 8px; border-radius: 50%; background: #1565c0; display: inline-block;"></span>
-                    <span>Cần bán</span>
-                  </button>
+            <div class="cms-heading cms-properties-heading">
+              <div class="cms-properties-head-top">
+                <div class="cms-properties-title-group">
+                  <p class="cms-eyebrow">Kho bất động sản</p>
+                  <h1>Quản lý hồ sơ</h1>
+                  <p class="cms-properties-desc">Tìm kiếm, quản lý và thêm mới bất động sản vào kho dữ liệu.</p>
                 </div>
                 <button id="btnCreatePropertyPage" class="cms-primary" type="button">
                   <svg class="cms-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                   <span>Thêm hồ sơ</span>
+                </button>
+              </div>
+              <div class="cms-listing-segmented" role="tablist" aria-label="Loại giao dịch">
+                <button type="button" class="cms-listing-seg-btn active" data-listing-filter="all">
+                  <span>Tất cả</span>
+                </button>
+                <button type="button" class="cms-listing-seg-btn" data-listing-filter="rent">
+                  <span style="width: 8px; height: 8px; border-radius: 50%; background: #2e7d32; display: inline-block;"></span>
+                  <span>Cho thuê</span>
+                </button>
+                <button type="button" class="cms-listing-seg-btn" data-listing-filter="sale">
+                  <span style="width: 8px; height: 8px; border-radius: 50%; background: #1565c0; display: inline-block;"></span>
+                  <span>Cần bán</span>
                 </button>
               </div>
             </div>
@@ -383,6 +383,16 @@
                       </select>
                     </div>
                   </div>
+
+                  <div class="cms-mobile-filter-actions">
+                    <button type="button" id="btnMobileResetFilters" class="cms-btn-reset">
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><polyline points="3 3 3 8 8 8"/></svg>
+                      <span>Đặt lại bộ lọc</span>
+                    </button>
+                    <button type="button" id="btnMobileApplyFilters" class="cms-primary">
+                      <span>Xem kết quả</span>
+                    </button>
+                  </div>
                 </div>
               </form>
             </div>
@@ -478,31 +488,34 @@
               </button>
             </div>
 
-            <div class="cms-queue-summary">
-              <article><span>Tổng chủ sở hữu</span><strong id="ownersStatTotal">—</strong></article>
-              <article><span>Chủ nhà trực tiếp (F0)</span><strong id="ownersStatDirect">—</strong></article>
-              <article><span>Đầu chủ & Môi giới</span><strong id="ownersStatBroker">—</strong></article>
-              <article><span>Ký gửi nhiều căn (>1)</span><strong id="ownersStatMulti">—</strong></article>
+            <div class="cms-queue-summary cms-owners-summary">
+              <article class="stat-card stat-total"><span>Tổng chủ sở hữu</span><strong id="ownersStatTotal">—</strong></article>
+              <article class="stat-card stat-direct"><span>Chủ nhà trực tiếp</span><strong id="ownersStatDirect">—</strong></article>
+              <article class="stat-card stat-broker"><span>Đầu chủ & F1</span><strong id="ownersStatBroker">—</strong></article>
+              <article class="stat-card stat-multi"><span>Nhiều căn (>1)</span><strong id="ownersStatMulti">—</strong></article>
             </div>
 
             <!-- Filters -->
-            <div class="cms-surface" style="padding: 14px 18px; margin-bottom: 20px; display: flex; gap: 12px; flex-wrap: wrap; align-items: center; justify-content: space-between;">
-              <div style="display: flex; gap: 10px; flex: 1; min-width: 260px; max-width: 450px; position: relative;">
-                <input id="ownersSearchInput" type="text" class="cms-input" placeholder="Tìm theo tên, SĐT, quận, địa chỉ nhà…" style="width: 100%; height: 38px; padding-left: 36px;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position: absolute; left: 12px; top: 11px; color: var(--muted); pointer-events: none;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <div class="cms-surface cms-owners-filters">
+              <div class="cms-owners-search-wrap">
+                <input id="ownersSearchInput" type="text" class="cms-input" placeholder="Tìm theo tên, SĐT, quận, đường…">
+                <svg class="cms-owners-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <button type="button" id="ownersSearchClear" class="cms-owners-search-clear" aria-label="Xóa tìm kiếm" title="Xóa tìm kiếm" hidden>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
               </div>
-              <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                <select id="ownersRoleFilter" class="cms-select" style="height: 38px; min-width: 160px;">
+              <div class="cms-owners-select-group">
+                <select id="ownersRoleFilter" class="cms-select">
                   <option value="all">Tất cả vai trò</option>
                   <option value="Chủ nhà trực tiếp">Chủ nhà trực tiếp</option>
                   <option value="Đầu chủ / Nguồn nội bộ">Đầu chủ / Nguồn nội bộ</option>
                   <option value="Môi giới F1">Môi giới F1</option>
-                  <option value="Quản lý / Người trông coi">Quản lý / Người trông coi</option>
+                  <option value="Quản lý / Người trông coi">Quản lý / Trông coi</option>
                 </select>
-                <select id="ownersSortSelect" class="cms-select" style="height: 38px;">
-                  <option value="properties_desc">Nhiều căn nhất trước</option>
-                  <option value="newest">Mới cập nhật nhất</option>
-                  <option value="name_asc">Tên chủ nhà (A - Z)</option>
+                <select id="ownersSortSelect" class="cms-select">
+                  <option value="properties_desc">Nhiều căn nhất</option>
+                  <option value="newest">Mới cập nhật</option>
+                  <option value="name_asc">Tên (A - Z)</option>
                 </select>
               </div>
             </div>
@@ -706,12 +719,12 @@
                 <h1>Quản lý Kênh Facebook</h1>
                 <p>Danh sách các Fanpage Facebook được kết nối qua Composio MCP Gateway & Facebook Graph API v19.0.</p>
               </div>
-              <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                <button id="btnSyncComposio" class="cms-primary" type="button" style="background: var(--forest); box-shadow: 0 4px 14px rgba(40, 61, 52, 0.2);">
+              <div class="cms-fb-top-actions">
+                <button id="btnSyncComposio" class="cms-primary cms-fb-btn-sync" type="button">
                   <svg class="cms-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-                  <span>Đồng bộ từ Composio</span>
+                  <span>Đồng bộ Composio</span>
                 </button>
-                <button id="btnCreateFbPage" class="cms-page-btn" type="button">
+                <button id="btnCreateFbPage" class="cms-page-btn cms-fb-btn-create" type="button">
                   <svg class="cms-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                   <span>Thêm thủ công</span>
                 </button>
@@ -724,30 +737,30 @@
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="#1877f2"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
               </div>
               <div class="cms-fb-composio-text">
-                <strong>
-                  <span>Kết nối trực tiếp tài khoản Facebook Composio</span>
+                <div class="cms-fb-composio-header">
+                  <strong>Kết nối trực tiếp tài khoản Facebook Composio</strong>
                   <span class="cms-fb-tag-composio">Active · Multi-Pages</span>
-                </strong>
+                </div>
                 <p>Tất cả Fanpage bạn quản trị trên Composio được tự động tải về đầy đủ token. Bạn có thể chọn bất kỳ Page nào khi xuất bản bài viết BĐS trong Facebook Studio.</p>
               </div>
             </div>
 
             <!-- Queue Summary Metrics -->
-            <div class="cms-queue-summary">
-              <article><span>Tổng Fanpage</span><strong id="fbTotalPages">13</strong></article>
-              <article><span>Trang Mặc Định</span><strong id="fbDefaultPageName" style="font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Ngọc Nhà Tốt</strong></article>
-              <article><span>Composio MCP</span><strong style="color:var(--forest);font-size:15px;">Đã kết nối</strong></article>
-              <article><span>Graph API</span><strong style="color:var(--forest);font-size:15px;">v19.0 Sẵn sàng</strong></article>
+            <div class="cms-queue-summary cms-fb-summary">
+              <article><span>Tổng Fanpage</span><strong id="fbTotalPages">1</strong></article>
+              <article><span>Trang Mặc Định</span><strong id="fbDefaultPageName">Ngọc Nhà Tốt</strong></article>
+              <article><span>Composio MCP</span><strong class="cms-fb-status-composio">Đã kết nối</strong></article>
+              <article><span>Graph API</span><strong class="cms-fb-status-api">v19.0 Sẵn sàng</strong></article>
             </div>
 
             <div id="fbPagesAlert" class="cms-alert" hidden></div>
 
             <!-- List of Fanpages -->
-            <div class="cms-surface" style="padding: 20px;">
-              <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; border-bottom: 1px solid var(--line); padding-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+            <div class="cms-surface cms-fb-surface">
+              <header class="cms-fb-list-header">
                 <div>
-                  <strong style="font-size: 16px; color: var(--forest);">Danh sách Fanpage đang hoạt động</strong>
-                  <span style="display: block; font-size: 13px; color: var(--muted); margin-top: 2px;">Các Fanpage này sẽ xuất hiện trong menu chọn đăng bài ở kho bất động sản.</span>
+                  <strong>Danh sách Fanpage đang hoạt động</strong>
+                  <span>Các Fanpage này sẽ xuất hiện trong menu chọn đăng bài ở kho bất động sản.</span>
                 </div>
                 <button id="btnRefreshFbPages" class="cms-page-btn" type="button" title="Tải lại danh sách Fanpage">
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
@@ -1367,6 +1380,6 @@
 
     <div id="toastContainer" class="cms-toast-container" aria-live="polite"></div>
   </div>
-  <script src="/admin/admin.js?v=20260903-multi-channel-v107" defer></script>
+  <script src="/admin/admin.js?v=20260904-props-v116" defer></script>
 </body>
 </html>

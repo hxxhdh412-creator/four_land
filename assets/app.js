@@ -1045,7 +1045,125 @@ $('adminAccessForm').onsubmit=async event=>{
   }
 };
 $('archivedToggle').onclick=()=>{state.viewArchived=!state.viewArchived;state.page=1;state.selectedIds.clear();$('archivedToggle').classList.toggle('active',state.viewArchived);$('archivedToggle').textContent=state.viewArchived?'Quay lại kho nhà':'Hồ sơ đã ẩn';load();updateBulkBar()};
-let searchTimer;const scheduleLoad=(delay=250)=>{clearTimeout(searchTimer);state.page=1;searchTimer=setTimeout(load,delay)};$('q').addEventListener('input',()=>scheduleLoad(320));['district','ward','street','type','timeRange','rentalStatus','sortBy','minPrice','maxPrice','minArea','maxArea'].forEach(id=>{const el=$(id);if(el)el.addEventListener('change',()=>scheduleLoad(0))});$('searchForm').onsubmit=event=>{event.preventDefault();scheduleLoad(0)};$('reset').onclick=()=>{$('searchForm').reset();scheduleLoad(0)};$('prev').onclick=()=>{if(state.page>1){state.page--;load();scrollTo({top:0,behavior:'smooth'})}};$('next').onclick=()=>{if(state.page*state.pageSize<state.total){state.page++;load();scrollTo({top:0,behavior:'smooth'})}};$('filterToggle').onclick=()=>{const open=$('filters').classList.toggle('open');$('searchForm').classList.toggle('filter-open',open);$('filterToggle').setAttribute('aria-expanded',open)};
+let searchTimer;
+const scheduleLoad = (delay = 250) => {
+  clearTimeout(searchTimer);
+  state.page = 1;
+  searchTimer = setTimeout(load, delay);
+};
+
+const searchInputEl = $('q');
+const searchClearBtn = $('searchClearBtn');
+
+function updateSearchClearVisibility() {
+  if (searchClearBtn && searchInputEl) {
+    searchClearBtn.hidden = !searchInputEl.value.trim();
+  }
+}
+
+if (searchInputEl) {
+  searchInputEl.addEventListener('input', () => {
+    updateSearchClearVisibility();
+    scheduleLoad(320);
+  });
+}
+
+if (searchClearBtn) {
+  searchClearBtn.onclick = () => {
+    if (searchInputEl) {
+      searchInputEl.value = '';
+      searchInputEl.focus();
+    }
+    searchClearBtn.hidden = true;
+    if (window.location.hash && window.location.hash.startsWith('#q=')) {
+      history.replaceState(null, '', window.location.pathname + window.location.search);
+    }
+    clearTimeout(searchTimer);
+    state.page = 1;
+    load();
+    showToast('✓ Đã xóa từ khóa tìm kiếm', 1600);
+  };
+}
+
+['district', 'ward', 'street', 'type', 'timeRange', 'rentalStatus', 'sortBy', 'minPrice', 'maxPrice', 'minArea', 'maxArea'].forEach(id => {
+  const el = $(id);
+  if (el) el.addEventListener('change', () => scheduleLoad(0));
+});
+
+$('searchForm').onsubmit = event => {
+  event.preventDefault();
+  scheduleLoad(0);
+};
+
+function resetAllFilters() {
+  if (searchInputEl) searchInputEl.value = '';
+  if (searchClearBtn) searchClearBtn.hidden = true;
+
+  ['district', 'ward', 'street', 'type', 'rentalStatus', 'timeRange'].forEach(id => {
+    const el = $(id);
+    if (el) {
+      el.value = '';
+      el.selectedIndex = 0;
+    }
+  });
+
+  const sortEl = $('sortBy');
+  if (sortEl) sortEl.value = 'newest';
+
+  ['minPrice', 'maxPrice', 'minArea', 'maxArea'].forEach(id => {
+    const el = $(id);
+    if (el) el.value = '';
+  });
+
+  state.filterTab = 'all';
+  document.querySelectorAll('.quick-tab').forEach(tab => {
+    tab.classList.toggle('active', tab.dataset.filter === 'all');
+  });
+
+  if (window.location.hash && window.location.hash.startsWith('#q=')) {
+    history.replaceState(null, '', window.location.pathname + window.location.search);
+  }
+
+  const filtersEl = $('filters');
+  const searchFormEl = $('searchForm');
+  const filterToggleEl = $('filterToggle');
+  if (filtersEl && filtersEl.classList.contains('open')) {
+    filtersEl.classList.remove('open');
+    if (searchFormEl) searchFormEl.classList.remove('filter-open');
+    if (filterToggleEl) filterToggleEl.setAttribute('aria-expanded', 'false');
+  }
+
+  clearTimeout(searchTimer);
+  state.page = 1;
+  load();
+
+  showToast('✓ Đã xóa toàn bộ bộ lọc', 2000);
+}
+
+const resetBtn = $('reset');
+if (resetBtn) resetBtn.onclick = resetAllFilters;
+
+$('prev').onclick = () => {
+  if (state.page > 1) {
+    state.page--;
+    load();
+    scrollTo({ top: 0, behavior: 'smooth' });
+  }
+};
+
+$('next').onclick = () => {
+  if (state.page * state.pageSize < state.total) {
+    state.page++;
+    load();
+    scrollTo({ top: 0, behavior: 'smooth' });
+  }
+};
+
+$('filterToggle').onclick = () => {
+  const open = $('filters').classList.toggle('open');
+  $('searchForm').classList.toggle('filter-open', open);
+  $('filterToggle').setAttribute('aria-expanded', open);
+};
 
 function closeDetailModal(){
   $('detail').close();
@@ -1082,6 +1200,7 @@ function handleSearchFromHash(){
   if(hash&&hash.startsWith('#q=')){
     const qValue=decodeURIComponent(hash.slice(3).replace(/\+/g,' '));
     $('q').value=qValue;
+    updateSearchClearVisibility();
     state.page=1;
     load();
     const grid=$('grid');
@@ -1101,6 +1220,7 @@ document.querySelectorAll('.quick-tab').forEach(tab=>{
   };
 });
 
+updateSearchClearVisibility();
 loadFacets();
 load();
 checkAdminSession();

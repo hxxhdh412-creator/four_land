@@ -645,6 +645,87 @@ http.createServer(async (req,res)=>{
       return send(res, 500, { ok: false, error: { message: error.message } });
     }
   }
+  if(url.pathname==="/api/admin/v1/facebook/pages") {
+    try {
+      const {
+        getFacebookPages,
+        addFacebookPage,
+        updateFacebookPage,
+        deleteFacebookPage
+      } = require("./server/cms-facebook-pages");
+
+      if (req.method === "GET") {
+        const forceRefresh = url.searchParams.get("sync") === "true" || url.searchParams.get("refresh") === "1";
+        const pages = await getFacebookPages({ forceRefresh });
+        return send(res, 200, { ok: true, data: pages, total: pages.length });
+      }
+
+      if (req.method === "POST") {
+        const body = await readBody(req);
+        const { name, pageId, token, isDefault } = body;
+        if (!name || !pageId) {
+          return send(res, 400, { ok: false, error: { message: "Vui lòng nhập đầy đủ Tên Fanpage và Page ID" } });
+        }
+        const newPage = await addFacebookPage({ name, pageId, token, isDefault });
+        return send(res, 201, { ok: true, data: newPage, message: "Đã thêm Fanpage thành công!" });
+      }
+
+      if (req.method === "PATCH") {
+        const body = await readBody(req);
+        const pageId = body.pageId || url.searchParams.get("id");
+        if (!pageId) {
+          return send(res, 400, { ok: false, error: { message: "Thiếu mã Page ID cần cập nhật" } });
+        }
+        const updated = await updateFacebookPage(pageId, body);
+        return send(res, 200, { ok: true, data: updated, message: "Đã cập nhật Fanpage thành công!" });
+      }
+
+      if (req.method === "DELETE") {
+        const body = await readBody(req);
+        const pageId = body.pageId || url.searchParams.get("id");
+        if (!pageId) {
+          return send(res, 400, { ok: false, error: { message: "Thiếu mã Page ID cần xóa" } });
+        }
+        const result = await deleteFacebookPage(pageId);
+        return send(res, 200, { ok: true, message: result.message });
+      }
+
+      return send(res, 405, { ok: false, error: { code: "METHOD_NOT_ALLOWED", message: "Method Not Allowed" } });
+    } catch (err) {
+      return send(res, 500, { ok: false, error: { message: err.message } });
+    }
+  }
+  if(url.pathname==="/api/admin/v1/owners" || url.pathname==="/api/cms-owners") {
+    try {
+      const { buildOwnerDirectory } = require("./server/cms-owners");
+      const search = url.searchParams.get("q") || url.searchParams.get("search") || "";
+      const role = url.searchParams.get("role") || "";
+      const sort = url.searchParams.get("sort") || "properties_desc";
+
+      let properties = [];
+      if (databaseEnabled) {
+        const PROPS_FOR_OWNERS = [
+          "property_id", "status", "property_type", "address", "district", "ward",
+          "price_text", "area_text", "phone", "notes", "data_json", "received_at", "updated_at"
+        ].join(",");
+        const result = await dbRequest(`properties?select=${PROPS_FOR_OWNERS}&status=neq.archived&order=received_at.desc&limit=5000`);
+        properties = (result && Array.isArray(result.data)) ? result.data : [];
+      } else {
+        properties = rows.filter(item => item.status !== "archived");
+      }
+
+      const directory = buildOwnerDirectory(properties, {
+        includeSensitive: true,
+        search,
+        role,
+        sort
+      });
+
+      return send(res, 200, { ok: true, data: directory });
+    } catch (err) {
+      return send(res, 500, { ok: false, error: { message: err.message } });
+    }
+  }
   if(url.pathname==="/api/admin/v1/access-pins" || url.pathname==="/api/admin-pin-settings") {
     if(req.method==="GET") {
       return send(res, 200, {

@@ -52,7 +52,7 @@
   <link rel="manifest" href="/manifest.json">
   <link rel="icon" type="image/png" href="/assets/brand/fourland-icon-192.png">
   <link rel="apple-touch-icon" href="/assets/brand/fourland-icon-192.png">
-  <link rel="stylesheet" href="/assets/app.css?v=20260904-fab-widget-v84">
+  <link rel="stylesheet" href="/assets/app.css?v=20260904-reset-filter-v85">
 
   <!-- Schema.org JSON-LD Structured Data -->
   <script type="application/ld+json">
@@ -163,7 +163,10 @@
               <circle cx="11" cy="11" r="6.5" />
               <path d="m16 16 4 4" />
             </svg></span><input id="q" aria-label="Tìm kiếm bất động sản" autocomplete="off"
-            placeholder="Địa chỉ, mã hồ sơ, số điện thoại…"><button class="filter-toggle" id="filterToggle"
+            placeholder="Địa chỉ, mã hồ sơ, số điện thoại…"><button class="search-clear-btn" id="searchClearBtn"
+            type="button" aria-label="Xóa từ khóa tìm kiếm" title="Xóa tìm kiếm" hidden><svg viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
+              aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button><button class="filter-toggle" id="filterToggle"
             type="button" aria-expanded="false" aria-label="Mở bộ lọc" title="Bộ lọc"><svg class="filter-icon"
               aria-hidden="true" viewBox="0 0 24 24" fill="none">
               <path d="M4 5h16l-6.25 7.1v5.15L10.25 19v-6.9L4 5Z" />
@@ -207,7 +210,7 @@
         <label>Diện tích từ<input id="minArea" inputmode="decimal" placeholder="0 m²"></label>
         <label>Diện tích đến<input id="maxArea" inputmode="decimal" placeholder="Không giới hạn"></label>
       </div>
-      <div class="actions"><button id="reset" type="button">Xóa toàn bộ bộ lọc</button></div>
+      <div class="actions"><button id="reset" type="button"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg><span>Xóa toàn bộ bộ lọc</span></button></div>
     </form>
 
     <div class="quick-tabs" id="quickTabs" role="tablist">
@@ -498,7 +501,7 @@
     </button>
   </aside>
 
-  <script src="/assets/app.js?v=20260904-fab-widget-v84" defer></script>
+  <script src="/assets/app.js?v=20260904-reset-filter-v85" defer></script>
 </body>
 
 </html>

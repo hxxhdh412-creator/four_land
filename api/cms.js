@@ -28,6 +28,7 @@ module.exports = async function handler(req, res) {
   const host = req.headers["x-forwarded-host"] || req.headers.host || "localhost";
   const url = new URL(req.url, `https://${host}`);
   const pathname = url.pathname;
+  req.query = Object.assign({}, Object.fromEntries(url.searchParams.entries()), req.query || {});
 
   try {
     // 0. Classic In-Page Admin APIs
