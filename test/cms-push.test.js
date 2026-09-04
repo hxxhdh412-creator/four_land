@@ -35,3 +35,34 @@ test("cms push status queries OneSignal apps endpoint", async () => {
     assert.equal(typeof status.subscribers, "number");
   }
 });
+
+test("sendPushNotification normalizes #q=BDS-... URLs to direct canonical property paths", async () => {
+  // Mock global fetch to inspect payload
+  const originalFetch = globalThis.fetch;
+  let sentPayload = null;
+  globalThis.fetch = async (url, options) => {
+    if (String(url).includes("/notifications")) {
+      sentPayload = JSON.parse(options.body);
+      return {
+        ok: true,
+        text: async () => JSON.stringify({ id: "mock-push-id-123", recipients: 1 })
+      };
+    }
+    return originalFetch(url, options);
+  };
+
+  try {
+    const res = await sendPushNotification({
+      title: "Test BĐS",
+      message: "Nhà đẹp Võ Văn Tần",
+      url: "https://www.fourland.vn/#q=BDS-20260904-410EBD11"
+    });
+
+    assert.equal(res.ok, true);
+    assert.ok(sentPayload);
+    assert.equal(sentPayload.url, "https://www.fourland.vn/bat-dong-san/bds--BDS-20260904-410EBD11");
+    assert.equal(sentPayload.web_url, "https://www.fourland.vn/bat-dong-san/bds--BDS-20260904-410EBD11");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});

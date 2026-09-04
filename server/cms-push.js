@@ -48,8 +48,14 @@ async function getPushStatus() {
 async function sendPushNotification({ title, message, url, imageUrl, propertyId }) {
   const cleanTitle = String(title || "").trim();
   const cleanMessage = String(message || "").trim();
-  const targetUrl = String(url || "https://www.fourland.vn").trim();
+  let targetUrl = String(url || "https://www.fourland.vn").trim();
   const targetImage = String(imageUrl || "").trim();
+
+  // Normalize target URL to direct canonical property path if it contains a BDS ID
+  const bdsMatch = targetUrl.match(/[#?&/](?:q=|id=)?(BDS-[\w-]+)/i) || targetUrl.match(/\b(BDS-[\w-]+)\b/i);
+  if (bdsMatch && !targetUrl.includes("/bat-dong-san/")) {
+    targetUrl = `https://www.fourland.vn/bat-dong-san/bds--${bdsMatch[1]}`;
+  }
 
   if (!cleanTitle) {
     throw new Error("Vui lòng nhập tiêu đề thông báo");
@@ -74,7 +80,9 @@ async function sendPushNotification({ title, message, url, imageUrl, propertyId 
       en: cleanMessage,
       vi: cleanMessage
     },
-    url: targetUrl
+    url: targetUrl,
+    web_url: targetUrl,
+    app_url: targetUrl
   };
 
   if (targetImage && targetImage.startsWith("http")) {

@@ -1226,14 +1226,23 @@ if (floatingWidget && floatingTrigger) {
 
 function handleSearchFromHash(){
   const hash=window.location.hash;
-  if(hash&&hash.startsWith('#q=')){
-    const qValue=decodeURIComponent(hash.slice(3).replace(/\+/g,' '));
-    $('q').value=qValue;
-    updateSearchClearVisibility();
-    state.page=1;
-    load();
-    const grid=$('grid');
-    if(grid)grid.scrollIntoView({behavior:'smooth'});
+  if(hash){
+    let rawHash = hash.replace(/^#/, '');
+    if (rawHash.startsWith('q=')) rawHash = rawHash.slice(2);
+    const decodedVal = decodeURIComponent(rawHash.replace(/\+/g, ' ')).trim();
+    if (/^BDS-/i.test(decodedVal)) {
+      setTimeout(() => openDetail(decodedVal, window.location.pathname), 50);
+      return;
+    }
+    if(hash.startsWith('#q=')){
+      const qValue=decodeURIComponent(hash.slice(3).replace(/\+/g,' '));
+      $('q').value=qValue;
+      updateSearchClearVisibility();
+      state.page=1;
+      load();
+      const grid=$('grid');
+      if(grid)grid.scrollIntoView({behavior:'smooth'});
+    }
   }
 }
 window.addEventListener('hashchange',handleSearchFromHash);
@@ -1257,7 +1266,13 @@ checkAdminSession();
 const pathSlug = window.location.pathname.startsWith('/bat-dong-san/') ? window.location.pathname.slice('/bat-dong-san/'.length) : '';
 const markerIdx = pathSlug.lastIndexOf('--');
 const extractedSlugId = markerIdx >= 0 ? pathSlug.slice(markerIdx + 2) : '';
-const initUrlId = extractedSlugId || new URLSearchParams(window.location.search).get('id') || (window.location.hash ? window.location.hash.replace(/^#/, '') : '');
+
+let rawHash = window.location.hash ? window.location.hash.replace(/^#/, '') : '';
+if (rawHash.startsWith('q=')) rawHash = rawHash.slice(2);
+const decodedHash = decodeURIComponent(rawHash.replace(/\+/g, ' ')).trim();
+
+const urlSearchId = new URLSearchParams(window.location.search).get('id') || new URLSearchParams(window.location.search).get('bds');
+const initUrlId = extractedSlugId || urlSearchId || (/^BDS-/i.test(decodedHash) ? decodedHash : '');
 
 if (initUrlId && /^BDS-/i.test(initUrlId)) {
   setTimeout(() => openDetail(initUrlId, window.location.pathname), 150);

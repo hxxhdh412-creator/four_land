@@ -2786,7 +2786,17 @@ function openPushStudio(property = null) {
       : `Bất động sản mới vừa lên sàn Fourland với mức giá hấp dẫn. Chạm để xem ngay!`;
 
     const propId = property.id || property.property_id || '';
-    const autoUrl = propId ? `https://www.fourland.vn/#q=${encodeURIComponent(propId)}` : 'https://www.fourland.vn';
+    let autoUrl = 'https://www.fourland.vn';
+    if (propId) {
+      let slug = 'bds';
+      const rawAddr = property.address || property.street || '';
+      if (rawAddr) {
+        const s = String(rawAddr).normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/gi, 'd')
+          .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60);
+        if (s) slug = s;
+      }
+      autoUrl = `https://www.fourland.vn/bat-dong-san/${slug}--${encodeURIComponent(propId)}`;
+    }
 
     let firstImg = '';
     if (Array.isArray(property.images) && property.images.length > 0) {
