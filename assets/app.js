@@ -1717,3 +1717,48 @@ if ($('facebookPostDialog')) {
   };
 }
 
+// ==========================================================================
+// ONESIGNAL WEB PUSH NOTIFICATIONS
+// ==========================================================================
+function initOneSignalPush() {
+  const ONE_SIGNAL_APP_ID = window.FOURLAND_ONESIGNAL_APP_ID || "";
+  if (!ONE_SIGNAL_APP_ID || ONE_SIGNAL_APP_ID === "YOUR_ONESIGNAL_APP_ID") {
+    return;
+  }
+
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  window.OneSignalDeferred.push(async function(OneSignal) {
+    try {
+      await OneSignal.init({
+        appId: ONE_SIGNAL_APP_ID,
+        allowLocalhostAsSecureOrigin: true,
+        notifyButton: {
+          enable: false,
+        },
+        slidedown: {
+          prompts: [
+            {
+              type: "push",
+              autoPrompt: true,
+              text: {
+                actionMessage: "Nhận thông báo khi có căn nhà mới ký gửi hoặc chủ hạ giá gấp tại Fourland?",
+                acceptButton: "Nhận tin mới",
+                cancelButton: "Để sau"
+              },
+              delay: {
+                pageViews: 1,
+                timeDelay: 4
+              }
+            }
+          ]
+        }
+      });
+    } catch (err) {
+      console.warn("[OneSignal] Push warning:", err);
+    }
+  });
+}
+
+initOneSignalPush();
+
+
