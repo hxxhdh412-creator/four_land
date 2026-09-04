@@ -3,7 +3,7 @@ const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
 const { parseNaturalQuery, matchAndScoreProperty, removeVietnameseTones } = require("./api/_smartSearch");
-const { propertyIdFromSlug, renderPropertyPage } = require("./server/seo");
+const { propertyIdFromSlug, renderPropertyPage, renderSitemap } = require("./server/seo");
 const { buildDashboardSummary } = require("./server/cms-dashboard");
 const { buildPropertyListRoute, normalizePropertyListItem, parsePropertyListQuery } = require("./server/cms-properties");
 const { buildPropertyDetailRoute, normalizePropertyDetail, validPropertyId } = require("./server/cms-property-detail");
@@ -20,7 +20,7 @@ const envFile = path.join(root, ".env.local");
 if (fs.existsSync(envFile)) fs.readFileSync(envFile, "utf8").split(/\r?\n/).forEach(line => { const index=line.indexOf("=");if(index>0&&!line.trim().startsWith("#"))env[line.slice(0,index).trim()]=line.slice(index+1).trim() });
 Object.assign(process.env, env);
 const database = { url:String(env.SUPABASE_URL||"").replace(/\/+$/, ""), key:String(env.SUPABASE_SECRET_KEY||"") };
-const databaseEnabled = /^https:\/\/.+\.supabase\.co$/i.test(database.url) && database.key.length > 20;
+const databaseEnabled = process.env.FOURLAND_PREVIEW_SAMPLE !== "1" && /^https:\/\/.+\.supabase\.co$/i.test(database.url) && database.key.length > 20;
 const photo = (id) => `https://drive.google.com/thumbnail?id=${id}&sz=w1400`;
 const sampleImages = [
   photo("1lc-L-ix0w6W89xTvIPtgn7uNsHwoC_pE"),
@@ -858,6 +858,14 @@ http.createServer(async (req,res)=>{
     if(row.status==="archived"&&!isAdmin(req))return send(res,404,{ok:false,error:"Không tìm thấy hồ sơ"});
     row.view_count=(Number(row.view_count)||0)+1;
     return send(res,200,{ok:true,property:row});
+  }
+  if(url.pathname==="/sitemap.xml") {
+    try {
+      let properties;
+      if(databaseEnabled){const result=await dbRequest("properties?select=property_id,address,street,ward,district,status,received_at,updated_at&status=neq.archived&order=updated_at.desc&limit=5000");properties=result.data}
+      else properties=rows;
+      res.writeHead(200,{"Content-Type":"application/xml; charset=utf-8","Cache-Control":"no-cache"});res.end(renderSitemap(properties));return;
+    } catch(error) { return send(res,503,"Sitemap tạm thời chưa khả dụng","text/plain; charset=utf-8") }
   }
   if(url.pathname.startsWith("/bat-dong-san/")) {
     try {

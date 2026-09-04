@@ -3,6 +3,11 @@
 # https://www.fourland.vn/
 # ==============================================================================
 
+User-agent: OAI-SearchBot
+Allow: /
+Allow: /assets/
+Disallow: /api/
+
 User-agent: *
 Allow: /
 Allow: /assets/

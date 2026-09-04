@@ -31,9 +31,10 @@ npm run sync:sheet   # ghi thật, chỉ chạy có chủ đích
 3. `npm run sync:check` thành công nếu đụng data mapping.
 4. Kiểm tra tìm kiếm, mở popup và card ở desktop.
 5. Kiểm tra 393 × 852: lưới 2 cột, không overflow, popup cuộn được.
-6. Mở một card trong tab mới: URL `/bat-dong-san/...`, nội dung hiện ngay và canonical đúng.
-7. Nếu đụng admin: login, sửa, thêm/xóa ảnh, archive/restore.
-8. Không có secret hay dữ liệu cá nhân mới trong diff.
+6. Mở một card trong tab mới: URL `/bat-dong-san/...`, nội dung hiện ngay khi không chạy JavaScript, canonical đúng và không lộ số nhà/SĐT nguồn.
+7. Mở `/sitemap.xml`: trả XML động, có URL hồ sơ public và không chứa hồ sơ archived hoặc URL nhạy cảm.
+8. Nếu đụng admin: login, sửa, thêm/xóa ảnh, archive/restore.
+9. Không có secret hay dữ liệu cá nhân mới trong diff.
 
 ## Triển khai
 

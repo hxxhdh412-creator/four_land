@@ -11,6 +11,7 @@
   "rewrites": [
     { "source": "/admin", "destination": "/admin.html" },
     { "source": "/admin/", "destination": "/admin.html" },
+    { "source": "/sitemap.xml", "destination": "/api/sitemap" },
     { "source": "/api/admin/v1/:path*", "destination": "/api/cms" },
     { "source": "/api/admin-login", "destination": "/api/cms" },
     { "source": "/api/admin-archive", "destination": "/api/cms" },

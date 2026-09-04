@@ -30,6 +30,8 @@
 - HTML ban đầu có title, description, canonical, Open Graph, Twitter Card, JSON-LD và nội dung bất động sản nhìn thấy được.
 - Card là liên kết `<a href>` thật. Click thường vẫn mở popup để giữ trải nghiệm hiện tại; mở tab mới và crawler nhận trang SEO độc lập.
 - `server/seo.js` là nguồn dùng chung cho URL, HTML phía server và sitemap.
+- `/sitemap.xml` được Vercel rewrite sang API sitemap động; API phân trang dữ liệu public, loại hồ sơ archived và chỉ phát canonical đã che số nhà/SĐT. Không đặt file `sitemap.xml` tĩnh trong repo vì Vercel ưu tiên filesystem trước rewrite.
+- URL chi tiết cũ hoặc chứa địa chỉ nhạy cảm được redirect 308 sang canonical sạch theo `property_id` ổn định.
 
 ## 4. Luồng ghi quản trị
 
