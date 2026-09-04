@@ -726,6 +726,10 @@ http.createServer(async (req,res)=>{
       return send(res, 500, { ok: false, error: { message: err.message } });
     }
   }
+  if(url.pathname==="/api/admin/v1/push" || url.pathname.startsWith("/api/admin/v1/push/")) {
+    const cmsPush = require("./server/cms-push");
+    return cmsPush.handlePushApi(req, res);
+  }
   if(url.pathname==="/api/admin/v1/access-pins" || url.pathname==="/api/admin-pin-settings") {
     if(req.method==="GET") {
       return send(res, 200, {

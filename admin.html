@@ -255,10 +255,19 @@
                   <h1>Quản lý hồ sơ</h1>
                   <p class="cms-properties-desc">Tìm kiếm, quản lý và thêm mới bất động sản vào kho dữ liệu.</p>
                 </div>
-                <button id="btnCreatePropertyPage" class="cms-primary" type="button">
-                  <svg class="cms-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                  <span>Thêm hồ sơ</span>
-                </button>
+                <div class="cms-properties-actions">
+                  <button id="btnQuickPushHeader" class="cms-btn-quick-push" type="button" title="Bắn thông báo đẩy về điện thoại khách hàng">
+                    <svg class="cms-btn-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                      <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                    </svg>
+                    <span>Bắn thông báo</span>
+                  </button>
+                  <button id="btnCreatePropertyPage" class="cms-primary" type="button">
+                    <svg class="cms-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    <span>Thêm hồ sơ</span>
+                  </button>
+                </div>
               </div>
               <div class="cms-listing-segmented" role="tablist" aria-label="Loại giao dịch">
                 <button type="button" class="cms-listing-seg-btn active" data-listing-filter="all">
@@ -829,6 +838,13 @@
               <svg class="cms-btn-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
               <span>Đăng Facebook</span>
             </button>
+            <button id="btnPushNotification" class="cms-push-btn" type="button" title="Bắn thông báo đẩy về điện thoại khách hàng" hidden>
+              <svg class="cms-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+              </svg>
+              <span>Bắn Push</span>
+            </button>
             <button id="detailEdit" class="cms-edit-preview" type="button" hidden>Chỉnh sửa</button>
             <button id="detailClose" class="cms-close-btn" type="button" aria-label="Đóng chi tiết">
               <svg class="cms-close-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -1279,6 +1295,83 @@
       </div>
     </dialog>
 
+    <dialog id="pushNotificationDialog" class="cms-detail-dialog cms-push-dialog" aria-labelledby="pushDialogTitle">
+      <div class="cms-detail-shell">
+        <header>
+          <div>
+            <p class="cms-eyebrow">Web Push Broadcast &bull; OneSignal</p>
+            <h1 id="pushDialogTitle">Bắn thông báo đẩy về thiết bị khách</h1>
+          </div>
+          <div class="cms-detail-actions">
+            <button id="pushDialogClose" class="cms-close-btn" type="button" aria-label="Đóng bảng thông báo">
+              <svg class="cms-close-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+        </header>
+
+        <div class="cms-push-status-bar" id="pushStatusBar">
+          <span class="push-status-dot"></span>
+          <span id="pushStatusText">Đang kiểm tra kết nối OneSignal...</span>
+        </div>
+
+        <div class="cms-push-grid">
+          <form id="pushNotificationForm" class="cms-push-form">
+            <label>
+              Tiêu đề thông báo
+              <input type="text" id="pushTitleInput" placeholder="VD: 🔥 [CẦN BÁN] Nhà 4 tầng HXH Quận 1 - 12.5 Tỷ" required maxlength="120">
+              <span class="cms-form-hint">Nên ngắn gọn, hấp dẫn, có icon lửa hoặc nhà.</span>
+            </label>
+
+            <label>
+              Nội dung thông báo
+              <textarea id="pushMessageInput" rows="3" placeholder="VD: Vị trí cực đẹp, gần chợ Tân Định, full nội thất cao cấp. Chạm để xem chi tiết ngay!" required maxlength="250"></textarea>
+              <span class="cms-form-hint">Mô tả điểm nhấn và lời kêu gọi bấm xem.</span>
+            </label>
+
+            <label>
+              Đường dẫn khi khách bấm vào (Target URL)
+              <input type="url" id="pushUrlInput" placeholder="https://www.fourland.vn/#q=..." required>
+              <span class="cms-form-hint">Khách chạm vào thông báo trên điện thoại/máy tính sẽ mở link này.</span>
+            </label>
+
+            <label>
+              Ảnh minh họa (Banner / Big Picture)
+              <input type="url" id="pushImageInput" placeholder="https://res.cloudinary.com/... hoặc ảnh BĐS">
+              <span class="cms-form-hint">Ảnh hiện to rõ trên màn hình khóa điện thoại Android / Windows.</span>
+            </label>
+
+            <div class="cms-push-actions">
+              <button type="button" id="pushCancelBtn" class="cms-btn-reset">Hủy</button>
+              <button type="submit" id="pushSubmitBtn" class="cms-btn-send-push">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="22" y1="2" x2="11" y2="13"></line>
+                  <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                </svg>
+                <span>Bắn thông báo ngay</span>
+              </button>
+            </div>
+          </form>
+
+          <div class="cms-push-preview-wrap">
+            <div class="cms-preview-label">Xem trước trên điện thoại</div>
+            <div class="cms-phone-mockup">
+              <div class="cms-phone-notch"></div>
+              <div class="cms-phone-time" id="pushPhoneTime">09:41</div>
+              <div class="cms-phone-push-card">
+                <div class="cms-push-card-header">
+                  <img class="cms-push-card-icon" src="/favicon.ico" alt="Fourland" onerror="this.src='/logo-192.png'">
+                  <span class="cms-push-card-app">FOURLAND &bull; Vừa xong</span>
+                </div>
+                <strong class="cms-push-card-title" id="pushPreviewTitle">Tiêu đề thông báo mẫu</strong>
+                <p class="cms-push-card-desc" id="pushPreviewDesc">Nội dung thông báo sẽ hiển thị ở đây trên màn hình khóa của khách hàng.</p>
+                <img id="pushPreviewBigImg" class="cms-push-card-big-img" src="" alt="Push preview" style="display: none;">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </dialog>
+
     <dialog id="fbPageDialog" class="cms-detail-dialog cms-fb-page-modal" aria-labelledby="fbPageDialogTitle">
       <div class="cms-detail-shell">
         <header>
@@ -1380,6 +1473,6 @@
 
     <div id="toastContainer" class="cms-toast-container" aria-live="polite"></div>
   </div>
-  <script src="/admin/admin.js?v=20260904-props-v116" defer></script>
+  <script src="/admin/admin.js?v=20260905-push-v117" defer></script>
 </body>
 </html>

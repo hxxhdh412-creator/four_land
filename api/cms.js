@@ -17,6 +17,7 @@ const cmsSmartMatch = require("./_cms-smart-match");
 const cmsFacebook = require("./_cms-facebook");
 const cmsFacebookPages = require("./_cms-facebook-pages");
 const cmsOwners = require("./_cms-owners");
+const cmsPush = require("../server/cms-push");
 
 // Classic In-Page Admin Handlers
 const adminLogin = require("./_admin-login");
@@ -70,6 +71,11 @@ module.exports = async function handler(req, res) {
     }
     if (pathname === "/api/admin/v1/facebook" || pathname === "/api/admin/v1/facebook/draft" || pathname === "/api/admin/v1/facebook/publish") {
       return cmsFacebook(req, res);
+    }
+
+    // 4.1. Web Push Notifications (OneSignal)
+    if (pathname === "/api/admin/v1/push" || pathname.startsWith("/api/admin/v1/push/")) {
+      return cmsPush.handlePushApi(req, res);
     }
 
     // 5. Dashboard Summary

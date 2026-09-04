@@ -136,6 +136,9 @@ function updateHeaderUser() {
   if (byId('btnLogoutTopbar')) byId('btnLogoutTopbar').hidden = false;
   byId('systemState').classList.add('ready');
   byId('systemState').querySelector('span').textContent = `Đã xác thực · ${cmsState.user.role}`;
+  if (byId('btnQuickPushHeader')) {
+    byId('btnQuickPushHeader').hidden = !['super_admin', 'manager', 'editor', 'sales'].includes(cmsState.user.role);
+  }
 }
 
 async function handleLogin(credentials = {}) {
@@ -719,6 +722,10 @@ async function openPropertyDetail(id) {
     if (byId('btnPostFacebook')) {
       byId('btnPostFacebook').hidden = !['super_admin', 'manager', 'editor', 'sales'].includes(cmsState.user?.role);
       byId('btnPostFacebook').onclick = () => openFacebookStudio(item.id);
+    }
+    if (byId('btnPushNotification')) {
+      byId('btnPushNotification').hidden = !['super_admin', 'manager', 'editor', 'sales'].includes(cmsState.user?.role);
+      byId('btnPushNotification').onclick = () => openPushStudio(item);
     }
 
     // Workflow actions
@@ -2648,6 +2655,202 @@ if (byId('facebookPostDialog')) {
     if (event.target === byId('facebookPostDialog')) closeFacebookStudio();
   });
 }
+
+// ============================================================================
+// WEB PUSH STUDIO (ONESIGNAL BROADCAST)
+// ============================================================================
+
+const pushState = {
+  property: null,
+  isSending: false
+};
+
+function updatePushPhoneTime() {
+  const timeEl = byId('pushPhoneTime');
+  if (!timeEl) return;
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2, '0');
+  const mm = String(now.getMinutes()).padStart(2, '0');
+  timeEl.textContent = `${hh}:${mm}`;
+}
+
+function updatePushPreview() {
+  const title = byId('pushTitleInput')?.value?.trim() || '';
+  const message = byId('pushMessageInput')?.value?.trim() || '';
+  const image = byId('pushImageInput')?.value?.trim() || '';
+
+  const previewTitle = byId('pushPreviewTitle');
+  const previewDesc = byId('pushPreviewDesc');
+  const previewImg = byId('pushPreviewBigImg');
+
+  if (previewTitle) {
+    previewTitle.textContent = title || 'Tiêu đề thông báo mẫu';
+  }
+  if (previewDesc) {
+    previewDesc.textContent = message || 'Nội dung thông báo sẽ hiển thị ở đây trên màn hình khóa của khách hàng.';
+  }
+  if (previewImg) {
+    if (image && (image.startsWith('http://') || image.startsWith('https://'))) {
+      previewImg.src = image;
+      previewImg.style.display = 'block';
+    } else {
+      previewImg.style.display = 'none';
+      previewImg.src = '';
+    }
+  }
+  updatePushPhoneTime();
+}
+
+async function checkPushStatus() {
+  const statusBar = byId('pushStatusBar');
+  const statusText = byId('pushStatusText');
+  if (!statusBar || !statusText) return;
+
+  statusBar.className = 'cms-push-status-bar';
+  statusText.textContent = 'Đang kiểm tra kết nối OneSignal...';
+
+  try {
+    const res = await cmsApi('/api/admin/v1/push/status');
+    if (res.ok && res.enabled) {
+      statusBar.classList.add('is-connected');
+      const count = res.messageableSubscribers ?? res.subscribers ?? 0;
+      statusText.textContent = `OneSignal kết nối tốt · ${res.appName || 'Fourland'} (${count} thiết bị đã nhận tin)`;
+    } else {
+      statusBar.classList.add('is-warning');
+      statusText.textContent = res.error || 'Chưa thể kết nối OneSignal REST API';
+    }
+  } catch (err) {
+    statusBar.classList.add('is-warning');
+    statusText.textContent = `Chưa kết nối OneSignal: ${err.message}`;
+  }
+}
+
+function openPushStudio(property = null) {
+  pushState.property = property;
+  const dialog = byId('pushNotificationDialog');
+  if (!dialog) return;
+
+  const titleInput = byId('pushTitleInput');
+  const messageInput = byId('pushMessageInput');
+  const urlInput = byId('pushUrlInput');
+  const imageInput = byId('pushImageInput');
+
+  if (property) {
+    const isRent = property.listingType === 'rent' || String(property.price || '').toLowerCase().includes('tháng');
+    const tag = isRent ? 'CHO THUÊ' : 'CẦN BÁN';
+    const addr = property.addressClean || property.address || 'Bất động sản mới';
+    const price = property.price ? ` - ${property.price}` : '';
+    const autoTitle = `🔥 [${tag}] ${addr}${price}`.slice(0, 100);
+
+    const specs = [property.structure, property.area, property.legal].filter(Boolean).join(' · ');
+    const autoMsg = specs 
+      ? `${specs}. Vị trí cực đẹp, giá tốt. Chạm để xem chi tiết ngay!`
+      : `Bất động sản mới vừa lên sàn Fourland với mức giá hấp dẫn. Chạm để xem ngay!`;
+
+    const propId = property.id || property.property_id || '';
+    const autoUrl = propId ? `https://www.fourland.vn/#q=${encodeURIComponent(propId)}` : 'https://www.fourland.vn';
+
+    let firstImg = '';
+    if (Array.isArray(property.images) && property.images.length > 0) {
+      firstImg = typeof property.images[0] === 'string' ? property.images[0] : (property.images[0]?.url || '');
+    } else if (property.imageUrl) {
+      firstImg = property.imageUrl;
+    }
+
+    if (titleInput) titleInput.value = autoTitle;
+    if (messageInput) messageInput.value = autoMsg;
+    if (urlInput) urlInput.value = autoUrl;
+    if (imageInput) imageInput.value = firstImg;
+  } else {
+    // General broadcast
+    if (titleInput) titleInput.value = '🔥 Bất động sản mới cập nhật - Fourland';
+    if (messageInput) messageInput.value = 'Hàng loạt bất động sản chính chủ mới vừa cập nhật với mức giá tốt nhất tuần. Chạm để khám phá ngay!';
+    if (urlInput) urlInput.value = 'https://www.fourland.vn';
+    if (imageInput) imageInput.value = '';
+  }
+
+  updatePushPreview();
+  checkPushStatus();
+  dialog.showModal();
+}
+
+function closePushStudio() {
+  const dialog = byId('pushNotificationDialog');
+  if (dialog && dialog.open) dialog.close();
+}
+
+async function handleSendPushSubmit(e) {
+  e.preventDefault();
+  if (pushState.isSending) return;
+
+  const title = byId('pushTitleInput')?.value?.trim();
+  const message = byId('pushMessageInput')?.value?.trim();
+  const url = byId('pushUrlInput')?.value?.trim() || 'https://www.fourland.vn';
+  const imageUrl = byId('pushImageInput')?.value?.trim() || '';
+
+  if (!title || !message) {
+    alert('Vui lòng nhập đầy đủ tiêu đề và nội dung thông báo.');
+    return;
+  }
+
+  const confirmMsg = `Bạn có chắc muốn bắn thông báo đẩy này đến tất cả khách hàng trên website Fourland?\n\n• Tiêu đề: ${title}\n• Link đích: ${url}`;
+  if (!confirm(confirmMsg)) return;
+
+  const submitBtn = byId('pushSubmitBtn');
+  const origBtnHtml = submitBtn ? submitBtn.innerHTML : '';
+  pushState.isSending = true;
+
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = `<span>Đang gửi thông báo...</span>`;
+  }
+
+  try {
+    const res = await cmsApi('/api/admin/v1/push/send', {
+      method: 'POST',
+      body: {
+        title,
+        message,
+        url,
+        imageUrl,
+        propertyId: pushState.property?.id || null
+      }
+    });
+
+    if (res.ok) {
+      if (res.warning) {
+        alert(`Ghi nhận lệnh gửi Push thành công!\n\nLưu ý: ${res.warning}`);
+      } else {
+        alert(res.message || `Đã bắn thông báo đẩy thành công đến ${res.recipients || 0} thiết bị!`);
+      }
+      closePushStudio();
+    } else {
+      alert(`Không thể gửi thông báo: ${res.error?.message || 'Lỗi không xác định'}`);
+    }
+  } catch (err) {
+    alert(`Lỗi khi bắn Push: ${err.message}`);
+  } finally {
+    pushState.isSending = false;
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = origBtnHtml;
+    }
+  }
+}
+
+// Push Studio Event Listeners
+if (byId('btnQuickPushHeader')) byId('btnQuickPushHeader').addEventListener('click', () => openPushStudio(null));
+if (byId('pushDialogClose')) byId('pushDialogClose').addEventListener('click', closePushStudio);
+if (byId('pushCancelBtn')) byId('pushCancelBtn').addEventListener('click', closePushStudio);
+if (byId('pushNotificationDialog')) {
+  byId('pushNotificationDialog').addEventListener('click', event => {
+    if (event.target === byId('pushNotificationDialog')) closePushStudio();
+  });
+}
+if (byId('pushTitleInput')) byId('pushTitleInput').addEventListener('input', updatePushPreview);
+if (byId('pushMessageInput')) byId('pushMessageInput').addEventListener('input', updatePushPreview);
+if (byId('pushImageInput')) byId('pushImageInput').addEventListener('input', updatePushPreview);
+if (byId('pushNotificationForm')) byId('pushNotificationForm').addEventListener('submit', handleSendPushSubmit);
 
 // ==========================================================================
 // FACEBOOK PAGES MANAGEMENT
