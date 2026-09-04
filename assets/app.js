@@ -1095,20 +1095,38 @@ $('searchForm').onsubmit = event => {
   scheduleLoad(0);
 };
 
-function resetAllFilters() {
+function resetAllFilters(event) {
+  if (event) {
+    if (typeof event.preventDefault === 'function') event.preventDefault();
+    if (typeof event.stopPropagation === 'function') event.stopPropagation();
+  }
+
   if (searchInputEl) searchInputEl.value = '';
   if (searchClearBtn) searchClearBtn.hidden = true;
 
   ['district', 'ward', 'street', 'type', 'rentalStatus', 'timeRange'].forEach(id => {
     const el = $(id);
     if (el) {
-      el.value = '';
       el.selectedIndex = 0;
+      el.value = '';
+      if (el.options && el.options.length > 0) {
+        for (let i = 0; i < el.options.length; i++) {
+          el.options[i].selected = (i === 0);
+        }
+      }
     }
   });
 
   const sortEl = $('sortBy');
-  if (sortEl) sortEl.value = 'newest';
+  if (sortEl) {
+    sortEl.value = 'newest';
+    sortEl.selectedIndex = 0;
+    if (sortEl.options && sortEl.options.length > 0) {
+      for (let i = 0; i < sortEl.options.length; i++) {
+        sortEl.options[i].selected = (sortEl.options[i].value === 'newest' || i === 0);
+      }
+    }
+  }
 
   ['minPrice', 'maxPrice', 'minArea', 'maxArea'].forEach(id => {
     const el = $(id);
@@ -1125,11 +1143,11 @@ function resetAllFilters() {
   }
 
   const filtersEl = $('filters');
-  const searchFormEl = $('searchForm');
+  const formEl = $('searchForm');
   const filterToggleEl = $('filterToggle');
   if (filtersEl && filtersEl.classList.contains('open')) {
     filtersEl.classList.remove('open');
-    if (searchFormEl) searchFormEl.classList.remove('filter-open');
+    if (formEl) formEl.classList.remove('filter-open');
     if (filterToggleEl) filterToggleEl.setAttribute('aria-expanded', 'false');
   }
 
@@ -1141,7 +1159,18 @@ function resetAllFilters() {
 }
 
 const resetBtn = $('reset');
-if (resetBtn) resetBtn.onclick = resetAllFilters;
+if (resetBtn) {
+  resetBtn.onclick = resetAllFilters;
+  resetBtn.addEventListener('click', resetAllFilters);
+}
+
+const searchFormElem = $('searchForm');
+if (searchFormElem) {
+  searchFormElem.addEventListener('reset', (e) => {
+    e.preventDefault();
+    resetAllFilters(e);
+  });
+}
 
 $('prev').onclick = () => {
   if (state.page > 1) {
