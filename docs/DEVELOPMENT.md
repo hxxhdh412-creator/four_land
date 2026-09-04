@@ -32,16 +32,18 @@ npm run sync:sheet   # ghi thật, chỉ chạy có chủ đích
 4. Kiểm tra tìm kiếm, mở popup và card ở desktop.
 5. Kiểm tra 393 × 852: lưới 2 cột, không overflow, popup cuộn được.
 6. Mở một card trong tab mới: URL `/bat-dong-san/...`, nội dung hiện ngay khi không chạy JavaScript, canonical đúng và không lộ số nhà/SĐT nguồn.
-7. Mở `/sitemap.xml`: trả XML động, có URL hồ sơ public và không chứa hồ sơ archived hoặc URL nhạy cảm.
-8. Nếu đụng admin: login, sửa, thêm/xóa ảnh, archive/restore.
-9. Không có secret hay dữ liệu cá nhân mới trong diff.
+7. Mở `/sitemap.xml`: trả XML động, có URL hồ sơ public, landing nhà phố đủ dữ liệu và không chứa hồ sơ archived hoặc URL nhạy cảm.
+8. Mở `/nha-pho`, `/nha-pho/ban`, `/nha-pho/cho-thue`: HTML phải có H1, canonical, CollectionPage/ItemList/FAQPage và thẻ hồ sơ liên kết thật.
+9. Kiểm tra một route quận có ít nhất 3 hồ sơ và một route quận ít hơn 3 hồ sơ; route mỏng phải trả 404/noindex.
+10. Nếu đụng admin: login, sửa, thêm/xóa ảnh, archive/restore.
+11. Không có secret hay dữ liệu cá nhân mới trong diff.
 
 ## Triển khai
 
 - Nhánh production: `main`.
 - Push GitHub sẽ kích hoạt Vercel nếu project đã kết nối repo.
 - Static assets đang dùng cache dài; mỗi lần thay CSS/JS phải đổi query version trong `index.html`.
-- Sau deploy kiểm tra route `/api/properties?page=1&pageSize=1`, trang chính, một URL hồ sơ và `sitemap.xml`.
+- Sau deploy kiểm tra route `/api/properties?page=1&pageSize=1`, trang chính, `/nha-pho`, một URL hồ sơ và `sitemap.xml`.
 
 ## Quy ước commit
 

@@ -4,6 +4,7 @@ const path = require("path");
 const crypto = require("crypto");
 const { parseNaturalQuery, matchAndScoreProperty, removeVietnameseTones } = require("./api/_smartSearch");
 const { propertyIdFromSlug, renderPropertyPage, renderSitemap } = require("./server/seo");
+const { buildLandingSitemapEntries, renderLandingPage } = require("./server/seo-landings");
 const { buildDashboardSummary } = require("./server/cms-dashboard");
 const { buildPropertyListRoute, normalizePropertyListItem, parsePropertyListQuery } = require("./server/cms-properties");
 const { buildPropertyDetailRoute, normalizePropertyDetail, validPropertyId } = require("./server/cms-property-detail");
@@ -862,10 +863,25 @@ http.createServer(async (req,res)=>{
   if(url.pathname==="/sitemap.xml") {
     try {
       let properties;
-      if(databaseEnabled){const result=await dbRequest("properties?select=property_id,address,street,ward,district,status,received_at,updated_at&status=neq.archived&order=updated_at.desc&limit=5000");properties=result.data}
+      if(databaseEnabled){const result=await dbRequest("properties?select=property_id,address,street,ward,district,status,property_type,price_text,normalized_text,received_at,updated_at&status=neq.archived&order=updated_at.desc&limit=5000");properties=result.data}
       else properties=rows;
-      res.writeHead(200,{"Content-Type":"application/xml; charset=utf-8","Cache-Control":"no-cache"});res.end(renderSitemap(properties));return;
+      res.writeHead(200,{"Content-Type":"application/xml; charset=utf-8","Cache-Control":"no-cache"});res.end(renderSitemap(properties,new Date(),buildLandingSitemapEntries(properties)));return;
     } catch(error) { return send(res,503,"Sitemap tạm thời chưa khả dụng","text/plain; charset=utf-8") }
+  }
+  if(url.pathname==="/nha-pho"||url.pathname.startsWith("/nha-pho/")) {
+    try {
+      const segments=url.pathname.split("/").filter(Boolean);
+      let intent="all",districtSlug="";
+      if(segments[1]==="ban"||segments[1]==="cho-thue"){intent=segments[1];districtSlug=segments[2]||""}
+      else if(segments[1]==="khu-vuc") districtSlug=segments[2]||"";
+      else if(segments.length>1) return send(res,404,"Trang khu vực chưa có đủ dữ liệu đang hoạt động","text/plain; charset=utf-8");
+      let properties;
+      if(databaseEnabled){const result=await dbRequest("properties?select=*,property_images(position,public_url,source_url)&status=neq.archived&order=updated_at.desc&limit=2000");properties=result.data}
+      else properties=rows;
+      const html=renderLandingPage(properties,{intent,districtSlug});
+      if(!html)return send(res,404,"Trang khu vực chưa có đủ dữ liệu đang hoạt động","text/plain; charset=utf-8");
+      res.writeHead(200,{"Content-Type":"text/html; charset=utf-8","Cache-Control":"no-cache"});res.end(html);return;
+    } catch(error) { return send(res,500,error.message,"text/plain; charset=utf-8") }
   }
   if(url.pathname.startsWith("/bat-dong-san/")) {
     try {

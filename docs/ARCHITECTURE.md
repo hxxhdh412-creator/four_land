@@ -31,6 +31,13 @@
 - Card là liên kết `<a href>` thật. Click thường vẫn mở popup để giữ trải nghiệm hiện tại; mở tab mới và crawler nhận trang SEO độc lập.
 - `server/seo.js` là nguồn dùng chung cho URL, HTML phía server và sitemap.
 - `/sitemap.xml` được Vercel rewrite sang API sitemap động; API phân trang dữ liệu public, loại hồ sơ archived và chỉ phát canonical đã che số nhà/SĐT. Không đặt file `sitemap.xml` tĩnh trong repo vì Vercel ưu tiên filesystem trước rewrite.
+
+### Luồng landing SEO/GEO nhà phố
+
+- `/nha-pho`, `/nha-pho/ban` và `/nha-pho/cho-thue` là các trang bộ sưu tập SSR, đọc cùng nguồn Supabase công khai và không thay đổi giao diện kho chính.
+- `server/seo-landings.js` lọc hồ sơ nhà ở đang hoạt động, loại trùng theo địa chỉ và tạo nội dung, liên kết nội bộ, FAQ cùng structured data từ dữ liệu thật.
+- Trang quận chỉ được trả về và đưa vào sitemap khi có ít nhất 3 hồ sơ duy nhất phù hợp với loại giao dịch; URL thiếu dữ liệu trả 404 kèm `noindex` để tránh trang mỏng.
+- Landing và thẻ hồ sơ chỉ công khai tên đường/khu vực. Số nhà và SĐT nguồn không được đưa vào HTML.
 - URL chi tiết cũ hoặc chứa địa chỉ nhạy cảm được redirect 308 sang canonical sạch theo `property_id` ổn định.
 
 ## 4. Luồng ghi quản trị

@@ -188,10 +188,20 @@ function renderPropertyPage(property) {
   return `<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><!-- Google tag (gtag.js) --><script async src="https://www.googletagmanager.com/gtag/js?id=G-BS0X1F8NSD"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-BS0X1F8NSD');</script><title>${escapeHtml(pageTitle)}</title><meta name="description" content="${escapeHtml(description)}"><meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1"><link rel="canonical" href="${escapeHtml(canonical)}"><meta property="og:type" content="article"><meta property="og:locale" content="vi_VN"><meta property="og:site_name" content="Fourland"><meta property="og:title" content="${escapeHtml(pageTitle)}"><meta property="og:description" content="${escapeHtml(description)}"><meta property="og:url" content="${escapeHtml(canonical)}"><meta property="og:image" content="${escapeHtml(hero)}"><meta property="og:image:alt" content="${escapeHtml(presentation.headline)}"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${escapeHtml(pageTitle)}"><meta name="twitter:description" content="${escapeHtml(description)}"><meta name="twitter:image" content="${escapeHtml(hero)}"><link rel="icon" href="/assets/brand/fourland-logo.png"><link rel="stylesheet" href="/assets/property.css"><script type="application/ld+json">${jsonLd(schema)}</script></head><body><header class="top"><a href="/" aria-label="Về kho Fourland"><img src="/assets/brand/fourland-logo.png" width="76" height="70" alt="Fourland"></a><a href="/">Kho bất động sản</a></header><main><nav aria-label="Đường dẫn"><a href="/">Kho nhà</a><span>›</span><span>${escapeHtml(presentation.headline)}</span></nav><article><header class="property-head"><p>FOURLAND COLLECTION</p><h1>${escapeHtml(presentation.headline)}</h1><strong>${escapeHtml(property.price_text || "Liên hệ")}</strong><div>${escapeHtml(presentation.location)}</div>${updated ? `<small>Cập nhật <time datetime="${escapeHtml(updated.iso)}">${escapeHtml(updated.label)}</time></small>` : ""}</header><section class="gallery">${images.length ? `<img class="hero" src="${escapeHtml(hero)}" width="1200" height="900" alt="${escapeHtml(presentation.headline)}" fetchpriority="high"><div class="thumbs">${images.slice(1, 8).map((url, index) => `<img src="${escapeHtml(url)}" width="180" height="135" loading="lazy" alt="Ảnh ${index + 2} của ${escapeHtml(presentation.headline)}">`).join("")}</div>` : `<div class="empty-photo">Hồ sơ chưa có hình ảnh</div>`}</section><section class="content"><div><h2>Thông tin bất động sản</h2><p>${escapeHtml(presentation.summary)}</p><dl>${facts.map(([key, factValue]) => `<div><dt>${escapeHtml(key)}</dt><dd>${escapeHtml(factValue)}</dd></div>`).join("")}</dl></div><aside><h2>Mô tả nguồn nhà</h2><p>${escapeHtml(rawDescription)}</p><a class="call" href="tel:${COMPANY_PHONE_HREF}">Gọi Fourland · ${COMPANY_PHONE}</a></aside></section></article></main><footer>© Fourland · Kho bất động sản chọn lọc TP.HCM</footer></body></html>`;
 }
 
-function renderSitemap(properties, generatedAt = new Date()) {
+function renderSitemap(properties, generatedAt = new Date(), landingEntries = []) {
   const fallbackDate = generatedAt.toISOString().slice(0, 10);
   const urls = [{ loc: `${SITE_ORIGIN}/`, lastmod: fallbackDate, changefreq: "daily", priority: "1.0" }];
   const seen = new Set(urls.map(item => item.loc));
+
+  for (const entry of landingEntries || []) {
+    const loc = entry.loc || `${SITE_ORIGIN}${entry.path}`;
+    if ((!entry.path && !entry.loc) || seen.has(loc)) continue;
+    seen.add(loc);
+    urls.push({
+      loc, lastmod: entry.lastmod || fallbackDate,
+      changefreq: entry.changefreq || "daily", priority: entry.priority || "0.8"
+    });
+  }
 
   for (const property of properties || []) {
     if (!value(property.property_id) || value(property.status).toLowerCase() === "archived") continue;
@@ -211,7 +221,7 @@ function renderSitemap(properties, generatedAt = new Date()) {
 }
 
 module.exports = {
-  SITE_ORIGIN, driveImage, escapeHtml, escapeXml, formatPublicAddress, inferListingAction, jsonLd,
+  SITE_ORIGIN, COMPANY_PHONE, COMPANY_PHONE_HREF, driveImage, escapeHtml, escapeXml, formatDate, formatPublicAddress, inferListingAction, jsonLd,
   maskDescriptionText, maskTextPhones, propertyIdFromSlug, propertyPath, propertyPresentation,
   publicImages, renderPropertyPage, renderSitemap, slugify, stripHouseNumber, value
 };

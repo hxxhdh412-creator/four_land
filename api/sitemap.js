@@ -1,5 +1,6 @@
 const { supabaseRequest } = require("./_supabase");
 const { renderSitemap } = require("../server/seo");
+const { buildLandingSitemapEntries } = require("../server/seo-landings");
 
 const PAGE_SIZE = 1000;
 const MAX_PROPERTIES = 50000;
@@ -8,7 +9,7 @@ async function fetchPublicProperties(request = supabaseRequest) {
   const properties = [];
   for (let offset = 0; offset < MAX_PROPERTIES; offset += PAGE_SIZE) {
     const query = new URLSearchParams({
-      select: "property_id,address,street,ward,district,status,received_at,updated_at",
+      select: "property_id,address,street,ward,district,status,property_type,price_text,normalized_text,received_at,updated_at",
       status: "neq.archived",
       order: "updated_at.desc",
       limit: String(PAGE_SIZE),
@@ -29,7 +30,7 @@ function createHandler({ request = supabaseRequest } = {}) {
       const properties = await fetchPublicProperties(request);
       res.setHeader("Content-Type", "application/xml; charset=utf-8");
       res.setHeader("Cache-Control", "public, s-maxage=300, stale-while-revalidate=3600");
-      return res.status(200).send(renderSitemap(properties));
+      return res.status(200).send(renderSitemap(properties, new Date(), buildLandingSitemapEntries(properties)));
     } catch (_) {
       res.setHeader("X-Robots-Tag", "noindex");
       return res.status(503).send("Sitemap tạm thời chưa khả dụng");

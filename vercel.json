@@ -17,6 +17,12 @@
     { "source": "/api/admin-archive", "destination": "/api/cms" },
     { "source": "/api/admin-property", "destination": "/api/cms" },
     { "source": "/api/admin-image", "destination": "/api/cms" },
+    { "source": "/nha-pho", "destination": "/api/seo-landing" },
+    { "source": "/nha-pho/ban", "destination": "/api/seo-landing?intent=ban" },
+    { "source": "/nha-pho/cho-thue", "destination": "/api/seo-landing?intent=cho-thue" },
+    { "source": "/nha-pho/khu-vuc/:district", "destination": "/api/seo-landing?district=:district" },
+    { "source": "/nha-pho/ban/:district", "destination": "/api/seo-landing?intent=ban&district=:district" },
+    { "source": "/nha-pho/cho-thue/:district", "destination": "/api/seo-landing?intent=cho-thue&district=:district" },
     { "source": "/bat-dong-san/:slug", "destination": "/api/seo-property?slug=:slug" }
   ],
   "headers": [
