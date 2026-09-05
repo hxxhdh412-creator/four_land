@@ -78,3 +78,16 @@ test('CMS property pagination controls have active event listeners and DOM eleme
   assert.match(js, /byId\('propertyPrev'\)\.addEventListener\('click'/);
   assert.match(js, /byId\('propertyNext'\)\.addEventListener\('click'/);
 });
+
+test('CMS property detail modal has mobile-optimized hero, tabs, and sticky bottom bar', () => {
+  assert.match(html, /id="detailMobileHero"/);
+  assert.match(html, /id="detailMobileTabs"/);
+  assert.match(html, /id="detailMobileBottomBar"/);
+  assert.match(html, /id="detailMobileActionMenu"/);
+  assert.match(html, /id="btnMobileDetailCopy"/);
+  assert.match(html, /id="btnMobileDetailCall"/);
+  assert.match(css, /\.cms-detail-mobile-hero/);
+  assert.match(css, /\.cms-detail-mobile-bottom-bar/);
+  assert.match(css, /\.cms-detail-mobile-tabs/);
+  assert.match(js, /setMobileDetailTab/);
+});

@@ -619,6 +619,11 @@ async function openPropertyDetail(id) {
   byId('detailContent').hidden = true;
   byId('detailEdit').hidden = true;
   byId('detailEditForm').hidden = true;
+  if (byId('detailMobileHero')) byId('detailMobileHero').innerHTML = '';
+  if (byId('detailMobileBottomBar')) byId('detailMobileBottomBar').hidden = true;
+  if (byId('detailGalleryBadge')) byId('detailGalleryBadge').hidden = true;
+  if (byId('detailMobileActionMenu')) byId('detailMobileActionMenu').hidden = true;
+  setMobileDetailTab('customer');
   dialog.showModal();
   try {
     const result = await cmsApi(`/api/admin/v1/properties/${encodeURIComponent(id)}`);
@@ -626,9 +631,18 @@ async function openPropertyDetail(id) {
     cmsState.currentProperty = item;
     byId('detailTitle').textContent = item.address || 'Hồ sơ chưa có địa chỉ';
     const gallery = byId('detailGallery');
-    if (item.images && item.images.length) {
-      const allUrls = item.images.map(entry => driveImage(entry.url));
-      gallery.replaceChildren(...item.images.slice(0, 8).map((entry, index) => {
+    const allUrls = (item.images && item.images.length) ? item.images.map(entry => driveImage(entry.url)) : [];
+    const galleryBadge = byId('detailGalleryBadge');
+    if (galleryBadge) {
+      if (allUrls.length) {
+        galleryBadge.hidden = false;
+        galleryBadge.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span>1 / ${allUrls.length} ảnh (vuốt ngang)</span>`;
+      } else {
+        galleryBadge.hidden = true;
+      }
+    }
+    if (allUrls.length) {
+      gallery.replaceChildren(...item.images.slice(0, 12).map((entry, index) => {
         const image = document.createElement('img');
         image.src = driveImage(entry.url);
         image.alt = `Ảnh bất động sản ${index + 1}`;
@@ -646,6 +660,49 @@ async function openPropertyDetail(id) {
       empty.textContent = 'Hồ sơ chưa có hình ảnh';
       gallery.replaceChildren(empty);
     }
+
+    const mobileHero = byId('detailMobileHero');
+    if (mobileHero) {
+      const isSale = item.listingType === 'sale';
+      const listingBadgeClass = isSale ? 'cms-badge-sale' : 'cms-badge-rent';
+      const listingLabel = isSale ? 'Cần bán' : 'Cho thuê';
+      
+      const factsChips = [];
+      if (item.dimensions || item.area) {
+        const areaStr = [item.dimensions, item.area].filter(Boolean).join(' · ');
+        factsChips.push(`<span class="cms-hero-chip">📐 <strong>${escapeHtml(areaStr)}</strong></span>`);
+      }
+      if (item.bedrooms || item.bathrooms) {
+        const rooms = [
+          item.bedrooms ? `${item.bedrooms} PN` : null,
+          item.bathrooms ? `${item.bathrooms} WC` : null
+        ].filter(Boolean).join(' · ');
+        factsChips.push(`<span class="cms-hero-chip">🛏️ <strong>${escapeHtml(rooms)}</strong></span>`);
+      }
+      if (item.structure) {
+        factsChips.push(`<span class="cms-hero-chip">🏢 <strong>${escapeHtml(item.structure)}</strong></span>`);
+      }
+      if (item.ward || item.district) {
+        const locStr = [item.ward, item.district].filter(Boolean).join(', ');
+        factsChips.push(`<span class="cms-hero-chip">📍 <strong>${escapeHtml(locStr)}</strong></span>`);
+      }
+
+      mobileHero.innerHTML = `
+        <div class="cms-hero-top">
+          <div class="cms-hero-badges">
+            <span class="cms-listing-tag ${listingBadgeClass}">${listingLabel}</span>
+            <span class="cms-badge">${statusLabel(item.status)}</span>
+            ${item.propertyType ? `<span class="cms-type-tag">${escapeHtml(item.propertyType)}</span>` : ''}
+          </div>
+          <div class="cms-hero-price">${escapeHtml(item.price || 'Liên hệ')}</div>
+        </div>
+        <div class="cms-hero-address">${escapeHtml(item.address || 'Hồ sơ chưa có địa chỉ')}</div>
+        <div class="cms-hero-chips">
+          ${factsChips.join('')}
+        </div>
+      `;
+    }
+
     byId('detailFacts').replaceChildren(
       detailRow('Hình thức', item.listingType === 'sale' ? 'Cần bán' : 'Cho thuê'),
       detailRow('Loại bất động sản', item.propertyType), detailRow('Giá', item.price),
@@ -733,6 +790,40 @@ async function openPropertyDetail(id) {
     if (byId('btnWorkflowPublish')) byId('btnWorkflowPublish').hidden = !canManageWorkflow || item.status === 'ready';
     if (byId('btnWorkflowArchive')) byId('btnWorkflowArchive').hidden = !canManageWorkflow || item.status === 'archived';
     if (byId('btnWorkflowRestore')) byId('btnWorkflowRestore').hidden = !canManageWorkflow || item.status !== 'archived';
+
+    // Mobile Bottom Action Bar setup
+    const bottomBar = byId('detailMobileBottomBar');
+    if (bottomBar) bottomBar.hidden = false;
+
+    const btnMobileCopy = byId('btnMobileDetailCopy');
+    if (btnMobileCopy) {
+      btnMobileCopy.onclick = () => {
+        handleCopyPitch(formatPropertyPitch(item));
+      };
+    }
+
+    const btnMobileCall = byId('btnMobileDetailCall');
+    if (btnMobileCall) {
+      if (canSeeSensitive && item.phone) {
+        const cleanNum = String(item.phone).replace(/[^0-9+]/g, '');
+        const displayNum = formatPhoneDisplay(cleanNum) || cleanNum;
+        btnMobileCall.href = `tel:${cleanNum}`;
+        btnMobileCall.hidden = false;
+        btnMobileCall.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg><span>Gọi: ${escapeHtml(displayNum)}</span>`;
+      } else {
+        btnMobileCall.hidden = true;
+      }
+    }
+
+    const canEdit = ['super_admin', 'manager', 'editor'].includes(cmsState.user?.role);
+    const canShare = ['super_admin', 'manager', 'editor', 'sales'].includes(cmsState.user?.role);
+
+    if (byId('menuBtnEdit')) byId('menuBtnEdit').hidden = !canEdit;
+    if (byId('menuBtnPush')) byId('menuBtnPush').hidden = !canShare;
+    if (byId('menuBtnFacebook')) byId('menuBtnFacebook').hidden = !canShare;
+    if (byId('menuBtnPublish')) byId('menuBtnPublish').hidden = !canManageWorkflow || item.status === 'ready';
+    if (byId('menuBtnArchive')) byId('menuBtnArchive').hidden = !canManageWorkflow || item.status === 'archived';
+    if (byId('menuBtnRestore')) byId('menuBtnRestore').hidden = !canManageWorkflow || item.status !== 'archived';
   } catch (error) {
     byId('detailLoading').hidden = true;
     byId('detailError').hidden = false;
@@ -3264,6 +3355,94 @@ if (byId('createPropertyDialog')) {
 function closePropertyDetail() {
   const dialog = byId('propertyDetail');
   if (dialog && dialog.open) dialog.close();
+  if (byId('detailMobileActionMenu')) byId('detailMobileActionMenu').hidden = true;
+  if (byId('detailMobileBottomBar')) byId('detailMobileBottomBar').hidden = true;
+}
+
+function setMobileDetailTab(tab) {
+  const shell = document.querySelector('.cms-detail-shell');
+  if (shell) shell.setAttribute('data-mobile-tab', tab);
+  document.querySelectorAll('.cms-detail-tab-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.detailTab === tab);
+  });
+}
+
+document.querySelectorAll('.cms-detail-tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    setMobileDetailTab(btn.dataset.detailTab || 'customer');
+  });
+});
+
+function closeMobileActionMenu() {
+  const menu = byId('detailMobileActionMenu');
+  if (menu) menu.hidden = true;
+}
+
+if (byId('btnMobileDetailMore')) {
+  byId('btnMobileDetailMore').addEventListener('click', (e) => {
+    e.stopPropagation();
+    const menu = byId('detailMobileActionMenu');
+    if (menu) menu.hidden = !menu.hidden;
+  });
+}
+
+if (byId('closeMobileActionMenu')) byId('closeMobileActionMenu').addEventListener('click', closeMobileActionMenu);
+if (byId('backdropMobileActionMenu')) byId('backdropMobileActionMenu').addEventListener('click', closeMobileActionMenu);
+
+if (byId('menuBtnEdit')) {
+  byId('menuBtnEdit').addEventListener('click', () => {
+    closeMobileActionMenu();
+    setEditFormVisible(true);
+  });
+}
+
+if (byId('menuBtnPush')) {
+  byId('menuBtnPush').addEventListener('click', () => {
+    closeMobileActionMenu();
+    if (cmsState.currentProperty) openPushStudio(cmsState.currentProperty);
+  });
+}
+
+if (byId('menuBtnFacebook')) {
+  byId('menuBtnFacebook').addEventListener('click', () => {
+    closeMobileActionMenu();
+    if (cmsState.currentProperty) openFacebookStudio(cmsState.currentProperty.id);
+  });
+}
+
+if (byId('menuBtnPublish')) {
+  byId('menuBtnPublish').addEventListener('click', () => {
+    closeMobileActionMenu();
+    handlePropertyWorkflow('publish');
+  });
+}
+
+if (byId('menuBtnArchive')) {
+  byId('menuBtnArchive').addEventListener('click', () => {
+    closeMobileActionMenu();
+    handlePropertyWorkflow('archive');
+  });
+}
+
+if (byId('menuBtnRestore')) {
+  byId('menuBtnRestore').addEventListener('click', () => {
+    closeMobileActionMenu();
+    handlePropertyWorkflow('restore');
+  });
+}
+
+const detailGalleryEl = byId('detailGallery');
+if (detailGalleryEl) {
+  detailGalleryEl.addEventListener('scroll', () => {
+    const badge = byId('detailGalleryBadge');
+    if (!badge || badge.hidden) return;
+    const img = detailGalleryEl.querySelector('img');
+    const imgWidth = img ? (img.offsetWidth + 10) : 1;
+    const scrollLeft = detailGalleryEl.scrollLeft;
+    const total = cmsState.currentProperty?.images?.length || 1;
+    const currentIndex = Math.min(total, Math.max(1, Math.round(scrollLeft / imgWidth) + 1));
+    badge.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span>${currentIndex} / ${total} ảnh (vuốt ngang)</span>`;
+  }, { passive: true });
 }
 
 if (byId('detailClose')) byId('detailClose').addEventListener('click', closePropertyDetail);
