@@ -110,6 +110,8 @@ async function listDatabaseProperties(url){
 
   const featuredOnly = url.searchParams.get("featured") === "1" || url.searchParams.get("featured") === "true";
   const withImagesOnly = url.searchParams.get("withImages") === "1" || url.searchParams.get("withImages") === "true";
+  const idsParam = String(url.searchParams.get("ids") || "").trim();
+  const idsFilter = idsParam ? new Set(idsParam.split(",").map(s => s.trim()).filter(Boolean)) : null;
 
   const scoredRows = allRows
     .map(row => {
@@ -128,6 +130,7 @@ async function listDatabaseProperties(url){
       };
     })
     .filter(item => {
+      if (idsFilter && !idsFilter.has(item.row.property_id)) return false;
       if (item.score <= 0) return false;
       if (featuredOnly && !item.isFeatured) return false;
       if (withImagesOnly && !(Number(item.row.image_count) > 0 || item.row.property_images?.length > 0)) return false;
@@ -922,7 +925,9 @@ http.createServer(async (req,res)=>{
     if(url.searchParams.get("archived")==="only"&&!isAdmin(req))return send(res,401,{ok:false,error:"Cần mở quyền quản trị"});
     if(databaseEnabled){try{return send(res,200,await listDatabaseProperties(url))}catch(error){return send(res,500,{ok:false,error:error.message})}}
     const q=String(url.searchParams.get("q")||"").toLowerCase();
-    const archivedOnly=url.searchParams.get("archived")==="only";const filtered=rows.filter(row=>(archivedOnly?row.status==="archived":row.status!=="archived")&&(!q||JSON.stringify(row).toLowerCase().includes(q))&&["district","ward","street"].every(key=>!url.searchParams.get(key)||row[key]===url.searchParams.get(key))&&(!url.searchParams.get("type")||row.property_type===url.searchParams.get("type")));
+    const idsParam = String(url.searchParams.get("ids") || "").trim();
+    const idsFilter = idsParam ? new Set(idsParam.split(",").map(s => s.trim()).filter(Boolean)) : null;
+    const archivedOnly=url.searchParams.get("archived")==="only";const filtered=rows.filter(row=>(archivedOnly?row.status==="archived":row.status!=="archived")&&(!idsFilter||idsFilter.has(row.property_id))&&(!q||JSON.stringify(row).toLowerCase().includes(q))&&["district","ward","street"].every(key=>!url.searchParams.get(key)||row[key]===url.searchParams.get(key))&&(!url.searchParams.get("type")||row.property_type===url.searchParams.get("type")));
     return send(res,200,{ok:true,rows:filtered,total:filtered.length,page:1,pageSize:24});
   }
   if(url.pathname==="/api/property") {

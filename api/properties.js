@@ -60,6 +60,8 @@ module.exports = async function handler(req, res) {
     const rawQ = String(req.query.q || "").trim();
     const nlp = parseNaturalQuery(rawQ);
     const featuredOnly = req.query.featured === "1" || req.query.featured === "true";
+    const idsParam = String(req.query.ids || "").trim();
+    const idsFilter = idsParam ? new Set(idsParam.split(",").map(s => s.trim()).filter(Boolean)) : null;
     const sortBy = text(req.query.sortBy) || "newest";
     const bypassCache = Boolean(isAdmin(req) || req.query.archived);
 
@@ -98,6 +100,7 @@ module.exports = async function handler(req, res) {
         };
       })
       .filter(item => {
+        if (idsFilter && !idsFilter.has(item.row.property_id)) return false;
         if (item.score <= 0) return false;
         if (featuredOnly && !item.isFeatured) return false;
         return true;

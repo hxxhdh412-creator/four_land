@@ -1,6 +1,201 @@
 const state={page:1,pageSize:24,total:0,rows:[],facets:null,requestId:0,authRole:null,adminUnlocked:false,ctvUnlocked:false,canViewFullAddress:false,currentPropertyId:null,filterTab:'all',selectedIds:new Set()};const $=id=>document.getElementById(id);const escapeHtml=value=>String(value||'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const phoneHref=value=>String(value||'').replace(/[^\d+]/g,'');
 const slugify=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/gi,'d').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,90)||'ho-so-bat-dong-san';
+const COMPANY_HOTLINE='084.2222.813';
+const FAVORITES_KEY='fourland_favorites_v1';
+
+const favoriteStore = {
+  getIds() {
+    try {
+      const raw = localStorage.getItem(FAVORITES_KEY);
+      if (!raw) return [];
+      const arr = JSON.parse(raw);
+      return Array.isArray(arr) ? arr.filter(Boolean).map(String) : [];
+    } catch {
+      return [];
+    }
+  },
+  has(id) {
+    if (!id) return false;
+    return this.getIds().includes(String(id));
+  },
+  add(id) {
+    if (!id) return false;
+    const strId = String(id);
+    let ids = this.getIds();
+    if (!ids.includes(strId)) {
+      ids.unshift(strId);
+      if (ids.length > 300) ids = ids.slice(0, 300);
+      try { localStorage.setItem(FAVORITES_KEY, JSON.stringify(ids)); } catch (_) {}
+      updateFavoritesUI();
+      return true;
+    }
+    return false;
+  },
+  remove(id) {
+    if (!id) return false;
+    const strId = String(id);
+    let ids = this.getIds();
+    if (ids.includes(strId)) {
+      ids = ids.filter(x => x !== strId);
+      try { localStorage.setItem(FAVORITES_KEY, JSON.stringify(ids)); } catch (_) {}
+      updateFavoritesUI();
+      return true;
+    }
+    return false;
+  },
+  toggle(id) {
+    if (this.has(id)) {
+      this.remove(id);
+      return false;
+    } else {
+      this.add(id);
+      return true;
+    }
+  }
+};
+
+function fallbackCopyText(textToCopy) {
+  try {
+    const textArea = document.createElement('textarea');
+    textArea.value = textToCopy;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    textArea.style.top = '-999999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textArea);
+    showToast('📋 Đã sao chép danh sách nhà! Bạn có thể dán vào Zalo/Messenger.', 3200);
+  } catch (err) {
+    showToast('Không thể tự động sao chép: ' + err.message, 3500);
+  }
+}
+
+function updateFavoritesUI() {
+  const ids = favoriteStore.getIds();
+  const count = ids.length;
+
+  // Topbar button badge
+  const topBadge = $('topFavBadge');
+  if (topBadge) {
+    topBadge.textContent = count;
+    topBadge.hidden = count === 0;
+  }
+  const topBtn = $('topFavBtn');
+  if (topBtn) {
+    topBtn.classList.toggle('has-favorites', count > 0);
+  }
+
+  // Quick tab badge
+  const tabBadge = $('favCountBadge');
+  if (tabBadge) {
+    tabBadge.textContent = count;
+    tabBadge.hidden = count === 0;
+  }
+
+  // Active cards in grid
+  document.querySelectorAll('.card-favorite-btn').forEach(btn => {
+    const id = btn.dataset.favId;
+    const isFav = ids.includes(id);
+    btn.classList.toggle('is-favorited', isFav);
+    btn.setAttribute('aria-label', isFav ? 'Bỏ lưu căn này' : 'Lưu vào danh sách quan tâm');
+    btn.setAttribute('title', isFav ? 'Bỏ lưu' : 'Lưu tin quan tâm');
+  });
+
+  // Modal detail chip if open
+  const detailFavBtn = $('actionFavBtn');
+  if (detailFavBtn) {
+    const id = detailFavBtn.dataset.favId;
+    const isFav = ids.includes(id);
+    detailFavBtn.classList.toggle('is-favorited', isFav);
+    const span = detailFavBtn.querySelector('span');
+    if (span) span.textContent = isFav ? 'Đã thả tim' : 'Lưu tin';
+    const svg = detailFavBtn.querySelector('svg');
+    if (svg) {
+      svg.style.fill = isFav ? '#dc2626' : 'none';
+      svg.style.stroke = isFav ? '#dc2626' : 'currentColor';
+    }
+  }
+
+  updateFavoritesBanner();
+}
+
+function updateFavoritesBanner() {
+  const banner = $('favBanner');
+  if (!banner) return;
+  if (state.filterTab !== 'favorites' || !state.rows.length) {
+    banner.hidden = true;
+    banner.innerHTML = '';
+    return;
+  }
+
+  const count = state.rows.length;
+  let zaloMsg = `Chào Fourland, tôi đang quan tâm ${count} căn nhà sau trên website:\n`;
+  state.rows.slice(0, 10).forEach((r, idx) => {
+    const addr = formatPublicAddress(r, false);
+    const price = r.price_text || 'Liên hệ';
+    zaloMsg += `${idx + 1}. [${r.property_id}] ${addr} (${price})\n`;
+  });
+  zaloMsg += `Nhờ Fourland kiểm tra tình trạng còn phòng và tư vấn xếp lịch xem nhà giúp tôi nhé!`;
+
+  const cleanPhone = phoneHref(COMPANY_HOTLINE);
+  const zaloUrl = `https://zalo.me/${cleanPhone}`;
+
+  banner.hidden = false;
+  banner.innerHTML = `
+    <div class="fav-banner-card">
+      <div class="fav-banner-visual">
+        <span class="fav-banner-icon">❤️</span>
+      </div>
+      <div class="fav-banner-info">
+        <h3 class="fav-banner-title">Danh sách ${count} căn bạn đang quan tâm</h3>
+        <p class="fav-banner-sub">Gửi danh sách này cho đội ngũ Fourland để kiểm tra nhanh tình trạng trống, pháp lý và đặt lịch hẹn xem nhà thực tế.</p>
+      </div>
+      <div class="fav-banner-actions">
+        <a href="${zaloUrl}" target="_blank" rel="noopener noreferrer" class="fav-zalo-cta" id="favZaloCta">
+          <svg viewBox="0 0 40 40" width="20" height="20" fill="none" aria-hidden="true">
+            <path d="M20 3C10.61 3 3 10.16 3 19c0 3.4 1.13 6.54 3.06 9.1L4.1 36.1c-.24.78.48 1.5 1.26 1.26L13.1 34.9A17.2 17.2 0 0 0 20 35c9.39 0 17-7.16 17-16S29.39 3 20 3z" fill="#0068FF"/>
+            <text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" fill="#ffffff" font-family="'Manrope', sans-serif" font-weight="900" font-size="11" letter-spacing="-0.02em">Zalo</text>
+          </svg>
+          <span>Tư vấn qua Zalo</span>
+        </a>
+        <button type="button" class="fav-copy-cta" id="favCopyCta" title="Sao chép danh sách vào bộ nhớ tạm">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+          <span>Copy danh sách</span>
+        </button>
+      </div>
+    </div>
+  `;
+
+  const copyBtn = $('favCopyCta');
+  if (copyBtn) {
+    copyBtn.onclick = () => {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(zaloMsg).then(() => {
+          showToast('📋 Đã sao chép danh sách nhà! Bạn có thể dán vào Zalo/Messenger.', 3200);
+        }).catch(() => fallbackCopyText(zaloMsg));
+      } else {
+        fallbackCopyText(zaloMsg);
+      }
+    };
+  }
+
+  const zaloCta = $('favZaloCta');
+  if (zaloCta) {
+    zaloCta.onclick = () => {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(zaloMsg).catch(() => {});
+      }
+      showToast('Đang mở Zalo tư vấn Fourland… (Đã copy sẵn danh sách nhà)', 3000);
+    };
+  }
+}
+
 function stripHouseNumber(address){
   let addr=String(address||'').trim();
   if(!addr)return'';
@@ -67,7 +262,30 @@ function formatVietnamFullDateTime(isoString){
 }
 
 function driveImage(url){const value=String(url||'');const match=value.match(/\/d\/([\w-]+)/)||value.match(/[?&]id=([\w-]+)/);return match?`https://drive.google.com/thumbnail?id=${match[1]}&sz=w1400`:value}
-function values(){return{q:$('q').value,district:$('district').value,ward:$('ward').value,street:$('street').value,type:$('type').value,timeRange:$('timeRange')?$('timeRange').value:'',sortBy:$('sortBy')?$('sortBy').value:'',rentalStatus:$('rentalStatus')?$('rentalStatus').value:'',minPrice:$('minPrice').value,maxPrice:$('maxPrice').value,minArea:$('minArea').value,maxArea:$('maxArea').value,page:state.page,pageSize:state.pageSize,archived:state.viewArchived?'only':'',featured:state.filterTab==='featured'?'1':'',_t:Date.now()}}
+function values(){
+  const isFavTab = state.filterTab === 'favorites';
+  const favIds = isFavTab ? favoriteStore.getIds() : [];
+  return {
+    q:$('q').value,
+    district:$('district').value,
+    ward:$('ward').value,
+    street:$('street').value,
+    type:$('type').value,
+    timeRange:$('timeRange')?$('timeRange').value:'',
+    sortBy:$('sortBy')?$('sortBy').value:'',
+    rentalStatus:$('rentalStatus')?$('rentalStatus').value:'',
+    minPrice:$('minPrice').value,
+    maxPrice:$('maxPrice').value,
+    minArea:$('minArea').value,
+    maxArea:$('maxArea').value,
+    page:state.page,
+    pageSize:state.pageSize,
+    archived:state.viewArchived?'only':'',
+    featured:state.filterTab==='featured'?'1':'',
+    ids:isFavTab?favIds.join(','):'',
+    _t:Date.now()
+  };
+}
 function params(input){const search=new URLSearchParams();Object.entries(input).forEach(([key,value])=>{if(value!==''&&value!=null)search.set(key,value)});return search}
 async function api(path,options={},retries=1){
   try{
@@ -119,6 +337,23 @@ setTimeout(dismissSplash,900);
 
 async function load(){
   const requestId=++state.requestId;$('error').hidden=true;$('grid').innerHTML=skeleton();
+  if (state.filterTab === 'favorites') {
+    const favIds = favoriteStore.getIds();
+    if (!favIds.length) {
+      state.rows = [];
+      state.total = 0;
+      $('total').textContent = '0';
+      $('withImages').textContent = '0';
+      $('resultLabel').textContent = '0 hồ sơ đã lưu';
+      $('pageLabel').textContent = '';
+      $('pageNumber').textContent = '1';
+      $('prev').disabled = true;
+      $('next').disabled = true;
+      render();
+      dismissSplash();
+      return;
+    }
+  }
   try{
     const data=await api('/api/properties?'+params(values()));
     if(requestId!==state.requestId)return;
@@ -126,7 +361,11 @@ async function load(){
     state.total=data.total||0;
     $('total').textContent=state.total.toLocaleString('vi-VN');
     $('withImages').textContent=state.rows.filter(row=>Number(row.image_count)>0).length;
-    $('resultLabel').textContent=state.viewArchived?`${state.total.toLocaleString('vi-VN')} hồ sơ đã ẩn`:`${state.total.toLocaleString('vi-VN')} hồ sơ phù hợp`;
+    if (state.filterTab === 'favorites') {
+      $('resultLabel').textContent = `${state.total.toLocaleString('vi-VN')} hồ sơ đã lưu`;
+    } else {
+      $('resultLabel').textContent=state.viewArchived?`${state.total.toLocaleString('vi-VN')} hồ sơ đã ẩn`:`${state.total.toLocaleString('vi-VN')} hồ sơ phù hợp`;
+    }
     $('pageLabel').textContent=`Trang ${state.page} / ${Math.max(1,Math.ceil(state.total/state.pageSize))}`;
     $('pageNumber').textContent=state.page;
     $('prev').disabled=state.page<=1;
@@ -189,10 +428,37 @@ function updateBulkBar(){
 }
 
 function render(){
-  if(!state.rows.length){$('grid').innerHTML='<div class="empty">Không tìm thấy hồ sơ phù hợp.</div>';updateBulkBar();return}
+  if (state.filterTab === 'favorites' && !state.rows.length) {
+    $('grid').innerHTML = `
+      <div class="empty empty-favorites">
+        <div class="empty-fav-icon">
+          <svg viewBox="0 0 24 24" width="38" height="38" fill="none" stroke="#e53935" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+          </svg>
+        </div>
+        <h3>Chưa có bất động sản nào được lưu</h3>
+        <p>Bấm vào biểu tượng trái tim trên các căn nhà bạn ưng ý để lưu lại danh sách quan tâm và nhận tư vấn nhanh qua Zalo bất cứ lúc nào.</p>
+        <button type="button" class="btn-explore-warehouse" id="btnExploreWarehouse">
+          Khám phá kho nhà ngay
+        </button>
+      </div>
+    `;
+    const exploreBtn = $('btnExploreWarehouse');
+    if (exploreBtn) {
+      exploreBtn.onclick = () => {
+        const allTab = document.querySelector('.quick-tab[data-filter="all"]');
+        if (allTab) allTab.click();
+      };
+    }
+    updateBulkBar();
+    updateFavoritesBanner();
+    return;
+  }
+  if(!state.rows.length){$('grid').innerHTML='<div class="empty">Không tìm thấy hồ sơ phù hợp.</div>';updateBulkBar();updateFavoritesBanner();return}
   $('grid').innerHTML=state.rows.map(row=>{
     const isFeatured = row.status === 'featured' || Boolean(row.is_featured);
     const isRented = row.status === 'rented' || Boolean(row.is_rented);
+    const isFav = favoriteStore.has(row.property_id);
     const images = (row.property_images || []).filter(item => item.public_url && String(item.public_url).startsWith('http')).sort((a, b) => a.position - b.position);
     const image = driveImage(images[0]?.public_url);
     let typeBadgeHtml = '';
@@ -231,6 +497,14 @@ function render(){
 
     const statusPillHtml = `<span class="photo-status-pill ${isRented ? 'is-rented' : 'is-available'}" title="${isRented ? 'Đã cho thuê' : 'Đang mở thuê (Còn phòng)'}"><i class="photo-status-dot"></i></span>`;
 
+    const favoriteBtnHtml = `
+      <button type="button" class="card-favorite-btn ${isFav ? 'is-favorited' : ''}" data-fav-id="${escapeHtml(row.property_id)}" aria-label="${isFav ? 'Bỏ lưu căn này' : 'Lưu vào danh sách quan tâm'}" title="${isFav ? 'Bỏ lưu' : 'Lưu tin quan tâm'}">
+        <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+        </svg>
+      </button>
+    `;
+
     return`<a class="card ${isFeatured?'is-featured':''} ${isRented?'is-rented':''} ${row.status==='archived'?'archived-card':''} ${state.selectedIds.has(row.property_id)?'is-selected':''}" href="${escapeHtml(propertyPath(row))}" data-id="${escapeHtml(row.property_id)}" aria-label="Xem ${escapeHtml(displayAddress)}">
       <div class="photo ${!image?'no-photo':''}">
         ${image?`<img loading="lazy" referrerpolicy="no-referrer" src="${escapeHtml(image)}" alt="${escapeHtml(imgAlt)}" title="${escapeHtml(imgAlt)}" onerror="handleCardImgError(this)">`:`
@@ -241,6 +515,7 @@ function render(){
         `}
         ${typeBadgeHtml}
         ${statusPillHtml}
+        ${favoriteBtnHtml}
         ${selectCheckboxHtml}
       </div>
       <div class="card-body">
@@ -259,6 +534,24 @@ function render(){
   }).join('');
 
   let isTouchDevice = false;
+
+  document.querySelectorAll('.card-favorite-btn').forEach(btn => {
+    btn.onclick = event => {
+      event.preventDefault();
+      event.stopPropagation();
+      const id = btn.dataset.favId;
+      const isSaved = favoriteStore.toggle(id);
+      if (isSaved) {
+        showToast('❤️ Đã lưu căn nhà vào danh sách quan tâm!');
+        try { if (navigator.vibrate) navigator.vibrate(35); } catch (_) {}
+      } else {
+        showToast('Đã bỏ lưu khỏi danh sách quan tâm.');
+        if (state.filterTab === 'favorites') {
+          load();
+        }
+      }
+    };
+  });
 
   document.querySelectorAll('.card-select-wrap').forEach(wrap=>{
     wrap.onclick=event=>{
@@ -337,6 +630,11 @@ function render(){
         isLongPress=false;
         return;
       }
+      if(event.target.closest('.card-favorite-btn')){
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+      }
       if(event.target.closest('.card-select-wrap')){
         event.preventDefault();
         event.stopPropagation();
@@ -354,6 +652,7 @@ function render(){
     });
   });
   updateBulkBar();
+  updateFavoritesBanner();
 }
 
 function toggleCardSelection(id){
@@ -439,7 +738,6 @@ function maskDescriptionText(text,address,street,isAdmin=false){
   return output;
 }
 
-const COMPANY_HOTLINE='084.2222.813';
 const DEFAULT_PAGE_TITLE='FOURLAND · Kho Bất Động Sản Chọn Lọc TP.HCM | Mua Bán & Cho Thuê Nhà Đất';
 
 function injectPropertySchema(p, images){
@@ -695,11 +993,16 @@ async function openDetail(id,seoPath=''){
       <span class="gallery-counter"><span id="activeImgIndex">1</span> / ${images.length}</span>
     ` : '';
 
+    const isFav = favoriteStore.has(p.property_id);
     const quickActionsHtml = `
       <div class="property-quick-actions">
         <button type="button" class="action-chip share-chip" id="actionShareBtn" title="Chia sẻ căn nhà này">
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
           <span>Chia sẻ</span>
+        </button>
+        <button type="button" class="action-chip fav-chip ${isFav ? 'is-favorited' : ''}" id="actionFavBtn" data-fav-id="${escapeHtml(p.property_id)}" title="${isFav ? 'Bỏ lưu căn này' : 'Lưu vào danh sách quan tâm'}">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="${isFav ? '#dc2626' : 'none'}" stroke="${isFav ? '#dc2626' : 'currentColor'}" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          <span>${isFav ? 'Đã thả tim' : 'Lưu tin'}</span>
         </button>
         ${state.adminUnlocked ? `
         <button type="button" class="action-chip fb-chip" id="actionFbBtn" title="Đăng lên Facebook Studio">
@@ -751,6 +1054,20 @@ async function openDetail(id,seoPath=''){
     
     const actionShare=$('actionShareBtn');
     if(actionShare)actionShare.onclick=()=>handleShareProperty(p);
+
+    const actionFav=$('actionFavBtn');
+    if(actionFav){
+      actionFav.onclick=()=>{
+        const id=actionFav.dataset.favId;
+        const isSaved=favoriteStore.toggle(id);
+        if(isSaved){
+          showToast('❤️ Đã lưu căn nhà vào danh sách quan tâm!');
+          try { if (navigator.vibrate) navigator.vibrate(35); } catch (_) {}
+        }else{
+          showToast('Đã bỏ lưu khỏi danh sách quan tâm.');
+        }
+      };
+    }
 
     const actionFb=$('actionFbBtn');
     if(actionFb)actionFb.onclick=()=>openFacebookStudio(p.property_id);
@@ -1258,6 +1575,17 @@ document.querySelectorAll('.quick-tab').forEach(tab=>{
   };
 });
 
+const topFavBtn = $('topFavBtn');
+if (topFavBtn) {
+  topFavBtn.onclick = () => {
+    const tabFav = $('tabFavorites');
+    if (tabFav) tabFav.click();
+    const grid = $('grid');
+    if (grid) grid.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+}
+
+updateFavoritesUI();
 updateSearchClearVisibility();
 loadFacets();
 load();

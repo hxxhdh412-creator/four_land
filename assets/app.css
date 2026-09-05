@@ -284,11 +284,185 @@ input:focus,select:focus{border-color:var(--orange);box-shadow:0 0 0 3px rgba(23
 .quick-tab.tab-featured.active{background:linear-gradient(135deg,#182b24 0%,#0d1a15 100%);color:#fbbf24;border-color:#f59e0b;box-shadow:0 4px 14px rgba(24,43,36,.22)}
 .quick-tab.tab-featured .star-icon{width:13px;height:13px;fill:currentColor}
 
-/* Floating Pure Live Status Dot (Top-Right of Card Photo) */
+/* Favorites Quick Tab */
+.quick-tab.tab-favorites {
+  border-color: rgba(239, 68, 68, 0.28);
+  background: #fffcfc;
+  color: #b91c1c;
+}
+.quick-tab.tab-favorites:hover {
+  border-color: #ef4444;
+  background: #fff5f5;
+  color: #991b1b;
+}
+.quick-tab.tab-favorites.active {
+  background: linear-gradient(135deg, #182b24 0%, #0d1a15 100%);
+  color: #fca5a5;
+  border-color: #ef4444;
+  box-shadow: 0 4px 14px rgba(24, 43, 36, 0.22);
+}
+.quick-tab.tab-favorites .heart-tab-icon {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+  display: block;
+}
+.quick-tab.tab-favorites.active .heart-tab-icon {
+  fill: #ef4444;
+  stroke: #ef4444;
+}
+.tab-fav-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: #ef4444;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+}
+.quick-tab.tab-favorites.active .tab-fav-badge {
+  background: #dc2626;
+  color: #ffffff;
+}
+
+/* Topbar Quick Heart Button */
+.top-fav-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 38px;
+  padding: 0 14px;
+  border-radius: 20px;
+  border: 1px solid var(--line);
+  background: #ffffff;
+  color: var(--forest);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+.top-fav-btn:hover {
+  border-color: rgba(239, 68, 68, 0.45);
+  background: #fff8f8;
+  color: #b91c1c;
+  transform: translateY(-1px);
+}
+.top-fav-btn:active {
+  transform: scale(0.96);
+}
+.top-fav-btn svg {
+  stroke: #64748b;
+  transition: stroke 0.18s ease;
+}
+.top-fav-btn:hover svg,
+.top-fav-btn.has-favorites svg {
+  stroke: #ef4444;
+}
+.top-fav-btn.has-favorites {
+  border-color: rgba(239, 68, 68, 0.35);
+  color: #991b1b;
+}
+.top-fav-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: #ef4444;
+  color: #ffffff;
+  font-size: 10.5px;
+  font-weight: 800;
+  line-height: 1;
+}
+@media (max-width: 480px) {
+  .top-fav-label {
+    display: none;
+  }
+  .top-fav-btn {
+    padding: 0 10px;
+  }
+}
+
+/* Floating Card Heart Button */
+.card-favorite-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.16);
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.card-favorite-btn:hover {
+  transform: scale(1.12);
+  background: #ffffff;
+  border-color: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
+}
+.card-favorite-btn:active {
+  transform: scale(0.92);
+}
+.card-favorite-btn svg {
+  width: 17px;
+  height: 17px;
+  transition: all 0.2s ease;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.12));
+}
+.card-favorite-btn:not(.is-favorited) svg {
+  stroke: #334155;
+  fill: none;
+}
+.card-favorite-btn.is-favorited {
+  background: #ffffff;
+  border-color: rgba(229, 57, 53, 0.35);
+  box-shadow: 0 3px 12px rgba(229, 57, 53, 0.28);
+  animation: heartPop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.card-favorite-btn.is-favorited svg {
+  stroke: #e53935;
+  fill: #e53935;
+}
+
+body.selection-mode-active .card-favorite-btn,
+.card.is-selected .card-favorite-btn {
+  opacity: 0 !important;
+  transform: scale(0.5) !important;
+  pointer-events: none !important;
+}
+
+@keyframes heartPop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.35); }
+  100% { transform: scale(1); }
+}
+
+/* Floating Pure Live Status Dot (Top-Right, next to Heart Button) */
 .photo-status-pill {
   position: absolute;
-  top: 9px;
-  right: 9px;
+  top: 15px;
+  right: 48px;
   z-index: 2;
   display: inline-flex;
   align-items: center;
@@ -1531,7 +1705,7 @@ body.selection-mode-active .card-select-wrap,
    ========================================================================== */
 .property-quick-actions {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
   gap: 10px;
   margin-top: 14px;
   margin-bottom: 4px;
@@ -1603,6 +1777,31 @@ body.selection-mode-active .card-select-wrap,
   background: #ffffff;
   border-color: #94a3b8;
   color: #0f172a;
+}
+
+.action-chip.fav-chip {
+  background: #f8fafc;
+  color: #334155;
+  border-color: #e2e8f0;
+}
+
+.action-chip.fav-chip:hover {
+  background: #fff5f5;
+  border-color: #fca5a5;
+  color: #dc2626;
+}
+
+.action-chip.fav-chip.is-favorited {
+  background: #fef2f2;
+  border-color: #fca5a5;
+  color: #dc2626;
+  font-weight: 700;
+}
+
+.action-chip.fav-chip.is-favorited svg {
+  stroke: #dc2626;
+  fill: #dc2626;
+  animation: heartPop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .action-chip.fb-chip {
@@ -3133,5 +3332,190 @@ dialog#detail[open] ~ .floating-contact-widget {
     height: 44px;
     justify-content: center;
   }
+}
+
+/* ==========================================================================
+   FAVORITES ACTION BANNER & LEAD GENERATION CTA
+   ========================================================================== */
+.fav-action-banner {
+  margin: 12px 0 18px;
+}
+.fav-banner-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 16px 22px;
+  background: linear-gradient(135deg, #ffffff 0%, #fffbfb 100%);
+  border: 1.5px solid rgba(239, 68, 68, 0.25);
+  border-radius: 10px;
+  box-shadow: 0 4px 18px rgba(239, 68, 68, 0.08);
+}
+.fav-banner-visual {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #fee2e2;
+  font-size: 20px;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.15);
+}
+.fav-banner-info {
+  flex: 1;
+  min-width: 0;
+}
+.fav-banner-title {
+  margin: 0 0 4px;
+  font-family: "Manrope", sans-serif;
+  font-size: 15px;
+  font-weight: 800;
+  color: #991b1b;
+  letter-spacing: -0.01em;
+}
+.fav-banner-sub {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #64748b;
+}
+.fav-banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.fav-zalo-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 42px;
+  padding: 0 18px;
+  border-radius: 8px;
+  background: #0068ff;
+  color: #ffffff;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 800;
+  text-decoration: none;
+  cursor: pointer;
+  box-shadow: 0 3px 12px rgba(0, 104, 255, 0.28);
+  transition: all 0.18s ease;
+  white-space: nowrap;
+}
+.fav-zalo-cta:hover {
+  background: #0055d6;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(0, 104, 255, 0.38);
+}
+.fav-zalo-cta:active {
+  transform: scale(0.96);
+}
+.fav-copy-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 42px;
+  padding: 0 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  background: #ffffff;
+  color: var(--forest);
+  font-family: var(--font-sans);
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  white-space: nowrap;
+}
+.fav-copy-cta:hover {
+  background: #f8fafc;
+  border-color: rgba(15, 23, 42, 0.28);
+  transform: translateY(-1px);
+}
+.fav-copy-cta:active {
+  transform: scale(0.96);
+}
+
+@media (max-width: 640px) {
+  .fav-banner-card {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 14px;
+    gap: 12px;
+  }
+  .fav-banner-visual {
+    display: none;
+  }
+  .fav-banner-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    width: 100%;
+  }
+  .fav-zalo-cta, .fav-copy-cta {
+    justify-content: center;
+    padding: 0 10px;
+    font-size: 12px;
+  }
+}
+
+/* Empty Favorites State */
+.empty-favorites {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 60px 20px;
+  max-width: 460px;
+  margin: 0 auto;
+}
+.empty-fav-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: #fef2f2;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.12);
+}
+.empty-favorites h3 {
+  margin: 0 0 8px;
+  font-family: "Manrope", sans-serif;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--forest);
+}
+.empty-favorites p {
+  margin: 0 0 20px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #64748b;
+}
+.btn-explore-warehouse {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 42px;
+  padding: 0 22px;
+  border-radius: 8px;
+  background: var(--forest);
+  color: #ffffff;
+  font-family: var(--font-sans);
+  font-size: 13.5px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(24, 43, 36, 0.2);
+  transition: all 0.18s ease;
+}
+.btn-explore-warehouse:hover {
+  background: var(--forest-2);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(24, 43, 36, 0.28);
 }
 
