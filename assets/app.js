@@ -478,9 +478,10 @@ function render(){
     
     // Specs pills with luxury vector line SVGs
     const specs = [];
-    const cardArea = row.area_text || row.data_json?.property?.area || row.dimensions;
-    if(cardArea){
-      specs.push(`<span class="spec-tag" title="Diện tích / Kích thước"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="M3 9h18M9 21V9" stroke="currentColor" stroke-width="1.7"/></svg>${escapeHtml(cardArea)}</span>`);
+    const { area: cardArea, dimensions: cardDim } = resolveAreaAndDimensions(row);
+    const primarySpec = cardDim || cardArea;
+    if(primarySpec){
+      specs.push(`<span class="spec-tag" title="Kích thước / Diện tích"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="M3 9h18M9 21V9" stroke="currentColor" stroke-width="1.7"/></svg>${escapeHtml(primarySpec)}</span>`);
     }
     const cardBedrooms = row.data_json?.property?.bedrooms || (row.bedrooms ? `${row.bedrooms} PN` : null);
     if(cardBedrooms){
@@ -905,6 +906,65 @@ function renderSimilarPropertiesHtml(similarList) {
   `;
 }
 
+function resolveAreaAndDimensions(p) {
+  if (!p) return { area: null, dimensions: null };
+  const rawArea = p.area_text || p.data_json?.property?.area || null;
+  const rawDim = p.dimensions || p.data_json?.property?.dimensions || null;
+
+  // Format dimensions (e.g. "5x15" -> "5x15m")
+  let dimFormatted = rawDim ? String(rawDim).trim() : null;
+  if (dimFormatted && /^(\d+(?:[.,]\d+)?)\s*[xX*×]\s*(\d+(?:[.,]\d+)?)$/.test(dimFormatted)) {
+    dimFormatted = dimFormatted.replace(/\s+/g, '') + 'm';
+  }
+
+  // Calculate area from dimensions if available (e.g. 5x15 -> 75 m²)
+  let calculatedArea = null;
+  const dimSource = rawDim || rawArea;
+  if (dimSource) {
+    const m = String(dimSource).match(/(\d+(?:[.,]\d+)?)\s*[xX*×]\s*(\d+(?:[.,]\d+)?)/);
+    if (m) {
+      const w = parseFloat(m[1].replace(',', '.'));
+      const l = parseFloat(m[2].replace(',', '.'));
+      if (w > 0 && l > 0) {
+        const areaVal = Math.round(w * l * 10) / 10;
+        calculatedArea = `${areaVal} m²`;
+      }
+    }
+  }
+
+  // Determine display area
+  let areaFormatted = null;
+  if (rawArea) {
+    const areaStr = String(rawArea).trim();
+    // If rawArea is just dimensions like "5x15"
+    if (/^(\d+(?:[.,]\d+)?)\s*[xX*×]\s*(\d+(?:[.,]\d+)?)(?:m)?$/i.test(areaStr)) {
+      if (!dimFormatted) {
+        dimFormatted = areaStr.replace(/\s+/g, '');
+        if (!dimFormatted.endsWith('m')) dimFormatted += 'm';
+      }
+      areaFormatted = calculatedArea || null;
+    } else if (/\d+\s*(?:m2|m²)/i.test(areaStr)) {
+      areaFormatted = areaStr.replace(/m2/i, 'm²');
+    } else if (/^\d+(?:[.,]\d+)?$/.test(areaStr)) {
+      areaFormatted = `${areaStr} m²`;
+    } else {
+      areaFormatted = areaStr;
+    }
+  } else if (calculatedArea) {
+    areaFormatted = calculatedArea;
+  }
+
+  // Anti-duplication check: if area and dim string are identical, suppress duplicate
+  if (areaFormatted && dimFormatted && areaFormatted.toLowerCase().replace(/[\s.m²]/g, '') === dimFormatted.toLowerCase().replace(/[\s.m]/g, '')) {
+    areaFormatted = calculatedArea && calculatedArea !== dimFormatted ? calculatedArea : null;
+  }
+
+  return {
+    area: areaFormatted,
+    dimensions: dimFormatted
+  };
+}
+
 async function openDetail(id,seoPath=''){
   const dialog=$('detail');state.currentPropertyId=id;$('detailId').textContent=id;
   document.body.classList.add('detail-modal-open');
@@ -965,7 +1025,7 @@ async function openDetail(id,seoPath=''){
       (state.adminUnlocked?`<label class="admin-thumb-add" for="adminQuickUpload" title="Bổ sung hình ảnh"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></label><input id="adminQuickUpload" type="file" accept="image/jpeg,image/png,image/webp" multiple hidden style="display:none!important">`:'');
     const displayBedrooms = p.data_json?.property?.bedrooms || (p.bedrooms ? `${p.bedrooms} PN` : null);
     const displayBathrooms = p.data_json?.property?.bathrooms || (p.bathrooms ? `${p.bathrooms} WC` : null);
-    const displayArea = p.area_text || p.data_json?.property?.area || p.dimensions || null;
+    const { area: displayArea, dimensions: displayDimensions } = resolveAreaAndDimensions(p);
     const displayLegal = p.legal || p.data_json?.property?.legal || null;
     const displayStructure = p.structure || p.data_json?.property?.structure || null;
     const displayCommission = p.commission || p.data_json?.property?.commission || null;
@@ -977,7 +1037,7 @@ async function openDetail(id,seoPath=''){
       ['Cập nhật lúc', formatVietnamFullDateTime(p.received_at||p.updated_at||p.created_at)],
       ['Hoa hồng', displayCommission],
       ['Diện tích', displayArea],
-      ['Kích thước', p.dimensions],
+      ['Kích thước', displayDimensions],
       ['Phòng ngủ', displayBedrooms],
       ['Phòng tắm', displayBathrooms],
       ['Kết cấu', displayStructure],
