@@ -392,57 +392,57 @@ input:focus,select:focus{border-color:var(--orange);box-shadow:0 0 0 3px rgba(23
   }
 }
 
-/* Floating Card Heart Button */
+/* Floating Card Heart Button (Bottom-Right Corner, Pure Minimal Icon) */
 .card-favorite-btn {
   position: absolute;
-  top: 8px;
   right: 8px;
+  bottom: 8px;
   z-index: 3;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  background: rgba(255, 255, 255, 0.88);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.16);
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  box-shadow: none;
   cursor: pointer;
   padding: 0;
-  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
 }
 .card-favorite-btn:hover {
-  transform: scale(1.12);
-  background: #ffffff;
-  border-color: rgba(255, 255, 255, 0.95);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
+  transform: scale(1.18);
+  background: transparent;
+  border: none;
+  box-shadow: none;
 }
 .card-favorite-btn:active {
-  transform: scale(0.92);
+  transform: scale(0.9);
 }
 .card-favorite-btn svg {
   width: 17px;
   height: 17px;
-  transition: all 0.2s ease;
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.12));
+  transition: stroke 0.2s ease, fill 0.2s ease, transform 0.2s ease;
 }
 .card-favorite-btn:not(.is-favorited) svg {
-  stroke: #334155;
+  stroke: #94a3b8;
   fill: none;
 }
+.card-favorite-btn:hover:not(.is-favorited) svg {
+  stroke: #e53935;
+}
 .card-favorite-btn.is-favorited {
-  background: #ffffff;
-  border-color: rgba(229, 57, 53, 0.35);
-  box-shadow: 0 3px 12px rgba(229, 57, 53, 0.28);
+  background: transparent;
+  border: none;
+  box-shadow: none;
   animation: heartPop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 .card-favorite-btn.is-favorited svg {
   stroke: #e53935;
   fill: #e53935;
+  filter: drop-shadow(0 1px 3px rgba(229, 57, 53, 0.35));
 }
 
 body.selection-mode-active .card-favorite-btn,
@@ -458,11 +458,11 @@ body.selection-mode-active .card-favorite-btn,
   100% { transform: scale(1); }
 }
 
-/* Floating Pure Live Status Dot (Top-Right, next to Heart Button) */
+/* Floating Pure Live Status Dot (Top-Right of Card Photo) */
 .photo-status-pill {
   position: absolute;
-  top: 15px;
-  right: 48px;
+  top: 9px;
+  right: 9px;
   z-index: 2;
   display: inline-flex;
   align-items: center;
@@ -558,7 +558,7 @@ body.selection-mode-active .photo-status-pill,
 .icon-pin{width:11px;height:11px;flex:0 0 11px;stroke:var(--orange)}
 .card-time{display:flex;align-items:center;gap:3px;color:#8c9891;font-family:var(--font-sans);font-size:10px;font-weight:600;letter-spacing:-.01em;white-space:nowrap;margin-top:1px}
 .card-time svg{width:10px;height:10px;stroke:currentColor;flex:0 0 10px}
-.card-specs{display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin-top:auto;padding-top:3px}
+.card-specs{display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin-top:auto;padding-top:3px;padding-right:32px}
 .spec-tag{display:inline-flex;align-items:center;gap:3.5px;padding:2.5px 6px;border-radius:3px;background:#f3f6f3;border:1px solid rgba(24,43,36,.08);color:var(--forest);font-family:var(--font-sans);font-size:10.5px;font-weight:700;letter-spacing:-.01em}
 .spec-tag svg{width:11px;height:11px;stroke:var(--forest);flex:0 0 11px}
 
@@ -711,7 +711,9 @@ label,.eyebrow,.detail-kicker,.result-head strong,.brand-caption{font-weight:700
   .card-title{font-size:10.8px;font-weight:700;line-height:1.4;margin:1px 0;padding:1px 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .card-location{font-size:10.5px;gap:3.5px;line-height:1.35;padding:1px 0}
   .card-location .icon-pin{width:11px;height:11px;flex:0 0 11px}
-  .card-specs{gap:4.5px;margin-top:auto;padding-top:2px}
+  .card-specs{gap:4.5px;margin-top:auto;padding-top:2px;padding-right:28px}
+  .card-favorite-btn{right:6px;bottom:6px;width:26px;height:26px}
+  .card-favorite-btn svg{width:16px;height:16px}
   .spec-tag{padding:2.5px 6px;border-radius:4px;font-size:10px;gap:3.5px}
   .spec-tag svg{width:10.5px;height:10.5px;flex:0 0 10.5px}
   .badge{max-width:76px;font-size:9.5px;padding:3px 6.5px;gap:3.5px;right:6px;top:6px}

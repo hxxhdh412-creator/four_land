@@ -515,7 +515,6 @@ function render(){
         `}
         ${typeBadgeHtml}
         ${statusPillHtml}
-        ${favoriteBtnHtml}
         ${selectCheckboxHtml}
       </div>
       <div class="card-body">
@@ -529,6 +528,7 @@ function render(){
         </div>
         ${timeRel ? `<div class="card-time" title="Cập nhật lúc: ${escapeHtml(timeFull)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span>${escapeHtml(timeRel)}</span></div>` : ''}
         ${specsHtml}
+        ${favoriteBtnHtml}
       </div>
     </a>`;
   }).join('');
