@@ -111,7 +111,7 @@ function updateFavoritesUI() {
     const isFav = ids.includes(id);
     detailFavBtn.classList.toggle('is-favorited', isFav);
     const span = detailFavBtn.querySelector('span');
-    if (span) span.textContent = isFav ? 'Đã thả tim' : 'Lưu tin';
+    if (span) span.textContent = isFav ? 'Đã lưu' : 'Lưu tin';
     const svg = detailFavBtn.querySelector('svg');
     if (svg) {
       svg.style.fill = isFav ? '#dc2626' : 'none';
@@ -1002,7 +1002,7 @@ async function openDetail(id,seoPath=''){
         </button>
         <button type="button" class="action-chip fav-chip ${isFav ? 'is-favorited' : ''}" id="actionFavBtn" data-fav-id="${escapeHtml(p.property_id)}" title="${isFav ? 'Bỏ lưu căn này' : 'Lưu vào danh sách quan tâm'}">
           <svg viewBox="0 0 24 24" width="14" height="14" fill="${isFav ? '#dc2626' : 'none'}" stroke="${isFav ? '#dc2626' : 'currentColor'}" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-          <span>${isFav ? 'Đã thả tim' : 'Lưu tin'}</span>
+          <span>${isFav ? 'Đã lưu' : 'Lưu tin'}</span>
         </button>
         ${state.adminUnlocked ? `
         <button type="button" class="action-chip fb-chip" id="actionFbBtn" title="Đăng lên Facebook Studio">
