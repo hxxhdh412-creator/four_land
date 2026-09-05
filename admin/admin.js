@@ -47,6 +47,12 @@ function setActivePage(page, updateUrl = true) {
   document.querySelectorAll('[data-page-panel]').forEach(panel => panel.classList.toggle('active', panel.dataset.pagePanel === targetPage));
   document.querySelectorAll('[data-page]').forEach(item => item.classList.toggle('active', item.dataset.page === targetPage));
 
+  const morePages = ['editor', 'web-pins', 'users', 'sync', 'facebook-pages'];
+  const btnMore = byId('btnMobileMore');
+  if (btnMore) {
+    btnMore.classList.toggle('active', morePages.includes(targetPage));
+  }
+
   try {
     localStorage.setItem('fourland_cms_last_tab', targetPage);
   } catch (_) {}
@@ -276,9 +282,19 @@ async function loadDashboard() {
     byId('dashboardUpdated').textContent = 'Dữ liệu trực tiếp';
 
     const badgeReview = byId('navBadgeReview');
+    const mobileBadgeReview = byId('mobileBadgeReview');
+    const mobileMoreDot = byId('mobileMoreDot');
+    const pendingReviewCount = summary.pendingReview || 0;
     if (badgeReview) {
-      badgeReview.textContent = summary.pendingReview || 0;
-      badgeReview.hidden = !summary.pendingReview;
+      badgeReview.textContent = pendingReviewCount;
+      badgeReview.hidden = !pendingReviewCount;
+    }
+    if (mobileBadgeReview) {
+      mobileBadgeReview.textContent = pendingReviewCount;
+      mobileBadgeReview.hidden = !pendingReviewCount;
+    }
+    if (mobileMoreDot) {
+      mobileMoreDot.hidden = !pendingReviewCount;
     }
     const badgeProps = byId('navBadgeProperties');
     if (badgeProps) {
@@ -1260,9 +1276,19 @@ async function loadReviewQueue() {
     byId('reviewLoading').hidden = true;
 
     const badgeReview = byId('navBadgeReview');
+    const mobileBadgeReview = byId('mobileBadgeReview');
+    const mobileMoreDot = byId('mobileMoreDot');
+    const totalReview = summary.total || 0;
     if (badgeReview) {
-      badgeReview.textContent = summary.total || 0;
-      badgeReview.hidden = !summary.total;
+      badgeReview.textContent = totalReview;
+      badgeReview.hidden = !totalReview;
+    }
+    if (mobileBadgeReview) {
+      mobileBadgeReview.textContent = totalReview;
+      mobileBadgeReview.hidden = !totalReview;
+    }
+    if (mobileMoreDot) {
+      mobileMoreDot.hidden = !totalReview;
     }
 
     if (!items.length) { byId('reviewEmpty').hidden = false; return; }
@@ -3579,5 +3605,59 @@ if (byId('ownersSearchInput')) {
 if (byId('ownersRoleFilter')) byId('ownersRoleFilter').addEventListener('change', () => loadOwners(true));
 if (byId('ownersSortSelect')) byId('ownersSortSelect').addEventListener('change', () => loadOwners(true));
 
+function initMobileMoreSheet() {
+  const btnMore = byId('btnMobileMore');
+  const sheet = byId('cmsMobileMoreSheet');
+  const backdrop = byId('cmsMobileMoreBackdrop');
+  const btnClose = byId('cmsMobileMoreClose');
+  const logoutBtn = byId('cmsMobileMoreLogout');
+
+  function openSheet() {
+    if (!sheet) return;
+    sheet.hidden = false;
+    document.body.style.overflow = 'hidden';
+    if (btnMore) btnMore.setAttribute('aria-expanded', 'true');
+  }
+
+  function closeSheet() {
+    if (!sheet) return;
+    sheet.hidden = true;
+    document.body.style.overflow = '';
+    if (btnMore) btnMore.setAttribute('aria-expanded', 'false');
+  }
+
+  if (btnMore) {
+    btnMore.addEventListener('click', () => {
+      if (sheet && !sheet.hidden) closeSheet();
+      else openSheet();
+    });
+  }
+
+  if (backdrop) backdrop.addEventListener('click', closeSheet);
+  if (btnClose) btnClose.addEventListener('click', closeSheet);
+
+  if (sheet) {
+    sheet.querySelectorAll('[data-page]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        closeSheet();
+      });
+    });
+  }
+
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', () => {
+      closeSheet();
+      handleLogout();
+    });
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && sheet && !sheet.hidden) {
+      closeSheet();
+    }
+  });
+}
+
+initMobileMoreSheet();
 bootstrapCms();
 
