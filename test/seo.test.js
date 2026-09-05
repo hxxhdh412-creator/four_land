@@ -5,7 +5,7 @@ const path = require("node:path");
 const { createHandler: createPropertySeoHandler } = require("../api/seo-property");
 const { createHandler: createSitemapHandler } = require("../api/sitemap");
 const {
-  propertyIdFromSlug, propertyPath, renderPropertyPage, renderSitemap
+  propertyIdFromSlug, propertyPath, renderPropertyPage, renderSitemap, resolveAreaAndDimensions
 } = require("../server/seo");
 
 const sample = {
@@ -103,3 +103,21 @@ test("dynamic sitemap path has no conflicting static file and allows AI search c
   assert.match(robots, /User-agent: OAI-SearchBot[\s\S]*?Allow: \//);
   assert.match(robots, /Sitemap: https:\/\/www\.fourland\.vn\/sitemap\.xml/);
 });
+
+test("resolveAreaAndDimensions calculates total area from dimensions and formats facts", () => {
+  const prop = {
+    ...sample,
+    property_id: "BDS-TEST-AREA",
+    area_text: "3.6x18m",
+    dimensions: "3.6x18m"
+  };
+  const resolved = resolveAreaAndDimensions(prop);
+  assert.equal(resolved.area, "64.8 m²");
+  assert.equal(resolved.dimensions, "3.6x18m");
+
+  const html = renderPropertyPage(prop);
+  assert.match(html, /<dt>Diện tích<\/dt><dd>64\.8 m²<\/dd>/);
+  assert.match(html, /<dt>Kích thước<\/dt><dd>3\.6x18m<\/dd>/);
+  assert.match(html, /diện tích 64\.8 m²/);
+});
+

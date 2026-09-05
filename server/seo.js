@@ -115,6 +115,61 @@ function formatDate(input) {
   };
 }
 
+function resolveAreaAndDimensions(p) {
+  if (!p) return { area: null, dimensions: null };
+  const rawArea = p.area_text || p.data_json?.property?.area || null;
+  const rawDim = p.dimensions || p.data_json?.property?.dimensions || null;
+
+  // Format dimensions (e.g. "5x15" -> "5x15m")
+  let dimFormatted = rawDim ? String(rawDim).trim() : null;
+  if (dimFormatted && /^(\d+(?:[.,]\d+)?)\s*[xX*×]\s*(\d+(?:[.,]\d+)?)$/.test(dimFormatted)) {
+    dimFormatted = dimFormatted.replace(/\s+/g, "") + "m";
+  }
+
+  // Calculate area from dimensions if available (e.g. 5x15 -> 75 m², 3.6x18m -> 64.8 m²)
+  let calculatedArea = null;
+  const dimSource = rawDim || rawArea;
+  if (dimSource) {
+    const m = String(dimSource).match(/(\d+(?:[.,]\d+)?)\s*[xX*×]\s*(\d+(?:[.,]\d+)?)/);
+    if (m) {
+      const w = parseFloat(m[1].replace(",", "."));
+      const l = parseFloat(m[2].replace(",", "."));
+      if (w > 0 && l > 0) {
+        const areaVal = Math.round(w * l * 10) / 10;
+        calculatedArea = `${areaVal} m²`;
+      }
+    }
+  }
+
+  // Determine display area
+  let areaFormatted = null;
+  if (rawArea) {
+    const areaStr = String(rawArea).trim();
+    if (/^(\d+(?:[.,]\d+)?)\s*[xX*×]\s*(\d+(?:[.,]\d+)?)(?:m)?$/i.test(areaStr)) {
+      if (!dimFormatted) {
+        dimFormatted = areaStr.replace(/\s+/g, "");
+        if (!dimFormatted.endsWith("m")) dimFormatted += "m";
+      }
+      areaFormatted = calculatedArea || null;
+    } else if (/\d+\s*(?:m2|m²)/i.test(areaStr)) {
+      areaFormatted = areaStr.replace(/m2/i, "m²");
+    } else if (/^\d+(?:[.,]\d+)?$/.test(areaStr)) {
+      areaFormatted = `${areaStr} m²`;
+    } else {
+      areaFormatted = areaStr;
+    }
+  } else if (calculatedArea) {
+    areaFormatted = calculatedArea;
+  }
+
+  // Anti-duplication check: if area and dim string are identical, suppress duplicate
+  if (areaFormatted && dimFormatted && areaFormatted.toLowerCase().replace(/[\s.m²]/g, "") === dimFormatted.toLowerCase().replace(/[\s.m]/g, "")) {
+    areaFormatted = calculatedArea && calculatedArea !== dimFormatted ? calculatedArea : null;
+  }
+
+  return { area: areaFormatted, dimensions: dimFormatted };
+}
+
 function propertyPresentation(property) {
   const publicAddress = formatPublicAddress(property);
   const propertyType = value(property.property_type) || "Bất động sản";
@@ -127,14 +182,19 @@ function propertyPresentation(property) {
   const headlineLocation = [publicAddress, district && !normalizedAddress.includes(normalizedDistrict) ? district : ""].filter(Boolean).join(", ");
   const headline = `${subject} tại ${headlineLocation}`;
   const location = [ward, district, "TP.HCM"].filter(Boolean).join(", ");
+  const { area: resolvedArea, dimensions: resolvedDim } = resolveAreaAndDimensions(property);
+  const areaDesc = resolvedArea ? `diện tích ${resolvedArea}` : (resolvedDim ? `diện tích ${resolvedDim}` : "");
   const summary = [
     headline,
-    property.area_text ? `diện tích ${value(property.area_text)}` : "",
+    areaDesc,
     property.bedrooms ? `${value(property.bedrooms)} phòng ngủ` : "",
     property.structure ? `kết cấu ${value(property.structure)}` : "",
     property.price_text ? `giá ${value(property.price_text)}` : ""
   ].filter(Boolean).join(", ");
-  return { action, district, headline, location, propertyType, publicAddress, summary: `${summary}.` };
+  return {
+    action, district, headline, location, propertyType, publicAddress,
+    summary: `${summary}.`, area: resolvedArea, dimensions: resolvedDim
+  };
 }
 
 function renderSimilarCard(item) {
@@ -145,7 +205,8 @@ function renderSimilarCard(item) {
   const price = value(item.price_text) || "Liên hệ";
   const dispAddr = formatPublicAddress(item);
   const loc = [item.street, item.ward, item.district].map(value).filter(Boolean).join(" · ");
-  const specs = [item.dimensions || item.area_text, item.structure, item.bedrooms ? `${item.bedrooms} PN` : ""].map(value).filter(Boolean).join(" · ");
+  const { area: simArea, dimensions: simDim } = resolveAreaAndDimensions(item);
+  const specs = [simDim || simArea, item.structure, item.bedrooms ? `${item.bedrooms} PN` : ""].map(value).filter(Boolean).join(" · ");
   const badgeText = value(item.badge) || value(item.district) || inferListingAction(item) || "Gần đây";
   const isRented = Boolean(item.is_rented || String(item.status).toLowerCase() === "rented");
 
@@ -261,7 +322,7 @@ function renderPropertyPage(property, { similarProperties = [] } = {}) {
   const updated = formatDate(property.updated_at || property.received_at);
   const facts = [
     ["Quận/Huyện", property.district], ["Phường/Xã", property.ward], ["Tên đường", stripHouseNumber(property.street) || property.street],
-    ["Diện tích", property.area_text], ["Kích thước", property.dimensions], ["Phòng ngủ", property.bedrooms],
+    ["Diện tích", presentation.area], ["Kích thước", presentation.dimensions], ["Phòng ngủ", property.bedrooms],
     ["Phòng tắm", property.bathrooms], ["Kết cấu", property.structure], ["Pháp lý", property.legal], ["Loại BĐS", property.property_type]
   ].filter(([, factValue]) => value(factValue));
   const residenceId = `${canonical}#property`;
@@ -543,5 +604,5 @@ function renderSitemap(properties, generatedAt = new Date(), landingEntries = []
 module.exports = {
   SITE_ORIGIN, COMPANY_PHONE, COMPANY_PHONE_HREF, driveImage, escapeHtml, escapeXml, formatDate, formatPublicAddress, inferListingAction, jsonLd,
   maskDescriptionText, maskTextPhones, propertyIdFromSlug, propertyPath, propertyPresentation,
-  publicImages, renderPropertyPage, renderSitemap, slugify, stripHouseNumber, value
+  publicImages, renderPropertyPage, renderSitemap, resolveAreaAndDimensions, slugify, stripHouseNumber, value
 };
