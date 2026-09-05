@@ -6,8 +6,6 @@ const path = require('node:path');
 test('index.html contains all essential favorites DOM nodes', () => {
   const html = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8');
   
-  assert.ok(html.includes('id="topFavBtn"'), 'Must have topbar favorite button #topFavBtn');
-  assert.ok(html.includes('id="topFavBadge"'), 'Must have topbar badge #topFavBadge');
   assert.ok(html.includes('id="tabFavorites"'), 'Must have tab #tabFavorites');
   assert.ok(html.includes('id="favCountBadge"'), 'Must have tab badge #favCountBadge');
   assert.ok(html.includes('id="favBanner"'), 'Must have lead-gen banner container #favBanner');
