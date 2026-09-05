@@ -1941,6 +1941,30 @@ if (byId('propertyResetFilters')) {
 
 updateMobilePropertyFilters();
 
+// Property Pagination Controls
+if (byId('propertyPrev')) {
+  byId('propertyPrev').addEventListener('click', () => {
+    if (byId('propertyPrev').disabled) return;
+    if (cmsState.propertyPage > 1) {
+      loadProperties(cmsState.propertyPage - 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  });
+}
+
+if (byId('propertyNext')) {
+  byId('propertyNext').addEventListener('click', () => {
+    if (byId('propertyNext').disabled) return;
+    const totalPages = cmsState.propertyMeta?.total && cmsState.propertyMeta?.pageSize
+      ? Math.ceil(cmsState.propertyMeta.total / cmsState.propertyMeta.pageSize)
+      : (cmsState.propertyMeta?.hasNext ? cmsState.propertyPage + 1 : cmsState.propertyPage);
+    if (cmsState.propertyMeta?.hasNext || cmsState.propertyPage < totalPages) {
+      loadProperties(cmsState.propertyPage + 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  });
+}
+
 // View Switcher (Grid / Table)
 function setViewMode(mode) {
   cmsState.viewMode = mode;

@@ -69,3 +69,12 @@ test('CMS Smart Match exposes a compact mobile decision flow', () => {
   assert.match(css, /\.cms-match-quick-chips \.chip-title \{[\s\S]*position: absolute !important/);
   assert.match(css, /\.cms-match-price \{[\s\S]*display: none/);
 });
+
+test('CMS property pagination controls have active event listeners and DOM elements', () => {
+  assert.match(html, /id="propertyPagination"/);
+  assert.match(html, /id="propertyPrev"/);
+  assert.match(html, /id="propertyNext"/);
+  assert.match(html, /id="propertyPage"/);
+  assert.match(js, /byId\('propertyPrev'\)\.addEventListener\('click'/);
+  assert.match(js, /byId\('propertyNext'\)\.addEventListener\('click'/);
+});
