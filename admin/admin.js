@@ -964,9 +964,64 @@ async function loadProperties(page = cmsState.propertyPage) {
     }
 
     if (!result.data.items.length) {
+      const grid = byId('propertyGrid');
+      if (grid) {
+        grid.replaceChildren();
+        grid.hidden = true;
+      }
+      const tableBody = byId('propertyTableBody');
+      if (tableBody) tableBody.replaceChildren();
+      if (byId('propertyTableWrap')) byId('propertyTableWrap').hidden = true;
+      byId('propertyPagination').hidden = true;
       byId('propertyEmpty').hidden = false;
+
+      const emptyBox = byId('propertyEmpty');
+      const searchVal = (byId('propertySearch')?.value || '').trim();
+      const listingType = cmsState.currentListingType || 'all';
+
+      if (emptyBox) {
+        let title = 'Không tìm thấy hồ sơ phù hợp';
+        let desc = 'Thử đổi từ khóa hoặc bộ lọc.';
+        let showSwitchToAll = false;
+
+        if (!searchVal && listingType === 'sale') {
+          title = 'Kho hiện chưa có hồ sơ Cần bán';
+          desc = 'Toàn bộ hồ sơ trong kho hiện tại là bất động sản Cho thuê.';
+          showSwitchToAll = true;
+        } else if (!searchVal && listingType === 'rent') {
+          title = 'Không tìm thấy hồ sơ Cho thuê phù hợp';
+          desc = 'Thử đổi hoặc nới lỏng các bộ lọc.';
+        }
+
+        emptyBox.innerHTML = `
+          <div class="cms-empty">
+            <b>${title}</b>
+            <span>${desc}</span>
+            ${showSwitchToAll ? `
+              <button type="button" class="cms-btn-filter-action" id="btnSwitchToAll" style="margin-top: 14px; padding: 9px 20px; border-radius: 9px; background: var(--forest); color: #fff; border: none; font-size: 13.5px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(40,61,52,0.18);">
+                <span>Xem tất cả hồ sơ</span>
+              </button>
+            ` : ''}
+          </div>
+        `;
+
+        const switchBtn = byId('btnSwitchToAll');
+        if (switchBtn) {
+          switchBtn.addEventListener('click', () => {
+            cmsState.currentListingType = 'all';
+            document.querySelectorAll('.cms-listing-seg-btn').forEach(b => {
+              b.classList.toggle('active', (b.dataset.listingFilter || 'all') === 'all');
+            });
+            updateMobilePropertyFilters();
+            loadProperties(1);
+          });
+        }
+      }
+
       return;
     }
+
+    byId('propertyEmpty').hidden = true;
 
     let items = [...result.data.items];
     cmsState.currentPropertyItems = items;
