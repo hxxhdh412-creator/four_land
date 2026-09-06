@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const { mergeSourceProperty } = require("../server/property-field-ownership");
+const { collectIndexNowUrls, submitToIndexNow } = require("../server/indexnow");
 
 function loadEnvironment() {
   const file = path.join(__dirname, "..", ".env.local");
@@ -273,6 +274,15 @@ async function main() {
   for (let offset = 0; offset < uniqueProperties.length; offset += 100) await request(config, "properties?on_conflict=property_id", { method: "POST", body: uniqueProperties.slice(offset, offset + 100), prefer: "resolution=merge-duplicates,return=minimal" });
   for (let offset = 0; offset < filteredImages.length; offset += 100) await request(config, "property_images?on_conflict=property_id,position", { method: "POST", body: filteredImages.slice(offset, offset + 100), prefer: "resolution=merge-duplicates,return=minimal" });
   console.log(JSON.stringify({ ok: true, synced: uniqueProperties.length, skippedDuplicateIds: duplicateIdsToDelete.size, images: filteredImages.length }));
+  if (process.argv.includes("--indexnow") || process.env.INDEXNOW_AUTO_PING === "1") {
+    try {
+      const urls = collectIndexNowUrls(uniqueProperties);
+      const indexNowRes = await submitToIndexNow(urls);
+      console.log(JSON.stringify({ ok: true, indexnow: indexNowRes }));
+    } catch (idxErr) {
+      console.warn(JSON.stringify({ ok: false, indexnow_error: idxErr.message }));
+    }
+  }
 }
 
 if (require.main === module) {

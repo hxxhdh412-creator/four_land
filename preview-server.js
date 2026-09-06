@@ -5,6 +5,7 @@ const crypto = require("crypto");
 const { parseNaturalQuery, matchAndScoreProperty, removeVietnameseTones } = require("./api/_smartSearch");
 const { propertyIdFromSlug, renderPropertyPage, renderSitemap } = require("./server/seo");
 const { buildLandingSitemapEntries, renderLandingPage } = require("./server/seo-landings");
+const { INDEXNOW_KEY, INDEXNOW_HOST, INDEXNOW_KEY_LOCATION, INDEXNOW_ENDPOINT, collectIndexNowUrls, submitToIndexNow } = require("./server/indexnow");
 const { buildDashboardSummary } = require("./server/cms-dashboard");
 const { buildPropertyListRoute, normalizePropertyListItem, parsePropertyListQuery } = require("./server/cms-properties");
 const { buildPropertyDetailRoute, normalizePropertyDetail, validPropertyId } = require("./server/cms-property-detail");
@@ -949,6 +950,22 @@ http.createServer(async (req,res)=>{
     if(row.status==="archived"&&!isAdmin(req))return send(res,404,{ok:false,error:"Không tìm thấy hồ sơ"});
     row.view_count=(Number(row.view_count)||0)+1;
     return send(res,200,{ok:true,property:row});
+  }
+  if(url.pathname==="/api/indexnow") {
+    if(req.method==="GET") {
+      return send(res,200,{ok:true,host:INDEXNOW_HOST,key:INDEXNOW_KEY,keyLocation:INDEXNOW_KEY_LOCATION,endpoint:INDEXNOW_ENDPOINT,description:"Giao thức IndexNow giúp thông báo URL mới và cập nhật cho các công cụ tìm kiếm và AI (Bing, Perplexity, Copilot)."});
+    }
+    if(req.method==="POST") {
+      try {
+        let properties;
+        if(databaseEnabled){const result=await dbRequest("properties?select=property_id,address,street,ward,district,status,property_type,price_text,normalized_text,received_at,updated_at&status=neq.archived&order=updated_at.desc&limit=2000");properties=result.data}
+        else properties=rows;
+        const urls=collectIndexNowUrls(properties);
+        const result=await submitToIndexNow(urls);
+        return send(res,result.ok?200:502,{...result,host:INDEXNOW_HOST,key:INDEXNOW_KEY});
+      } catch(error) { return send(res,500,{ok:false,error:error.message}) }
+    }
+    return send(res,405,{ok:false,error:"Method Not Allowed"});
   }
   if(url.pathname==="/sitemap.xml") {
     try {
