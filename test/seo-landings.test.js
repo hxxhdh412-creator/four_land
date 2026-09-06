@@ -3,7 +3,8 @@ const assert = require("node:assert/strict");
 const { createHandler } = require("../api/seo-landing");
 const { renderSitemap } = require("../server/seo");
 const {
-  buildLandingSitemapEntries, houseInventory, landingPath, renderLandingPage, resolveLanding
+  buildLandingSitemapEntries, calculateMarketStats, generateLandingFAQs,
+  houseInventory, landingPath, renderLandingPage, resolveLanding
 } = require("../server/seo-landings");
 
 const base = {
@@ -75,3 +76,42 @@ test("sitemap includes robust landing routes and excludes thin district routes",
   assert.match(xml, /https:\/\/www\.fourland\.vn\/nha-pho\/ban\/binh-thanh<\/loc>/);
   assert.doesNotMatch(xml, /nha-pho\/cho-thue\/phu-nhuan<\/loc>/);
 });
+
+test("calculateMarketStats computes accurate price brackets, area range, and market summary", () => {
+  const stats = calculateMarketStats(samples, "ban", "Bình Thạnh");
+  assert.equal(stats.totalCount, 6);
+  assert.equal(stats.lowPrice, 25000000);
+  assert.equal(stats.highPrice, 14000000000);
+  assert.match(stats.priceRangeLabel, /25 triệu – 14 tỷ/);
+  assert.equal(stats.minArea, 72);
+  assert.match(stats.summaryText, /Bình Thạnh/);
+});
+
+test("generateLandingFAQs generates contextual questions for rent and sale", () => {
+  const fakeRentPage = { intent: "cho-thue", district: { name: "Tân Bình" } };
+  const rentStats = { priceRangeLabel: "15 triệu – 80 triệu/tháng", areaRangeLabel: "50 – 150 m²", popularStreets: "Hoàng Hoa Thám" };
+  const rentFaqs = generateLandingFAQs(fakeRentPage, rentStats);
+  assert.equal(rentFaqs.length, 4);
+  assert.match(rentFaqs[0].question, /Giá thuê nhà nguyên căn tại Tân Bình/);
+  assert.match(rentFaqs[0].answer, /15 triệu – 80 triệu\/tháng/);
+  assert.match(rentFaqs[2].question, /Hợp đồng thuê nhà nguyên căn/);
+
+  const fakeSalePage = { intent: "ban", district: { name: "Phú Nhuận" } };
+  const saleStats = { priceRangeLabel: "8 tỷ – 35 tỷ", areaRangeLabel: "60 – 200 m²", popularStreets: "Phan Xích Long" };
+  const saleFaqs = generateLandingFAQs(fakeSalePage, saleStats);
+  assert.match(saleFaqs[0].question, /Giá mua bán nhà phố tại Phú Nhuận/);
+  assert.match(saleFaqs[2].question, /Quy trình kiểm tra pháp lý/);
+});
+
+test("renderLandingPage renders market-insights, AggregateOffer schema and dynamic FAQs", () => {
+  const html = renderLandingPage(samples);
+  assert.match(html, /class="market-insights"/);
+  assert.match(html, /Khoảng giá niêm yết/);
+  assert.match(html, /Diện tích phổ biến/);
+  assert.match(html, /Tuyến đường trọng điểm/);
+  assert.match(html, /Nhận định thị trường Fourland/);
+  assert.match(html, /AggregateOffer/);
+  assert.match(html, /lowPrice/);
+  assert.match(html, /highPrice/);
+});
+
