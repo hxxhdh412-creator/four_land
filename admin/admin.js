@@ -854,7 +854,8 @@ function setEditFormVisible(visible) {
   if (!visible || !cmsState.currentProperty) return;
   const item = cmsState.currentProperty;
   for (const [name, value] of Object.entries({
-    address: item.address, property_type: item.propertyType,
+    address: item.address === 'Chưa có địa chỉ' ? '' : item.address,
+    property_type: item.propertyType,
     listing_type: item.listingType || (String(item.price || '').includes('tỷ') ? 'sale' : 'rent'),
     owner_name: item.ownerName, owner_role: item.ownerRole,
     price_text: item.price, area_text: item.area, dimensions: item.dimensions, phone: item.phone,
