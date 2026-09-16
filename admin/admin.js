@@ -879,8 +879,11 @@ async function handleSavePropertyEdit() {
   const fields = Object.fromEntries(new FormData(form).entries());
   try {
     const result = await cmsApi(`/api/admin/v1/properties/${encodeURIComponent(item.id)}/update`, {
-      method: 'POST',
-      body: { fields }
+      method: 'PATCH',
+      body: {
+        expectedVersion: item.version || 1,
+        fields
+      }
     });
     resultBox.classList.add('ok');
     resultBox.textContent = result.message || 'Đã lưu thay đổi hồ sơ thành công!';
@@ -906,7 +909,10 @@ async function handlePropertyWorkflow(command) {
   try {
     await cmsApi(`/api/admin/v1/properties/${encodeURIComponent(item.id)}/workflow`, {
       method: 'POST',
-      body: { command }
+      body: {
+        command,
+        expectedVersion: item.version || 1
+      }
     });
     await openPropertyDetail(item.id);
     cmsState.propertiesLoaded = false;

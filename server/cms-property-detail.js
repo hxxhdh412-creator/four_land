@@ -4,7 +4,7 @@ const DETAIL_FIELDS = [
   "property_id", "status", "property_type", "address", "district", "ward", "street",
   "area_text", "area_number", "dimensions", "bedrooms", "bathrooms", "structure",
   "price_text", "legal", "commission", "notes", "phone", "raw_text", "image_count",
-  "received_at", "updated_at", "data_json", "property_images(position,public_url)"
+  "received_at", "updated_at", "version", "data_json", "property_images(position,public_url)"
 ].join(",");
 
 function validPropertyId(value) {
@@ -47,7 +47,8 @@ function normalizePropertyDetail(row, { includeSensitive = false } = {}) {
     bathrooms: Number(row?.bathrooms) > 0 ? Number(row.bathrooms) : null,
     structure: row?.structure || "", price: row?.price_text || "Liên hệ", legal: row?.legal || "",
     notes: row?.notes || "", imageCount: Number(row?.image_count || images.length || 0), images,
-    receivedAt: row?.received_at || null, updatedAt: row?.updated_at || null
+    receivedAt: row?.received_at || null, updatedAt: row?.updated_at || null,
+    version: Number.isInteger(Number(row?.version)) && Number(row?.version) >= 1 ? Number(row.version) : 1
   };
   if (includeSensitive) {
     detail.phone = row?.phone || "";
