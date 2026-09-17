@@ -2,30 +2,72 @@ const { sendError, supabaseRequest } = require("./_supabase");
 
 let cachedFacets = null;
 let cachedFacetsTime = 0;
-const FACETS_TTL_MS = 300000; // 5 phút cache RAM
+const FACETS_TTL_MS = 60000; // 1 phút cache RAM
 
 module.exports = async function handler(req, res) {
   if (req.method !== "GET") return res.status(405).json({ ok: false, error: "Method Not Allowed" });
   try {
     const now = Date.now();
     if (cachedFacets && (now - cachedFacetsTime < FACETS_TTL_MS)) {
-      res.setHeader("Cache-Control", "public, s-maxage=300, stale-while-revalidate=1800");
+      res.setHeader("Cache-Control", "public, max-age=30, s-maxage=60, stale-while-revalidate=60");
       return res.status(200).json(cachedFacets);
     }
 
+const CANONICAL_DISTRICTS = [
+  "Quận 1", "Quận 2", "Quận 3", "Quận 4", "Quận 5", "Quận 6",
+  "Quận 7", "Quận 8", "Quận 9", "Quận 10", "Quận 11", "Quận 12",
+  "Bình Thạnh", "Gò Vấp", "Phú Nhuận", "Tân Bình", "Tân Phú",
+  "Bình Tân", "Thủ Đức", "Nhà Bè", "Hóc Môn", "Củ Chi", "Cần Giờ", "Bình Chánh"
+];
+
+function normalizeDistrictFacet(raw) {
+  const str = String(raw || "").trim();
+  if (!str) return "";
+  const lower = str.toLowerCase();
+  const stripped = lower.replace(/^(?:quận|huyện|thành\s*phố|tp\.?)\s+/iu, "").trim();
+
+  for (const canon of CANONICAL_DISTRICTS) {
+    const cLower = canon.toLowerCase();
+    const cStripped = cLower.replace(/^(?:quận|huyện|thành\s*phố|tp\.?)\s+/iu, "").trim();
+    if (lower === cLower || stripped === cStripped || stripped === cLower) {
+      return canon;
+    }
+  }
+  const numMatch = str.match(/^(?:quận|q)?\s*\.?\s*(1[0-2]|[1-9])$/iu);
+  if (numMatch) return `Quận ${numMatch[1]}`;
+  return str;
+}
+
+function uniqueCaseInsensitive(items, normalizer = (x) => String(x || "").trim()) {
+  const map = new Map();
+  for (const item of items || []) {
+    const normalized = normalizer(item);
+    if (!normalized) continue;
+    const key = normalized.toLowerCase();
+    if (!map.has(key)) {
+      map.set(key, normalized);
+    } else {
+      const existing = map.get(key);
+      if (normalized !== existing && normalized[0] === normalized[0].toUpperCase() && existing[0] !== existing[0].toUpperCase()) {
+        map.set(key, normalized);
+      }
+    }
+  }
+  return Array.from(map.values()).sort((a, b) => a.localeCompare(b, "vi"));
+}
+
     const result = await supabaseRequest("properties?select=district,ward,street,property_type&status=neq.archived&order=district.asc&limit=5000");
-    const unique = (key) => [...new Set((result.data || []).map((row) => String(row[key] || "").trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, "vi"));
     
     cachedFacets = {
       ok: true,
-      districts: unique("district"),
-      wards: unique("ward"),
-      streets: unique("street"),
-      types: unique("property_type")
+      districts: uniqueCaseInsensitive((result.data || []).map(r => r.district), normalizeDistrictFacet),
+      wards: uniqueCaseInsensitive((result.data || []).map(r => r.ward)),
+      streets: uniqueCaseInsensitive((result.data || []).map(r => r.street)),
+      types: uniqueCaseInsensitive((result.data || []).map(r => r.property_type))
     };
     cachedFacetsTime = now;
 
-    res.setHeader("Cache-Control", "public, s-maxage=300, stale-while-revalidate=1800");
+    res.setHeader("Cache-Control", "public, max-age=30, s-maxage=60, stale-while-revalidate=60");
     res.status(200).json(cachedFacets);
   } catch (error) {
     if (cachedFacets) {

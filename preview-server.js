@@ -921,7 +921,56 @@ http.createServer(async (req,res)=>{
       }catch{return send(res,400,{ok:false,error:"Dữ liệu gửi lên không hợp lệ"})}
     });return;
   }
-  if(url.pathname==="/api/facets") {if(databaseEnabled){try{const result=await dbRequest("properties?select=district,ward,street,property_type&status=neq.archived&limit=10000"),values=key=>[...new Set(result.data.map(item=>item[key]).filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b),"vi"));return send(res,200,{ok:true,districts:values("district"),wards:values("ward"),streets:values("street"),types:values("property_type")})}catch(error){return send(res,500,{ok:false,error:error.message})}}const activeRows=rows.filter(item=>item.status!=="archived");return send(res,200,{ok:true,districts:[...new Set(activeRows.map(x=>x.district))],wards:[...new Set(activeRows.map(x=>x.ward))],streets:[...new Set(activeRows.map(x=>x.street))],types:[...new Set(activeRows.map(x=>x.property_type))]});}
+  if(url.pathname==="/api/facets") {
+    const CANONICAL_DISTRICTS = ["Quận 1","Quận 2","Quận 3","Quận 4","Quận 5","Quận 6","Quận 7","Quận 8","Quận 9","Quận 10","Quận 11","Quận 12","Bình Thạnh","Gò Vấp","Phú Nhuận","Tân Bình","Tân Phú","Bình Tân","Thủ Đức","Nhà Bè","Hóc Môn","Củ Chi","Cần Giờ","Bình Chánh"];
+    const normalizeFacet = (raw) => {
+      const str = String(raw || "").trim();
+      if (!str) return "";
+      const lower = str.toLowerCase();
+      const stripped = lower.replace(/^(?:quận|huyện|thành\s*phố|tp\.?)\s+/iu, "").trim();
+      for (const canon of CANONICAL_DISTRICTS) {
+        const cLower = canon.toLowerCase();
+        const cStripped = cLower.replace(/^(?:quận|huyện|thành\s*phố|tp\.?)\s+/iu, "").trim();
+        if (lower === cLower || stripped === cStripped || stripped === cLower) return canon;
+      }
+      const numMatch = str.match(/^(?:quận|q)?\s*\.?\s*(1[0-2]|[1-9])$/iu);
+      if (numMatch) return `Quận ${numMatch[1]}`;
+      return str;
+    };
+    const dedupe = (items, normalizer = (x) => String(x || "").trim()) => {
+      const map = new Map();
+      for (const item of items || []) {
+        const norm = normalizer(item);
+        if (!norm) continue;
+        const key = norm.toLowerCase();
+        if (!map.has(key) || (norm[0] === norm[0].toUpperCase() && map.get(key)[0] !== map.get(key)[0].toUpperCase())) {
+          map.set(key, norm);
+        }
+      }
+      return Array.from(map.values()).sort((a, b) => a.localeCompare(b, "vi"));
+    };
+
+    if(databaseEnabled){
+      try{
+        const result=await dbRequest("properties?select=district,ward,street,property_type&status=neq.archived&limit=10000");
+        return send(res,200,{
+          ok:true,
+          districts:dedupe(result.data.map(item=>item.district), normalizeFacet),
+          wards:dedupe(result.data.map(item=>item.ward)),
+          streets:dedupe(result.data.map(item=>item.street)),
+          types:dedupe(result.data.map(item=>item.property_type))
+        });
+      }catch(error){return send(res,500,{ok:false,error:error.message})}
+    }
+    const activeRows=rows.filter(item=>item.status!=="archived");
+    return send(res,200,{
+      ok:true,
+      districts:dedupe(activeRows.map(x=>x.district), normalizeFacet),
+      wards:dedupe(activeRows.map(x=>x.ward)),
+      streets:dedupe(activeRows.map(x=>x.street)),
+      types:dedupe(activeRows.map(x=>x.property_type))
+    });
+  }
   if(url.pathname==="/api/properties") {
     if(url.searchParams.get("archived")==="only"&&!isAdmin(req))return send(res,401,{ok:false,error:"Cần mở quyền quản trị"});
     if(databaseEnabled){try{return send(res,200,await listDatabaseProperties(url))}catch(error){return send(res,500,{ok:false,error:error.message})}}

@@ -225,7 +225,10 @@ function matchAndScoreProperty(property, parsedNlp, explicitFilters = {}) {
   if (district) {
     const propDist = removeVietnameseTones(property.district || '');
     const searchDist = removeVietnameseTones(district);
-    if (!propDist.includes(searchDist)) return -1;
+    const propClean = propDist.replace(/^(?:quan|huyen|thanh pho|tp)\s+/i, '').trim();
+    const searchClean = searchDist.replace(/^(?:quan|huyen|thanh pho|tp)\s+/i, '').trim();
+    const matched = propDist.includes(searchDist) || searchDist.includes(propDist) || (propClean && propClean === searchClean);
+    if (!matched) return -1;
   }
 
   const ward = explicitFilters.ward || parsedNlp.filters.ward;

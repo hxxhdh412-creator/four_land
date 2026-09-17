@@ -309,8 +309,8 @@ async function api(path,options={},retries=1){
     throw err;
   }
 }
-function setOptions(id,items,label){const select=$(id);if(!select)return;const current=select.value;select.innerHTML=`<option value="">${label}</option>`+(items||[]).map(item=>`<option value="${escapeHtml(item)}">${escapeHtml(item)}</option>`).join('');select.value=current}
-async function loadFacets(){try{const data=await api('/api/facets');state.facets=data;setOptions('district',data.districts,'Tất cả quận huyện');setOptions('ward',data.wards,'Tất cả phường xã');setOptions('street',data.streets,'Tất cả tuyến đường');setOptions('type',data.types,'Tất cả loại hình')}catch{}}
+function setOptions(id,items,label){const select=$(id);if(!select)return;const current=select.value;const seen=new Set();const list=[];for(const item of(items||[])){const s=String(item||'').trim();if(!s)continue;const k=s.toLowerCase();if(!seen.has(k)){seen.add(k);list.push(s);}}select.innerHTML=`<option value="">${label}</option>`+list.map(item=>`<option value="${escapeHtml(item)}">${escapeHtml(item)}</option>`).join('');select.value=current}
+async function loadFacets(){try{const data=await api('/api/facets?t='+Date.now());state.facets=data;setOptions('district',data.districts,'Tất cả quận huyện');setOptions('ward',data.wards,'Tất cả phường xã');setOptions('street',data.streets,'Tất cả tuyến đường');setOptions('type',data.types,'Tất cả loại hình')}catch{}}
 function skeleton(){
   return Array.from({length:8},()=>`
     <div class="skeleton">

@@ -1075,10 +1075,24 @@ label,.eyebrow,.detail-kicker,.result-head strong,.brand-caption{font-weight:700
     gap: 14px 18px;
     padding-top: 18px;
   }
+  .filters label {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+  }
   .filters input, .filters select {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
     height: 48px;
     border-radius: 6px;
     font-size: 14px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
   }
 
   /* Grid & Property Cards Desktop */
