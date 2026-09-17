@@ -937,6 +937,42 @@ http.createServer(async (req,res)=>{
       if (numMatch) return `Quận ${numMatch[1]}`;
       return str;
     };
+    const toTitleCase = (str) => {
+      return str.split(/\s+/).map(word => {
+        if (!word) return "";
+        if (/^[0-9]/.test(word) || (/^[A-Z0-9]+$/.test(word) && word.length <= 4)) return word;
+        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+      }).join(" ");
+    };
+    const JUNK_STREET_PATTERNS = [
+      /dán\s*bảng/i,
+      /bàn\s*giao/i,
+      /chdv/i,
+      /hhtt/i,
+      /nhận\s*nhà/i,
+      /view\s*sông/i,
+      /siêu\s*rộng/i,
+      /thông\s*từ/i,
+      /huyết\s*mạch/i,
+      /^(?:lầu|trệt|trống|lớn|năm|rộng)$/i,
+      /^(?:a|anh|chị|c|em)\s+[A-ZÀ-Ỹ]/i
+    ];
+    const normalizeStreetFacet = (raw) => {
+      let str = String(raw || "").trim();
+      if (!str) return "";
+      str = str.replace(/[.,;]+$/, "").trim();
+      if (str.length <= 2) return "";
+      for (const pattern of JUNK_STREET_PATTERNS) {
+        if (pattern.test(str)) return "";
+      }
+      str = str.replace(/[,/]?\s*(?:q\.|quận|p\.|phường)\s*.*$/iu, "").trim();
+      if (!str || str.length <= 2) return "";
+      if (/^(?:đường\s+)?số\s+(\d+.*)$/i.test(str)) {
+        const num = str.match(/^(?:đường\s+)?số\s+(\d+.*)$/i)[1];
+        return "Đường Số " + toTitleCase(num);
+      }
+      return toTitleCase(str);
+    };
     const dedupe = (items, normalizer = (x) => String(x || "").trim()) => {
       const map = new Map();
       for (const item of items || []) {
@@ -957,7 +993,7 @@ http.createServer(async (req,res)=>{
           ok:true,
           districts:dedupe(result.data.map(item=>item.district), normalizeFacet),
           wards:dedupe(result.data.map(item=>item.ward)),
-          streets:dedupe(result.data.map(item=>item.street)),
+          streets:dedupe(result.data.map(item=>item.street), normalizeStreetFacet),
           types:dedupe(result.data.map(item=>item.property_type))
         });
       }catch(error){return send(res,500,{ok:false,error:error.message})}
@@ -967,7 +1003,7 @@ http.createServer(async (req,res)=>{
       ok:true,
       districts:dedupe(activeRows.map(x=>x.district), normalizeFacet),
       wards:dedupe(activeRows.map(x=>x.ward)),
-      streets:dedupe(activeRows.map(x=>x.street)),
+      streets:dedupe(activeRows.map(x=>x.street), normalizeStreetFacet),
       types:dedupe(activeRows.map(x=>x.property_type))
     });
   }
