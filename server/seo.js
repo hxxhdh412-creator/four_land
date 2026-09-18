@@ -564,6 +564,8 @@ function renderPropertyPage(property, { similarProperties = [] } = {}) {
               `'</a>';` +
             `}).join("");` +
           `}).catch(()=>{});` +
+        `document.addEventListener("contextmenu",function(e){if(e.target&&e.target.closest&&e.target.closest("img,.gallery-hero-wrap,.gallery-thumbs,.lightbox-image-wrap,.related-photo,.similar-card")){e.preventDefault();return false;}},{capture:true});` +
+        `document.addEventListener("dragstart",function(e){if(e.target&&e.target.closest&&e.target.closest("img,.gallery-hero-wrap,.gallery-thumbs,.lightbox-image-wrap,.related-photo,.similar-card")){e.preventDefault();return false;}},{capture:true});` +
       `})();` +
     `</script>` +
   `</body></html>`;

@@ -2226,4 +2226,49 @@ window.triggerPushNotification = function() {
 
 initOneSignalPush();
 
+// ==========================================================================
+// CHỐNG TẢI VÀ SAO CHÉP HÌNH ẢNH BĐS (ANTI-IMAGE DOWNLOAD PROTECTION)
+// ==========================================================================
+(function initImageProtection() {
+  function isProtectedTarget(target) {
+    if (!target) return false;
+    return (
+      target.tagName === 'IMG' ||
+      Boolean(
+        target.closest &&
+        target.closest('img, .photo, .gallery-main, .thumbs, .lightbox-image-wrap, .listing-photo, .gallery-hero-wrap, .similar-card')
+      )
+    );
+  }
+
+  // 1. Chặn chuột phải (Context Menu) trên toàn bộ ảnh và khung chứa ảnh
+  document.addEventListener('contextmenu', function (e) {
+    if (isProtectedTarget(e.target)) {
+      e.preventDefault();
+      e.stopPropagation();
+      return false;
+    }
+  }, { capture: true, passive: false });
+
+  // 2. Chặn kéo thả ảnh (Drag and Drop) ra ngoài Desktop hoặc mở tab mới
+  document.addEventListener('dragstart', function (e) {
+    if (isProtectedTarget(e.target)) {
+      e.preventDefault();
+      e.stopPropagation();
+      return false;
+    }
+  }, { capture: true, passive: false });
+
+  // 3. Chặn lưu trang / ảnh bằng phím tắt Ctrl+S / Cmd+S khi tương tác với ảnh
+  window.addEventListener('keydown', function (e) {
+    if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) {
+      const detailDialog = document.getElementById('detail');
+      if (isProtectedTarget(document.activeElement) || (detailDialog && detailDialog.open)) {
+        e.preventDefault();
+      }
+    }
+  });
+})();
+
+
 

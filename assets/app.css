@@ -3583,3 +3583,61 @@ dialog#detail[open] ~ .floating-contact-widget {
   box-shadow: 0 6px 18px rgba(24, 43, 36, 0.28);
 }
 
+/* ==========================================================================
+   CHỐNG TẢI VÀ SAO CHÉP HÌNH ẢNH BĐS (ANTI-IMAGE DOWNLOAD PROTECTION)
+   ========================================================================== */
+img,
+.photo,
+.photo img,
+.gallery-main,
+.gallery-main img,
+.thumbs,
+.thumbs img,
+.lightbox-image-wrap,
+.lightbox-image-wrap img,
+.listing-photo,
+.listing-photo img,
+.gallery-hero-wrap,
+.gallery-hero-wrap img,
+.similar-card {
+  -webkit-touch-callout: none !important;
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+  user-select: none !important;
+  -webkit-user-drag: none !important;
+  -khtml-user-drag: none !important;
+  -moz-user-drag: none !important;
+  -o-user-drag: none !important;
+  user-drag: none !important;
+}
+
+/* Lớp phủ trong suốt bảo vệ ảnh trên card BĐS */
+.photo {
+  position: relative;
+}
+.photo:after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: transparent;
+  pointer-events: auto;
+}
+.card .badge {
+  z-index: 3 !important;
+}
+.card-favorite-btn {
+  z-index: 4 !important;
+}
+
+/* Bảo vệ ảnh chi tiết trong modal */
+.gallery-main {
+  position: relative;
+}
+.gallery-nav,
+.gallery-counter {
+  z-index: 5 !important;
+}
+
+

@@ -11,3 +11,34 @@ main{width:min(1180px,calc(100% - 40px));margin:auto}.crumbs{display:flex;align-
 @media(max-width:840px){main{width:min(calc(100% - 28px),680px)}.top{height:70px;padding:0 15px}.brand img{width:48px;height:45px}.brand span{font-size:13px}.warehouse{padding:8px 11px;font-size:11px}.hero{max-width:100%;border-radius:22px;padding:42px 22px}.hero h1{font-size:38px}.lead{font-size:14px}.metrics{gap:22px;margin-top:30px}.metrics strong{font-size:20px}.districts{grid-template-columns:1fr;gap:20px;padding:48px 0 24px}.insights-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.listing-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.listing-grid,.listing-card,.results{min-width:0}.contact{align-items:flex-start;flex-direction:column;padding:28px}.contact h2{font-size:23px}}
 @media(max-width:520px){.brand small{display:none}.warehouse{max-width:132px;text-align:center}.crumbs{overflow:hidden;white-space:nowrap}.hero h1{font-size:32px}.metrics{display:grid;grid-template-columns:1fr 1fr}.insights-grid{grid-template-columns:1fr}.listing-grid{grid-template-columns:1fr}.results>header{align-items:flex-start;flex-direction:column}.listing-body h2{min-height:0}.contact{margin-bottom:45px}}
 
+/* ==========================================================================
+   CHỐNG TẢI VÀ SAO CHÉP HÌNH ẢNH BĐS (ANTI-IMAGE DOWNLOAD PROTECTION)
+   ========================================================================== */
+img,
+.listing-photo,
+.listing-photo img {
+  -webkit-touch-callout: none !important;
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+  user-select: none !important;
+  -webkit-user-drag: none !important;
+  -khtml-user-drag: none !important;
+  -moz-user-drag: none !important;
+  -o-user-drag: none !important;
+  user-drag: none !important;
+}
+
+.listing-photo {
+  position: relative;
+}
+.listing-photo:after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: transparent;
+  pointer-events: auto;
+}
+
+
