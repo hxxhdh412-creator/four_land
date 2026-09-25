@@ -56,6 +56,11 @@ function canViewAddress(req) {
   return role === "admin" || role === "ctv";
 }
 
+function canDownloadImages(req) {
+  const role = getAuthRole(req);
+  return role === "admin" || role === "ctv";
+}
+
 function requireAdmin(req, res) {
   const role = getAuthRole(req);
   if (role === "admin") return true;
@@ -71,5 +76,5 @@ function sessionCookie(token) {
   return `${COOKIE_NAME}=${encodeURIComponent(token)}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=28800`;
 }
 
-module.exports = { canViewAddress, createSession, getAuthRole, isAdmin, isCtv, requireAdmin, safeEqual, secrets, sessionCookie };
+module.exports = { canDownloadImages, canViewAddress, createSession, getAuthRole, isAdmin, isCtv, requireAdmin, safeEqual, secrets, sessionCookie };
 

@@ -1036,6 +1036,33 @@ http.createServer(async (req,res)=>{
     row.view_count=(Number(row.view_count)||0)+1;
     return send(res,200,{ok:true,property:row});
   }
+  if(url.pathname==="/api/download-image") {
+    if(req.method!=="GET") return send(res,405,{ok:false,error:"Method Not Allowed"});
+    const role=getAuthRole(req);
+    if(role!=="admin" && role!=="ctv") {
+      return send(res,403,{ok:false,error:"Chỉ Cộng tác viên (CTV) hoặc Quản trị viên mới có quyền tải hình ảnh này về máy."});
+    }
+    const rawUrl=String(url.searchParams.get("url")||"").trim();
+    if(!rawUrl||(!rawUrl.startsWith("http://")&&!rawUrl.startsWith("https://"))){
+      return send(res,400,{ok:false,error:"URL hình ảnh không hợp lệ"});
+    }
+    const cleanName=String(url.searchParams.get("filename")||"fourland-bds-image.jpg").replace(/[/\\?%*:|"<>]/g,"_").replace(/\s+/g,"_").trim()||"fourland-bds-image.jpg";
+    try {
+      const upstreamRes=await fetch(rawUrl,{headers:{"User-Agent":"Mozilla/5.0 FourlandWarehouse/1.0"},signal:AbortSignal.timeout(15000)});
+      if(!upstreamRes.ok) return send(res,502,{ok:false,error:`Không thể tải hình ảnh (${upstreamRes.status})`});
+      const contentType=upstreamRes.headers.get("content-type")||"image/jpeg";
+      const buffer=Buffer.from(await upstreamRes.arrayBuffer());
+      res.writeHead(200,{
+        "Content-Type":contentType,
+        "Content-Disposition":`attachment; filename="${encodeURIComponent(cleanName)}"; filename*=UTF-8''${encodeURIComponent(cleanName)}`,
+        "Content-Length":buffer.length,
+        "Cache-Control":"private, max-age=3600"
+      });
+      return res.end(buffer);
+    } catch(err) {
+      return send(res,500,{ok:false,error:err.message});
+    }
+  }
   if(url.pathname==="/api/indexnow") {
     if(req.method==="GET") {
       return send(res,200,{ok:true,host:INDEXNOW_HOST,key:INDEXNOW_KEY,keyLocation:INDEXNOW_KEY_LOCATION,endpoint:INDEXNOW_ENDPOINT,description:"Giao thức IndexNow giúp thông báo URL mới và cập nhật cho các công cụ tìm kiếm và AI (Bing, Perplexity, Copilot)."});

@@ -3640,4 +3640,44 @@ img,
   z-index: 5 !important;
 }
 
+/* Nút tải ảnh dành riêng cho CTV & Admin */
+.action-chip.download-chip,
+.action-chip.download-all-chip {
+  background: #f0fdf4;
+  border-color: #86efac;
+  color: #166534;
+}
+.action-chip.download-chip:hover,
+.action-chip.download-all-chip:hover {
+  background: #dcfce7;
+  border-color: #4ade80;
+  color: #14532d;
+  transform: translateY(-1px);
+}
+.action-chip.download-all-chip {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+  color: #065f46;
+  font-weight: 600;
+}
+.action-chip.download-all-chip:hover {
+  background: #d1fae5;
+  border-color: #6ee7b7;
+  color: #047857;
+}
+
+/* Khi đã xác thực quyền CTV hoặc Admin: Cho phép chọn và lưu ảnh */
+body.role-unlocked img,
+body.role-unlocked .photo img,
+body.role-unlocked .gallery-main img,
+body.role-unlocked .thumbs img,
+body.role-unlocked .lightbox-image-wrap img,
+body.role-unlocked .listing-photo img {
+  -webkit-touch-callout: default !important;
+  -webkit-user-select: auto !important;
+  user-select: auto !important;
+  -webkit-user-drag: auto !important;
+  user-drag: auto !important;
+}
+
 

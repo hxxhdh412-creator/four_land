@@ -73,6 +73,17 @@ function fallbackCopyText(textToCopy) {
   }
 }
 
+function triggerImageDownload(url, filename) {
+  if (!url) return;
+  const downloadUrl = `/api/download-image?url=${encodeURIComponent(url)}&filename=${encodeURIComponent(filename || 'fourland-bds-image.jpg')}`;
+  const link = document.createElement('a');
+  link.href = downloadUrl;
+  link.download = filename || 'fourland-bds-image.jpg';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
 function updateFavoritesUI() {
   const ids = favoriteStore.getIds();
   const count = ids.length;
@@ -1054,6 +1065,20 @@ async function openDetail(id,seoPath=''){
     ` : '';
 
     const isFav = favoriteStore.has(p.property_id);
+    const canDownload = state.adminUnlocked || state.ctvUnlocked || state.canViewFullAddress;
+    const downloadBtnsHtml = canDownload && images.length > 0 ? `
+      <button type="button" class="action-chip download-chip" id="actionDownloadBtn" title="Tải ảnh đang xem về máy">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <span>Tải ảnh</span>
+      </button>
+      ${images.length > 1 ? `
+      <button type="button" class="action-chip download-all-chip" id="actionDownloadAllBtn" title="Tải trọn bộ ${images.length} ảnh của căn nhà này về máy">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <span>Tải cả bộ (${images.length})</span>
+      </button>
+      ` : ''}
+    ` : '';
+
     const quickActionsHtml = `
       <div class="property-quick-actions">
         <button type="button" class="action-chip share-chip" id="actionShareBtn" title="Chia sẻ căn nhà này">
@@ -1064,6 +1089,7 @@ async function openDetail(id,seoPath=''){
           <svg viewBox="0 0 24 24" width="14" height="14" fill="${isFav ? '#dc2626' : 'none'}" stroke="${isFav ? '#dc2626' : 'currentColor'}" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
           <span>${isFav ? 'Đã lưu' : 'Lưu tin'}</span>
         </button>
+        ${downloadBtnsHtml}
         ${state.adminUnlocked ? `
         <button type="button" class="action-chip fb-chip" id="actionFbBtn" title="Đăng lên Facebook Studio">
           <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
@@ -1126,6 +1152,42 @@ async function openDetail(id,seoPath=''){
         }else{
           showToast('Đã bỏ lưu khỏi danh sách quan tâm.');
         }
+      };
+    }
+
+    const actionDownload = $('actionDownloadBtn');
+    if (actionDownload) {
+      actionDownload.onclick = () => {
+        const currentUrl = images[currentImgIdx] || images[0];
+        if (!currentUrl) return;
+        const cleanId = (p.property_id || 'BDS').replace(/[^\w-]/g, '_');
+        const cleanAddr = slugify(p.address || p.street || 'nha').slice(0, 30);
+        const filename = `${cleanId}_${cleanAddr}_anh_${currentImgIdx + 1}.jpg`;
+        showToast(`📥 Đang tải ảnh ${currentImgIdx + 1} về máy...`, 2000);
+        triggerImageDownload(currentUrl, filename);
+      };
+    }
+
+    const actionDownloadAll = $('actionDownloadAllBtn');
+    if (actionDownloadAll) {
+      actionDownloadAll.onclick = async () => {
+        if (!images.length) return;
+        const count = images.length;
+        showToast(`📥 Bắt đầu tải trọn bộ ${count} ảnh...`, 2500);
+        actionDownloadAll.disabled = true;
+        const cleanId = (p.property_id || 'BDS').replace(/[^\w-]/g, '_');
+        const cleanAddr = slugify(p.address || p.street || 'nha').slice(0, 30);
+        for (let i = 0; i < count; i++) {
+          const filename = `${cleanId}_${cleanAddr}_anh_${i + 1}.jpg`;
+          triggerImageDownload(images[i], filename);
+          if (i < count - 1) {
+            await new Promise(r => setTimeout(r, 450));
+          }
+        }
+        setTimeout(() => {
+          actionDownloadAll.disabled = false;
+          showToast(`✅ Đã gửi lệnh tải trọn bộ ${count} ảnh về máy!`, 3000);
+        }, 800);
       };
     }
 
@@ -1261,6 +1323,12 @@ function setAdminState(unlocked, role = null){
   state.adminUnlocked = state.authRole === 'admin';
   state.ctvUnlocked = state.authRole === 'ctv';
   state.canViewFullAddress = state.adminUnlocked || state.ctvUnlocked;
+
+  if (document.body) {
+    document.body.classList.toggle('role-unlocked', Boolean(state.canViewFullAddress));
+    document.body.classList.toggle('role-ctv', Boolean(state.ctvUnlocked));
+    document.body.classList.toggle('role-admin', Boolean(state.adminUnlocked));
+  }
 
   if(!state.adminUnlocked){
     state.selectedIds.clear();
@@ -2228,6 +2296,8 @@ initOneSignalPush();
 
 // ==========================================================================
 // CHỐNG TẢI VÀ SAO CHÉP HÌNH ẢNH BĐS (ANTI-IMAGE DOWNLOAD PROTECTION)
+// Khách vãng lai: Bị chặn chuột phải, kéo thả, phím tắt Ctrl+S
+// CTV & Admin: Được quyền lưu ảnh và tải ảnh tự do
 // ==========================================================================
 (function initImageProtection() {
   function isProtectedTarget(target) {
@@ -2241,27 +2311,34 @@ initOneSignalPush();
     );
   }
 
-  // 1. Chặn chuột phải (Context Menu) trên toàn bộ ảnh và khung chứa ảnh
+  function canBypassProtection() {
+    return Boolean(state.adminUnlocked || state.ctvUnlocked || state.canViewFullAddress);
+  }
+
+  // 1. Chặn chuột phải (Context Menu) trên toàn bộ ảnh với khách, cho phép CTV & Admin
   document.addEventListener('contextmenu', function (e) {
     if (isProtectedTarget(e.target)) {
+      if (canBypassProtection()) return;
       e.preventDefault();
       e.stopPropagation();
       return false;
     }
   }, { capture: true, passive: false });
 
-  // 2. Chặn kéo thả ảnh (Drag and Drop) ra ngoài Desktop hoặc mở tab mới
+  // 2. Chặn kéo thả ảnh (Drag and Drop) ra ngoài Desktop với khách, cho phép CTV & Admin
   document.addEventListener('dragstart', function (e) {
     if (isProtectedTarget(e.target)) {
+      if (canBypassProtection()) return;
       e.preventDefault();
       e.stopPropagation();
       return false;
     }
   }, { capture: true, passive: false });
 
-  // 3. Chặn lưu trang / ảnh bằng phím tắt Ctrl+S / Cmd+S khi tương tác với ảnh
+  // 3. Chặn lưu trang / ảnh bằng phím tắt Ctrl+S / Cmd+S khi tương tác với ảnh với khách
   window.addEventListener('keydown', function (e) {
     if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) {
+      if (canBypassProtection()) return;
       const detailDialog = document.getElementById('detail');
       if (isProtectedTarget(document.activeElement) || (detailDialog && detailDialog.open)) {
         e.preventDefault();
