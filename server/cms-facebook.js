@@ -584,9 +584,21 @@ async function publishToComposioFacebook({
             signal: AbortSignal.timeout(20000)
           });
 
+function formatFacebookError(err) {
+  if (!err) return "Lỗi không xác định từ Facebook";
+  const userTitle = err.error_user_title || "";
+  const userMsg = err.error_user_msg || "";
+  const subcode = err.error_subcode ? ` (mã lỗi: ${err.error_subcode})` : ` (mã lỗi: ${err.code || '1'})`;
+  if (userTitle || userMsg) {
+    const combined = [userTitle, userMsg].filter(Boolean).join(": ");
+    return `Facebook từ chối: ${combined}${subcode}`;
+  }
+  return `Facebook API: ${err.message || 'Lỗi không xác định'}${subcode}`;
+}
+
           const feedData = await feedRes.json();
           if (feedData.error) {
-            throw new Error(`Facebook API: ${feedData.error.message} (mã: ${feedData.error.code})`);
+            throw new Error(formatFacebookError(feedData.error));
           }
           const rawId = feedData.id || "";
           if (rawId) {
@@ -619,7 +631,7 @@ async function publishToComposioFacebook({
         });
         const photoData = await photoRes.json();
         if (photoData.error) {
-          throw new Error(`Facebook API: ${photoData.error.message} (mã: ${photoData.error.code})`);
+          throw new Error(formatFacebookError(photoData.error));
         }
         const rawId = photoData.id || photoData.post_id || "";
         if (rawId) {
@@ -644,7 +656,7 @@ async function publishToComposioFacebook({
         });
         const feedData = await feedRes.json();
         if (feedData.error) {
-          throw new Error(`Facebook API: ${feedData.error.message} (mã: ${feedData.error.code})`);
+          throw new Error(formatFacebookError(feedData.error));
         }
         const rawId = feedData.id || "";
         if (rawId) {
@@ -658,7 +670,7 @@ async function publishToComposioFacebook({
         }
       }
     } catch (graphErr) {
-      if (graphErr.message?.startsWith("Facebook API:")) {
+      if (graphErr.message?.startsWith("Facebook")) {
         throw graphErr;
       }
       console.warn("Direct Graph API execution notice:", graphErr.message);

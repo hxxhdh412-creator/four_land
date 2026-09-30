@@ -137,13 +137,18 @@ function createHandler({ requireCmsImpl = requireCms, request = supabaseRequest 
         const successCount = publishResults.filter(r => r.success).length;
         const failedCount = publishResults.length - successCount;
         const primaryPostUrl = publishResults.find(r => r.success && r.postUrl)?.postUrl || null;
-
+        const firstError = publishResults.find(r => !r.success)?.error;
         const summaryMsg = publishResults.length === 1
-          ? `${publishResults[0].message || "Đã xuất bản bài viết thành công"} (Đã lưu nội dung vào kho nhà)`
-          : `Đã xuất bản thành công lên ${successCount}/${publishResults.length} Fanpage! (Đã lưu nội dung vào kho nhà)`;
+          ? (publishResults[0].success
+              ? `${publishResults[0].message || "Đã xuất bản bài viết thành công"} (Đã lưu nội dung vào kho nhà)`
+              : (publishResults[0].error || "Đăng bài lên Facebook thất bại"))
+          : (successCount > 0
+              ? `Đã xuất bản thành công lên ${successCount}/${publishResults.length} Fanpage! (Đã lưu nội dung vào kho nhà)`
+              : `Đăng bài thất bại trên toàn bộ ${publishResults.length} Fanpage!`);
 
         return res.status(200).json({
           ok: successCount > 0,
+          error: successCount === 0 ? { message: firstError || summaryMsg } : undefined,
           data: {
             ...(publishResults[0] || {}),
             total: publishResults.length,

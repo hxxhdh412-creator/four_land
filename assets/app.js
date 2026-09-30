@@ -1746,9 +1746,9 @@ const fbPortalState = {
   content: '',
   allImages: [],
   selectedImages: new Set(),
-  selectedPageIds: new Set(),
-  selectedPageId: null,
-  pageName: '',
+  selectedPageIds: new Set(['104363431784609']),
+  selectedPageId: '104363431784609',
+  pageName: 'FourLand',
   pages: []
 };
 
@@ -1757,12 +1757,20 @@ function renderFacebookPortalChannels() {
   if (!container) return;
   const pages = Array.isArray(fbPortalState.pages) && fbPortalState.pages.length > 0
     ? fbPortalState.pages
-    : [{
-        pageId: '106656702112510',
-        name: 'Ngọc Nhà Tốt',
-        isDefault: true,
-        category: 'Trang BĐS Fourland'
-      }];
+    : [
+        {
+          pageId: '104363431784609',
+          name: 'FourLand',
+          isDefault: true,
+          category: 'Công ty phát triển bất động sản'
+        },
+        {
+          pageId: '106656702112510',
+          name: 'Ngọc Nhà Tốt',
+          isDefault: false,
+          category: 'Người môi giới bất động sản'
+        }
+      ];
 
   if (fbPortalState.selectedPageIds.size === 0 && pages.length > 0) {
     const defaultPage = pages.find(p => p.isDefault) || pages[0];
