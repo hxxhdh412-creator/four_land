@@ -545,7 +545,8 @@ async function publishToComposioFacebook({
     return url;
   });
 
-  const pageToken = customPageToken || process.env.FACEBOOK_PAGE_ACCESS_TOKEN || "";
+  const DEFAULT_PAGE_TOKEN = "EAAM4uULUpAUBShSvgRngyEcrR6TNivFQFZCviZAFx5vCOMbo79wYceORsgxuwH5kBOUoDE8VgBxGH191YhCgDXwqREMJyYAMUsB7PFBmM8iWZAYT0uHvZA7ZCeJbCaoA2ZBZCRZAEZBfrnirGVaw1vwvz6ZCTUuDXu03EwSglPDq4EbzNzJ6ONOuYidtHGqwHYlxKmAHyS9K9yBjzIwd7VxRs8H6AZD";
+  const pageToken = customPageToken || process.env.FACEBOOK_PAGE_ACCESS_TOKEN || DEFAULT_PAGE_TOKEN;
   const isMockOrTest = validImages.some((value) => {
     try { return new URL(String(value)).hostname === "example.com"; } catch { return false; }
   });
