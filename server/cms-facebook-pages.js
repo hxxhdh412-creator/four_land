@@ -4,8 +4,8 @@
 
 const DEFAULT_PAGE_ID = process.env.FACEBOOK_PAGE_ID || "104363431784609";
 const DEFAULT_PAGE_NAME = process.env.FACEBOOK_PAGE_NAME || "FourLand";
-const DEFAULT_PAGE_TOKEN = process.env.FACEBOOK_PAGE_ACCESS_TOKEN || "EAAM4uULUpAUBSW1m7Y2ZAu3HcJCf9DsnCimBmvQULVd2pewnxKWxOBw3o018pNE9Umsp5OsXdiVnzXejU1oLwr3xO6k4Y7xpx1SBkfcLquAtY1xG8PUHQsyqCLDezguqxiOcJRDfViwTBUHpmBPgFbdAnyBbR2TjnyLV7aZAWEqNSTsrL4pgmstg7Lkk6d9ZA9P5X1FtRWn4rad62ZBjnc0ZD";
-const COMPOSIO_API_KEY = process.env.COMPOSIO_API_KEY || "ck_e4AHzIDYFZKwFT8XrkwX";
+const DEFAULT_PAGE_TOKEN = process.env.FACEBOOK_PAGE_ACCESS_TOKEN || "";
+const COMPOSIO_API_KEY = process.env.COMPOSIO_API_KEY || "";
 
 const INITIAL_PAGES = [
   {
@@ -24,7 +24,7 @@ const INITIAL_PAGES = [
     id: "106656702112510",
     pageId: "106656702112510",
     name: "Ngọc Nhà Tốt",
-    token: "EAAM4uULUpAUBSU9xH13NOrCzer4tEqkAWJHV3PGIZAd9pZBjViOBMBTbm8e7OscvgBbXpCQiZC7hyrwURaPrkZCoBo03MXWLXn6vWVZA1i23bZCZCwZBlZAimnrtVyHBDd1eTvc8O50b4ZAK9nukLumlvYkkcTAfBeNIDRbyCVhsiwz36ZCN2SkjaSyeYbNxnpfDusasdAB4sux9FBL3dHiTZCsZD",
+    token: "",
     isDefault: false,
     source: "custom",
     category: "Người môi giới bất động sản",
@@ -165,7 +165,7 @@ function sanitizePage(page) {
 }
 
 async function fetchComposioPages({ apiKey = COMPOSIO_API_KEY, fetchImpl = fetch } = {}) {
-  const candidateKeys = Array.from(new Set([apiKey, "ck_e4AHzIDYFZKwFT8XrkwX", process.env.COMPOSIO_API_KEY])).filter(k => k && k !== "pending");
+  const candidateKeys = Array.from(new Set([apiKey, process.env.COMPOSIO_API_KEY])).filter(k => k && k !== "pending");
   if (!candidateKeys.length) return dynamicPagesStore.map(sanitizePage);
 
   for (const candidateKey of candidateKeys) {
@@ -301,7 +301,7 @@ async function addFacebookPage({ name, pageId, token = "", isDefault = false }) 
     id: cleanId,
     pageId: cleanId,
     name: cleanName,
-    token: cleanToken || DEFAULT_PAGE_TOKEN,
+    token: cleanToken || (existingIndex >= 0 ? dynamicPagesStore[existingIndex].token : ""),
     source: "custom",
     isDefault: isDefault || dynamicPagesStore.length === 0,
     avatarUrl: `https://graph.facebook.com/${cleanId}/picture?type=large`,

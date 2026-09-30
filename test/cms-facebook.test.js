@@ -135,6 +135,23 @@ test("publishToComposioFacebook provides clean simulation when API key is not co
   assert.equal(result.pageName, "Ngọc Ngà Tốt");
 });
 
+test("publishToComposioFacebook surfaces Graph API failures instead of simulating success", async () => {
+  await assert.rejects(
+    () => publishToComposioFacebook({
+      content: "Bài kiểm tra lỗi Facebook",
+      pageId: "104363431784609",
+      pageToken: "expired-token",
+      imageUrls: ["https://cdn.example.test/house.jpg"],
+      fetchImpl: async () => ({
+        ok: false,
+        status: 400,
+        json: async () => ({ error: { message: "Invalid OAuth access token", code: 190 } })
+      })
+    }),
+    /Facebook API: Invalid OAuth access token/
+  );
+});
+
 test("Facebook Studio API handler creates draft with safe property facts", async () => {
   const handler = createHandler({
     requireCmsImpl: async () => ({ id: "usr-admin-01", role: "super_admin" }),

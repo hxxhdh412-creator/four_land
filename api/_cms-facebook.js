@@ -91,7 +91,6 @@ function createHandler({ requireCmsImpl = requireCms, request = supabaseRequest 
           : (body.pageId ? [body.pageId] : []);
 
         const photoUrls = Array.isArray(body.images) ? body.images : [];
-        const apiKey = process.env.COMPOSIO_API_KEY || "ck_e4AHzIDYFZKwFT8XrkwX";
 
         let targetPages = [];
         if (rawPageIds.length > 0) {
@@ -114,8 +113,7 @@ function createHandler({ requireCmsImpl = requireCms, request = supabaseRequest 
               imageUrls: photoUrls,
               pageName: page.name || body.pageName || "FourLand",
               pageId: page.pageId || process.env.FACEBOOK_PAGE_ID || "104363431784609",
-              pageToken: page.token || "",
-              apiKey
+              pageToken: page.token || ""
             });
             publishResults.push({
               pageId: page.pageId,

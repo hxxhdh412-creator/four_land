@@ -517,14 +517,22 @@ function generateFacebookPost(property = {}, options = {}) {
   return post;
 }
 
+function formatFacebookError(err) {
+  if (!err) return "Lỗi không xác định từ Facebook";
+  const title = err.error_user_title || "";
+  const detail = err.error_user_msg || "";
+  const code = err.error_subcode || err.code;
+  const suffix = code ? ` (mã lỗi: ${code})` : "";
+  if (title || detail) return `Facebook từ chối: ${[title, detail].filter(Boolean).join(": ")}${suffix}`;
+  return `Facebook API: ${err.message || "Lỗi không xác định"}${suffix}`;
+}
+
 async function publishToComposioFacebook({
   content,
   imageUrls = [],
   pageId = process.env.FACEBOOK_PAGE_ID || "104363431784609",
   pageName = process.env.FACEBOOK_PAGE_NAME || "FourLand",
   pageToken: customPageToken = "",
-  apiKey = process.env.COMPOSIO_API_KEY || "",
-  sessionId = "fourland_session_" + Date.now(),
   fetchImpl = fetch
 } = {}) {
   if (!content || !content.trim()) {
@@ -537,9 +545,10 @@ async function publishToComposioFacebook({
     return url;
   });
 
-  const DEFAULT_PAGE_TOKEN = "EAAM4uULUpAUBSW1m7Y2ZAu3HcJCf9DsnCimBmvQULVd2pewnxKWxOBw3o018pNE9Umsp5OsXdiVnzXejU1oLwr3xO6k4Y7xpx1SBkfcLquAtY1xG8PUHQsyqCLDezguqxiOcJRDfViwTBUHpmBPgFbdAnyBbR2TjnyLV7aZAWEqNSTsrL4pgmstg7Lkk6d9ZA9P5X1FtRWn4rad62ZBjnc0ZD";
-  let pageToken = customPageToken || process.env.FACEBOOK_PAGE_ACCESS_TOKEN || DEFAULT_PAGE_TOKEN;
-  const isMockOrTest = validImages.some(u => u.includes("example.com")) || (!customPageToken && !apiKey);
+  const pageToken = customPageToken || process.env.FACEBOOK_PAGE_ACCESS_TOKEN || "";
+  const isMockOrTest = validImages.some((value) => {
+    try { return new URL(String(value)).hostname === "example.com"; } catch { return false; }
+  });
 
   // 1. Direct Facebook Graph API Execution (Native Album & Feed Publishing)
   if (!isMockOrTest && pageToken && pageToken.trim()) {
@@ -547,7 +556,6 @@ async function publishToComposioFacebook({
       if (validImages.length > 1) {
         // Multi-photo post: Upload all images as unpublished, then publish feed post with attached_media
         const uploadPromises = validImages.map(async (imgUrl) => {
-          try {
             const upRes = await fetchImpl(`https://graph.facebook.com/v19.0/${pageId}/photos`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -559,15 +567,11 @@ async function publishToComposioFacebook({
               signal: AbortSignal.timeout(20000)
             });
             const upData = await upRes.json();
-            if (upData.error) {
-              console.warn(`Upload photo notice (${imgUrl}):`, upData.error.message);
-              return null;
+            if (!upRes.ok || upData.error) {
+              throw new Error(formatFacebookError(upData.error || { message: `HTTP ${upRes.status}` }));
             }
-            return upData.id || null;
-          } catch (err) {
-            console.warn(`Upload photo fetch error (${imgUrl}):`, err.message);
-            return null;
-          }
+            if (!upData.id) throw new Error("Facebook không trả về mã ảnh sau khi tải lên");
+            return upData.id;
         });
 
         const uploadedIds = (await Promise.all(uploadPromises)).filter(Boolean);
@@ -584,21 +588,9 @@ async function publishToComposioFacebook({
             signal: AbortSignal.timeout(20000)
           });
 
-function formatFacebookError(err) {
-  if (!err) return "Lỗi không xác định từ Facebook";
-  const userTitle = err.error_user_title || "";
-  const userMsg = err.error_user_msg || "";
-  const subcode = err.error_subcode ? ` (mã lỗi: ${err.error_subcode})` : ` (mã lỗi: ${err.code || '1'})`;
-  if (userTitle || userMsg) {
-    const combined = [userTitle, userMsg].filter(Boolean).join(": ");
-    return `Facebook từ chối: ${combined}${subcode}`;
-  }
-  return `Facebook API: ${err.message || 'Lỗi không xác định'}${subcode}`;
-}
-
           const feedData = await feedRes.json();
-          if (feedData.error) {
-            throw new Error(formatFacebookError(feedData.error));
+          if (!feedRes.ok || feedData.error) {
+            throw new Error(formatFacebookError(feedData.error || { message: `HTTP ${feedRes.status}` }));
           }
           const rawId = feedData.id || "";
           if (rawId) {
@@ -630,8 +622,8 @@ function formatFacebookError(err) {
           signal: AbortSignal.timeout(20000)
         });
         const photoData = await photoRes.json();
-        if (photoData.error) {
-          throw new Error(formatFacebookError(photoData.error));
+        if (!photoRes.ok || photoData.error) {
+          throw new Error(formatFacebookError(photoData.error || { message: `HTTP ${photoRes.status}` }));
         }
         const rawId = photoData.id || photoData.post_id || "";
         if (rawId) {
@@ -655,8 +647,8 @@ function formatFacebookError(err) {
           signal: AbortSignal.timeout(20000)
         });
         const feedData = await feedRes.json();
-        if (feedData.error) {
-          throw new Error(formatFacebookError(feedData.error));
+        if (!feedRes.ok || feedData.error) {
+          throw new Error(formatFacebookError(feedData.error || { message: `HTTP ${feedRes.status}` }));
         }
         const rawId = feedData.id || "";
         if (rawId) {
@@ -669,15 +661,17 @@ function formatFacebookError(err) {
           };
         }
       }
+      throw new Error("Facebook không trả về mã bài đăng");
     } catch (graphErr) {
-      if (graphErr.message?.startsWith("Facebook")) {
-        throw graphErr;
-      }
-      console.warn("Direct Graph API execution notice:", graphErr.message);
+      throw graphErr instanceof Error ? graphErr : new Error(String(graphErr));
     }
   }
 
-  // 2. Clean fallback simulation with instant preview (for dev/test offline mock)
+  if (!isMockOrTest) {
+    throw new Error("Facebook chưa được cấu hình Page Access Token hợp lệ");
+  }
+
+  // 2. Local fixture simulation only.
   const simulatedPostId = `post_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
   const simulatedUrl = `https://www.facebook.com/${pageId}`;
 
