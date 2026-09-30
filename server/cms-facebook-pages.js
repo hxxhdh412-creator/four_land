@@ -2,9 +2,9 @@
 // FOURLAND CMS — FACEBOOK PAGES STORE & COMPOSIO DYNAMIC CONFIGURATION
 // ============================================================================
 
-const DEFAULT_PAGE_ID = process.env.FACEBOOK_PAGE_ID || "106656702112510";
-const DEFAULT_PAGE_NAME = process.env.FACEBOOK_PAGE_NAME || "Ngọc Nhà Tốt";
-const DEFAULT_PAGE_TOKEN = process.env.FACEBOOK_PAGE_ACCESS_TOKEN || "EAAM4uULUpAUBSU9xH13NOrCzer4tEqkAWJHV3PGIZAd9pZBjViOBMBTbm8e7OscvgBbXpCQiZC7hyrwURaPrkZCoBo03MXWLXn6vWVZA1i23bZCZCwZBlZAimnrtVyHBDd1eTvc8O50b4ZAK9nukLumlvYkkcTAfBeNIDRbyCVhsiwz36ZCN2SkjaSyeYbNxnpfDusasdAB4sux9FBL3dHiTZCsZD";
+const DEFAULT_PAGE_ID = process.env.FACEBOOK_PAGE_ID || "104363431784609";
+const DEFAULT_PAGE_NAME = process.env.FACEBOOK_PAGE_NAME || "FourLand";
+const DEFAULT_PAGE_TOKEN = process.env.FACEBOOK_PAGE_ACCESS_TOKEN || "EAAM4uULUpAUBSW1m7Y2ZAu3HcJCf9DsnCimBmvQULVd2pewnxKWxOBw3o018pNE9Umsp5OsXdiVnzXejU1oLwr3xO6k4Y7xpx1SBkfcLquAtY1xG8PUHQsyqCLDezguqxiOcJRDfViwTBUHpmBPgFbdAnyBbR2TjnyLV7aZAWEqNSTsrL4pgmstg7Lkk6d9ZA9P5X1FtRWn4rad62ZBjnc0ZD";
 const COMPOSIO_API_KEY = process.env.COMPOSIO_API_KEY || "ck_e4AHzIDYFZKwFT8XrkwX";
 
 const INITIAL_PAGES = [
@@ -14,9 +14,21 @@ const INITIAL_PAGES = [
     name: DEFAULT_PAGE_NAME,
     token: DEFAULT_PAGE_TOKEN,
     isDefault: true,
-    source: "composio",
-    category: "Bất động sản",
+    source: "custom",
+    category: "Công ty phát triển bất động sản",
     avatarUrl: `https://graph.facebook.com/${DEFAULT_PAGE_ID}/picture?type=large`,
+    createdAt: "2026-08-01T00:00:00.000Z",
+    updatedAt: "2026-08-01T00:00:00.000Z"
+  },
+  {
+    id: "106656702112510",
+    pageId: "106656702112510",
+    name: "Ngọc Nhà Tốt",
+    token: "EAAM4uULUpAUBSU9xH13NOrCzer4tEqkAWJHV3PGIZAd9pZBjViOBMBTbm8e7OscvgBbXpCQiZC7hyrwURaPrkZCoBo03MXWLXn6vWVZA1i23bZCZCwZBlZAimnrtVyHBDd1eTvc8O50b4ZAK9nukLumlvYkkcTAfBeNIDRbyCVhsiwz36ZCN2SkjaSyeYbNxnpfDusasdAB4sux9FBL3dHiTZCsZD",
+    isDefault: false,
+    source: "custom",
+    category: "Người môi giới bất động sản",
+    avatarUrl: "https://graph.facebook.com/106656702112510/picture?type=large",
     createdAt: "2026-08-01T00:00:00.000Z",
     updatedAt: "2026-08-01T00:00:00.000Z"
   }
@@ -216,8 +228,8 @@ async function fetchComposioPages({ apiKey = COMPOSIO_API_KEY, fetchImpl = fetch
 
                 // Ensure default page
                 if (!dynamicPagesStore.some(p => p.isDefault)) {
-                  const ngocNhaTot = dynamicPagesStore.find(p => p.pageId === DEFAULT_PAGE_ID);
-                  if (ngocNhaTot) ngocNhaTot.isDefault = true;
+                  const fourLand = dynamicPagesStore.find(p => p.pageId === DEFAULT_PAGE_ID);
+                  if (fourLand) fourLand.isDefault = true;
                   else if (dynamicPagesStore.length > 0) dynamicPagesStore[0].isDefault = true;
                 }
 

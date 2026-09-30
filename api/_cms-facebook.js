@@ -50,7 +50,7 @@ function createHandler({ requireCmsImpl = requireCms, request = supabaseRequest 
           tone,
           includeLink: body.includeLink !== false,
           hotline: body.hotline || process.env.FACEBOOK_HOTLINE || "037.6789.808",
-          pageName: targetPage?.name || "Ngọc Nhà Tốt"
+          pageName: targetPage?.name || "FourLand"
         });
 
         const images = (property.property_images || []).map(img => img.public_url).filter(Boolean);
@@ -112,8 +112,8 @@ function createHandler({ requireCmsImpl = requireCms, request = supabaseRequest 
             const resPublish = await publishToComposioFacebook({
               content,
               imageUrls: photoUrls,
-              pageName: page.name || body.pageName || "Ngọc Nhà Tốt",
-              pageId: page.pageId || process.env.FACEBOOK_PAGE_ID || "106656702112510",
+              pageName: page.name || body.pageName || "FourLand",
+              pageId: page.pageId || process.env.FACEBOOK_PAGE_ID || "104363431784609",
               pageToken: page.token || "",
               apiKey
             });

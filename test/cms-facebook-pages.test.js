@@ -38,7 +38,7 @@ test("getFacebookPages returns initial default Fanpage", async () => {
   assert.ok(pages.length >= 1);
   const defaultPage = pages.find(p => p.isDefault);
   assert.ok(defaultPage);
-  assert.equal(defaultPage.name, "Ngọc Nhà Tốt");
+  assert.equal(defaultPage.name, "FourLand");
 });
 
 test("addFacebookPage adds a new Fanpage and allows setting it as default", async () => {

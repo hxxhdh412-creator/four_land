@@ -2487,9 +2487,9 @@ const fbState = {
   content: '',
   allImages: [],
   selectedImages: new Set(),
-  selectedPageIds: new Set(['106656702112510']),
-  selectedPageId: '106656702112510',
-  pageName: 'Ngọc Nhà Tốt',
+  selectedPageIds: new Set(['104363431784609']),
+  selectedPageId: '104363431784609',
+  pageName: 'FourLand',
   pages: []
 };
 
@@ -2499,8 +2499,8 @@ function renderFacebookChannels() {
   const pages = Array.isArray(fbState.pages) && fbState.pages.length > 0
     ? fbState.pages
     : (Array.isArray(fbPagesCache) && fbPagesCache.length > 0 ? fbPagesCache : [{
-        pageId: '106656702112510',
-        name: 'Ngọc Nhà Tốt',
+        pageId: '104363431784609',
+        name: 'FourLand',
         isDefault: true,
         category: 'Trang BĐS Fourland'
       }]);
@@ -2516,7 +2516,7 @@ function renderFacebookChannels() {
     return `
       <label class="cms-fb-channel-card ${isChecked ? 'checked' : ''}" data-fb-channel-id="${escapeHtml(pid)}">
         <input type="checkbox" name="fbChannel" value="${escapeHtml(pid)}" ${isChecked ? 'checked' : ''}>
-        <img class="cms-fb-card-avatar" src="https://graph.facebook.com/${escapeHtml(pid)}/picture?type=large" alt="${escapeHtml(p.name)}" onerror="this.src='https://graph.facebook.com/106656702112510/picture?type=large'">
+        <img class="cms-fb-card-avatar" src="https://graph.facebook.com/${escapeHtml(pid)}/picture?type=large" alt="${escapeHtml(p.name)}" onerror="this.src='https://graph.facebook.com/104363431784609/picture?type=large'">
         <div class="cms-fb-card-info">
           <div class="cms-fb-card-name">
             <strong>${escapeHtml(p.name)}</strong>
@@ -2583,7 +2583,7 @@ function updatePreviewFromChannels() {
   const selectedPid = Array.from(fbState.selectedPageIds)[0];
   if (!selectedPid) return;
   const pageObj = (fbState.pages || []).find(p => String(p.pageId) === selectedPid);
-  const pName = pageObj?.name || 'Ngọc Nhà Tốt';
+  const pName = pageObj?.name || 'FourLand';
 
   const avatarImg = document.querySelector('.fb-mock-avatar img');
   if (avatarImg) {
@@ -2647,7 +2647,7 @@ async function loadFacebookDraft(propertyId, tone = 'hot') {
     const data = result.data;
     fbState.content = data.content;
     fbState.allImages = data.images || [];
-    fbState.pageName = data.pageName || 'Ngọc Nhà Tốt';
+    fbState.pageName = data.pageName || 'FourLand';
     fbState.pages = data.pages || fbState.pages;
 
     renderFacebookChannels();
@@ -3151,13 +3151,13 @@ document.querySelectorAll('[data-push-tab]').forEach(tabBtn => {
 
 const DEFAULT_FALLBACK_PAGES = [
   {
-    id: "106656702112510",
-    pageId: "106656702112510",
-    name: "Ngọc Nhà Tốt",
+    id: "104363431784609",
+    pageId: "104363431784609",
+    name: "FourLand",
     isDefault: true,
-    source: "composio",
-    category: "Bất động sản",
-    avatarUrl: "https://graph.facebook.com/106656702112510/picture?type=large"
+    source: "custom",
+    category: "Công ty phát triển bất động sản",
+    avatarUrl: "https://graph.facebook.com/104363431784609/picture?type=large"
   }
 ];
 
@@ -3189,7 +3189,7 @@ async function loadFacebookPages(force = false) {
     const totalEl = byId('fbTotalPages');
     if (totalEl) totalEl.textContent = fbPagesCache.length;
     const defaultEl = byId('fbDefaultPageName');
-    if (defaultEl) defaultEl.textContent = "Ngọc Nhà Tốt";
+    if (defaultEl) defaultEl.textContent = "FourLand";
 
     renderFacebookPagesGrid(fbPagesCache);
 
