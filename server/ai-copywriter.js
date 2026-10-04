@@ -8,6 +8,7 @@
 // Biến môi trường (không hard-code key/model trong mã nguồn):
 //   AI_CONTENT_MODEL      bắt buộc để bật AI (vd. tên model của nhà cung cấp)
 //   AI_CONTENT_PROVIDER   "gemini" | "openai" (tuỳ chọn, tự nhận theo key)
+//   AI_CONTENT_BASE_URL   tuỳ chọn, endpoint tương thích OpenAI (dùng chung proxy với AI tách dữ liệu Zalo)
 //   GEMINI_API_KEY / OPENAI_API_KEY
 //   FACEBOOK_CTA          tuỳ chọn, ghi đè khối CTA cuối bài
 // ============================================================================
@@ -271,16 +272,19 @@ function resolveAiConfig(env = process.env) {
   const preferred = cleanText(env.AI_CONTENT_PROVIDER).toLowerCase();
   const geminiKey = cleanText(env.GEMINI_API_KEY);
   const openaiKey = cleanText(env.OPENAI_API_KEY);
+  const baseUrl = cleanText(env.AI_CONTENT_BASE_URL).replace(/\/+$/, "");
   if (!model) return null;
-  if ((preferred === "gemini" || !preferred) && geminiKey) return { provider: "gemini", model, key: geminiKey };
-  if ((preferred === "openai" || !preferred) && openaiKey) return { provider: "openai", model, key: openaiKey };
-  if (geminiKey) return { provider: "gemini", model, key: geminiKey };
-  if (openaiKey) return { provider: "openai", model, key: openaiKey };
+  const openai = () => ({ provider: "openai", model, key: openaiKey, ...(baseUrl ? { baseUrl } : {}) });
+  const gemini = () => ({ provider: "gemini", model, key: geminiKey });
+  if ((preferred === "gemini" || !preferred) && geminiKey) return gemini();
+  if ((preferred === "openai" || !preferred) && openaiKey) return openai();
+  if (geminiKey) return gemini();
+  if (openaiKey) return openai();
   return null;
 }
 
 async function callModel(config, systemPrompt, userPrompt, fetchImpl = fetch) {
-  const signal = AbortSignal.timeout(25000);
+  const signal = AbortSignal.timeout(40000);
   if (config.provider === "gemini") {
     const res = await fetchImpl(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(config.model)}:generateContent`, {
       method: "POST",
@@ -296,9 +300,12 @@ async function callModel(config, systemPrompt, userPrompt, fetchImpl = fetch) {
     if (!res.ok) throw new Error(`AI ${res.status}: ${data?.error?.message || "lỗi không xác định"}`);
     return (data.candidates?.[0]?.content?.parts || []).map(p => p.text || "").join("").trim();
   }
-  const res = await fetchImpl("https://api.openai.com/v1/chat/completions", {
+  const base = String(config.baseUrl || "https://api.openai.com/v1").replace(/\/+$/, "");
+  const headers = { "Content-Type": "application/json", Authorization: `Bearer ${config.key}` };
+  // 1. Chuẩn /chat/completions (giống AI tách dữ liệu Zalo)
+  const res = await fetchImpl(`${base}/chat/completions`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${config.key}` },
+    headers,
     body: JSON.stringify({
       model: config.model,
       messages: [
@@ -309,8 +316,23 @@ async function callModel(config, systemPrompt, userPrompt, fetchImpl = fetch) {
     signal
   });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(`AI ${res.status}: ${data?.error?.message || "lỗi không xác định"}`);
-  return String(data.choices?.[0]?.message?.content || "").trim();
+  const chatText = String(data.choices?.[0]?.message?.content || "").trim();
+  if (res.ok && chatText) return chatText;
+  // 2. Dự phòng /responses cho proxy không hỗ trợ chat/completions
+  if (!res.ok && ![400, 404, 405].includes(res.status)) {
+    throw new Error(`AI ${res.status}: ${data?.error?.message || "lỗi không xác định"}`);
+  }
+  const res2 = await fetchImpl(`${base}/responses`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ model: config.model, instructions: systemPrompt, input: userPrompt, max_output_tokens: 1500 }),
+    signal
+  });
+  const data2 = await res2.json().catch(() => ({}));
+  if (!res2.ok) throw new Error(`AI ${res2.status}: ${data2?.error?.message || data?.error?.message || "lỗi không xác định"}`);
+  const text = data2.output_text
+    || (data2.output || []).flatMap(item => item.content || []).map(part => part.text || "").join("");
+  return String(text || "").trim();
 }
 
 async function writeFacebookCopy(property = {}, options = {}) {
