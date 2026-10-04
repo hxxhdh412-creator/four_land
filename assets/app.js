@@ -1188,19 +1188,8 @@ async function openDetail(id,seoPath=''){
     ` : '';
 
     const isFav = favoriteStore.has(p.property_id);
-    const canDownload = state.adminUnlocked || state.ctvUnlocked || state.canViewFullAddress;
-    const downloadBtnsHtml = canDownload && images.length > 0 ? `
-      <button type="button" class="action-chip download-chip" id="actionDownloadBtn" title="Tải ảnh đang xem về máy">
-        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        <span>Tải ảnh</span>
-      </button>
-      ${images.length > 1 ? `
-      <button type="button" class="action-chip download-all-chip" id="actionDownloadAllBtn" title="Tải trọn bộ ${images.length} ảnh của căn nhà này về máy">
-        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        <span>Tải cả bộ (${images.length})</span>
-      </button>
-      ` : ''}
-    ` : '';
+    // Đã bỏ nút "Tải ảnh" và "Tải cả bộ" khỏi giao diện chi tiết theo yêu cầu (04/10/2026)
+    const downloadBtnsHtml = '';
 
     const quickActionsHtml = `
       <div class="property-quick-actions">
