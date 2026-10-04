@@ -284,7 +284,7 @@ function resolveAiConfig(env = process.env) {
 }
 
 async function callModel(config, systemPrompt, userPrompt, fetchImpl = fetch) {
-  const signal = AbortSignal.timeout(40000);
+  const signal = AbortSignal.timeout(55000);
   if (config.provider === "gemini") {
     const res = await fetchImpl(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(config.model)}:generateContent`, {
       method: "POST",
