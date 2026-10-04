@@ -38,3 +38,41 @@ test('filters properties outside the parsed area range', () => {
   assert.equal(matchAndScoreProperty(tooSmall, parsed), -1);
   assert.equal(matchAndScoreProperty(tooLarge, parsed), -1);
 });
+
+
+// ---- Bộ lọc giá (ô "Giá từ / Giá đến") ----
+const { parsePriceInput } = require('../api/_smartSearch');
+
+test('parsePriceInput hiểu cách nhập phổ biến của người dùng', () => {
+  assert.equal(parsePriceInput('15'), 15000000, 'số trần < 1000 = triệu');
+  assert.equal(parsePriceInput('15tr'), 15000000);
+  assert.equal(parsePriceInput('15 triệu'), 15000000);
+  assert.equal(parsePriceInput('15,5'), 15500000);
+  assert.equal(parsePriceInput('1.5 tỷ'), 1500000000);
+  assert.equal(parsePriceInput('2ty'), 2000000000);
+  assert.equal(parsePriceInput('500k'), 500000);
+  assert.equal(parsePriceInput('15.000.000'), 15000000);
+  assert.equal(parsePriceInput('15000000'), 15000000);
+  assert.equal(parsePriceInput('15000'), 15000000, '1.000–999.999 = nghìn');
+  assert.equal(parsePriceInput(15000000), 15000000);
+  for (const bad of ['', '  ', 'abc', 'liên hệ', '0', null, undefined]) assert.equal(parsePriceInput(bad), null, String(bad));
+});
+
+test('lọc giá 15–20 triệu: đúng khoảng, loại tin không có giá VNĐ', () => {
+  const nlp = parseNaturalQuery('');
+  const rows = {
+    inRange: { price_number: 18000000 },
+    low: { price_number: 12000000 },
+    high: { price_number: 25000000 },
+    contact: { price_number: null, price_text: 'Liên hệ' },
+    usd: { price_number: 15, price_text: '15.000$' }
+  };
+  for (const [min, max] of [['15', '20'], ['15tr', '20tr'], ['15.000.000', '20.000.000'], ['15000000', '20000000']]) {
+    const pass = Object.entries(rows).filter(([, r]) => matchAndScoreProperty(r, nlp, { minPrice: min, maxPrice: max }) > 0).map(([k]) => k);
+    assert.deepEqual(pass, ['inRange'], `${min} -> ${max}`);
+  }
+  const onlyMax = Object.entries(rows).filter(([, r]) => matchAndScoreProperty(r, nlp, { maxPrice: '20' }) > 0).map(([k]) => k);
+  assert.deepEqual(onlyMax, ['inRange', 'low']);
+  const noFilter = Object.entries(rows).filter(([, r]) => matchAndScoreProperty(r, nlp, {}) > 0).map(([k]) => k);
+  assert.equal(noFilter.length, 5, 'không lọc giá thì vẫn hiện tin Liên hệ / USD');
+});

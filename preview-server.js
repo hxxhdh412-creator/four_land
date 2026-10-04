@@ -92,8 +92,8 @@ async function listDatabaseProperties(url){
     property_type: url.searchParams.get("type"),
     timeRange: url.searchParams.get("timeRange"),
     rentalStatus: url.searchParams.get("rentalStatus") || url.searchParams.get("status"),
-    minPrice: url.searchParams.get("minPrice") ? Number(url.searchParams.get("minPrice")) : null,
-    maxPrice: url.searchParams.get("maxPrice") ? Number(url.searchParams.get("maxPrice")) : null,
+    minPrice: url.searchParams.get("minPrice") || null,
+    maxPrice: url.searchParams.get("maxPrice") || null,
     minArea: url.searchParams.get("minArea") ? Number(url.searchParams.get("minArea")) : null,
     maxArea: url.searchParams.get("maxArea") ? Number(url.searchParams.get("maxArea")) : null,
     bedrooms: url.searchParams.get("bedrooms") ? Number(url.searchParams.get("bedrooms")) : null

@@ -13,6 +13,43 @@ function removeVietnameseTones(str) {
     .trim();
 }
 
+// Giá VNĐ hợp lệ nhỏ nhất (1 triệu). price_number nhỏ hơn thường là giá USD (vd. 15 = 15.000$).
+const MIN_VALID_VND_PRICE = 1000000;
+
+function parseLooseNumber(text) {
+  const s = String(text);
+  const seps = s.match(/[.,]/g) || [];
+  if (seps.length === 0) return Number(s);
+  // "15.000.000" / "15,000" (nhóm 3 chữ số) = dấu phân cách hàng nghìn; "1.5" / "1,5" = thập phân.
+  if (/^\d{1,3}([.,]\d{3})+$/.test(s)) return Number(s.replace(/[.,]/g, ''));
+  if (seps.length === 1) return Number(s.replace(',', '.'));
+  return NaN;
+}
+
+/**
+ * Chuyển giá người dùng nhập sang đồng.
+ * Có đơn vị: "15tr", "15 triệu", "1.5 tỷ", "500k", "15000000đ".
+ * Không đơn vị: < 1.000 -> triệu ("15" = 15 triệu); 1.000–999.999 -> nghìn; >= 1.000.000 -> đồng.
+ */
+function parsePriceInput(value) {
+  if (value === null || value === undefined) return null;
+  if (typeof value === 'number') return Number.isFinite(value) && value > 0 ? Math.round(value) : null;
+  const raw = removeVietnameseTones(value).replace(/\s+/g, '');
+  if (!raw) return null;
+  const match = raw.match(/^(\d+(?:[.,]\d+)*)(ty|trieu|tr|cu|m|nghin|ngan|k|dong|vnd|d)?$/);
+  if (!match) return null;
+  const amount = parseLooseNumber(match[1]);
+  if (!Number.isFinite(amount) || amount <= 0) return null;
+  const unit = match[2] || '';
+  let multiplier;
+  if (unit === 'ty') multiplier = 1e9;
+  else if (['trieu', 'tr', 'cu', 'm'].includes(unit)) multiplier = 1e6;
+  else if (['nghin', 'ngan', 'k'].includes(unit)) multiplier = 1e3;
+  else if (['dong', 'vnd', 'd'].includes(unit)) multiplier = 1;
+  else multiplier = amount < 1000 ? 1e6 : amount < 1e6 ? 1e3 : 1;
+  return Math.round(amount * multiplier);
+}
+
 const DISTRICT_MAP = [
   { name: 'Quận 1', patterns: [/\b(q\.?\s*1|quan\s*1|district\s*1)\b/i] },
   { name: 'Quận 2', patterns: [/\b(q\.?\s*2|quan\s*2|district\s*2)\b/i] },
@@ -260,14 +297,14 @@ function matchAndScoreProperty(property, parsedNlp, explicitFilters = {}) {
     }
   }
 
-  const minPrice = explicitFilters.minPrice || parsedNlp.filters.minPrice;
-  if (minPrice && Number.isFinite(Number(minPrice))) {
-    if (property.price_number && property.price_number < Number(minPrice)) return -1;
-  }
-
-  const maxPrice = explicitFilters.maxPrice || parsedNlp.filters.maxPrice;
-  if (maxPrice && Number.isFinite(Number(maxPrice))) {
-    if (property.price_number && property.price_number > Number(maxPrice)) return -1;
+  const minPrice = parsePriceInput(explicitFilters.minPrice) || parsePriceInput(parsedNlp.filters.minPrice);
+  const maxPrice = parsePriceInput(explicitFilters.maxPrice) || parsePriceInput(parsedNlp.filters.maxPrice);
+  if (minPrice || maxPrice) {
+    // Đang lọc giá: tin không có giá VNĐ hợp lệ ("Liên hệ", giá USD) không thể so sánh -> loại.
+    const price = Number(property.price_number);
+    if (!Number.isFinite(price) || price < MIN_VALID_VND_PRICE) return -1;
+    if (minPrice && price < minPrice) return -1;
+    if (maxPrice && price > maxPrice) return -1;
   }
 
   const minArea = explicitFilters.minArea || parsedNlp.filters.minArea;
@@ -357,8 +394,10 @@ function matchAndScoreProperty(property, parsedNlp, explicitFilters = {}) {
 
 module.exports = {
   DISTRICT_MAP,
+  MIN_VALID_VND_PRICE,
   TYPE_MAP,
   matchAndScoreProperty,
   parseNaturalQuery,
+  parsePriceInput,
   removeVietnameseTones
 };

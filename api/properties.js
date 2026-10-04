@@ -72,8 +72,8 @@ module.exports = async function handler(req, res) {
       property_type: text(req.query.type),
       timeRange: text(req.query.timeRange),
       rentalStatus: text(req.query.rentalStatus || req.query.status),
-      minPrice: req.query.minPrice ? Number(req.query.minPrice) : null,
-      maxPrice: req.query.maxPrice ? Number(req.query.maxPrice) : null,
+      minPrice: text(req.query.minPrice) || null, // parsePriceInput: "15" = 15 triệu, "15tr", "1.5 tỷ", "15.000.000"
+      maxPrice: text(req.query.maxPrice) || null,
       minArea: req.query.minArea ? Number(req.query.minArea) : null,
       maxArea: req.query.maxArea ? Number(req.query.maxArea) : null,
       bedrooms: req.query.bedrooms ? Number(req.query.bedrooms) : null
