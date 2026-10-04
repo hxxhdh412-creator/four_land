@@ -50,7 +50,8 @@ function createHandler({ requireCmsImpl = requireCms, request = supabaseRequest,
         // Viết bài theo prompt copywriter Fourland (AI nếu đã cấu hình, ngược lại bộ quy tắc cùng phong cách)
         const copy = await writer(property, {
           tone,
-          includeLink: body.includeLink !== false
+          includeLink: body.includeLink !== false,
+          regenerate: body.regenerate === true
         });
 
         const images = (property.property_images || []).map(img => img.public_url).filter(Boolean);
@@ -62,6 +63,7 @@ function createHandler({ requireCmsImpl = requireCms, request = supabaseRequest,
             tone,
             content: copy.content,
             generator: copy.generator,
+            cached: Boolean(copy.cached),
             aiWarning: copy.aiError ? "AI tạm lỗi, đã dùng bộ viết dự phòng" : undefined,
             images,
             pageId: targetPage?.pageId,

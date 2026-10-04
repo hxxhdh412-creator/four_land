@@ -2008,12 +2008,13 @@ function closeFacebookStudio() {
   if (dialog) dialog.close();
 }
 
-async function loadFacebookDraft(propertyId, tone = 'hot', targetPageId = null) {
+async function loadFacebookDraft(propertyId, tone = 'hot', targetPageId = null, regenerate = false) {
   fbPortalState.tone = tone;
   const contentInput = $('fbPostContent');
   const previewText = $('fbPreviewText');
-  if (contentInput) contentInput.value = 'Đang sinh nội dung bài viết với AI…';
-  if (previewText) previewText.textContent = 'Đang sinh nội dung bài viết với AI…';
+  const waitText = regenerate ? 'AI đang viết phiên bản mới… (khoảng 15–30 giây)' : 'Đang sinh nội dung bài viết với AI… (khoảng 15–30 giây, lần sau mở lại sẽ có ngay)';
+  if (contentInput) contentInput.value = waitText;
+  if (previewText) previewText.textContent = waitText;
 
   document.querySelectorAll('[data-fb-tone]').forEach(chip => {
     chip.classList.toggle('active', chip.dataset.fbTone === tone);
@@ -2032,6 +2033,7 @@ async function loadFacebookDraft(propertyId, tone = 'hot', targetPageId = null) 
         propertyId,
         tone,
         includeLink,
+        regenerate,
         pageId: targetPageId || fbPortalState.selectedPageId || undefined
       })
     });
@@ -2279,10 +2281,12 @@ if (btnPortalSelectAll) {
 }
 
 document.querySelectorAll('[data-fb-tone]').forEach(chip => {
+  chip.title = 'Bấm lại vào phong cách đang chọn để AI viết phiên bản mới';
   chip.onclick = () => {
     const tone = chip.dataset.fbTone;
     if (fbPortalState.propertyId) {
-      loadFacebookDraft(fbPortalState.propertyId, tone, fbPortalState.selectedPageId);
+      const regenerate = chip.classList.contains('active') && tone === fbPortalState.tone;
+      loadFacebookDraft(fbPortalState.propertyId, tone, fbPortalState.selectedPageId, regenerate);
     }
   };
 });

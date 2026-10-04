@@ -115,3 +115,17 @@ test("rule-based fallback does not repeat dimensions stored as area", async () =
   const { content } = await writeFacebookCopy({ ...rental, area_text: "5x14", dimensions: "5x14", raw_text: "" }, { aiConfig: null });
   assert.equal((content.match(/5x14/g) || []).length, 1);
 });
+test("AI result is cached per property/tone and regenerate bypasses the cache", async () => {
+  let calls = 0;
+  const fetchImpl = async () => { calls++; return { ok: true, json: async () => ({ choices: [{ message: { content: "NGANG 5M PHÚ NHUẬN – ĐẮT HAY ĐÁNG TIỀN? " + "Nhà thoáng, hẻm xe hơi, ban công đón gió. ".repeat(10) + "Giá thuê 55 triệu/tháng." } }] }) }; };
+  const cfg = { provider: "openai", model: "cache-test", key: "k" };
+  const prop = { ...rental, property_id: "BDS-CACHE-1" };
+  const a = await writeFacebookCopy(prop, { aiConfig: cfg, fetchImpl });
+  const b = await writeFacebookCopy(prop, { aiConfig: cfg, fetchImpl, includeLink: true });
+  assert.equal(calls, 1);
+  assert.equal(b.cached, true);
+  assert.match(b.content, /fourland\.vn/);
+  assert.doesNotMatch(a.content, /fourland\.vn/);
+  await writeFacebookCopy(prop, { aiConfig: cfg, fetchImpl, regenerate: true });
+  assert.equal(calls, 2);
+});

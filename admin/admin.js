@@ -2619,13 +2619,14 @@ function closeFacebookStudio() {
   if (dialog) dialog.close();
 }
 
-async function loadFacebookDraft(propertyId, tone = 'hot') {
+async function loadFacebookDraft(propertyId, tone = 'hot', _pageId = null, regenerate = false) {
   fbState.tone = tone;
 
   const contentInput = byId('fbPostContent');
   const previewText = byId('fbPreviewText');
-  contentInput.value = 'Đang sinh nội dung bài viết với AI…';
-  previewText.textContent = 'Đang sinh nội dung bài viết với AI…';
+  const waitText = regenerate ? 'AI đang viết phiên bản mới… (khoảng 15–30 giây)' : 'Đang sinh nội dung bài viết với AI… (khoảng 15–30 giây, lần sau mở lại sẽ có ngay)';
+  contentInput.value = waitText;
+  previewText.textContent = waitText;
 
   // Highlight active tone chip
   document.querySelectorAll('[data-fb-tone]').forEach(chip => {
@@ -2640,7 +2641,8 @@ async function loadFacebookDraft(propertyId, tone = 'hot') {
         propertyId,
         tone,
         pageId: selectedPid,
-        includeLink: byId('fbIncludeLink')?.checked !== false
+        includeLink: byId('fbIncludeLink')?.checked !== false,
+        regenerate
       }
     });
 
@@ -2830,10 +2832,12 @@ if (byId('linkManageFbPages')) {
 }
 
 document.querySelectorAll('[data-fb-tone]').forEach(chip => {
+  chip.title = 'Bấm lại vào phong cách đang chọn để AI viết phiên bản mới';
   chip.addEventListener('click', () => {
     const tone = chip.dataset.fbTone;
     if (fbState.propertyId) {
-      loadFacebookDraft(fbState.propertyId, tone, fbState.selectedPageId);
+      const regenerate = chip.classList.contains('active') && tone === fbState.tone;
+      loadFacebookDraft(fbState.propertyId, tone, fbState.selectedPageId, regenerate);
     }
   });
 });

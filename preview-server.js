@@ -608,7 +608,8 @@ http.createServer(async (req,res)=>{
         const tone = body.tone || "hot";
         const copy = await writeFacebookCopy(current, {
           tone,
-          includeLink: body.includeLink !== false
+          includeLink: body.includeLink !== false,
+          regenerate: body.regenerate === true
         });
         const content = copy.content;
         const images = (current.property_images || []).map(img => img.public_url).filter(Boolean);

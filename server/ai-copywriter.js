@@ -47,6 +47,7 @@ Nếu thông tin đầu vào chưa đủ, không tự bịa. Chỉ sử dụng d
 
 Quy tắc bổ sung của hệ thống:
 • Không ghi số nhà cụ thể, không ghi số điện thoại chủ nhà, không ghi hoa hồng/phí môi giới.
+• Không thêm nhận định không có trong dữ liệu (ví dụ: vuông vức, thuận tiện kết nối, an ninh, khu dân trí cao, gần trung tâm); cảm xúc chỉ được xây trên chi tiết có thật.
 • Không dùng markdown (không **, không #), chỉ trả về đúng nội dung bài đăng hoàn chỉnh, không giải thích thêm.
 • Nếu là nhà cho thuê, ghi rõ là cho thuê và giá thuê theo tháng; nếu là nhà bán, ghi giá bán.`;
 
@@ -335,6 +336,14 @@ async function callModel(config, systemPrompt, userPrompt, fetchImpl = fetch) {
   return String(text || "").trim();
 }
 
+// Cache kết quả AI (chưa gắn link/CTA) để mở lại nháp hoặc bật/tắt link là có ngay
+const AI_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
+const aiCache = new Map();
+function aiCacheKey(property, tone, userPrompt, config) {
+  const hash = require("crypto").createHash("sha1").update(userPrompt).digest("hex").slice(0, 16);
+  return `${property.property_id || ""}|${tone}|${config.provider}:${config.model}|${hash}`;
+}
+
 async function writeFacebookCopy(property = {}, options = {}) {
   const tone = TONE_HINTS[options.tone] ? options.tone : "hot";
   const cta = cleanText(options.cta || process.env.FACEBOOK_CTA) ? String(options.cta || process.env.FACEBOOK_CTA).replace(/\\n/g, "\n") : DEFAULT_CTA;
@@ -343,11 +352,18 @@ async function writeFacebookCopy(property = {}, options = {}) {
   const config = options.aiConfig === undefined ? resolveAiConfig(options.env || process.env) : options.aiConfig;
 
   if (config) {
+    const system = COPYWRITER_PROMPT.replace("{{CTA}}", cta);
+    const user = `${factsToPrompt(facts)}\n\n${TONE_HINTS[tone]}`;
+    const key = aiCacheKey(property, tone, user, config);
+    const hit = aiCache.get(key);
+    if (!options.regenerate && hit && Date.now() - hit.time < AI_CACHE_TTL_MS) {
+      return { content: finalizePost(hit.raw, property, { cta, link }), generator: "ai", provider: config.provider, model: config.model, cached: true };
+    }
     try {
-      const system = COPYWRITER_PROMPT.replace("{{CTA}}", cta);
-      const user = `${factsToPrompt(facts)}\n\n${TONE_HINTS[tone]}`;
       const raw = await callModel(config, system, user, options.fetchImpl || fetch);
       if (raw && countWords(raw) >= 40) {
+        aiCache.set(key, { raw, time: Date.now() });
+        if (aiCache.size > 300) aiCache.delete(aiCache.keys().next().value);
         return { content: finalizePost(raw, property, { cta, link }), generator: "ai", provider: config.provider, model: config.model };
       }
       throw new Error("AI trả về nội dung quá ngắn");
