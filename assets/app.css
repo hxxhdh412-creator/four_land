@@ -3681,3 +3681,11 @@ body.role-unlocked .listing-photo img {
 }
 
 
+
+/* ===== Data loading UX (SWR refresh, top progress bar) ===== */
+#grid{transition:opacity .18s ease}
+#grid.is-refreshing{opacity:.55;pointer-events:none}
+.top-progress{position:fixed;top:0;left:0;height:3px;width:0;z-index:10000;background:linear-gradient(90deg,#123c32,#2f8f6f,#9fe3c5);box-shadow:0 0 10px rgba(47,143,111,.55);opacity:0;pointer-events:none;border-radius:0 3px 3px 0}
+.top-progress.active{opacity:1;width:78%;transition:width 6s cubic-bezier(.08,.75,.12,1),opacity .15s ease}
+.top-progress.done{opacity:0;width:100%;transition:width .2s ease,opacity .35s ease .2s}
+@media (prefers-reduced-motion: reduce){#grid,.top-progress,.top-progress.active,.top-progress.done{transition:none}}

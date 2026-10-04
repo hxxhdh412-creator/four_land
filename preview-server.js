@@ -3,6 +3,7 @@ const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
 const { parseNaturalQuery, matchAndScoreProperty, removeVietnameseTones } = require("./api/_smartSearch");
+const { toCardRow } = require("./api/_cardRow");
 const { propertyIdFromSlug, renderPropertyPage, renderSitemap } = require("./server/seo");
 const { buildLandingSitemapEntries, renderLandingPage } = require("./server/seo-landings");
 const { INDEXNOW_KEY, INDEXNOW_HOST, INDEXNOW_KEY_LOCATION, INDEXNOW_ENDPOINT, collectIndexNowUrls, submitToIndexNow } = require("./server/indexnow");
@@ -169,7 +170,7 @@ async function listDatabaseProperties(url){
   const total = scoredRows.length;
   const paginatedRows = scoredRows
     .slice((page - 1) * pageSize, page * pageSize)
-    .map(item => item.row);
+    .map(item => toCardRow(item.row));
 
   return { ok: true, rows: paginatedRows, total, page, pageSize, parsedNlp: nlp.filters };
 }

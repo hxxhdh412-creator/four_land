@@ -1,6 +1,7 @@
 const { isAdmin } = require("./_admin");
 const { parseNaturalQuery, matchAndScoreProperty } = require("./_smartSearch");
 const { sendError, supabaseRequest, text } = require("./_supabase");
+const { toCardRow } = require("./_cardRow");
 
 // High-speed In-Memory Cache
 let memoryCachedActiveRows = null;
@@ -149,12 +150,13 @@ module.exports = async function handler(req, res) {
     const total = uniqueScoredRows.length;
     const paginatedRows = uniqueScoredRows
       .slice((page - 1) * pageSize, page * pageSize)
-      .map(item => item.row);
+      .map(item => toCardRow(item.row)); // Chỉ gửi trường thẻ cần; chi tiết lấy qua /api/property
 
     if (isAdmin(req) || req.query._t || req.query.archived) {
       res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0");
     } else {
-      res.setHeader("Cache-Control", "public, s-maxage=10, stale-while-revalidate=60");
+      // Edge cache kiểu SaaS: CDN giữ 30s, sau đó vẫn trả bản cũ ngay và làm mới ngầm trong 5 phút
+      res.setHeader("Cache-Control", "public, max-age=0, s-maxage=30, stale-while-revalidate=300");
     }
     res.status(200).json({ ok: true, rows: paginatedRows, total, page, pageSize, parsedNlp: nlp.filters });
   } catch (error) { sendError(res, error); }

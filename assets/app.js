@@ -272,7 +272,15 @@ function formatVietnamFullDateTime(isoString){
   return`${timeStr} - ${dateStr}`;
 }
 
-function driveImage(url){const value=String(url||'');const match=value.match(/\/d\/([\w-]+)/)||value.match(/[?&]id=([\w-]+)/);return match?`https://drive.google.com/thumbnail?id=${match[1]}&sz=w1400`:value}
+function driveImage(url,width=1400){const value=String(url||'');const match=value.match(/\/d\/([\w-]+)/)||value.match(/[?&]id=([\w-]+)/);return match?`https://drive.google.com/thumbnail?id=${match[1]}&sz=w${width}`:value}
+// Ảnh thẻ: dùng bản 320/480/720px theo màn hình thay vì 1400px; 4 ảnh đầu ưu tiên tải ngay
+function cardImageAttrs(url,index){
+  const src=driveImage(url,480);
+  const isDrive=/drive\.google\.com\/thumbnail\?id=/.test(src);
+  const srcset=isDrive?` srcset="${escapeHtml(driveImage(url,320))} 320w, ${escapeHtml(src)} 480w, ${escapeHtml(driveImage(url,720))} 720w" sizes="(max-width: 640px) 50vw, (max-width: 1100px) 34vw, 320px"`:'';
+  const eager=index<4;
+  return `src="${escapeHtml(src)}"${srcset} loading="${eager?'eager':'lazy'}" decoding="async"${eager?' fetchpriority="high"':''}`;
+}
 function values(){
   const isFavTab = state.filterTab === 'favorites';
   const favIds = isFavTab ? favoriteStore.getIds() : [];
@@ -294,7 +302,7 @@ function values(){
     archived:state.viewArchived?'only':'',
     featured:state.filterTab==='featured'?'1':'',
     ids:isFavTab?favIds.join(','):'',
-    _t:Date.now()
+    _t:state.adminUnlocked?Date.now():'' // Chỉ admin cần bỏ qua cache; khách dùng CDN + cache trình duyệt
   };
 }
 function params(input){const search=new URLSearchParams();Object.entries(input).forEach(([key,value])=>{if(value!==''&&value!=null)search.set(key,value)});return search}
@@ -313,6 +321,7 @@ async function api(path,options={},retries=1){
     }
     return body;
   }catch(err){
+    if(err&&err.name==='AbortError')throw err;
     if(retries>0){
       await new Promise(r=>setTimeout(r,1000));
       return api(path,options,retries-1);
@@ -321,7 +330,7 @@ async function api(path,options={},retries=1){
   }
 }
 function setOptions(id,items,label){const select=$(id);if(!select)return;const current=select.value;const seen=new Set();const list=[];for(const item of(items||[])){const s=String(item||'').trim();if(!s)continue;const k=s.toLowerCase();if(!seen.has(k)){seen.add(k);list.push(s);}}select.innerHTML=`<option value="">${label}</option>`+list.map(item=>`<option value="${escapeHtml(item)}">${escapeHtml(item)}</option>`).join('');select.value=current}
-async function loadFacets(){try{const data=await api('/api/facets?t='+Date.now());state.facets=data;setOptions('district',data.districts,'Tất cả quận huyện');setOptions('ward',data.wards,'Tất cả phường xã');setOptions('street',data.streets,'Tất cả tuyến đường');setOptions('type',data.types,'Tất cả loại hình')}catch{}}
+async function loadFacets(){try{const data=await api('/api/facets');state.facets=data;setOptions('district',data.districts,'Tất cả quận huyện');setOptions('ward',data.wards,'Tất cả phường xã');setOptions('street',data.streets,'Tất cả tuyến đường');setOptions('type',data.types,'Tất cả loại hình')}catch{}}
 function skeleton(){
   return Array.from({length:8},()=>`
     <div class="skeleton">
@@ -346,8 +355,82 @@ function dismissSplash(){
 }
 setTimeout(dismissSplash,900);
 
+// ===== Lớp dữ liệu kiểu SaaS: Stale-While-Revalidate + prefetch =====
+const LIST_CACHE_TTL=120000;      // giữ kết quả bộ lọc 2 phút
+const LIST_FRESH_MS=20000;        // dưới 20s coi là mới, không cần gọi lại
+const DETAIL_PREFETCH_TTL=60000;
+const listCache=new Map();
+const detailPrefetchCache=new Map();
+let listController=null;
+function listKey(query){const copy={...query};delete copy._t;return params(copy).toString()}
+function readListCache(key){
+  const now=Date.now();
+  const hit=listCache.get(key);
+  if(hit&&now-hit.time<LIST_CACHE_TTL)return hit;
+  try{
+    const raw=sessionStorage.getItem('fl:list:'+key);
+    if(raw){const parsed=JSON.parse(raw);if(parsed&&now-parsed.time<LIST_CACHE_TTL){listCache.set(key,parsed);return parsed}}
+  }catch{}
+  return null;
+}
+function writeListCache(key,data){
+  const entry={data,time:Date.now()};
+  listCache.set(key,entry);
+  if(listCache.size>40)listCache.delete(listCache.keys().next().value);
+  try{sessionStorage.setItem('fl:list:'+key,JSON.stringify(entry))}catch{}
+}
+function canUseListCache(){return !state.adminUnlocked&&!state.viewArchived}
+function saveDataMode(){try{return Boolean(navigator.connection&&navigator.connection.saveData)}catch{return false}}
+function topProgress(active){
+  let bar=$('topProgress');
+  if(!bar){bar=document.createElement('div');bar.id='topProgress';bar.className='top-progress';bar.setAttribute('aria-hidden','true');document.body.appendChild(bar)}
+  if(active){bar.classList.remove('done');void bar.offsetWidth;bar.classList.add('active')}
+  else if(bar.classList.contains('active')){bar.classList.remove('active');bar.classList.add('done')}
+}
+function applyListData(data){
+  state.rows=data.rows||[];
+  state.total=data.total||0;
+  $('total').textContent=state.total.toLocaleString('vi-VN');
+  $('withImages').textContent=state.rows.filter(row=>Number(row.image_count)>0).length;
+  if (state.filterTab === 'favorites') {
+    $('resultLabel').textContent = `${state.total.toLocaleString('vi-VN')} hồ sơ đã lưu`;
+  } else {
+    $('resultLabel').textContent=state.viewArchived?`${state.total.toLocaleString('vi-VN')} hồ sơ đã ẩn`:`${state.total.toLocaleString('vi-VN')} hồ sơ phù hợp`;
+  }
+  $('pageLabel').textContent=`Trang ${state.page} / ${Math.max(1,Math.ceil(state.total/state.pageSize))}`;
+  $('pageNumber').textContent=state.page;
+  $('prev').disabled=state.page<=1;
+  $('next').disabled=state.page*state.pageSize>=state.total;
+  render();
+  state.hasRenderedList=true;
+  dismissSplash();
+}
+function prefetchNextPage(query){
+  if(!canUseListCache()||saveDataMode())return;
+  if(state.page*state.pageSize>=state.total)return;
+  const next={...query,page:state.page+1};
+  const key=listKey(next);
+  if(readListCache(key))return;
+  const run=()=>api('/api/properties?'+params(next),{},0).then(data=>writeListCache(key,data)).catch(()=>{});
+  (window.requestIdleCallback||(fn=>setTimeout(fn,600)))(run);
+}
+function prefetchDetail(id){
+  if(!id||state.adminUnlocked||saveDataMode())return;
+  const hit=detailPrefetchCache.get(id);
+  if(hit&&Date.now()-hit.time<DETAIL_PREFETCH_TTL)return;
+  const promise=api('/api/property?prefetch=1&id='+encodeURIComponent(id),{},0).catch(()=>null);
+  detailPrefetchCache.set(id,{promise,time:Date.now()});
+  if(detailPrefetchCache.size>30)detailPrefetchCache.delete(detailPrefetchCache.keys().next().value);
+}
+async function takePrefetchedDetail(id){
+  const hit=detailPrefetchCache.get(id);
+  detailPrefetchCache.delete(id);
+  if(!hit||Date.now()-hit.time>=DETAIL_PREFETCH_TTL)return null;
+  return hit.promise;
+}
+
 async function load(){
-  const requestId=++state.requestId;$('error').hidden=true;$('grid').innerHTML=skeleton();
+  const requestId=++state.requestId;$('error').hidden=true;
   if (state.filterTab === 'favorites') {
     const favIds = favoriteStore.getIds();
     if (!favIds.length) {
@@ -365,33 +448,66 @@ async function load(){
       return;
     }
   }
+  const query=values();
+  const key=listKey(query);
+  const useCache=canUseListCache();
+  const cached=useCache?readListCache(key):null;
+  const grid=$('grid');
+  if(cached){
+    // Hiện ngay dữ liệu đã có (SWR), làm mới ngầm nếu đã cũ
+    applyListData(cached.data);
+    if(Date.now()-cached.time<LIST_FRESH_MS){prefetchNextPage(query);return}
+  }else if(state.hasRenderedList){
+    // Giữ lưới cũ, làm mờ nhẹ thay vì xoá trắng
+    grid.classList.add('is-refreshing');
+    topProgress(true);
+  }else{
+    grid.innerHTML=skeleton();
+  }
+  if(listController)listController.abort();
+  const controller=new AbortController();
+  listController=controller;
   try{
-    const data=await api('/api/properties?'+params(values()));
+    const data=await api('/api/properties?'+params(query),{signal:controller.signal});
     if(requestId!==state.requestId)return;
-    state.rows=data.rows||[];
-    state.total=data.total||0;
-    $('total').textContent=state.total.toLocaleString('vi-VN');
-    $('withImages').textContent=state.rows.filter(row=>Number(row.image_count)>0).length;
-    if (state.filterTab === 'favorites') {
-      $('resultLabel').textContent = `${state.total.toLocaleString('vi-VN')} hồ sơ đã lưu`;
-    } else {
-      $('resultLabel').textContent=state.viewArchived?`${state.total.toLocaleString('vi-VN')} hồ sơ đã ẩn`:`${state.total.toLocaleString('vi-VN')} hồ sơ phù hợp`;
-    }
-    $('pageLabel').textContent=`Trang ${state.page} / ${Math.max(1,Math.ceil(state.total/state.pageSize))}`;
-    $('pageNumber').textContent=state.page;
-    $('prev').disabled=state.page<=1;
-    $('next').disabled=state.page*state.pageSize>=state.total;
-    render();
-    dismissSplash();
+    if(useCache)writeListCache(key,data);
+    if(!cached||JSON.stringify(cached.data)!==JSON.stringify(data))applyListData(data);
+    prefetchNextPage(query);
   }catch(error){
-    if(requestId!==state.requestId)return;
-    $('grid').innerHTML='<div class="empty"><b>Đang kết nối lại máy chủ dữ liệu...</b><br><button type="button" class="primary" style="margin-top:14px;min-width:140px;display:inline-block;padding:0 20px;" onclick="load()">Thử tải lại ngay</button></div>';
+    if((error&&error.name==='AbortError')||requestId!==state.requestId)return;
+    if(cached)return; // đang hiển thị bản cache, không cần báo lỗi
+    grid.innerHTML='<div class="empty"><b>Đang kết nối lại máy chủ dữ liệu...</b><br><button type="button" class="primary" style="margin-top:14px;min-width:140px;display:inline-block;padding:0 20px;" onclick="load()">Thử tải lại ngay</button></div>';
     $('resultLabel').textContent='Tạm thời không tải được kho dữ liệu';
     $('error').textContent=error.message;
     $('error').hidden=false;
     dismissSplash();
+  }finally{
+    if(requestId===state.requestId){grid.classList.remove('is-refreshing');topProgress(false)}
+    if(listController===controller)listController=null;
   }
 }
+
+// Tải trước trang chi tiết khi rê chuột (120ms) hoặc chạm vào thẻ
+(function setupDetailPrefetch(){
+  const grid=$('grid');
+  if(!grid)return;
+  let hoverTimer=null,hoverId=null;
+  grid.addEventListener('mouseover',event=>{
+    const card=event.target.closest&&event.target.closest('a.card[data-id]');
+    if(!card||card.dataset.id===hoverId)return;
+    hoverId=card.dataset.id;
+    clearTimeout(hoverTimer);
+    hoverTimer=setTimeout(()=>prefetchDetail(hoverId),120);
+  });
+  grid.addEventListener('mouseout',event=>{
+    const card=event.target.closest&&event.target.closest('a.card[data-id]');
+    if(card&&!card.contains(event.relatedTarget)){clearTimeout(hoverTimer);hoverId=null}
+  });
+  grid.addEventListener('touchstart',event=>{
+    const card=event.target.closest&&event.target.closest('a.card[data-id]');
+    if(card)prefetchDetail(card.dataset.id);
+  },{passive:true});
+})();
 function formatCardPrice(row){
   if(row.status === 'archived') return `<span class="price-val price-archived">Đã ẩn</span>`;
   let text = String(row.price_text || '').trim();
@@ -466,7 +582,7 @@ function render(){
     return;
   }
   if(!state.rows.length){$('grid').innerHTML='<div class="empty">Không tìm thấy hồ sơ phù hợp.</div>';updateBulkBar();updateFavoritesBanner();return}
-  $('grid').innerHTML=state.rows.map(row=>{
+  $('grid').innerHTML=state.rows.map((row,index)=>{
     const isFeatured = row.status === 'featured' || Boolean(row.is_featured);
     const isRented = row.status === 'rented' || Boolean(row.is_rented);
     const isFav = favoriteStore.has(row.property_id);
@@ -519,7 +635,7 @@ function render(){
 
     return`<a class="card ${isFeatured?'is-featured':''} ${isRented?'is-rented':''} ${row.status==='archived'?'archived-card':''} ${state.selectedIds.has(row.property_id)?'is-selected':''}" href="${escapeHtml(propertyPath(row))}" data-id="${escapeHtml(row.property_id)}" aria-label="Xem ${escapeHtml(displayAddress)}">
       <div class="photo ${!image?'no-photo':''}">
-        ${image?`<img loading="lazy" referrerpolicy="no-referrer" src="${escapeHtml(image)}" alt="${escapeHtml(imgAlt)}" title="${escapeHtml(imgAlt)}" onerror="handleCardImgError(this)">`:`
+        ${image?`<img ${cardImageAttrs(images[0]?.public_url,index)} referrerpolicy="no-referrer" alt="${escapeHtml(imgAlt)}" title="${escapeHtml(imgAlt)}" onerror="handleCardImgError(this)">`:`
           <div class="placeholder-watermark">
             <img src="/assets/brand/fourland-logo.png" alt="Fourland" class="watermark-logo">
             <span class="watermark-text">Hình ảnh đang cập nhật</span>
@@ -877,7 +993,7 @@ function renderSimilarPropertiesHtml(similarList) {
 
   const cardsHtml = similarList.map(item => {
     const rawThumb = item.thumbnail || (item.property_images?.[0]?.public_url) || (item.property_images?.[0]?.source_url);
-    const thumb = rawThumb ? driveImage(rawThumb) : '';
+    const thumb = rawThumb ? driveImage(rawThumb, 400) : '';
     const dispAddr = formatPublicAddress(item, state.adminUnlocked);
     const price = item.price_text || 'Liên hệ';
     const specs = [item.dimensions || item.area_text, item.structure, item.bedrooms ? `${item.bedrooms} PN` : ''].filter(Boolean).join(' · ');
@@ -993,7 +1109,14 @@ async function openDetail(id,seoPath=''){
   `;
   if(!dialog.open)dialog.showModal();
   try{
-    const {property:p, similar:serverSimilar=[]}=await api('/api/property?id='+encodeURIComponent(id));
+    // Dùng dữ liệu đã tải trước khi rê chuột/chạm (nếu có), rồi ghi lượt xem ngầm
+    let detailData=await takePrefetchedDetail(id);
+    if(detailData&&detailData.property){
+      api('/api/property?id='+encodeURIComponent(id),{},0).catch(()=>{});
+    }else{
+      detailData=await api('/api/property?id='+encodeURIComponent(id));
+    }
+    const {property:p, similar:serverSimilar=[]}=detailData;
     let similarList = Array.isArray(serverSimilar) && serverSimilar.length > 0 ? serverSimilar : [];
     if (similarList.length === 0 && Array.isArray(state.rows) && state.rows.length > 0) {
       similarList = findClientSimilarProperties(p, state.rows).slice(0, 5);

@@ -103,36 +103,37 @@ module.exports = async function handler(req, res) {
     if (result.data[0].status === "archived" && !isAdmin(req)) return res.status(404).json({ ok: false, error: "Không tìm thấy hồ sơ" });
 
     const property = result.data[0];
+    // prefetch=1: trình duyệt tải trước khi người dùng rê chuột/chạm vào thẻ -> không tính lượt xem
+    const isPrefetch = req.query.prefetch === "1";
     const currentViews = Number(property.data_json?.view_count) || 0;
-    const newViews = currentViews + 1;
+    const newViews = isPrefetch ? currentViews : currentViews + 1;
     property.view_count = newViews;
 
-    // Increment view count in Supabase
-    const updatedDataJson = { ...(property.data_json || {}), view_count: newViews };
-    try {
-      await supabaseRequest(`properties?property_id=eq.${encodeURIComponent(id)}`, {
-        method: "PATCH",
-        body: { data_json: updatedDataJson }
-      });
-    } catch (_) {}
+    // Ghi lượt xem và tìm nhà tương tự chạy song song (trước đây chạy tuần tự)
+    const viewTask = isPrefetch
+      ? Promise.resolve()
+      : supabaseRequest(`properties?property_id=eq.${encodeURIComponent(id)}`, {
+          method: "PATCH",
+          body: { data_json: { ...(property.data_json || {}), view_count: newViews } }
+        }).catch(() => null);
 
-    // Fetch similar nearby properties
     let similar = [];
-    if (property.district) {
-      try {
-        const simParams = new URLSearchParams({
+    const similarTask = property.district
+      ? supabaseRequest(`properties?${new URLSearchParams({
           select: "property_id,address,street,ward,district,price_text,dimensions,area_text,property_type,bedrooms,bathrooms,structure,status,is_rented,property_images(position,public_url,source_url)",
           district: `eq.${property.district}`,
           property_id: `neq.${property.property_id}`,
           status: "neq.archived",
           limit: "15"
-        });
-        const simResult = await supabaseRequest(`properties?${simParams}`).catch(() => null);
-        if (simResult && Array.isArray(simResult.data)) {
-          similar = rankSimilarProperties(property, simResult.data).slice(0, 5);
-        }
-      } catch (_) {}
-    }
+        })}`).catch(() => null)
+      : Promise.resolve(null);
+
+    const [, simResult] = await Promise.all([viewTask, similarTask]);
+    try {
+      if (simResult && Array.isArray(simResult.data)) {
+        similar = rankSimilarProperties(property, simResult.data).slice(0, 5);
+      }
+    } catch (_) {}
 
     res.setHeader("Cache-Control", "no-cache");
     res.status(200).json({ ok: true, property, similar });

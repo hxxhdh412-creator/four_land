@@ -9,7 +9,7 @@ module.exports = async function handler(req, res) {
   try {
     const now = Date.now();
     if (cachedFacets && (now - cachedFacetsTime < FACETS_TTL_MS)) {
-      res.setHeader("Cache-Control", "public, max-age=30, s-maxage=60, stale-while-revalidate=60");
+      res.setHeader("Cache-Control", "public, max-age=60, s-maxage=300, stale-while-revalidate=3600");
       return res.status(200).json(cachedFacets);
     }
 
@@ -108,7 +108,7 @@ function uniqueCaseInsensitive(items, normalizer = (x) => String(x || "").trim()
     };
     cachedFacetsTime = now;
 
-    res.setHeader("Cache-Control", "public, max-age=30, s-maxage=60, stale-while-revalidate=60");
+    res.setHeader("Cache-Control", "public, max-age=60, s-maxage=300, stale-while-revalidate=3600");
     res.status(200).json(cachedFacets);
   } catch (error) {
     if (cachedFacets) {
