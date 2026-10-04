@@ -4,7 +4,8 @@
 
 const { requireCms } = require("./_cms-auth");
 const { ACTIONS } = require("../server/cms-authorization");
-const { generateFacebookPost, publishToComposioFacebook } = require("../server/cms-facebook");
+const { publishToComposioFacebook } = require("../server/cms-facebook");
+const { writeFacebookCopy } = require("../server/ai-copywriter");
 const {
   getFacebookPages,
   getFacebookPageById,
@@ -12,7 +13,7 @@ const {
 } = require("../server/cms-facebook-pages");
 const { sendError, supabaseRequest } = require("./_supabase");
 
-function createHandler({ requireCmsImpl = requireCms, request = supabaseRequest } = {}) {
+function createHandler({ requireCmsImpl = requireCms, request = supabaseRequest, writer = writeFacebookCopy } = {}) {
   return async function handler(req, res) {
     if (req.method !== "POST") {
       return res.status(405).json({ ok: false, error: { code: "METHOD_NOT_ALLOWED", message: "Method Not Allowed" } });
@@ -46,11 +47,10 @@ function createHandler({ requireCmsImpl = requireCms, request = supabaseRequest 
         const availablePages = await getFacebookPages();
 
         const tone = body.tone || "hot";
-        const postContent = generateFacebookPost(property, {
+        // Viết bài theo prompt copywriter Fourland (AI nếu đã cấu hình, ngược lại bộ quy tắc cùng phong cách)
+        const copy = await writer(property, {
           tone,
-          includeLink: body.includeLink !== false,
-          hotline: body.hotline || process.env.FACEBOOK_HOTLINE || "037.6789.808",
-          pageName: targetPage?.name || "FourLand"
+          includeLink: body.includeLink !== false
         });
 
         const images = (property.property_images || []).map(img => img.public_url).filter(Boolean);
@@ -60,7 +60,9 @@ function createHandler({ requireCmsImpl = requireCms, request = supabaseRequest 
           data: {
             propertyId,
             tone,
-            content: postContent,
+            content: copy.content,
+            generator: copy.generator,
+            aiWarning: copy.aiError ? "AI tạm lỗi, đã dùng bộ viết dự phòng" : undefined,
             images,
             pageId: targetPage?.pageId,
             pageName: targetPage?.name,

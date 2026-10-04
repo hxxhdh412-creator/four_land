@@ -176,7 +176,11 @@ test("Facebook Studio API handler creates draft with safe property facts", async
   await handler(req, res);
   assert.equal(statusCode, 200);
   assert.equal(jsonBody.ok, true);
-  assert.match(jsonBody.data.content, /SIÊU PHẨM/);
+  assert.match(jsonBody.data.content, /📲 Ngọc: 0376789808/);
+  assert.match(jsonBody.data.content, /15 tỷ/);
+  assert.doesNotMatch(jsonBody.data.content, /123\/45/);
+  assert.doesNotMatch(jsonBody.data.content, /0901234567/);
+  assert.equal(jsonBody.data.generator, "rules");
   assert.equal(jsonBody.data.images.length, 1);
 });
 

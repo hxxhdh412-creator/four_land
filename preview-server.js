@@ -14,7 +14,8 @@ const { validatePropertyDraft } = require("./server/cms-property-validation");
 const { buildReviewQueue, buildReviewQueueRoute } = require("./server/cms-review-queue");
 const { buildSystemHealth } = require("./server/cms-system-health");
 const { rankPropertiesForLead } = require("./server/smart-matcher");
-const { generateFacebookPost, publishToComposioFacebook } = require("./server/cms-facebook");
+const { publishToComposioFacebook } = require("./server/cms-facebook");
+const { writeFacebookCopy } = require("./server/ai-copywriter");
 
 const root = __dirname;
 const port = Number(process.env.PORT || 4175);
@@ -605,14 +606,13 @@ http.createServer(async (req,res)=>{
         const current = databaseEnabled ? (await dbRequest(buildPropertyDetailRoute(propertyId))).data[0] : rows.find(item => item.property_id === propertyId);
         if (!current) return send(res, 404, { ok: false, error: { message: "Không tìm thấy bất động sản" } });
         const tone = body.tone || "hot";
-        const content = generateFacebookPost(current, {
+        const copy = await writeFacebookCopy(current, {
           tone,
-          includeLink: body.includeLink !== false,
-          hotline: body.hotline || process.env.FACEBOOK_HOTLINE || "037.6789.808",
-          pageName: process.env.FACEBOOK_PAGE_NAME || "Ngọc Nhà Tốt"
+          includeLink: body.includeLink !== false
         });
+        const content = copy.content;
         const images = (current.property_images || []).map(img => img.public_url).filter(Boolean);
-        return send(res, 200, { ok: true, data: { propertyId, tone, content, images, pageName: process.env.FACEBOOK_PAGE_NAME || "Ngọc Nhà Tốt" } });
+        return send(res, 200, { ok: true, data: { propertyId, tone, content, generator: copy.generator, images, pageName: process.env.FACEBOOK_PAGE_NAME || "Ngọc Nhà Tốt" } });
       }
       if (action === "publish") {
         const content = String(body.content || "").trim();
