@@ -110,3 +110,8 @@ test("finalizePost keeps prices that share digits with the house number", () => 
   assert.match(out, /Giá 280 triệu/);
   assert.doesNotMatch(out, /280 Nguyễn/);
 });
+
+test("rule-based fallback does not repeat dimensions stored as area", async () => {
+  const { content } = await writeFacebookCopy({ ...rental, area_text: "5x14", dimensions: "5x14", raw_text: "" }, { aiConfig: null });
+  assert.equal((content.match(/5x14/g) || []).length, 1);
+});

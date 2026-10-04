@@ -231,8 +231,11 @@ function buildRuleBasedBody(facts, tone = "hot") {
   paragraphs.push(`Gửi anh chị một ${typeText} ${isRent ? "đang cho thuê" : "đang bán"}${loc ? ` trên ${loc}` : ""} – kiểu nhà xem rồi là muốn tính chuyện dọn vào ngay.`);
 
   const space = [];
-  if (facts.area && facts.dimensions) space.push(`Diện tích ${facts.area}, kích thước ${facts.dimensions}`);
-  else if (facts.area || facts.dimensions) space.push(`Diện tích ${facts.area || facts.dimensions}`);
+  const norm = v => String(v || "").toLowerCase().replace(/[\sm²]/g, "").replace(/×|\*/g, "x");
+  const areaIsDims = facts.area && /\d\s*[x×*]\s*\d/i.test(facts.area);
+  if (facts.area && facts.dimensions && norm(facts.area) !== norm(facts.dimensions) && !areaIsDims) space.push(`Diện tích ${facts.area}, kích thước ${facts.dimensions}`);
+  else if (facts.dimensions || areaIsDims) space.push(`Kích thước ${facts.dimensions || facts.area}`);
+  else if (facts.area) space.push(`Diện tích ${facts.area}`);
   if (facts.structure) space.push(`kết cấu ${facts.structure.toLowerCase()}`);
   const rooms = [facts.bedrooms ? `${facts.bedrooms.replace(/\s*pn$/i, "")} phòng ngủ` : "", facts.bathrooms ? `${facts.bathrooms.replace(/\s*wc$/i, "")} WC` : ""].filter(Boolean).join(", ");
   if (space.length || rooms) {
