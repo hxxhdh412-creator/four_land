@@ -272,7 +272,10 @@ function matchAndScoreProperty(property, parsedNlp, explicitFilters = {}) {
   if (ward) {
     const propWard = removeVietnameseTones(property.ward || '');
     const searchWard = removeVietnameseTones(ward);
-    if (!propWard.includes(searchWard)) return -1;
+    const propClean = propWard.replace(/^(?:phuong|xa|thi tran|p\.?)\s+/i, '').trim();
+    const searchClean = searchWard.replace(/^(?:phuong|xa|thi tran|p\.?)\s+/i, '').trim();
+    const matched = propWard.includes(searchWard) || searchWard.includes(propWard) || (propClean && propClean === searchClean);
+    if (!matched) return -1;
   }
 
   const street = explicitFilters.street;
@@ -284,9 +287,31 @@ function matchAndScoreProperty(property, parsedNlp, explicitFilters = {}) {
 
   const pType = explicitFilters.property_type || parsedNlp.filters.propertyType;
   if (pType) {
-    const propType = removeVietnameseTones(property.property_type || '');
-    const searchType = removeVietnameseTones(pType);
-    if (!propType.includes(searchType)) return -1;
+    const normalizePropertyType = (raw) => {
+      const str = String(raw || "").trim();
+      if (!str) return "";
+      const lower = str.toLowerCase();
+      if (lower.includes("căn hộ") || lower.includes("chung cư") || lower.includes("chdv")) return "Căn hộ";
+      if (lower.includes("biệt thự") || lower.includes("villa")) return "Biệt thự";
+      if (lower.includes("mặt tiền") || lower.includes("shophouse") || lower.includes("mặt bằng") || lower.startsWith("mb")) return "Mặt tiền kinh doanh";
+      if (lower.includes("đất")) return "Đất";
+      if (lower.includes("nhà phố")) return "Nhà phố";
+      if (lower.includes("tòa nhà") || lower.includes("văn phòng")) return "Tòa nhà";
+      if (lower.includes("kho") || lower.includes("xưởng")) return "Kho xưởng";
+      if (/^(?:nhà|thuê|nhà\s*thuê|cho\s*thuê|nguyên\s*căn|nhà\s*nguyên\s*căn)$/iu.test(lower) || lower.includes("thuê")) {
+        return "Nhà thuê";
+      }
+      return str;
+    };
+    const propNorm = normalizePropertyType(property.property_type || '');
+    const searchNorm = normalizePropertyType(pType);
+    if (propNorm && searchNorm) {
+      if (removeVietnameseTones(propNorm) !== removeVietnameseTones(searchNorm)) return -1;
+    } else {
+      const propType = removeVietnameseTones(property.property_type || '');
+      const searchType = removeVietnameseTones(pType);
+      if (!propType.includes(searchType)) return -1;
+    }
   }
 
   const bedrooms = explicitFilters.bedrooms || parsedNlp.filters.bedrooms;

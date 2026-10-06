@@ -14,6 +14,9 @@ module.exports = async function handler(req, res) {
     const update = {};
     const editedFields = [];
     TEXT_FIELDS.forEach(field => { if (Object.prototype.hasOwnProperty.call(req.body || {}, field)) { update[field] = text(req.body[field], field === "raw_text" || field === "notes" ? 5000 : 300); editedFields.push(field); } });
+    if (update.ward && /^\d+$/.test(update.ward.trim())) {
+      update.ward = `Phường ${parseInt(update.ward.trim(), 10)}`;
+    }
     NUMBER_FIELDS.forEach(field => { if (Object.prototype.hasOwnProperty.call(req.body || {}, field)) { const value = Number(req.body[field]); update[field] = Number.isFinite(value) && value >= 0 ? Math.round(value) : null; editedFields.push(field); } });
 
     if (editedFields.length) {
