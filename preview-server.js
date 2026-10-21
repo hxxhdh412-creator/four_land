@@ -86,9 +86,37 @@ function send(res, status, body, contentType="application/json; charset=utf-8") 
   res.end(contentType.startsWith("application/json")?JSON.stringify(body):body);
 }
 
-async function dbRequest(route,{method="GET",body,prefer="",contentType="application/json"}={}){
+async function dbSingleRequest(route,{method="GET",body,prefer="",contentType="application/json"}={}){
   const response=await fetch(`${database.url}/rest/v1/${route}`,{method,headers:{apikey:database.key,"User-Agent":"fourland-local-server/1.0",...(body!==undefined?{"Content-Type":contentType}:{}),...(prefer?{Prefer:prefer}:{})},...(body!==undefined?{body:contentType==="application/json"?JSON.stringify(body):body}:{})});
   const raw=await response.text();if(!response.ok)throw new Error(`Database ${response.status}: ${raw.slice(0,300)}`);return{data:raw?JSON.parse(raw):[],count:Number((response.headers.get("content-range")||"/0").split("/")[1])||0};
+}
+
+async function dbRequest(route,options={}){
+  const method=(options.method||"GET").toUpperCase();
+  const qIndex=typeof route==="string"?route.indexOf("?"):-1;
+  if(method==="GET"&&qIndex!==-1){
+    const tablePath=route.slice(0,qIndex);
+    const searchParams=new URLSearchParams(route.slice(qIndex+1));
+    const requestedLimit=Number.parseInt(searchParams.get("limit")||"",10);
+    const hasExplicitOffset=searchParams.has("offset");
+    if(Number.isFinite(requestedLimit)&&requestedLimit>1000&&!hasExplicitOffset){
+      const firstResult=await dbSingleRequest(route,options);
+      const allRows=Array.isArray(firstResult.data)?[...firstResult.data]:[];
+      const totalCount=firstResult.count;
+      while(allRows.length>=1000&&allRows.length<requestedLimit&&allRows.length%1000===0){
+        const pageParams=new URLSearchParams(searchParams);
+        pageParams.set("limit",String(Math.min(1000,requestedLimit-allRows.length)));
+        pageParams.set("offset",String(allRows.length));
+        const nextResult=await dbSingleRequest(`${tablePath}?${pageParams}`,options);
+        const nextBatch=Array.isArray(nextResult.data)?nextResult.data:[];
+        if(!nextBatch.length)break;
+        allRows.push(...nextBatch);
+        if(nextBatch.length<1000)break;
+      }
+      return{data:allRows.slice(0,requestedLimit),count:totalCount||allRows.length};
+    }
+  }
+  return dbSingleRequest(route,options);
 }
 
 function readBody(req,max=5*1024*1024){return new Promise((resolve,reject)=>{let raw="";req.on("data",chunk=>{raw+=chunk;if(raw.length>max){reject(new Error("Dữ liệu quá lớn"));req.destroy()}});req.on("end",()=>{try{resolve(JSON.parse(raw||"{}"))}catch{reject(new Error("Dữ liệu không hợp lệ"))}});req.on("error",reject)})}

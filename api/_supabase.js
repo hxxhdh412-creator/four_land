@@ -9,7 +9,9 @@ function configuration() {
   return { url, key };
 }
 
-async function supabaseRequest(route, { count = false, method = "GET", body, prefer = "" } = {}) {
+const POSTGREST_MAX_ROWS = 1000;
+
+async function supabaseSingleRequest(route, { count = false, method = "GET", body, prefer = "" } = {}) {
   const config = configuration();
   try {
     const response = await fetch(`${config.url}/rest/v1/${route}`, {
@@ -43,6 +45,47 @@ async function supabaseRequest(route, { count = false, method = "GET", body, pre
     }
     throw error;
   }
+}
+
+async function supabaseRequest(route, options = {}) {
+  const method = (options.method || "GET").toUpperCase();
+  const qIndex = typeof route === "string" ? route.indexOf("?") : -1;
+
+  if (method === "GET" && qIndex !== -1) {
+    const tablePath = route.slice(0, qIndex);
+    const searchParams = new URLSearchParams(route.slice(qIndex + 1));
+    const requestedLimit = Number.parseInt(searchParams.get("limit") || "", 10);
+    const hasExplicitOffset = searchParams.has("offset");
+
+    if (Number.isFinite(requestedLimit) && requestedLimit > POSTGREST_MAX_ROWS && !hasExplicitOffset) {
+      const firstResult = await supabaseSingleRequest(route, options);
+      const allRows = Array.isArray(firstResult.data) ? [...firstResult.data] : [];
+      const totalCount = firstResult.count;
+
+      while (
+        allRows.length >= POSTGREST_MAX_ROWS &&
+        allRows.length < requestedLimit &&
+        allRows.length % POSTGREST_MAX_ROWS === 0
+      ) {
+        const pageParams = new URLSearchParams(searchParams);
+        const remaining = requestedLimit - allRows.length;
+        pageParams.set("limit", String(Math.min(POSTGREST_MAX_ROWS, remaining)));
+        pageParams.set("offset", String(allRows.length));
+        const nextResult = await supabaseSingleRequest(`${tablePath}?${pageParams}`, options);
+        const nextBatch = Array.isArray(nextResult.data) ? nextResult.data : [];
+        if (nextBatch.length === 0) break;
+        allRows.push(...nextBatch);
+        if (nextBatch.length < POSTGREST_MAX_ROWS) break;
+      }
+
+      return {
+        data: allRows.slice(0, requestedLimit),
+        count: totalCount || allRows.length
+      };
+    }
+  }
+
+  return supabaseSingleRequest(route, options);
 }
 
 

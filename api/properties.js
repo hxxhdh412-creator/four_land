@@ -22,13 +22,39 @@ async function getPropertiesData(archivedOnly = false, bypassCache = false) {
   const params = new URLSearchParams({
     select: "property_id,status,phone,property_type,address,district,ward,street,area_text,area_number,dimensions,bedrooms,bathrooms,structure,price_text,price_number,legal,commission,image_count,received_at,updated_at,data_json,property_images(position,public_url)",
     order: "received_at.desc",
-    limit: "2000"
+    limit: "10000"
   });
   params.set("status", archivedOnly ? "eq.archived" : "neq.archived");
 
   try {
     const result = await supabaseRequest(`properties?${params}`);
-    const rows = result.data || [];
+    const rawRows = (result.data || []).filter(
+      (row) => !String(row?.property_id || "").startsWith("SYSTEM_")
+    );
+    let rows = rawRows;
+    if (!archivedOnly) {
+      const seenAddr = new Set();
+      const uniqueRows = [];
+      const duplicateIds = [];
+      for (const row of rawRows) {
+        const addrKey = row.address
+          ? String(row.address).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "")
+          : row.property_id;
+        if (seenAddr.has(addrKey)) {
+          if (row.property_id) duplicateIds.push(row.property_id);
+          continue;
+        }
+        seenAddr.add(addrKey);
+        uniqueRows.push(row);
+      }
+      rows = uniqueRows;
+      if (duplicateIds.length > 0) {
+        supabaseRequest(
+          `properties?property_id=in.(${duplicateIds.slice(0, 50).map(encodeURIComponent).join(",")})`,
+          { method: "PATCH", body: { status: "archived", updated_at: new Date().toISOString() } }
+        ).catch(() => null);
+      }
+    }
     if (archivedOnly) {
       memoryCachedArchivedRows = rows;
       memoryCachedArchivedTime = now;

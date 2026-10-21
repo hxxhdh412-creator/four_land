@@ -3,7 +3,9 @@ function startOfToday(now = new Date()) {
 }
 
 function buildDashboardSummary(properties, now = new Date()) {
-  const rows = Array.isArray(properties) ? properties : [];
+  const rows = (Array.isArray(properties) ? properties : []).filter(
+    row => !String(row?.property_id || "").startsWith("SYSTEM_")
+  );
   const active = rows.filter(row => row.status !== "archived");
   const published = active.filter(row => row.content_status ? row.content_status === "published" : true);
   const pendingReview = active.filter(row => row.content_status === "pending_review");
