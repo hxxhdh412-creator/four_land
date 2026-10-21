@@ -532,9 +532,45 @@ function renderPropertyPage(property, { similarProperties = [] } = {}) {
           `addSwipe(heroWrap,()=>showImage(currentIdx+1),()=>showImage(currentIdx-1));` +
           `addSwipe(lightbox,()=>showImage(currentIdx+1),()=>showImage(currentIdx-1));` +
         `}` +
+        `const curId=${JSON.stringify(value(property.property_id))};` +
+        `let unlockedRole=null;` +
+        `try{const raw=localStorage.getItem("fourland_access_session_v1")||sessionStorage.getItem("fourland_access_session_v1");if(raw){const s=JSON.parse(raw);if(s&&(s.role==="admin"||s.role==="ctv")&&(!s.expiresAt||Number(s.expiresAt)>Date.now()))unlockedRole=s.role;}}catch(_){}` +
+        `document.addEventListener("contextmenu",function(e){if(unlockedRole)return;if(e.target&&e.target.closest&&e.target.closest("img,.gallery-hero-wrap,.gallery-thumbs,.lightbox-image-wrap,.related-photo,.similar-card")){e.preventDefault();return false;}},{capture:true});` +
+        `document.addEventListener("dragstart",function(e){if(unlockedRole)return;if(e.target&&e.target.closest&&e.target.closest("img,.gallery-hero-wrap,.gallery-thumbs,.lightbox-image-wrap,.related-photo,.similar-card")){e.preventDefault();return false;}},{capture:true});` +
+        `(async()=>{` +
+          `try{` +
+            `let saved=null;try{saved=JSON.parse(localStorage.getItem("fourland_access_session_v1")||"null");}catch(_){}` +
+            `const devId=(saved&&saved.deviceId)||localStorage.getItem("fourland_device_id_v1")||"";` +
+            `const hdrs=devId?{"X-Fourland-Device":devId}:{};` +
+            `if(saved&&saved.token)hdrs["X-Fourland-Access"]=saved.token;` +
+            `const authRes=await fetch("/api/admin-login"+(devId?"?deviceId="+encodeURIComponent(devId):""),{headers:hdrs,credentials:"same-origin"}).then(r=>r.json()).catch(()=>null);` +
+            `const role=(authRes&&authRes.authenticated&&authRes.role)||(saved&&saved.role)||null;` +
+            `if(role!=="admin"&&role!=="ctv")return;` +
+            `unlockedRole=role;` +
+            `if(authRes&&authRes.token){try{localStorage.setItem("fourland_access_session_v1",JSON.stringify({role,token:authRes.token,deviceId:authRes.deviceId||devId,expiresAt:authRes.expiresAt||Date.now()+31536000000,updatedAt:Date.now()}));}catch(_){}}` +
+            `const propRes=await fetch("/api/property?prefetch=1&id="+encodeURIComponent(curId),{headers:hdrs,credentials:"same-origin"}).then(r=>r.json()).catch(()=>null);` +
+            `const p=propRes&&propRes.property;if(!p)return;` +
+            `if(p.address){` +
+              `const h1=document.querySelector(".property-head h1");if(h1)h1.textContent=p.address;` +
+              `const bc=document.querySelector(".breadcrumbs span:last-child");if(bc)bc.textContent=p.address;` +
+            `}` +
+            `const dl=document.querySelector(".content dl");` +
+            `if(dl&&p.address){` +
+              `const addrDiv=document.createElement("div");addrDiv.innerHTML="<dt>Địa chỉ</dt><dd></dd>";addrDiv.querySelector("dd").textContent=p.address;dl.prepend(addrDiv);` +
+            `}` +
+            `if(dl&&role==="admin"&&p.phone){` +
+              `const phoneDiv=document.createElement("div");const cleanTel=String(p.phone).replace(/[^\\d+]/g,"");phoneDiv.innerHTML="<dt>Liên hệ chủ nhà</dt><dd><a href=\\"tel:"+cleanTel+"\\" style=\\"color:#0f766e;font-weight:700\\"></a></dd>";phoneDiv.querySelector("a").textContent=p.phone;dl.appendChild(phoneDiv);` +
+            `}` +
+            `const descP=document.querySelector(".content aside p");` +
+            `if(descP&&(p.raw_text||p.notes)){` +
+              `let txt=String(p.raw_text||p.notes);` +
+              `if(role==="ctv")txt=txt.replace(/(?:\\+?84|0)(?:[35789])(?:[\\s.-]*\\d){7,9}/g,m=>m.replace(/[\\s.-]/g,"").slice(0,4)+" ••• •••");` +
+              `descP.textContent=txt;` +
+            `}` +
+          `}catch(_){}` +
+        `})();` +
         `const carousel=document.getElementById("similarCarousel");` +
         `if(!carousel||carousel.children.length>0)return;` +
-        `const curId=${JSON.stringify(value(property.property_id))};` +
         `fetch("/api/properties?limit=6")` +
           `.then(r=>r.json())` +
           `.then(res=>{` +
@@ -564,8 +600,6 @@ function renderPropertyPage(property, { similarProperties = [] } = {}) {
               `'</a>';` +
             `}).join("");` +
           `}).catch(()=>{});` +
-        `document.addEventListener("contextmenu",function(e){if(e.target&&e.target.closest&&e.target.closest("img,.gallery-hero-wrap,.gallery-thumbs,.lightbox-image-wrap,.related-photo,.similar-card")){e.preventDefault();return false;}},{capture:true});` +
-        `document.addEventListener("dragstart",function(e){if(e.target&&e.target.closest&&e.target.closest("img,.gallery-hero-wrap,.gallery-thumbs,.lightbox-image-wrap,.related-photo,.similar-card")){e.preventDefault();return false;}},{capture:true});` +
       `})();` +
     `</script>` +
   `</body></html>`;

@@ -42,8 +42,8 @@
 
 ## 4. Luồng ghi quản trị
 
-1. Người quản trị bấm avatar và đăng nhập bằng mã.
-2. Server phát cookie HttpOnly, Secure, SameSite=Strict, hết hạn sau 8 giờ.
+1. Người quản trị hoặc Cộng tác viên bấm avatar (hoặc số điện thoại ẩn) và đăng nhập bằng mã PIN.
+2. Server phát token ký HMAC-SHA256 kèm `deviceId` (hết hạn sau 365 ngày) qua cả cookie (`HttpOnly`, `Secure`, `SameSite=Lax`, `Max-Age=31536000`) và body JSON để trình duyệt lưu bền vững theo thiết bị (`localStorage` + `sessionStorage` + backup cookie), tự động gia hạn mỗi lần mở web. Riêng mã PIN CTV được tự động đổi ngẫu nhiên sang 6 số mới ngay sau mỗi lần CTV đăng nhập thành công (`rotateCtvPin`) để chống chia sẻ mã cho thiết bị khác.
 3. Các route `admin-*` gọi `requireAdmin` trước mọi thay đổi.
 4. Sửa thông tin dùng PATCH; thêm ảnh ghi Storage rồi ghi `property_images`.
 5. Ẩn hồ sơ dùng `status=archived`; xóa ảnh tạo tombstone `hidden:*`.

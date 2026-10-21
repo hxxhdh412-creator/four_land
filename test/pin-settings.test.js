@@ -70,18 +70,37 @@ test("handleAccessPins requires authorization and handles GET/PATCH", async () =
   assert.equal(patchRes.statusCode, 200);
   assert.equal(patchRes.body.data.adminCode, "246810");
   assert.equal(patchRes.body.data.ctvCode, "135790");
+
+  const rotateRes = mockResponse();
+  await handleAccessPins({
+    method: "PATCH",
+    body: { rotateCtv: true }
+  }, rotateRes, { isAuthorized: true });
+  assert.equal(rotateRes.statusCode, 200);
+  assert.equal(rotateRes.body.data.adminCode, "246810");
+  assert.notEqual(rotateRes.body.data.ctvCode, "135790");
+  assert.match(rotateRes.body.data.ctvCode, /^\d{6}$/);
 });
 
-test("admin-login verifies dynamic pins dynamically", async () => {
+test("admin-login verifies dynamic pins dynamically and rotates CTV pin after login", async () => {
   // Set custom PINs
   await saveDynamicPins({ adminCode: "777888", ctvCode: "111222" });
 
-  // 1. Login with new CTV PIN
+  // 1. Login with new CTV PIN (and verify it rotates)
   const ctvReq = { method: "POST", body: { code: "111222" } };
   const ctvRes = mockResponse();
   await adminLoginHandler(ctvReq, ctvRes);
   assert.equal(ctvRes.statusCode, 200);
   assert.equal(ctvRes.body.role, "ctv");
+
+  const rotatedPins = await getDynamicPins();
+  assert.notEqual(rotatedPins.ctvCode, "111222");
+  assert.match(rotatedPins.ctvCode, /^\d{6}$/);
+
+  // Re-using old CTV PIN "111222" now fails
+  const reusedCtvRes = mockResponse();
+  await adminLoginHandler({ method: "POST", body: { code: "111222" } }, reusedCtvRes);
+  assert.equal(reusedCtvRes.statusCode, 401);
 
   // 2. Login with new Admin PIN
   const adminReq = { method: "POST", body: { code: "777888" } };

@@ -559,9 +559,13 @@
                 <p>Thiết lập 2 cấp độ phân quyền tra cứu trên website <strong>fourland.vn</strong> (độc lập với tài khoản CMS).</p>
               </div>
               <div style="display: flex; gap: 10px;">
-                <button id="btnRandomPins" class="cms-page-btn" type="button" title="Tạo ngẫu nhiên mã PIN mới">
+                <button id="btnRefreshPins" class="cms-page-btn" type="button" title="Làm mới mã PIN đang có hiệu lực">
+                  <svg class="cms-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                  <span>Làm mới mã</span>
+                </button>
+                <button id="btnRandomPins" class="cms-page-btn" type="button" title="Đổi và lưu ngẫu nhiên mã PIN CTV mới ngay lập tức">
                   <svg class="cms-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><circle cx="15.5" cy="8.5" r="1.5"/><circle cx="15.5" cy="15.5" r="1.5"/><circle cx="8.5" cy="15.5" r="1.5"/><circle cx="12" cy="12" r="1.5"/></svg>
-                  <span>Tạo ngẫu nhiên mã CTV</span>
+                  <span>Đổi mã CTV ngẫu nhiên</span>
                 </button>
               </div>
             </div>
@@ -630,17 +634,23 @@
                     <ul class="cms-health-list" style="margin-bottom: 18px; font-size: 13px;">
                       <div><span>Địa chỉ / Số nhà</span><b class="ok">Xem 100%</b></div>
                       <div><span>Số điện thoại chủ nhà</span><b class="warn">Che hoàn toàn</b></div>
-                      <div><span>Nút gọi điện thoại</span><b class="warn">Đã tắt</b></div>
-                      <div><span>Quyền Sửa / Ẩn / Xóa</span><b class="warn">Không có quyền</b></div>
+                      <div><span>Cơ chế chống chia sẻ mã</span><b class="ok">Reset sau mỗi lần nhập</b></div>
+                      <div><span>Lưu phiên theo thiết bị</span><b class="ok">Giữ cố định trên máy CTV</b></div>
                     </ul>
                     <label style="display: grid; gap: 6px;">
-                      <span style="font-size: 12.5px; font-weight: 700; color: var(--forest);">Mã PIN Cộng Tác Viên <strong style="color:var(--orange)">*</strong></span>
-                      <div style="position: relative; display: flex;">
-                        <input id="inputCtvPin" type="password" required maxlength="30" placeholder="135790" style="width: 100%; height: 44px; border: 1.5px solid var(--line); border-radius: var(--radius-sm); padding: 0 40px 0 14px; font-family: monospace; font-size: 16px; font-weight: 700; letter-spacing: 0.1em; background: #fff; color: var(--forest);">
-                        <button type="button" class="btn-toggle-pin" data-target="inputCtvPin" title="Xem/Ẩn mã PIN" style="position: absolute; right: 6px; top: 50%; transform: translateY(-50%); height: 32px; width: 32px; padding: 0; background: transparent; border: 0; color: var(--muted); cursor: pointer; display: grid; place-items: center;">
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                      <span style="font-size: 12.5px; font-weight: 700; color: var(--forest);">Mã PIN Cộng Tác Viên (6 số dùng 1 lần) <strong style="color:var(--orange)">*</strong></span>
+                      <div style="position: relative; display: flex; gap: 8px;">
+                        <div style="position: relative; flex: 1; display: flex;">
+                          <input id="inputCtvPin" type="text" required maxlength="30" placeholder="135790" style="width: 100%; height: 44px; border: 1.5px solid var(--line); border-radius: var(--radius-sm); padding: 0 40px 0 14px; font-family: monospace; font-size: 16px; font-weight: 700; letter-spacing: 0.1em; background: #fff; color: var(--forest);">
+                          <button type="button" class="btn-toggle-pin" data-target="inputCtvPin" title="Xem/Ẩn mã PIN" style="position: absolute; right: 6px; top: 50%; transform: translateY(-50%); height: 32px; width: 32px; padding: 0; background: transparent; border: 0; color: var(--muted); cursor: pointer; display: grid; place-items: center;">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                          </button>
+                        </div>
+                        <button id="btnCopyCtvPin" class="cms-page-btn" type="button" title="Sao chép mã CTV hiện tại để gửi cho CTV" style="height: 44px; padding: 0 14px; flex-shrink: 0;">
+                          <span>Sao chép</span>
                         </button>
                       </div>
+                      <small style="font-size: 12px; color: var(--muted); line-height: 1.45;">Mỗi lần CTV đăng nhập thành công, thiết bị đó sẽ được lưu cố định và mã CTV sẽ tự động đổi sang 6 số ngẫu nhiên mới để tránh gửi mã cho người khác.</small>
                     </label>
                   </div>
                 </div>

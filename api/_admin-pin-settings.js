@@ -1,8 +1,24 @@
+const crypto = require("node:crypto");
 const { supabaseRequest, text } = require("./_supabase");
 
 let memoryCachedPins = null;
 let lastCacheTime = 0;
 const CACHE_TTL_MS = 15000; // 15 giây cache RAM để truy vấn siêu tốc
+
+function generateRandomCtvPin(excludeCodes = []) {
+  const excluded = new Set(
+    (Array.isArray(excludeCodes) ? excludeCodes : [excludeCodes])
+      .map((code) => String(code || "").trim())
+      .filter(Boolean)
+  );
+  for (let attempt = 0; attempt < 50; attempt += 1) {
+    const candidate = String(crypto.randomInt(100000, 1000000));
+    if (!excluded.has(candidate)) {
+      return candidate;
+    }
+  }
+  return String(crypto.randomInt(100000, 1000000));
+}
 
 function getEnvDefaultPins() {
   const adminCode = String(process.env.ADMIN_ACCESS_CODE || "246810").trim();
@@ -135,6 +151,15 @@ async function saveDynamicPins({ adminCode, ctvCode }) {
   return memoryCachedPins;
 }
 
+async function rotateCtvPin() {
+  const current = await getDynamicPins(true);
+  const nextCtv = generateRandomCtvPin([current.ctvCode, current.adminCode]);
+  return saveDynamicPins({
+    adminCode: current.adminCode,
+    ctvCode: nextCtv
+  });
+}
+
 // Handler cho Serverless API /api/admin/v1/access-pins
 async function handleAccessPins(req, res, { isAuthorized = false } = {}) {
   if (!isAuthorized) {
@@ -160,6 +185,14 @@ async function handleAccessPins(req, res, { isAuthorized = false } = {}) {
   if (req.method === "PATCH" || req.method === "POST") {
     try {
       const body = req.body || {};
+      if (body.rotateCtv === true || body.action === "rotate_ctv") {
+        const rotated = await rotateCtvPin();
+        return res.status(200).json({
+          ok: true,
+          message: `Đã đổi ngẫu nhiên mã PIN CTV mới: ${rotated.ctvCode}`,
+          data: rotated
+        });
+      }
       const updated = await saveDynamicPins({
         adminCode: body.adminCode || body.admin_access_code,
         ctvCode: body.ctvCode || body.ctv_access_code
@@ -177,4 +210,11 @@ async function handleAccessPins(req, res, { isAuthorized = false } = {}) {
   return res.status(405).json({ ok: false, error: "Method Not Allowed" });
 }
 
-module.exports = { getDynamicPins, getEnvDefaultPins, handleAccessPins, saveDynamicPins };
+module.exports = {
+  generateRandomCtvPin,
+  getDynamicPins,
+  getEnvDefaultPins,
+  handleAccessPins,
+  rotateCtvPin,
+  saveDynamicPins
+};

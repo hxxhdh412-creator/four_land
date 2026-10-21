@@ -3,6 +3,119 @@ const phoneHref=value=>String(value||'').replace(/[^\d+]/g,'');
 const slugify=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/gi,'d').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,90)||'ho-so-bat-dong-san';
 const COMPANY_HOTLINE='084.2222.813';
 const FAVORITES_KEY='fourland_favorites_v1';
+const DEVICE_ID_KEY='fourland_device_id_v1';
+const ACCESS_SESSION_KEY='fourland_access_session_v1';
+const ACCESS_BACKUP_COOKIE='fourland_access_backup';
+const DEVICE_COOKIE='fourland_device_id';
+const DEVICE_SESSION_TTL_MS=365*24*60*60*1000;
+
+const deviceAuthStore = {
+  readCookie(name) {
+    try {
+      const raw = String(document.cookie || '');
+      const item = raw.split(';').map(v => v.trim()).find(v => v.startsWith(name + '='));
+      return item ? decodeURIComponent(item.slice(name.length + 1)) : '';
+    } catch {
+      return '';
+    }
+  },
+  writeCookie(name, value, maxAgeSeconds = 31536000) {
+    try {
+      const expires = new Date(Date.now() + maxAgeSeconds * 1000).toUTCString();
+      const secure = window.location.protocol === 'https:' ? '; Secure' : '';
+      document.cookie = `${name}=${encodeURIComponent(value)}; Path=/; SameSite=Lax; Max-Age=${maxAgeSeconds}; Expires=${expires}${secure}`;
+    } catch (_) {}
+  },
+  getDeviceId() {
+    let id = '';
+    try { id = localStorage.getItem(DEVICE_ID_KEY) || ''; } catch (_) {}
+    if (!id) {
+      try { id = sessionStorage.getItem(DEVICE_ID_KEY) || ''; } catch (_) {}
+    }
+    if (!id) {
+      id = this.readCookie(DEVICE_COOKIE);
+    }
+    id = String(id || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 80);
+    if (!id || id.length < 6) {
+      const rand = (typeof crypto !== 'undefined' && crypto.randomUUID)
+        ? crypto.randomUUID().replace(/-/g, '')
+        : (Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2));
+      id = `fl_dev_${Date.now().toString(36)}_${rand.slice(0, 16)}`;
+    }
+    try { localStorage.setItem(DEVICE_ID_KEY, id); } catch (_) {}
+    try { sessionStorage.setItem(DEVICE_ID_KEY, id); } catch (_) {}
+    this.writeCookie(DEVICE_COOKIE, id, 31536000);
+    return id;
+  },
+  getSession() {
+    let parsed = null;
+    const sources = [
+      () => { try { return localStorage.getItem(ACCESS_SESSION_KEY); } catch { return null; } },
+      () => { try { return sessionStorage.getItem(ACCESS_SESSION_KEY); } catch { return null; } },
+      () => this.readCookie(ACCESS_BACKUP_COOKIE)
+    ];
+    for (const readSource of sources) {
+      try {
+        const raw = readSource();
+        if (!raw) continue;
+        const data = JSON.parse(raw);
+        if (data && (data.role === 'admin' || data.role === 'ctv')) {
+          if (data.expiresAt && Number(data.expiresAt) <= Date.now()) continue;
+          parsed = data;
+          break;
+        }
+      } catch (_) {}
+    }
+    if (parsed) {
+      this.saveSession(parsed, false);
+    }
+    return parsed;
+  },
+  getToken() {
+    const s = this.getSession();
+    return s && s.token ? String(s.token) : '';
+  },
+  getRole() {
+    const s = this.getSession();
+    return s && (s.role === 'admin' || s.role === 'ctv') ? s.role : null;
+  },
+  saveSession({ role, token, deviceId, expiresAt } = {}, updateTimestamp = true) {
+    if (role !== 'admin' && role !== 'ctv') return null;
+    const prev = (() => {
+      try {
+        const raw = localStorage.getItem(ACCESS_SESSION_KEY);
+        return raw ? JSON.parse(raw) : null;
+      } catch { return null; }
+    })();
+    const payload = {
+      role,
+      token: String(token || prev?.token || ''),
+      deviceId: String(deviceId || prev?.deviceId || this.getDeviceId()),
+      expiresAt: Number(expiresAt) > Date.now() ? Number(expiresAt) : (Date.now() + DEVICE_SESSION_TTL_MS),
+      updatedAt: updateTimestamp ? Date.now() : (prev?.updatedAt || Date.now())
+    };
+    const serialized = JSON.stringify(payload);
+    try { localStorage.setItem(ACCESS_SESSION_KEY, serialized); } catch (_) {}
+    try { sessionStorage.setItem(ACCESS_SESSION_KEY, serialized); } catch (_) {}
+    this.writeCookie(ACCESS_BACKUP_COOKIE, serialized, 31536000);
+    return payload;
+  },
+  clearSession() {
+    try { localStorage.removeItem(ACCESS_SESSION_KEY); } catch (_) {}
+    try { sessionStorage.removeItem(ACCESS_SESSION_KEY); } catch (_) {}
+    this.writeCookie(ACCESS_BACKUP_COOKIE, '', 0);
+  }
+};
+
+(function bootstrapSavedDeviceAuth() {
+  const savedRole = deviceAuthStore.getRole();
+  if (savedRole === 'admin' || savedRole === 'ctv') {
+    state.authRole = savedRole;
+    state.adminUnlocked = savedRole === 'admin';
+    state.ctvUnlocked = savedRole === 'ctv';
+    state.canViewFullAddress = true;
+  }
+})();
 
 const favoriteStore = {
   getIds() {
@@ -75,7 +188,9 @@ function fallbackCopyText(textToCopy) {
 
 function triggerImageDownload(url, filename) {
   if (!url) return;
-  const downloadUrl = `/api/download-image?url=${encodeURIComponent(url)}&filename=${encodeURIComponent(filename || 'fourland-bds-image.jpg')}`;
+  const savedToken = deviceAuthStore.getToken();
+  const tokenParam = savedToken ? `&access_token=${encodeURIComponent(savedToken)}` : '';
+  const downloadUrl = `/api/download-image?url=${encodeURIComponent(url)}&filename=${encodeURIComponent(filename || 'fourland-bds-image.jpg')}${tokenParam}`;
   const link = document.createElement('a');
   link.href = downloadUrl;
   link.download = filename || 'fourland-bds-image.jpg';
@@ -308,7 +423,18 @@ function values(){
 function params(input){const search=new URLSearchParams();Object.entries(input).forEach(([key,value])=>{if(value!==''&&value!=null)search.set(key,value)});return search}
 async function api(path,options={},retries=1){
   try{
-    const response=await fetch(path,options);
+    const deviceId=deviceAuthStore.getDeviceId();
+    const savedToken=deviceAuthStore.getToken();
+    const mergedHeaders={
+      'X-Fourland-Device':deviceId,
+      ...(savedToken?{'X-Fourland-Access':savedToken}:{}),
+      ...(options.headers||{})
+    };
+    const response=await fetch(path,{
+      credentials:'same-origin',
+      ...options,
+      headers:mergedHeaders
+    });
     const rawText=await response.text();
     let body={};
     try{body=rawText?JSON.parse(rawText):{}}catch{
@@ -1420,11 +1546,13 @@ async function deletePropertyPermanent(propertyId){
   }
 }
 async function logoutAdmin(){
+  deviceAuthStore.clearSession();
   try{await api('/api/admin-login',{method:'DELETE'})}catch(_){}
   setAdminState(false, null);
-  showToast('🔒 Đã thoát quyền truy cập');
+  showToast('🔒 Đã thoát quyền truy cập trên thiết bị này');
 }
-function setAdminState(unlocked, role = null){
+function setAdminState(unlocked, role = null, options = {}){
+  const prevRole = state.authRole;
   if (role) {
     state.authRole = role;
   } else if (unlocked) {
@@ -1446,32 +1574,63 @@ function setAdminState(unlocked, role = null){
     state.selectedIds.clear();
   }
   const profile=document.querySelector('.profile'),toggle=$('archivedToggle');
-  profile.classList.toggle('admin-active',state.adminUnlocked);
-  profile.classList.toggle('ctv-active',state.ctvUnlocked);
+  if (profile) {
+    profile.classList.toggle('admin-active',state.adminUnlocked);
+    profile.classList.toggle('ctv-active',state.ctvUnlocked);
 
-  if (state.adminUnlocked) {
-    profile.setAttribute('aria-label','Đang là Quản trị viên (Bấm để thoát Admin)');
-    profile.title='Đang là Quản trị viên (Bấm để thoát Admin)';
-  } else if (state.ctvUnlocked) {
-    profile.setAttribute('aria-label','Đang là Cộng tác viên (Bấm để thoát CTV)');
-    profile.title='Đang là Cộng tác viên (Xem trọn vẹn địa chỉ - Bấm để thoát)';
-  } else {
-    profile.setAttribute('aria-label','Mở quyền truy cập');
-    profile.title='Mở quyền truy cập (Admin / CTV)';
+    if (state.adminUnlocked) {
+      profile.setAttribute('aria-label','Đang là Quản trị viên (Bấm để thoát Admin)');
+      profile.title='Đang là Quản trị viên (Đã lưu trên máy này - Bấm để thoát)';
+    } else if (state.ctvUnlocked) {
+      profile.setAttribute('aria-label','Đang là Cộng tác viên (Bấm để thoát CTV)');
+      profile.title='Đang là Cộng tác viên (Xem trọn vẹn địa chỉ - Đã lưu trên máy này)';
+    } else {
+      profile.setAttribute('aria-label','Mở quyền truy cập');
+      profile.title='Mở quyền truy cập (Admin / CTV)';
+    }
   }
 
-  toggle.hidden=!state.adminUnlocked;
-  if(!state.adminUnlocked&&state.viewArchived){state.viewArchived=false;toggle.classList.remove('active');load()}
-  if(state.currentPropertyId&&$('detail').open){openDetail(state.currentPropertyId)}
-  render();
+  if (toggle) {
+    toggle.hidden=!state.adminUnlocked;
+    if(!state.adminUnlocked&&state.viewArchived){state.viewArchived=false;toggle.classList.remove('active');load()}
+  }
+  if (!options.uiOnly) {
+    const roleChanged = prevRole !== state.authRole;
+    if((roleChanged || options.forceDetailRefresh) && state.currentPropertyId && $('detail')?.open){
+      openDetail(state.currentPropertyId);
+    }
+    if (state.hasRenderedList || state.rows.length > 0) {
+      render();
+    }
+  }
   updateBulkBar();
 }
 async function checkAdminSession(){
+  const savedSession=deviceAuthStore.getSession();
+  if(savedSession&&savedSession.role){
+    setAdminState(true, savedSession.role, { uiOnly: !state.hasRenderedList });
+  }
   try{
-    const result=await api('/api/admin-login');
-    setAdminState(result.authenticated, result.role);
+    const deviceId=deviceAuthStore.getDeviceId();
+    const result=await api('/api/admin-login?deviceId='+encodeURIComponent(deviceId));
+    if(result&&result.authenticated&&result.role){
+      deviceAuthStore.saveSession({
+        role:result.role,
+        token:result.token||deviceAuthStore.getToken(),
+        deviceId:result.deviceId||deviceId,
+        expiresAt:result.expiresAt
+      });
+      setAdminState(true, result.role);
+    }else if(result&&result.authenticated===false){
+      deviceAuthStore.clearSession();
+      setAdminState(false, null);
+    }
   }catch{
-    setAdminState(false, null);
+    if(savedSession&&savedSession.role){
+      setAdminState(true, savedSession.role);
+    }else{
+      setAdminState(false, null);
+    }
   }
 }
 
@@ -1580,14 +1739,21 @@ $('adminAccessForm').onsubmit=async event=>{
   status.className='access-status';
   status.textContent='';
   try{
+    const deviceId=deviceAuthStore.getDeviceId();
     const result=await api('/api/admin-login',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({code:$('adminCode').value.trim()})
+      body:JSON.stringify({code:$('adminCode').value.trim(),deviceId})
     });
-    setAdminState(true, result.role);
+    deviceAuthStore.saveSession({
+      role:result.role,
+      token:result.token,
+      deviceId:result.deviceId||deviceId,
+      expiresAt:result.expiresAt
+    });
+    setAdminState(true, result.role, { forceDetailRefresh: true });
     status.className='access-status success-text';
-    status.textContent=result.message || (result.role==='ctv'?'Đã mở quyền Cộng tác viên (Xem địa chỉ).':'Đã mở toàn quyền Quản trị viên.');
+    status.textContent=result.message || (result.role==='ctv'?'Đã mở quyền Cộng tác viên (Đã lưu trên thiết bị này).':'Đã mở toàn quyền Quản trị viên (Đã lưu trên thiết bị này).');
     setTimeout(()=>{
       $('adminAccess').close();
       if(state.currentPropertyId&&$('detail').open)openDetail(state.currentPropertyId);
@@ -1827,6 +1993,7 @@ if (topFavBtn) {
 
 updateFavoritesUI();
 updateSearchClearVisibility();
+if (state.authRole) setAdminState(true, state.authRole, { uiOnly: true });
 loadFacets();
 load();
 checkAdminSession();

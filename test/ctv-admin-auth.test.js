@@ -1,6 +1,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const { canViewAddress, createSession, getAuthRole, isAdmin, isCtv, requireAdmin, secrets } = require("../api/_admin");
+const { getDynamicPins, saveDynamicPins } = require("../api/_admin-pin-settings");
 const adminLoginHandler = require("../api/_admin-login");
 
 function mockResponse() {
@@ -71,10 +72,11 @@ test("requireAdmin allows admin but rejects CTV with 403 Forbidden", () => {
   assert.equal(guestRes.statusCode, 401);
 });
 
-test("POST /api/admin-login logs in with Admin and CTV PIN codes correctly", async () => {
-  const { code: adminCode, ctvCode } = secrets();
+test("POST /api/admin-login logs in with Admin and CTV PIN codes and auto-rotates CTV PIN after each login", async () => {
+  const { code: adminCode, ctvCode: initialCtvCode } = secrets();
+  await saveDynamicPins({ adminCode, ctvCode: initialCtvCode });
 
-  // 1. Admin login
+  // 1. Admin login (does not rotate adminCode)
   const adminReq = { method: "POST", body: { code: adminCode } };
   const adminRes = mockResponse();
   await adminLoginHandler(adminReq, adminRes);
@@ -83,8 +85,8 @@ test("POST /api/admin-login logs in with Admin and CTV PIN codes correctly", asy
   assert.equal(adminRes.body.role, "admin");
   assert.match(adminRes.getHeader("set-cookie"), /fourland_admin=/);
 
-  // 2. CTV login
-  const ctvReq = { method: "POST", body: { code: ctvCode } };
+  // 2. CTV login succeeds and immediately rotates CTV PIN to a new 6-digit code
+  const ctvReq = { method: "POST", body: { code: initialCtvCode } };
   const ctvRes = mockResponse();
   await adminLoginHandler(ctvReq, ctvRes);
   assert.equal(ctvRes.statusCode, 200);
@@ -92,12 +94,70 @@ test("POST /api/admin-login logs in with Admin and CTV PIN codes correctly", asy
   assert.equal(ctvRes.body.role, "ctv");
   assert.match(ctvRes.body.message, /Cộng tác viên/i);
 
-  // 3. Invalid code login
-  const invalidReq = { method: "POST", body: { code: "999999" } };
-  const invalidRes = mockResponse();
-  await adminLoginHandler(invalidReq, invalidRes);
-  assert.equal(invalidRes.statusCode, 401);
-  assert.equal(invalidRes.body.ok, false);
+  const afterCtvLoginPins = await getDynamicPins();
+  assert.notEqual(afterCtvLoginPins.ctvCode, initialCtvCode);
+  assert.match(afterCtvLoginPins.ctvCode, /^\d{6}$/);
+
+  // 3. Reusing the old CTV code on another machine is rejected with 401
+  const reusedOldCtvReq = { method: "POST", body: { code: initialCtvCode } };
+  const reusedOldCtvRes = mockResponse();
+  await adminLoginHandler(reusedOldCtvReq, reusedOldCtvRes);
+  assert.equal(reusedOldCtvRes.statusCode, 401);
+  assert.equal(reusedOldCtvRes.body.ok, false);
+
+  // 4. Using the newly rotated CTV code succeeds and rotates again
+  const secondCtvReq = { method: "POST", body: { code: afterCtvLoginPins.ctvCode } };
+  const secondCtvRes = mockResponse();
+  await adminLoginHandler(secondCtvReq, secondCtvRes);
+  assert.equal(secondCtvRes.statusCode, 200);
+  assert.equal(secondCtvRes.body.role, "ctv");
+
+  // Reset back to default for subsequent tests
+  await saveDynamicPins({ adminCode, ctvCode: initialCtvCode });
+});
+
+test("Device-bound token persists across cookie loss and CTV PIN rotation via X-Fourland-Access header", async () => {
+  const { code: adminCode, ctvCode: initialCtvCode } = secrets();
+  await saveDynamicPins({ adminCode, ctvCode: initialCtvCode });
+  const deviceId = "fl_dev_machine_001";
+
+  // 1. Login with deviceId returns signed token, 365-day SameSite=Lax cookie, and rotates CTV PIN
+  const loginReq = {
+    method: "POST",
+    headers: { "x-fourland-device": deviceId },
+    body: { code: initialCtvCode, deviceId }
+  };
+  const loginRes = mockResponse();
+  await adminLoginHandler(loginReq, loginRes);
+  assert.equal(loginRes.statusCode, 200);
+  assert.equal(loginRes.body.authenticated, true);
+  assert.equal(loginRes.body.role, "ctv");
+  assert.equal(loginRes.body.deviceId, deviceId);
+  assert.ok(loginRes.body.token && loginRes.body.token.includes("."));
+  assert.match(loginRes.getHeader("set-cookie"), /SameSite=Lax/);
+  assert.match(loginRes.getHeader("set-cookie"), /Max-Age=31536000/);
+
+  // 2. Even after CTV PIN rotated, the logged-in device stays authenticated via X-Fourland-Access
+  const headerOnlyReq = {
+    method: "GET",
+    headers: {
+      "x-fourland-access": loginRes.body.token,
+      "x-fourland-device": deviceId
+    },
+    query: { deviceId }
+  };
+  assert.equal(getAuthRole(headerOnlyReq), "ctv");
+
+  const getRes = mockResponse();
+  await adminLoginHandler(headerOnlyReq, getRes);
+  assert.equal(getRes.statusCode, 200);
+  assert.equal(getRes.body.authenticated, true);
+  assert.equal(getRes.body.role, "ctv");
+  assert.equal(getRes.body.deviceId, deviceId);
+  assert.ok(getRes.body.token && getRes.body.token.includes("."));
+  assert.match(getRes.getHeader("set-cookie"), /fourland_admin=/);
+
+  await saveDynamicPins({ adminCode, ctvCode: initialCtvCode });
 });
 
 test("GET and DELETE /api/admin-login manage session state", async () => {

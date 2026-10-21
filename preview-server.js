@@ -43,7 +43,21 @@ let dynamicCtvCode = ctvCode;
 let dynamicPinsUpdatedAt = new Date().toISOString();
 const previewAdminToken = "fourland-preview-admin";
 const previewCtvToken = "fourland-preview-ctv";
+const {
+  SESSION_TTL_MS,
+  clearSessionCookie,
+  createSession,
+  getAuthRole: getSignedAuthRole,
+  normalizeDeviceId,
+  sessionCookie
+} = require("./api/_admin");
+const { generateRandomCtvPin } = require("./api/_admin-pin-settings");
 const getAuthRole = req => {
+  const signedRole = getSignedAuthRole(req);
+  if (signedRole) return signedRole;
+  const headerToken = String(req.headers["x-fourland-access"] || req.headers["x-admin-token"] || "").trim();
+  if (headerToken === previewAdminToken) return "admin";
+  if (headerToken === previewCtvToken) return "ctv";
   const cookies = String(req.headers.cookie||"").split(";").map(v=>v.trim());
   if (cookies.includes(`fourland_admin=${previewAdminToken}`)) return "admin";
   if (cookies.includes(`fourland_admin=${previewCtvToken}`)) return "ctv";
@@ -750,6 +764,19 @@ http.createServer(async (req,res)=>{
     if(req.method==="PATCH" || req.method==="POST") {
       try {
         const body = await readBody(req);
+        if (body.rotateCtv === true || body.action === "rotate_ctv") {
+          dynamicCtvCode = generateRandomCtvPin([dynamicCtvCode, dynamicAdminCode]);
+          dynamicPinsUpdatedAt = new Date().toISOString();
+          return send(res, 200, {
+            ok: true,
+            message: `Đã đổi ngẫu nhiên mã PIN CTV mới: ${dynamicCtvCode}`,
+            data: {
+              adminCode: dynamicAdminCode,
+              ctvCode: dynamicCtvCode,
+              updatedAt: dynamicPinsUpdatedAt
+            }
+          });
+        }
         const nextAdmin = body.adminCode || body.admin_access_code;
         const nextCtv = body.ctvCode || body.ctv_access_code;
         if(nextAdmin) dynamicAdminCode = String(nextAdmin).trim();
@@ -771,12 +798,18 @@ http.createServer(async (req,res)=>{
     return send(res, 405, { ok: false, error: "Method Not Allowed" });
   }
   if(url.pathname==="/api/admin-login") {
+    const requestDeviceId = normalizeDeviceId(url.searchParams.get("deviceId") || req.headers["x-fourland-device"]);
     if(req.method==="GET") {
       const currentRole = getAuthRole(req);
-      return send(res,200,{ok:true,authenticated:Boolean(currentRole),role:currentRole});
+      if (currentRole) {
+        const refreshedToken = createSession(currentRole, { deviceId: requestDeviceId });
+        res.setHeader("Set-Cookie", sessionCookie(refreshedToken, req));
+        return send(res,200,{ok:true,authenticated:true,role:currentRole,token:refreshedToken,deviceId:requestDeviceId||null,expiresAt:Date.now()+SESSION_TTL_MS});
+      }
+      return send(res,200,{ok:true,authenticated:false,role:null});
     }
     if(req.method==="DELETE") {
-      res.setHeader("Set-Cookie","fourland_admin=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0");
+      res.setHeader("Set-Cookie",clearSessionCookie(req));
       return send(res,200,{ok:true,authenticated:false,role:null,message:"Đã thoát quyền truy cập"});
     }
     if(req.method!=="POST") return send(res,405,{ok:false,error:"Method Not Allowed"});
@@ -784,22 +817,23 @@ http.createServer(async (req,res)=>{
       try{
         const body=JSON.parse(raw||"{}");
         const inputCode = String(body.code||"").trim();
+        const deviceId = normalizeDeviceId(body.deviceId || requestDeviceId);
         let role = null;
-        let token = "";
         let message = "";
-        if (inputCode === dynamicAdminCode || inputCode === adminCode) {
+        if (inputCode === dynamicAdminCode) {
           role = "admin";
-          token = previewAdminToken;
-          message = "Đã mở toàn quyền Quản trị viên.";
-        } else if (inputCode === dynamicCtvCode || inputCode === ctvCode) {
+          message = "Đã mở toàn quyền Quản trị viên (Đã lưu trên thiết bị này).";
+        } else if (inputCode === dynamicCtvCode) {
           role = "ctv";
-          token = previewCtvToken;
-          message = "Đã mở quyền Cộng tác viên (Xem trọn vẹn địa chỉ nhà).";
+          dynamicCtvCode = generateRandomCtvPin([dynamicCtvCode, dynamicAdminCode]);
+          dynamicPinsUpdatedAt = new Date().toISOString();
+          message = "Đã mở quyền Cộng tác viên (Xem trọn vẹn địa chỉ nhà · Đã lưu trên thiết bị này).";
         } else {
           return send(res,401,{ok:false,error:"Mã truy cập không đúng"});
         }
-        res.setHeader("Set-Cookie",`fourland_admin=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=28800`);
-        return send(res,200,{ok:true,authenticated:true,role,message});
+        const token = createSession(role, { deviceId });
+        res.setHeader("Set-Cookie",sessionCookie(token, req));
+        return send(res,200,{ok:true,authenticated:true,role,token,deviceId:deviceId||null,expiresAt:Date.now()+SESSION_TTL_MS,message});
       }catch{
         return send(res,400,{ok:false,error:"Dữ liệu không hợp lệ"});
       }

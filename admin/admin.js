@@ -1822,14 +1822,60 @@ document.querySelectorAll('.btn-toggle-pin').forEach(btn => {
   });
 });
 
-if (byId('btnRandomPins')) {
-  byId('btnRandomPins').addEventListener('click', () => {
-    const generate6Digits = () => Math.floor(100000 + Math.random() * 900000).toString();
+if (byId('btnRefreshPins')) {
+  byId('btnRefreshPins').addEventListener('click', async () => {
+    await loadAccessPins();
+    showToast('Đã cập nhật mã PIN đang có hiệu lực!');
+  });
+}
+
+if (byId('btnCopyCtvPin')) {
+  byId('btnCopyCtvPin').addEventListener('click', async () => {
     const ctvInput = byId('inputCtvPin');
-    if (ctvInput) {
-      ctvInput.value = generate6Digits();
+    const code = (ctvInput?.value || '').trim();
+    if (!code) return;
+    try {
+      await navigator.clipboard.writeText(code);
+      showToast(`Đã sao chép mã CTV: ${code}`);
+    } catch {
       ctvInput.type = 'text';
-      showToast('Đã tạo ngẫu nhiên mã CTV mới!');
+      ctvInput.select();
+      showToast(`Mã CTV hiện tại: ${code}`);
+    }
+  });
+}
+
+if (byId('btnRandomPins')) {
+  byId('btnRandomPins').addEventListener('click', async () => {
+    const ctvInput = byId('inputCtvPin');
+    const successBox = byId('pinSettingsSuccess');
+    const lastUpdatedEl = byId('pinLastUpdated');
+    try {
+      const result = await cmsApi('/api/admin/v1/access-pins', {
+        method: 'PATCH',
+        body: { rotateCtv: true }
+      });
+      const nextCode = result?.data?.ctvCode;
+      if (ctvInput && nextCode) {
+        ctvInput.value = nextCode;
+        ctvInput.type = 'text';
+      }
+      if (successBox && nextCode) {
+        successBox.textContent = `Đã đổi & lưu mã PIN CTV mới: ${nextCode}`;
+        successBox.hidden = false;
+      }
+      if (lastUpdatedEl) {
+        const d = new Date();
+        lastUpdatedEl.textContent = `Vừa xong (${d.toLocaleTimeString('vi-VN')})`;
+      }
+      showToast(`Đã tạo & lưu mã CTV mới: ${nextCode || ctvInput?.value || ''}`);
+    } catch {
+      const generate6Digits = () => Math.floor(100000 + Math.random() * 900000).toString();
+      if (ctvInput) {
+        ctvInput.value = generate6Digits();
+        ctvInput.type = 'text';
+        showToast('Đã tạo ngẫu nhiên mã CTV mới!');
+      }
     }
   });
 }
