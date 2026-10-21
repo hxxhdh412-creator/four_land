@@ -545,7 +545,7 @@ async function publishToComposioFacebook({
     return url;
   });
 
-  const DEFAULT_PAGE_TOKEN = "EAAM4uULUpAUBShSvgRngyEcrR6TNivFQFZCviZAFx5vCOMbo79wYceORsgxuwH5kBOUoDE8VgBxGH191YhCgDXwqREMJyYAMUsB7PFBmM8iWZAYT0uHvZA7ZCeJbCaoA2ZBZCRZAEZBfrnirGVaw1vwvz6ZCTUuDXu03EwSglPDq4EbzNzJ6ONOuYidtHGqwHYlxKmAHyS9K9yBjzIwd7VxRs8H6AZD";
+  const DEFAULT_PAGE_TOKEN = "EAAM4uULUpAUBSxoPVlNEUioVZBXoZAsp7EYmfe42aWpZBSgtmkmrx4UgJFyhbvrHlfvwU43Pk78XZBYBFcZAwCrFiyKhCcm1AGjyZCONYy93O84QgOM9BJPYQg7FFHF48GYw2GItvZBrQkWS6NyO5AhN66yyBUTMGESFOb7NMOZC14rJHZAr8NPZChXd85nc4hcMyr1R3jtKa16BddWZCENZCLhKl7sZD";
   const pageToken = customPageToken || process.env.FACEBOOK_PAGE_ACCESS_TOKEN || DEFAULT_PAGE_TOKEN;
   const isMockOrTest = validImages.some((value) => {
     try { return new URL(String(value)).hostname === "example.com"; } catch { return false; }

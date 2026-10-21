@@ -4,7 +4,7 @@
 
 const DEFAULT_PAGE_ID = process.env.FACEBOOK_PAGE_ID || "104363431784609";
 const DEFAULT_PAGE_NAME = process.env.FACEBOOK_PAGE_NAME || "FourLand";
-const DEFAULT_PAGE_TOKEN = process.env.FACEBOOK_PAGE_ACCESS_TOKEN || "EAAM4uULUpAUBShSvgRngyEcrR6TNivFQFZCviZAFx5vCOMbo79wYceORsgxuwH5kBOUoDE8VgBxGH191YhCgDXwqREMJyYAMUsB7PFBmM8iWZAYT0uHvZA7ZCeJbCaoA2ZBZCRZAEZBfrnirGVaw1vwvz6ZCTUuDXu03EwSglPDq4EbzNzJ6ONOuYidtHGqwHYlxKmAHyS9K9yBjzIwd7VxRs8H6AZD";
+const DEFAULT_PAGE_TOKEN = process.env.FACEBOOK_PAGE_ACCESS_TOKEN || "EAAM4uULUpAUBSxoPVlNEUioVZBXoZAsp7EYmfe42aWpZBSgtmkmrx4UgJFyhbvrHlfvwU43Pk78XZBYBFcZAwCrFiyKhCcm1AGjyZCONYy93O84QgOM9BJPYQg7FFHF48GYw2GItvZBrQkWS6NyO5AhN66yyBUTMGESFOb7NMOZC14rJHZAr8NPZChXd85nc4hcMyr1R3jtKa16BddWZCENZCLhKl7sZD";
 const COMPOSIO_API_KEY = process.env.COMPOSIO_API_KEY || "ck_kIfQa8ju8kMOPHOyvZC7";
 
 const INITIAL_PAGES = [
@@ -14,23 +14,23 @@ const INITIAL_PAGES = [
     name: DEFAULT_PAGE_NAME,
     token: DEFAULT_PAGE_TOKEN,
     isDefault: true,
-    source: "custom",
+    source: "composio",
     category: "Công ty phát triển bất động sản",
     avatarUrl: `https://graph.facebook.com/${DEFAULT_PAGE_ID}/picture?type=large`,
     createdAt: "2026-08-01T00:00:00.000Z",
-    updatedAt: "2026-08-01T00:00:00.000Z"
+    updatedAt: "2026-10-21T00:00:00.000Z"
   },
   {
     id: "106656702112510",
     pageId: "106656702112510",
     name: "Ngọc Nhà Tốt",
-    token: "",
+    token: "EAAM4uULUpAUBSxBxR0AZAcXvm3vAIOKvBaCDry12Dcita5TUacoFoZB8qNZB0LcONi4PnqHtFrR2yceWI9ngri2sHhHQJxqQVY6unpM2SWI5qixDocJhnIx8mSdVJhcnaZCaRtE31vyxbOuENdKqhZCK7g0j3rFhCzUKBt01OAytBbZC8FdfCb8mHURVBJJJEO2qTf0YFOnXKeo3eFA0GttjgZD",
     isDefault: false,
-    source: "custom",
+    source: "composio",
     category: "Người môi giới bất động sản",
     avatarUrl: "https://graph.facebook.com/106656702112510/picture?type=large",
     createdAt: "2026-08-01T00:00:00.000Z",
-    updatedAt: "2026-08-01T00:00:00.000Z"
+    updatedAt: "2026-10-21T00:00:00.000Z"
   }
 ];
 
@@ -194,7 +194,7 @@ async function fetchComposioPages({ apiKey = COMPOSIO_API_KEY, fetchImpl = fetch
 
       if (res.ok) {
         const text = await res.text();
-      for (const line of text.split("\n")) {
+      for (const line of text.split(/\r?\n/)) {
         if (line.startsWith("data: ")) {
           try {
             const j = JSON.parse(line.slice(6));
@@ -259,11 +259,15 @@ async function getFacebookPages({ forceRefresh = false, fetchImpl = fetch } = {}
   return dynamicPagesStore.map(sanitizePage);
 }
 
-async function getFacebookPageById(pageId) {
+async function getFacebookPageById(pageId, { forceRefresh = false } = {}) {
   if (!pageId) return null;
   await loadPersistentPages();
+  if (forceRefresh) {
+    await fetchComposioPages();
+    await savePersistentPages(dynamicPagesStore);
+  }
   let page = dynamicPagesStore.find(p => String(p.pageId) === String(pageId) || String(p.id) === String(pageId));
-  if (!page) {
+  if (!page || !page.token) {
     await fetchComposioPages();
     await savePersistentPages(dynamicPagesStore);
     page = dynamicPagesStore.find(p => String(p.pageId) === String(pageId) || String(p.id) === String(pageId));

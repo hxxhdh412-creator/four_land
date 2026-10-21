@@ -112,13 +112,37 @@ function createHandler({ requireCmsImpl = requireCms, request = supabaseRequest,
         const publishResults = [];
         for (const page of targetPages) {
           try {
-            const resPublish = await publishToComposioFacebook({
-              content,
-              imageUrls: photoUrls,
-              pageName: page.name || body.pageName || "FourLand",
-              pageId: page.pageId || process.env.FACEBOOK_PAGE_ID || "104363431784609",
-              pageToken: page.token || ""
-            });
+            let resPublish;
+            try {
+              resPublish = await publishToComposioFacebook({
+                content,
+                imageUrls: photoUrls,
+                pageName: page.name || body.pageName || "FourLand",
+                pageId: page.pageId || process.env.FACEBOOK_PAGE_ID || "104363431784609",
+                pageToken: page.token || ""
+              });
+            } catch (firstErr) {
+              const errMsg = String(firstErr?.message || "");
+              if (/access token|session has been invalidated|mã lỗi:\s*(?:190|460|463|467)/i.test(errMsg)) {
+                const refreshedPage = await getFacebookPageById(
+                  page.pageId || process.env.FACEBOOK_PAGE_ID || "104363431784609",
+                  { forceRefresh: true }
+                );
+                if (refreshedPage && refreshedPage.token && refreshedPage.token !== page.token) {
+                  resPublish = await publishToComposioFacebook({
+                    content,
+                    imageUrls: photoUrls,
+                    pageName: refreshedPage.name || page.name || body.pageName || "FourLand",
+                    pageId: refreshedPage.pageId || page.pageId || "104363431784609",
+                    pageToken: refreshedPage.token
+                  });
+                } else {
+                  throw firstErr;
+                }
+              } else {
+                throw firstErr;
+              }
+            }
             publishResults.push({
               pageId: page.pageId,
               pageName: page.name,
