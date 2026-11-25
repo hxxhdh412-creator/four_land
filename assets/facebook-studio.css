@@ -119,10 +119,7 @@
 .social-studio :is(.fb-group-engine-left, .cms-fb-engine-left) { min-width: 0; }
 .social-studio :is(.fb-group-engine-right, .cms-fb-engine-right) { flex: 1 1 auto; justify-content: space-between; }
 .social-studio :is(.fb-group-account-grid, .cms-fb-account-grid) {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  align-items: end;
-  gap: 8px;
+  display: none !important;
 }
 .social-studio :is(.fb-portal-field, .cms-fb-field) {
   display: grid;
