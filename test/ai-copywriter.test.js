@@ -129,3 +129,41 @@ test("AI result is cached per property/tone and regenerate bypasses the cache", 
   await writeFacebookCopy(prop, { aiConfig: cfg, fetchImpl, regenerate: true });
   assert.equal(calls, 2);
 });
+
+test("zero-AI anti-spam spin and image shuffle produce diverse non-repeating outputs while preserving facts", () => {
+  const { buildRuleBasedVariants } = require("../server/ai-copywriter");
+  const { smartBdsAntiSpamSpin, shuffleImagesForGroup } = require("../server/anti-spam-spin");
+
+  const variants = buildRuleBasedVariants(rental, { link: "https://www.fourland.vn" });
+  assert.equal(variants.length, 4);
+
+  const recentHashes = [];
+  const generatedPosts = new Set();
+  for (let step = 0; step < 16; step++) {
+    const raw = variants[step % variants.length];
+    const spun = smartBdsAntiSpamSpin(raw, { stepIndex: step, recentHashes });
+    generatedPosts.add(spun);
+    // Phải bảo toàn 100% giá, SĐT CTA, tên đường, quận và ẩn số nhà/SĐT chủ
+    assert.match(spun, /55 triệu\/tháng/i);
+    assert.match(spun, /0376789808/);
+    assert.match(spun, /Nguyễn Trọng Tuyển/i);
+    assert.match(spun, /Phú Nhuận/i);
+    assert.doesNotMatch(spun, /280 Nguyễn/i);
+    assert.doesNotMatch(spun, /0909123456/);
+    assert.doesNotMatch(spun, /\{[^{}]+\}/);
+  }
+  assert.ok(generatedPosts.size >= 14, `Expected >= 14 distinct posts across 16 groups, got ${generatedPosts.size}`);
+
+  // Kiểm tra xáo trộn vị trí hình ảnh: nhóm 0 giữ nguyên, các nhóm tiếp theo đổi ảnh bìa & không lặp thứ tự liên tiếp
+  const imgs = ["img1.jpg", "img2.jpg", "img3.jpg", "img4.jpg", "img5.jpg"];
+  const step0 = shuffleImagesForGroup(imgs, { stepIndex: 0 });
+  assert.deepEqual(step0.items, imgs);
+
+  let prevSig = step0.signature;
+  for (let step = 1; step <= 10; step++) {
+    const res = shuffleImagesForGroup(imgs, { stepIndex: step, lastSignature: prevSig });
+    assert.equal(res.items.length, imgs.length);
+    assert.notEqual(res.signature, prevSig, `Step ${step} should not repeat previous image order`);
+    prevSig = res.signature;
+  }
+});

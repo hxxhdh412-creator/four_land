@@ -2809,10 +2809,15 @@ function renderCmsRevidGroupsList() {
 }
 
 function resolveCmsSpintaxPreview(text) {
-  return String(text || '').replace(/\{([^{}]+)\}/g, (_, choices) => {
-    const parts = choices.split('|').map(s => s.trim()).filter(Boolean);
-    return parts[0] || '';
-  });
+  let out = String(text || '');
+  let guard = 0;
+  while (/\{[^{}]+\}/.test(out) && guard++ < 8) {
+    out = out.replace(/\{([^{}]+)\}/g, (_, choices) => {
+      const parts = choices.split('|').map(s => s.trim()).filter(Boolean);
+      return parts[0] || '';
+    });
+  }
+  return out;
 }
 
 function resolveCmsScheduleTimeInput(rawVal) {
@@ -2868,7 +2873,7 @@ function updateCmsGroupRotationEta() {
   }
   const perGroupExec = sched.iso ? 40 : 22;
   const mins = Math.max(1, Math.round((n * perGroupExec + (n - 1) * (a + b) / 2) / 60));
-  etaEl.textContent = `Đã chọn ${n} nhóm · ${filledVars} bản · ${sched.iso ? `~${mins}p · ${sched.label}` : `Tăng tốc ~${mins}p`}`;
+  etaEl.textContent = `Đã chọn ${n} nhóm · Xáo ảnh & Spin ${filledVars} góc · ${sched.iso ? `~${mins}p · ${sched.label}` : `Tăng tốc ~${mins}p`}`;
 }
 
 function setCmsFacebookMode(mode) {
@@ -2994,6 +2999,27 @@ function renderFacebookChannels() {
     });
   });
 
+  const btnSelectAll = byId('btnFbSelectAllPages');
+  if (btnSelectAll) {
+    const toggleAllPages = () => {
+      const shouldSelectAll = btnSelectAll.type === 'checkbox'
+        ? btnSelectAll.checked
+        : fbState.selectedPageIds.size < pages.length;
+      if (shouldSelectAll) {
+        pages.forEach(p => fbState.selectedPageIds.add(String(p.pageId)));
+      } else {
+        fbState.selectedPageIds.clear();
+      }
+      renderFacebookChannels();
+    };
+    if (btnSelectAll.type === 'checkbox') {
+      btnSelectAll.onchange = toggleAllPages;
+      btnSelectAll.onclick = null;
+    } else {
+      btnSelectAll.onclick = toggleAllPages;
+    }
+  }
+
   updatePublishButtonState();
   updatePreviewFromChannels();
 }
@@ -3054,7 +3080,13 @@ function updatePublishButtonState() {
   const btnSelectAll = byId('btnFbSelectAllPages');
   if (btnSelectAll) {
     const total = (fbState.pages || []).length || 1;
-    btnSelectAll.textContent = (count === total && total > 0) ? 'Bỏ chọn tất cả' : 'Chọn tất cả';
+    const isAll = count === total && total > 0;
+    if (btnSelectAll.type === 'checkbox') {
+      btnSelectAll.checked = isAll;
+      btnSelectAll.indeterminate = count > 0 && count < total;
+    } else {
+      btnSelectAll.textContent = isAll ? 'Bỏ chọn tất cả' : 'Chọn tất cả';
+    }
   }
 }
 

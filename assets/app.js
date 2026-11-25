@@ -2197,10 +2197,15 @@ const fbPortalState = {
 };
 
 function resolveSpintaxPreview(text) {
-  return String(text || '').replace(/\{([^{}]+)\}/g, (_, choices) => {
-    const parts = choices.split('|').map(s => s.trim()).filter(Boolean);
-    return parts[0] || '';
-  });
+  let out = String(text || '');
+  let guard = 0;
+  while (/\{[^{}]+\}/.test(out) && guard++ < 8) {
+    out = out.replace(/\{([^{}]+)\}/g, (_, choices) => {
+      const parts = choices.split('|').map(s => s.trim()).filter(Boolean);
+      return parts[0] || '';
+    });
+  }
+  return out;
 }
 
 async function revidEngineApi(method, path, body, baseUrl = fbPortalState.activeEngineUrl) {
@@ -2492,7 +2497,7 @@ function updateGroupRotationEta() {
   }
   const perGroupExec = sched.iso ? 40 : 22;
   const mins = Math.max(1, Math.round((n * perGroupExec + (n - 1) * (a + b) / 2) / 60));
-  etaEl.textContent = `Đã chọn ${n} nhóm · ${filledVars} bản · ${sched.iso ? `~${mins}p · ${sched.label}` : `Tăng tốc ~${mins}p`}`;
+  etaEl.textContent = `Đã chọn ${n} nhóm · Xáo ảnh & Spin ${filledVars} góc · ${sched.iso ? `~${mins}p · ${sched.label}` : `Tăng tốc ~${mins}p`}`;
 }
 
 function syncPortalFbUrl(propertyId, fbMode) {
@@ -2705,7 +2710,12 @@ function updatePortalPublishButtonState() {
   const btnSelectAll = $('btnFbPortalSelectAll');
   if (btnSelectAll) {
     const total = (fbPortalState.pages || []).length || 1;
-    btnSelectAll.textContent = (count === total && total > 0) ? 'Bỏ chọn tất cả' : 'Chọn tất cả';
+    if (btnSelectAll.type === 'checkbox') {
+      btnSelectAll.checked = count === total && total > 0;
+      btnSelectAll.indeterminate = count > 0 && count < total;
+    } else {
+      btnSelectAll.textContent = (count === total && total > 0) ? 'Bỏ chọn tất cả' : 'Chọn tất cả';
+    }
   }
 }
 
@@ -3190,11 +3200,13 @@ if ($('fbSubmitBtn')) $('fbSubmitBtn').onclick = handlePublishFacebook;
 
 const btnPortalSelectAll = $('btnFbPortalSelectAll');
 if (btnPortalSelectAll) {
-  btnPortalSelectAll.onclick = () => {
+  const toggleAllPortalPages = () => {
     const pages = fbPortalState.pages || [];
     if (!pages.length) return;
-    const allSelected = fbPortalState.selectedPageIds.size === pages.length;
-    if (allSelected) {
+    const shouldSelectAll = btnPortalSelectAll.type === 'checkbox'
+      ? btnPortalSelectAll.checked
+      : (fbPortalState.selectedPageIds.size !== pages.length);
+    if (!shouldSelectAll) {
       fbPortalState.selectedPageIds.clear();
       const defaultPage = pages.find(p => p.isDefault) || pages[0];
       if (defaultPage) fbPortalState.selectedPageIds.add(String(defaultPage.pageId));
@@ -3203,6 +3215,8 @@ if (btnPortalSelectAll) {
     }
     renderFacebookPortalChannels();
   };
+  if (btnPortalSelectAll.type === 'checkbox') btnPortalSelectAll.onchange = toggleAllPortalPages;
+  else btnPortalSelectAll.onclick = toggleAllPortalPages;
 }
 
 document.querySelectorAll('[data-fb-tone]').forEach(chip => {

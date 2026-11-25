@@ -377,24 +377,79 @@ async function writeFacebookCopy(property = {}, options = {}) {
 
 function buildRuleBasedVariants(property = {}, { cta = DEFAULT_CTA, link = "" } = {}) {
   const facts = buildPropertyFacts(property);
-  const tones = ["hot", "detail", "quick"];
-  const v1 = finalizePost(buildRuleBasedBody(facts, "hot"), property, { cta, link });
-  const v2 = finalizePost(buildRuleBasedBody(facts, "detail"), property, { cta, link });
-  const v3 = finalizePost(buildRuleBasedBody(facts, "quick"), property, { cta, link });
-
-  // Bản 4: Spintax xoay vòng mở đầu & lời kêu gọi để đăng nhóm không bị trùng lặp
+  const corpus = [facts.propertyType, facts.structure, facts.description].join(" ");
+  const f = detectFeatures(corpus);
+  const width = parseFrontWidth(facts.dimensions);
   const isRent = facts.transaction === "Cho thuê";
-  const loc = [facts.street ? `đường ${facts.street.replace(/^đường\s+/i, "")}` : "", facts.ward, facts.district].filter(Boolean).join(", ");
-  const spintaxHead = `{🔥|✨|🏡} {CẦN ${isRent ? "CHO THUÊ" : "BÁN"}|${isRent ? "CHO THUÊ NHANH" : "CHÍNH CHỦ GỬI"}|NGUỒN NHÀ ĐẸP} ${loc ? loc.toUpperCase() : "TP.HCM"}`;
-  const spintaxIntro = `{Chào anh chị trong nhóm,|Gửi anh chị đang tìm nhà khu vực ${facts.district || "TP.HCM"},|Mình mới nhận ký gửi căn này rất đáng xem:}`;
-  const spintaxSpecs = [
-    facts.dimensions || facts.area ? `• {Diện tích|Kích thước}: ${[facts.dimensions, facts.area].filter(Boolean).join(" - ")}` : "",
-    facts.structure ? `• {Kết cấu|Hiện trạng}: ${facts.structure}` : "",
-    facts.bedrooms ? `• {Số phòng|Công năng}: ${facts.bedrooms}${facts.bathrooms ? ` · ${facts.bathrooms}` : ""}` : "",
-    facts.price ? `• {Giá ${isRent ? "thuê" : "chào"}|Mức giá}: ${facts.price}` : ""
+  const streetClean = facts.street ? `đường ${facts.street.replace(/^đường\s+/i, "")}` : "";
+  const loc = [streetClean, facts.ward, facts.district].filter(Boolean).join(", ");
+  const shortLoc = [streetClean, facts.district].filter(Boolean).join(", ");
+  const locUpper = (shortLoc || facts.district || "TP.HCM").toUpperCase();
+  const rawType = cleanText(facts.propertyType);
+  const typeText = !rawType || /thuê|bán/i.test(rawType) ? "căn nhà" : rawType.toLowerCase();
+
+  const norm = v => String(v || "").toLowerCase().replace(/[\sm²]/g, "").replace(/×|\*/g, "x");
+  const areaIsDims = facts.area && /\d\s*[x×*]\s*\d/i.test(facts.area);
+  const dimSpec = (facts.area && facts.dimensions && norm(facts.area) !== norm(facts.dimensions) && !areaIsDims)
+    ? `${facts.dimensions} (${facts.area})`
+    : (facts.dimensions || facts.area || "");
+  const roomSpec = [
+    facts.bedrooms ? `${facts.bedrooms.replace(/\s*pn$/i, "")} {phòng ngủ|PN}` : "",
+    facts.bathrooms ? `${facts.bathrooms.replace(/\s*wc$/i, "")} WC` : ""
+  ].filter(Boolean).join(", ");
+
+  // Bản 1: Thu hút – Hook câu hỏi tò mò + kể chuyện tự nhiên (có Spintax nhẹ chống trùng)
+  const v1Body = buildRuleBasedBody(facts, "hot");
+  const v1 = finalizePost(v1Body, property, { cta, link });
+
+  // Bản 2: Góc nhìn trải nghiệm không gian & công năng thực tế (khác hoàn toàn cấu trúc câu Bản 1)
+  const v2Head = `{✨|🌿|🏡} ${isRent ? "{GỢI Ý CĂN NHÀ THUÊ ĐÁNG XEM|TÌM NHÀ THUÊ RỘNG THOÁNG}" : "{TÌM NHÀ PHỐ CHÍNH CHỦ|MỘT CĂN ĐÁNG XEM TRỰC TIẾP}"} TẠI ${locUpper}`;
+  const v2Lines = [
+    v2Head,
+    `{Chia sẻ tới anh chị|Mời anh chị tham khảo|Gửi anh chị đang tìm nhà khu vực ${facts.district || "TP.HCM"}} một ${typeText} ${isRent ? "{hiện cho thuê|đang cho thuê}" : "{chính chủ gửi bán|đang chào bán}"}${loc ? ` ngay ${loc}` : ""}.`,
+    [
+      dimSpec ? `{Thông số khuôn đất|Kích thước}: ${dimSpec}` : "",
+      facts.structure ? `{quy mô|kết cấu} ${facts.structure.toLowerCase()}` : "",
+      roomSpec ? `bố trí ${roomSpec}` : ""
+    ].filter(Boolean).join(" · ") + (dimSpec || facts.structure || roomSpec ? ". {Cách chia không gian gọn gàng, dễ sắp xếp đồ đạc theo nhu cầu thực tế.|Nhà bố trí hợp lý, vừa thoải mái sinh hoạt vừa giữ sự riêng tư.}" : ""),
+    [
+      width >= 5 ? `🌿 Bề ngang ${String(width).replace(".", ",")}m thoáng rộng hiếm gặp trong phân khúc.` : "",
+      f.carAlley ? "🚘 {Hẻm xe hơi đi lại thuận tiện|Đường xe hơi ra vào nhẹ nhàng}." : "",
+      f.frontage ? "✨ {Vị trí mặt tiền sáng, dễ nhận diện|Mặt tiền thoáng, thuận lợi vừa ở vừa khai thác}." : "",
+      f.furnished ? "🏡 {Trang bị sẵn nội thất, dọn vào ở ngay|Có nội thất cơ bản, tiết kiệm thời gian setup}." : "",
+      (f.balcony || f.rooftop || f.garden) ? "🌿 {Có khoảng thoáng đón gió và ánh sáng tự nhiên mỗi ngày|Không gian thoáng mát, dễ chịu}." : ""
+    ].filter(Boolean).slice(0, 3).join("\n"),
+    facts.legal ? `Pháp lý chuẩn: ${facts.legal}.` : "",
+    facts.price ? `💰 {Mức giá ${isRent ? "thuê" : "chào"}|${isRent ? "Giá thuê" : "Giá bán"}}: ${facts.price}.` : "💰 Giá tốt làm việc trực tiếp chính chủ."
+  ].filter(Boolean).join("\n\n");
+  const v2 = finalizePost(v2Lines, property, { cta, link });
+
+  // Bản 3: Súc tích – Dành cho khách lướt nhanh trong hội nhóm BĐS
+  const v3Head = `{🔥|📍|🔑} ${isRent ? "CHO THUÊ" : "BÁN"} ${typeText.toUpperCase()} ${locUpper}${facts.price ? ` – ${facts.price.toUpperCase()}` : ""}`;
+  const v3Bullets = [
+    loc ? `▪️ Vị trí: ${loc.replace(/^./, c => c.toUpperCase())}` : "",
+    dimSpec ? `▪️ {Diện tích|Khuôn đất}: ${dimSpec}` : "",
+    facts.structure ? `▪️ {Kết cấu|Hiện trạng}: ${facts.structure}` : "",
+    roomSpec ? `▪️ {Công năng|Số phòng}: ${roomSpec}` : "",
+    f.carAlley ? "▪️ Lối đi: Hẻm xe hơi" : (f.frontage ? "▪️ Vị trí: Mặt tiền đường" : ""),
+    facts.legal ? `▪️ Pháp lý: ${facts.legal}` : "",
+    facts.price ? `▪️ {Giá ${isRent ? "thuê" : "bán"}|Giá làm việc}: ${facts.price}` : ""
   ].filter(Boolean).join("\n");
-  const spintaxRaw = `${spintaxHead}\n\n${spintaxIntro}\n\n${spintaxSpecs}\n\n{Anh chị quan tâm|Ai cần xem thực tế} {nhắn mình|liên hệ trực tiếp} để xem nhà nhé!`;
-  const v4 = finalizePost(spintaxRaw, property, { cta, link });
+  const v3Raw = `${v3Head}\n\n${v3Bullets}\n\n{Anh chị thấy hợp nhu cầu nhắn mình gửi thêm chi tiết và hẹn lịch xem thực tế nhé.|Nhà đang sẵn lịch xem, anh chị cần đi coi thực tế báo mình hỗ trợ ngay.}`;
+  const v3 = finalizePost(v3Raw, property, { cta, link });
+
+  // Bản 4: Spintax Đa Tầng Siêu Biến Thể (hàng ngàn tổ hợp tự nhiên, 0đ AI, chống đánh Spam tuyệt đối)
+  const spintaxHead = `{🔥|✨|🏡|🌿|📍} {${isRent ? "CẦN CHO THUÊ|CHO THUÊ NHANH|NHÀ THUÊ ĐÁNG XEM" : "CHÍNH CHỦ GỬI BÁN|NGUỒN NHÀ PHỐ ĐẸP|CẦN BÁN CĂN NHÀ"}} – ${locUpper}`;
+  const spintaxIntro = `{Chào anh chị trong nhóm,|Gửi anh chị đang tìm ${typeText} khu vực ${facts.district || "TP.HCM"},|Mình mới cập nhật một ${typeText} ${isRent ? "cho thuê" : "đang bán"} khá đáng xem:|Thêm một lựa chọn ${isRent ? "thuê" : "nhà phố"} tốt tại ${facts.district || "Sài Gòn"} để anh chị tham khảo:}`;
+  const spintaxSpecs = [
+    dimSpec ? `{•|▪️|🌿} {Diện tích|Kích thước|Thông số}: ${dimSpec}` : "",
+    facts.structure ? `{•|▪️|🌿} {Kết cấu|Thiết kế xây dựng|Quy mô}: ${facts.structure}` : "",
+    roomSpec ? `{•|▪️|🌿} {Công năng|Bố trí phòng|Số phòng}: ${roomSpec}` : "",
+    facts.legal ? `{•|▪️|🌿} Pháp lý: ${facts.legal}` : "",
+    facts.price ? `{•|▪️|🌿} {Giá ${isRent ? "thuê" : "chào"}|Mức giá|Giá mong muốn}: ${facts.price}` : ""
+  ].filter(Boolean).join("\n");
+  const spintaxClose = `{Anh chị quan tâm|Ai cần xem thực tế|Anh chị thấy phù hợp ngân sách} {nhắn mình|inbox hoặc gọi trực tiếp|báo mình} để {hẹn giờ xem nhà|đi xem thực tế căn này} nhé!`;
+  const v4 = finalizePost(`${spintaxHead}\n\n${spintaxIntro}\n\n${spintaxSpecs}\n\n${spintaxClose}`, property, { cta, link });
 
   return [v1, v2, v3, v4];
 }

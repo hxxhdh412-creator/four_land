@@ -222,7 +222,6 @@ function createHandler({
         const variants = buildRuleBasedVariants(property, {
           link: includeLink ? "https://www.fourland.vn" : ""
         });
-        variants[0] = copy.content;
 
         const posterNode = await getPosterNodeConfig(request);
 
