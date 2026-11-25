@@ -327,36 +327,52 @@
 .social-studio .social-advanced[open] > summary::after { content: '▴'; }
 .social-studio .social-advanced-fields {
   display: grid;
-  gap: 8px;
-  margin-top: 8px;
-  padding: 8px 10px;
+  gap: 6px;
+  margin-top: 6px;
+  padding: 8px;
   border-radius: 8px;
   background: #f8faf9;
   border: 1px solid #e1e8e3;
 }
+.social-studio .social-advanced-fields > label:first-child {
+  display: none !important;
+}
 .social-studio :is(.fb-group-schedule-grid, .cms-fb-schedule-grid) {
   display: grid;
-  grid-template-columns: 95px 95px minmax(150px, 1fr);
-  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
 }
-.social-studio :is(.fb-group-schedule-grid, .cms-fb-schedule-grid) > :is(label, .social-schedule-field):nth-child(n+3) {
+.social-studio :is(.fb-group-schedule-grid, .cms-fb-schedule-grid) > :is(label, .social-schedule-field) {
   grid-column: 1 / -1;
 }
+.social-studio :is(.fb-group-schedule-grid, .cms-fb-schedule-grid) > label:nth-child(1),
+.social-studio :is(.fb-group-schedule-grid, .cms-fb-schedule-grid) > label:nth-child(2) {
+  grid-column: auto;
+}
 .social-studio .social-schedule-row {
-  display: grid;
-  grid-template-columns: 112px minmax(0, 1fr);
+  display: flex;
   align-items: center;
   gap: 6px;
+}
+.social-studio .social-schedule-row input[type="time"] {
+  width: 96px;
+  flex-shrink: 0;
+  height: 30px !important;
+  padding: 0 6px !important;
+  font-size: 12.5px !important;
 }
 .social-studio .social-schedule-presets {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  overflow-x: auto;
   gap: 4px;
+  scrollbar-width: none;
 }
+.social-studio .social-schedule-presets::-webkit-scrollbar { display: none; }
 .social-studio .social-time-chip {
   height: 28px;
-  padding: 0 8px;
+  padding: 0 7px;
   border: 1px solid #cfd8d2;
   border-radius: 6px;
   background: #ffffff;
@@ -366,6 +382,7 @@
   cursor: pointer;
   transition: all 0.14s ease;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 .social-studio .social-time-chip:hover {
   background: var(--sage, #eaf1ed);
@@ -378,21 +395,27 @@
 }
 .social-studio .social-schedule-hint {
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--forest, #283d34);
 }
 .social-studio .social-group-checks {
   display: flex;
-  gap: 6px 14px;
-  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: nowrap;
+  padding-top: 2px;
 }
 .social-studio :is(.fb-portal-checkbox, .cms-fb-checkbox) {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  min-height: 26px;
-  font-size: 11.5px;
+  gap: 5px;
+  min-height: 22px;
+  font-size: 11px !important;
   font-weight: 600;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  white-space: nowrap;
 }
 .social-studio :is(.fb-group-eta, .cms-fb-eta-badge) {
   margin: 0;
@@ -600,8 +623,8 @@
   .social-studio .fb-var-tab { min-height: 42px; padding-inline: 2px; font-size: 11px; }
   .social-studio .fb-variant-number { display: none; }
   .social-studio :is(.fb-group-schedule-grid, .cms-fb-schedule-grid) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .social-studio :is(.fb-group-schedule-grid, .cms-fb-schedule-grid) > label:nth-child(n+3) { grid-column: 1 / -1; }
   .social-studio :is(.fb-group-input, .cms-fb-compact-input, .fb-group-node-select, .cms-fb-node-select, textarea) { font-size: 16px !important; }
+  .social-studio .social-advanced-fields :is(.fb-group-input, .cms-fb-compact-input) { height: 32px !important; font-size: 13px !important; }
   .social-studio :is(.fb-portal-footer, .cms-fb-footer) { padding: 8px 12px calc(8px + env(safe-area-inset-bottom)) !important; gap: 4px; }
   .social-studio :is(.fb-portal-actions, .cms-fb-buttons) { display: grid !important; grid-template-columns: 74px minmax(0, 1fr) !important; }
   .social-studio .cms-fb-buttons { width: 100%; margin-left: 0; }
