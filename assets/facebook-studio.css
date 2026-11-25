@@ -1058,12 +1058,14 @@
 .social-queue-table thead th:nth-child(5) { width: 146px; }
 
 .social-queue-table tbody td {
-  padding: 8px 10px;
-  border-bottom: 1px solid #eef3ef;
+  padding: 10px 12px;
+  border-bottom: 1px solid #cbd9d0;
   vertical-align: middle;
 }
-.social-queue-table tbody tr:hover { background: #fafcfa; }
-.social-queue-table tbody tr.is-running-row { background: #f2fbf5; }
+.social-queue-table tbody tr:nth-child(even) { background: #fafcfb; }
+.social-queue-table tbody tr:hover { background: #f3f8f5; }
+.social-queue-table tbody tr.is-running-row { background: #f6fcf8; }
+.social-queue-table tbody tr.is-running-row:nth-child(even) { background: #eff8f2; }
 .social-queue-table tbody tr.is-priority-row { background: #f8faf8; }
 
 @keyframes socialQSpin {
@@ -1295,13 +1297,16 @@
   .social-queue-header {
     height: auto;
     min-height: 44px;
-    padding: calc(4px + env(safe-area-inset-top)) 10px 4px;
-    gap: 5px;
+    padding: calc(4px + env(safe-area-inset-top)) 8px 4px;
+    gap: 4px;
+    box-sizing: border-box;
   }
-  .social-queue-title-wrap h2 { font-size: 13px; }
-  .social-q-filter { height: 24px; padding: 0 6px; font-size: 10.5px; }
+  .social-queue-title-wrap { gap: 4px; }
+  .social-queue-title-wrap h2 { font-size: 12.5px; }
+  .social-queue-sub { padding: 1.5px 5px; font-size: 10px; }
+  .social-q-filter { height: 24px; padding: 0 5.5px; font-size: 10.5px; }
   .social-q-icon-top { width: 26px; height: 26px; }
-  .social-queue-table-wrap { padding: 0 0 calc(10px + env(safe-area-inset-bottom)); }
+  .social-queue-table-wrap { padding: 0 0 calc(12px + env(safe-area-inset-bottom)); }
   .social-queue-table thead,
   .social-q-desk-only { display: none !important; }
   .social-q-mobile-only { display: block; }
@@ -1311,8 +1316,8 @@
     box-sizing: border-box;
   }
   .social-queue-table tbody tr {
-    padding: 7px 10px;
-    border-bottom: 1px solid #edf2ee;
+    padding: 10px 12px;
+    border-bottom: 1px solid #c5d5cb !important;
   }
   .social-queue-table tbody td {
     padding: 0;
@@ -1349,12 +1354,23 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 8px;
-    margin-top: 5px;
+    gap: 7px;
+    margin-top: 6px;
+    min-width: 0;
   }
   .social-q-m-prog-row .social-q-rt-track {
-    flex: 1 1 auto;
-    min-width: 60px;
+    flex: 1 1 56px;
+    min-width: 44px;
+  }
+  .social-q-m-prog-row .social-q-sched-meta {
+    min-width: 0;
+    max-width: 55%;
+    overflow: hidden;
+  }
+  .social-q-m-prog-row .social-q-sched-meta span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .social-q-m-stat {
     font-size: 10.5px;

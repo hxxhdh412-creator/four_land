@@ -3543,7 +3543,7 @@ function renderPortalQueueTable() {
   const s = portalQueueState.summary || { runningCount: 0, waitingCount: 0, doneCount: 0, failedCount: 0 };
   if (sub) {
     const activeSum = (s.runningCount || 0) + (s.waitingCount || 0);
-    sub.textContent = activeSum > 0 ? `${activeSum} luồng hoạt động` : `${s.doneCount || 0} hoàn tất`;
+    sub.textContent = activeSum > 0 ? `${activeSum} luồng` : `${s.doneCount || 0} xong`;
   }
 
   const f = portalQueueState.filter;
