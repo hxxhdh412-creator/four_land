@@ -2877,6 +2877,8 @@ async function handlePublishGroupRotation() {
 
     const gapMin = Math.max(30, Number($('fbGroupGapMin')?.value) || 60);
     const gapMax = Math.max(gapMin, Number($('fbGroupGapMax')?.value) || 120);
+    const rawStartAt = ($('fbGroupStartAt')?.value || '').trim();
+    const startAtIso = rawStartAt && !Number.isNaN(Date.parse(rawStartAt)) ? new Date(rawStartAt).toISOString() : '';
     const rotBody = {
       name: ($('fbGroupRotName')?.value || '').trim() || `BĐS Fourland · ${fbPortalState.propertyId || Date.now()}`,
       accountId,
@@ -2892,7 +2894,7 @@ async function handlePublishGroupRotation() {
       skipApproval: $('fbGroupSkipApproval')?.checked !== false,
       autoLike: $('fbGroupAutoLike')?.checked !== false,
       firstComment: ($('fbGroupFirstComment')?.value || '').trim(),
-      startAt: '',
+      startAt: startAtIso,
       dryRun: false
     };
 

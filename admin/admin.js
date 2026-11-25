@@ -3050,6 +3050,8 @@ async function handlePublishFacebook() {
       variants[0] = content;
       const gapMin = Math.max(30, Number(byId('cmsFbGroupGapMin')?.value) || 60);
       const gapMax = Math.max(gapMin, Number(byId('cmsFbGroupGapMax')?.value) || 120);
+      const rawStartAt = (byId('cmsFbGroupStartAt')?.value || '').trim();
+      const startAtIso = rawStartAt && !Number.isNaN(Date.parse(rawStartAt)) ? new Date(rawStartAt).toISOString() : '';
       const rotBody = {
         name: (byId('cmsFbGroupRotName')?.value || '').trim() || `BĐS Fourland · ${fbState.propertyId || Date.now()}`,
         accountId,
@@ -3065,7 +3067,7 @@ async function handlePublishFacebook() {
         skipApproval: byId('cmsFbGroupSkipApproval')?.checked !== false,
         autoLike: byId('cmsFbGroupAutoLike')?.checked !== false,
         firstComment: (byId('cmsFbGroupFirstComment')?.value || '').trim(),
-        startAt: '',
+        startAt: startAtIso,
         dryRun: false
       };
       const saved = await cmsRevidApi('POST', '/api/mk/rotations', rotBody);

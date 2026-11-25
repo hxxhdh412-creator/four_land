@@ -1401,7 +1401,7 @@
                 <input type="text" id="cmsFbGroupSearchInput" placeholder="Tìm nhanh nhóm BĐS theo tên…" style="width:100%;height:34px;padding:0 10px;margin:4px 0 6px;border:1px solid #cbd5e1;border-radius:7px;font-size:12.5px;background:#fff;">
                 <div id="cmsFbGroupListBox" style="max-height:150px;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:5px;padding:6px;background:#fff;border:1px solid #dbe3dd;border-radius:8px;"></div>
               </div>
-              <div style="display:grid;grid-template-columns:100px 100px 1fr;gap:8px;">
+              <div style="display:grid;grid-template-columns:100px 100px 180px 1fr;gap:8px;">
                 <label class="cms-fb-field">
                   <span class="cms-fb-label">Cách tối thiểu (s):</span>
                   <input type="number" id="cmsFbGroupGapMin" min="30" value="60" style="height:34px;padding:0 8px;border:1px solid #cbd5e1;border-radius:7px;font-size:12.5px;background:#fff;">
@@ -1409,6 +1409,10 @@
                 <label class="cms-fb-field">
                   <span class="cms-fb-label">Tối đa (s):</span>
                   <input type="number" id="cmsFbGroupGapMax" min="30" value="120" style="height:34px;padding:0 8px;border:1px solid #cbd5e1;border-radius:7px;font-size:12.5px;background:#fff;">
+                </label>
+                <label class="cms-fb-field">
+                  <span class="cms-fb-label">⏰ Hẹn giờ chạy:</span>
+                  <input type="datetime-local" id="cmsFbGroupStartAt" style="height:34px;padding:0 8px;border:1px solid #cbd5e1;border-radius:7px;font-size:12px;background:#fff;">
                 </label>
                 <label class="cms-fb-field">
                   <span class="cms-fb-label">Bình luận đầu tiên (Seeding):</span>
@@ -1817,6 +1821,6 @@
 
     <div id="toastContainer" class="cms-toast-container" aria-live="polite"></div>
   </div>
-  <script src="/admin/admin.js?v=20261125-server50-poster-v5" defer></script>
+  <script src="/admin/admin.js?v=20261125-server50-poster-v6" defer></script>
 </body>
 </html>

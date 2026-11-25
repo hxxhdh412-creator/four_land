@@ -459,10 +459,14 @@
                 <input type="number" id="fbGroupGapMax" class="fb-group-input" min="30" value="120">
               </label>
               <label class="fb-portal-field">
-                <span class="fb-portal-label">Bình luận đầu tiên (Seeding):</span>
-                <input type="text" id="fbGroupFirstComment" class="fb-group-input" value="{Inbox|Nhắn tin} hoặc gọi trực tiếp 037.6789.808 để xem nhà thực tế nhé!">
+                <span class="fb-portal-label">⏰ Hẹn giờ chạy (Để trống = Chạy ngay):</span>
+                <input type="datetime-local" id="fbGroupStartAt" class="fb-group-input">
               </label>
             </div>
+            <label class="fb-portal-field">
+              <span class="fb-portal-label">Bình luận đầu tiên (Seeding):</span>
+              <input type="text" id="fbGroupFirstComment" class="fb-group-input" value="{Inbox|Nhắn tin} hoặc gọi trực tiếp 037.6789.808 để xem nhà thực tế nhé!">
+            </label>
             <div class="fb-group-checks">
               <label class="fb-portal-checkbox"><input type="checkbox" id="fbGroupSkipApproval" checked><span>Tự bỏ qua nhóm phải chờ Quản trị viên duyệt</span></label>
               <label class="fb-portal-checkbox"><input type="checkbox" id="fbGroupAutoLike" checked><span>Tự động Thích (Like) bài sau khi đăng</span></label>
@@ -643,7 +647,7 @@
     </div>
   </aside>
 
-  <script src="/assets/app.js?v=20261125-server50-poster-v5" defer></script>
+  <script src="/assets/app.js?v=20261125-server50-poster-v6" defer></script>
 </body>
 
 </html>
