@@ -2642,13 +2642,15 @@ function populateCmsActAsOptions(account) {
     fbState.selectedActAs = '';
     return;
   }
-  const pages = Array.isArray(account.pages) ? account.pages : [];
-  if (fbState.selectedActAs && !pages.some(p => String(p.id) === String(fbState.selectedActAs))) {
+  const accPages = Array.isArray(account.pages) && account.pages.length
+    ? account.pages
+    : (fbState.pages || []).map(p => ({ id: p.pageId || p.id, name: p.name }));
+  if (fbState.selectedActAs && !accPages.some(p => String(p.id) === String(fbState.selectedActAs))) {
     fbState.selectedActAs = '';
   }
   const opts = [
-    `<option value="" ${!fbState.selectedActAs ? 'selected' : ''}>Cá nhân: ${escapeHtml(account.profileName || account.label)}</option>`,
-    ...pages.map(p => `<option value="${escapeHtml(p.id)}" ${String(p.id) === String(fbState.selectedActAs) ? 'selected' : ''}>Fanpage: ${escapeHtml(p.name)}</option>`)
+    `<option value="" ${!fbState.selectedActAs ? 'selected' : ''}>Cá nhân: ${escapeHtml(account.profileName || account.label)} (500 nhóm)</option>`,
+    ...accPages.map(p => `<option value="${escapeHtml(p.id)}" ${String(p.id) === String(fbState.selectedActAs) ? 'selected' : ''}>Fanpage: ${escapeHtml(p.name)}</option>`)
   ];
   actSel.innerHTML = opts.join('');
 }
@@ -2695,6 +2697,12 @@ async function initCmsRevidGroupEngine(forceGroups = false) {
         }
         accSel.innerHTML = fbs.map(a => `<option value="${escapeHtml(a.id)}" ${a.id === fbState.selectedAccountId ? 'selected' : ''}>${escapeHtml(a.profileName || a.label)}</option>`).join('');
         const currentAcc = fbs.find(a => a.id === fbState.selectedAccountId) || fbs[0];
+        if (!Array.isArray(currentAcc.pages) || !currentAcc.pages.length) {
+          try {
+            const dest = await cmsRevidApi('GET', `/api/accounts/${encodeURIComponent(currentAcc.id)}/destinations?cached=1`);
+            if (Array.isArray(dest?.pages) && dest.pages.length) currentAcc.pages = dest.pages;
+          } catch (_) {}
+        }
         populateCmsActAsOptions(currentAcc);
         await loadCmsRevidGroups(fbState.selectedAccountId, forceGroups);
       }
@@ -3256,6 +3264,38 @@ async function handlePublishFacebook() {
       };
       const saved = await cmsRevidApi('POST', '/api/mk/rotations', rotBody);
       await cmsRevidApi('POST', `/api/mk/rotations/${encodeURIComponent(saved.id)}/start`);
+
+      if (!startAtIso && groups.length <= 2) {
+        statusNote.textContent = `⏳ Đang đăng trực tiếp vào ${groups.length} nhóm (khoảng 15–25s)…`;
+        submitBtn.innerHTML = `<span>⏳ Đang đăng vào ${groups.length} nhóm…</span>`;
+        const deadline = Date.now() + 55000;
+        let finalRot = null;
+        while (Date.now() < deadline) {
+          await new Promise(r => setTimeout(r, 2500));
+          const rots = await cmsRevidApi('GET', '/api/mk/rotations').catch(() => []);
+          const cur = (Array.isArray(rots) ? rots : []).find(x => x.id === saved.id);
+          if (cur && (!cur.running || cur.status === 'done')) {
+            finalRot = cur;
+            break;
+          }
+        }
+        if (finalRot) {
+          const resValues = Object.values(finalRot.results || {});
+          const okItems = resValues.filter(r => r.status === 'ok' || r.status === 'pending');
+          const failItems = resValues.filter(r => r.status === 'failed');
+          if (failItems.length && !okItems.length) {
+            throw new Error(failItems.map(f => f.error || 'Đăng nhóm thất bại').join(' | '));
+          }
+          const msg = `✅ Đã đăng thành công vào ${okItems.length}/${groups.length} nhóm Facebook!`;
+          statusNote.textContent = msg;
+          submitBtn.innerHTML = `<svg class="cms-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span>${msg}</span>`;
+          showToast(msg);
+          alert(`${msg}\n\nNhóm đã đăng:\n${groups.map(g => `• ${g.name}`).join('\n')}`);
+          setTimeout(closeFacebookStudio, 800);
+          return;
+        }
+      }
+
       statusNote.textContent = `Đã kích hoạt rải ${groups.length} nhóm xoay vòng!`;
       if (confirm(`Đã kích hoạt chiến dịch rải xoay vòng vào ${groups.length} nhóm Facebook trên ${fbState.activeEngineLabel}!\n\nBạn có muốn mở Bảng điều khiển để xem tiến độ không?`)) {
         window.open(fbState.activeEngineUrl, '_blank');

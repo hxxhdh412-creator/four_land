@@ -46,36 +46,46 @@
 .social-studio .social-destination {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
-  padding: 2px;
+  gap: 3px;
+  padding: 3px;
   border: 1px solid var(--line);
   border-radius: 10px;
   background: var(--sage, #edf0e8);
 }
 .social-studio .social-destination button {
   position: relative;
-  display: grid;
-  place-items: center;
-  width: 42px;
-  height: 42px;
-  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 10px 0 6px;
   border: 0;
   border-radius: 7px;
   color: var(--forest);
   background: transparent;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
   cursor: pointer;
 }
 .social-studio .social-destination button:hover { background: var(--studio-surface); }
 .social-studio .social-destination button[aria-pressed="true"] { background: var(--forest); color: #fff; }
-.social-studio .social-destination svg { width: 20px; height: 20px; }
+.social-studio .social-destination svg { width: 18px; height: 18px; }
 .social-studio .social-destination img {
-  width: 30px;
-  height: 30px;
+  width: 24px;
+  height: 24px;
   border-radius: 5px;
   background: var(--studio-surface);
   object-fit: cover;
+  flex-shrink: 0;
 }
-.social-studio .social-destination-photo { position: absolute; inset: 6px; }
+.social-studio .social-destination-photo {
+  position: absolute;
+  left: 6px;
+  top: 6px;
+  width: 24px;
+  height: 24px;
+}
 .social-studio .social-destination button[aria-pressed="true"] img { outline: 1px solid #fff; }
 .social-studio :is(.fb-portal-mode-tabs, .cms-fb-mode-tabs) { margin: 0; }
 .social-studio :is(.fb-mode-tab, .cms-fb-mode-tab) { height: 34px; font-size: 12.5px; }

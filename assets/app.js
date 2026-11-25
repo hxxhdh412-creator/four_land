@@ -2247,13 +2247,15 @@ function populatePortalActAsOptions(account) {
     fbPortalState.selectedActAs = '';
     return;
   }
-  const pages = Array.isArray(account.pages) ? account.pages : [];
-  if (fbPortalState.selectedActAs && !pages.some(p => String(p.id) === String(fbPortalState.selectedActAs))) {
+  const accPages = Array.isArray(account.pages) && account.pages.length
+    ? account.pages
+    : (fbPortalState.pages || []).map(p => ({ id: p.pageId || p.id, name: p.name }));
+  if (fbPortalState.selectedActAs && !accPages.some(p => String(p.id) === String(fbPortalState.selectedActAs))) {
     fbPortalState.selectedActAs = '';
   }
   const opts = [
-    `<option value="" ${!fbPortalState.selectedActAs ? 'selected' : ''}>Cá nhân: ${escapeHtml(account.profileName || account.label)}</option>`,
-    ...pages.map(p => `<option value="${escapeHtml(p.id)}" ${String(p.id) === String(fbPortalState.selectedActAs) ? 'selected' : ''}>Fanpage: ${escapeHtml(p.name)}</option>`)
+    `<option value="" ${!fbPortalState.selectedActAs ? 'selected' : ''}>Cá nhân: ${escapeHtml(account.profileName || account.label)} (500 nhóm)</option>`,
+    ...accPages.map(p => `<option value="${escapeHtml(p.id)}" ${String(p.id) === String(fbPortalState.selectedActAs) ? 'selected' : ''}>Fanpage: ${escapeHtml(p.name)}</option>`)
   ];
   actSel.innerHTML = opts.join('');
 }
@@ -2302,6 +2304,12 @@ async function initRevidGroupEngine(forceGroups = false) {
         }
         accSel.innerHTML = fbs.map(a => `<option value="${escapeHtml(a.id)}" ${a.id === fbPortalState.selectedAccountId ? 'selected' : ''}>${escapeHtml(a.profileName || a.label)}</option>`).join('');
         const currentAcc = fbs.find(a => a.id === fbPortalState.selectedAccountId) || fbs[0];
+        if (!Array.isArray(currentAcc.pages) || !currentAcc.pages.length) {
+          try {
+            const dest = await revidEngineApi('GET', `/api/accounts/${encodeURIComponent(currentAcc.id)}/destinations?cached=1`);
+            if (Array.isArray(dest?.pages) && dest.pages.length) currentAcc.pages = dest.pages;
+          } catch (_) {}
+        }
         populatePortalActAsOptions(currentAcc);
         await loadRevidAccountGroups(fbPortalState.selectedAccountId, forceGroups);
       }
@@ -3004,8 +3012,41 @@ async function handlePublishGroupRotation() {
     };
 
     const saved = await revidEngineApi('POST', '/api/mk/rotations', rotBody);
-    if (!saved?.id) throw new Error('Không tạo được chiến dịch đăng nhóm trên 8788');
+    if (!saved?.id) throw new Error('Không tạo được chiến dịch đăng nhóm trên 8889');
     await revidEngineApi('POST', `/api/mk/rotations/${encodeURIComponent(saved.id)}/start`);
+
+    if (!startAtIso && groups.length <= 2) {
+      if (submitBtn) {
+        submitBtn.innerHTML = `<span>⏳ Đang đăng trực tiếp vào ${groups.length} nhóm (khoảng 15–25s)…</span>`;
+      }
+      const deadline = Date.now() + 55000;
+      let finalRot = null;
+      while (Date.now() < deadline) {
+        await new Promise(r => setTimeout(r, 2500));
+        const rots = await revidEngineApi('GET', '/api/mk/rotations').catch(() => []);
+        const cur = (Array.isArray(rots) ? rots : []).find(x => x.id === saved.id);
+        if (cur && (!cur.running || cur.status === 'done')) {
+          finalRot = cur;
+          break;
+        }
+      }
+      if (finalRot) {
+        const resValues = Object.values(finalRot.results || {});
+        const okItems = resValues.filter(r => r.status === 'ok' || r.status === 'pending');
+        const failItems = resValues.filter(r => r.status === 'failed');
+        if (failItems.length && !okItems.length) {
+          throw new Error(failItems.map(f => f.error || 'Đăng nhóm thất bại').join(' | '));
+        }
+        const msg = `✅ Đã đăng thành công vào ${okItems.length}/${groups.length} nhóm Facebook!`;
+        if (submitBtn) {
+          submitBtn.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span>${msg}</span>`;
+        }
+        showToast(msg, 4500);
+        alert(`${msg}\n\nNhóm đã đăng:\n${groups.map(g => `• ${g.name}`).join('\n')}`);
+        setTimeout(closeFacebookStudio, 800);
+        return;
+      }
+    }
 
     if (submitBtn) {
       submitBtn.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span>Đã kích hoạt rải ${groups.length} nhóm xoay vòng!</span>`;
