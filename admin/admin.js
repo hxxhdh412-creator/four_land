@@ -3846,7 +3846,8 @@ const cmsQueueState = {
   items: [],
   summary: null,
   timer: null,
-  tickTimer: null
+  tickTimer: null,
+  expandedIds: new Set()
 };
 
 const CMS_Q_ICONS = {
@@ -4047,6 +4048,15 @@ function renderCmsQueueTable() {
       </div>
     `;
 
+    const recentLinks = Array.isArray(it.recentLinks) ? it.recentLinks : [];
+    const isExpanded = cmsQueueState.expandedIds.has(String(it.id));
+    const linkBtnHtml = recentLinks.length > 1
+      ? `<button type="button" class="social-q-ext" data-q-toggle-links="${escapeHtml(it.id)}" title="Xem danh sách link từng bài đã đăng trong các nhóm"><span>${recentLinks.length} bài</span>${CMS_Q_ICONS.ext}</button>`
+      : (it.postUrl ? `<a class="social-q-ext" href="${escapeHtml(it.postUrl)}" target="_blank" rel="noopener noreferrer" title="Mở trực tiếp bài đã đăng"><span>Mở bài</span>${CMS_Q_ICONS.ext}</a>` : '');
+    const linksDrawerHtml = recentLinks.length > 1
+      ? `<div class="social-q-links-drawer" data-q-drawer="${escapeHtml(it.id)}" ${isExpanded ? '' : 'hidden'}>${recentLinks.map(lk => `<a class="social-q-link-item" href="${escapeHtml(lk.url)}" target="_blank" rel="noopener noreferrer"><span>${escapeHtml(cleanCmsQueueTitle(lk.groupName) || 'Nhóm Facebook')}</span>${CMS_Q_ICONS.ext}</a>`).join('')}</div>`
+      : '';
+
     return `
       <tr class="${rowCls}">
         <td class="social-q-desk-only"><span class="social-q-status ${st.cls}">${stIcon}<span>${escapeHtml(stText)}</span></span></td>
@@ -4054,8 +4064,9 @@ function renderCmsQueueTable() {
         <td class="social-q-desk-only">
           <div class="social-q-post-line">
             <span class="social-q-post-title ${it.error ? 'is-err' : ''}" title="${escapeHtml(titleLine)}">${escapeHtml(titleLine)}</span>
-            ${it.postUrl ? `<a class="social-q-ext" href="${escapeHtml(it.postUrl)}" target="_blank" rel="noopener noreferrer" title="Mở bài đã đăng">${CMS_Q_ICONS.ext}</a>` : ''}
+            ${linkBtnHtml}
           </div>
+          ${linksDrawerHtml}
         </td>
         <td class="social-q-desk-only">
           <div class="social-q-prog-stack">
@@ -4082,8 +4093,9 @@ function renderCmsQueueTable() {
           </div>
           <div class="social-q-m-bot">
             <span class="social-q-m-title ${it.error ? 'is-err' : ''}">${escapeHtml(titleLine)}</span>
-            ${it.postUrl ? `<a class="social-q-ext" href="${escapeHtml(it.postUrl)}" target="_blank" rel="noopener noreferrer" title="Mở bài đã đăng">${CMS_Q_ICONS.ext}</a>` : ''}
+            ${linkBtnHtml}
           </div>
+          ${linksDrawerHtml}
         </td>
       </tr>
     `;
@@ -4166,6 +4178,14 @@ document.querySelectorAll('[data-fb-q-filter]').forEach(tab => {
 });
 if (byId('fbQueueTableBody')) {
   byId('fbQueueTableBody').addEventListener('click', (e) => {
+    const toggleBtn = e.target.closest('[data-q-toggle-links]');
+    if (toggleBtn) {
+      const id = String(toggleBtn.dataset.qToggleLinks || '');
+      if (cmsQueueState.expandedIds.has(id)) cmsQueueState.expandedIds.delete(id);
+      else cmsQueueState.expandedIds.add(id);
+      renderCmsQueueTable();
+      return;
+    }
     const btn = e.target.closest('[data-q-op]');
     if (!btn) return;
     handleCmsQueueAction(btn.dataset.qType, btn.dataset.qId, btn.dataset.qOp, btn);

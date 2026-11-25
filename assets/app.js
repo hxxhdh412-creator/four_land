@@ -3406,6 +3406,7 @@ const portalQueueState = {
   summary: null,
   timer: null,
   tickTimer: null,
+  expandedIds: new Set(),
   loading: false
 };
 
@@ -3603,6 +3604,15 @@ function renderPortalQueueTable() {
       </div>
     `;
 
+    const recentLinks = Array.isArray(it.recentLinks) ? it.recentLinks : [];
+    const isExpanded = portalQueueState.expandedIds.has(String(it.id));
+    const linkBtnHtml = recentLinks.length > 1
+      ? `<button type="button" class="social-q-ext" data-q-toggle-links="${escapeHtml(it.id)}" title="Xem danh sách link từng bài đã đăng trong các nhóm"><span>${recentLinks.length} bài</span>${PORTAL_Q_ICONS.ext}</button>`
+      : (it.postUrl ? `<a class="social-q-ext" href="${escapeHtml(it.postUrl)}" target="_blank" rel="noopener noreferrer" title="Mở trực tiếp bài đã đăng"><span>Mở bài</span>${PORTAL_Q_ICONS.ext}</a>` : '');
+    const linksDrawerHtml = recentLinks.length > 1
+      ? `<div class="social-q-links-drawer" data-q-drawer="${escapeHtml(it.id)}" ${isExpanded ? '' : 'hidden'}>${recentLinks.map(lk => `<a class="social-q-link-item" href="${escapeHtml(lk.url)}" target="_blank" rel="noopener noreferrer"><span>${escapeHtml(cleanPortalQueueTitle(lk.groupName) || 'Nhóm Facebook')}</span>${PORTAL_Q_ICONS.ext}</a>`).join('')}</div>`
+      : '';
+
     return `
       <tr class="${rowCls}">
         <td class="social-q-desk-only"><span class="social-q-status ${st.cls}">${stIcon}<span>${escapeHtml(stText)}</span></span></td>
@@ -3610,8 +3620,9 @@ function renderPortalQueueTable() {
         <td class="social-q-desk-only">
           <div class="social-q-post-line">
             <span class="social-q-post-title ${it.error ? 'is-err' : ''}" title="${escapeHtml(titleLine)}">${escapeHtml(titleLine)}</span>
-            ${it.postUrl ? `<a class="social-q-ext" href="${escapeHtml(it.postUrl)}" target="_blank" rel="noopener noreferrer" title="Mở bài đã đăng">${PORTAL_Q_ICONS.ext}</a>` : ''}
+            ${linkBtnHtml}
           </div>
+          ${linksDrawerHtml}
         </td>
         <td class="social-q-desk-only">
           <div class="social-q-prog-stack">
@@ -3638,8 +3649,9 @@ function renderPortalQueueTable() {
           </div>
           <div class="social-q-m-bot">
             <span class="social-q-m-title ${it.error ? 'is-err' : ''}">${escapeHtml(titleLine)}</span>
-            ${it.postUrl ? `<a class="social-q-ext" href="${escapeHtml(it.postUrl)}" target="_blank" rel="noopener noreferrer" title="Mở bài đã đăng">${PORTAL_Q_ICONS.ext}</a>` : ''}
+            ${linkBtnHtml}
           </div>
+          ${linksDrawerHtml}
         </td>
       </tr>
     `;
@@ -3717,6 +3729,14 @@ document.querySelectorAll('[data-fb-q-filter]').forEach(tab => {
 });
 if ($('fbQueueTableBody')) {
   $('fbQueueTableBody').onclick = (e) => {
+    const toggleBtn = e.target.closest('[data-q-toggle-links]');
+    if (toggleBtn) {
+      const id = String(toggleBtn.dataset.qToggleLinks || '');
+      if (portalQueueState.expandedIds.has(id)) portalQueueState.expandedIds.delete(id);
+      else portalQueueState.expandedIds.add(id);
+      renderPortalQueueTable();
+      return;
+    }
     const btn = e.target.closest('[data-q-op]');
     if (!btn) return;
     handlePortalQueueAction(btn.dataset.qType, btn.dataset.qId, btn.dataset.qOp, btn);
