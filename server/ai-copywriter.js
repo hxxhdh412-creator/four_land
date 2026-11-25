@@ -454,14 +454,197 @@ function buildRuleBasedVariants(property = {}, { cta = DEFAULT_CTA, link = "" } 
   return [v1, v2, v3, v4];
 }
 
+// ---------------------------------------------------------------------------
+// Tối ưu nội dung chuyên biệt cho Threads (giới hạn cứng 500 ký tự của Meta)
+// Bảo toàn 100%: Tiêu đề/Hook + Thông số cốt lõi + Giá + Link + SĐT chốt khách
+// ---------------------------------------------------------------------------
+function threadsCharLen(str) {
+  const s = String(str || "");
+  return Math.max([...s].length, s.length);
+}
+
+function stripSimpleSpintax(text) {
+  let out = String(text || "");
+  let guard = 0;
+  while (/\{[^{}]+\}/.test(out) && guard++ < 8) {
+    out = out.replace(/\{([^{}]+)\}/g, (_, choices) => {
+      const parts = choices.split("|").map((x) => x.trim()).filter(Boolean);
+      return parts[0] || "";
+    });
+  }
+  return out;
+}
+
+function optimizeContentForThreads(rawText, { maxChars = 465 } = {}) {
+  const expanded = stripSimpleSpintax(rawText).replace(/\r/g, "").replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+  if (!expanded) return "";
+  if (threadsCharLen(expanded) <= maxChars) return expanded;
+
+  const rawLines = expanded.split("\n").map((l) => l.trim()).filter(Boolean);
+  if (rawLines.length === 0) return "";
+
+  let linkLine = "";
+  let phoneLine = "";
+  let priceLine = "";
+  const bodyCandidates = [];
+
+  const headline = rawLines[0].replace(/\s+/g, " ");
+  const headlineHasPrice = /\d+(?:[.,]\d+)?\s*(?:tỷ|triệu)/i.test(headline);
+
+  for (let i = 1; i < rawLines.length; i++) {
+    const line = rawLines[i];
+    // Bỏ câu slogan phụ cuối bài để nhường ký tự cho thông số thật của nhà
+    if (/^(?:✨|🌿|🤝)?\s*(?:Hỗ trợ tìm nhà|Đồng hành tìm nhà|Chào anh chị trong nhóm)/i.test(line)) {
+      continue;
+    }
+    const urlMatch = line.match(/https?:\/\/[^\s)]+/i);
+    if (urlMatch || /fourland\.vn/i.test(line)) {
+      const url = urlMatch ? urlMatch[0] : "https://www.fourland.vn";
+      if (!linkLine) linkLine = `🌐 ${url}`;
+      continue;
+    }
+    if (/(?:0|\+84)\d[\d.\s-]{7,11}/.test(line)) {
+      if (!phoneLine) phoneLine = line.length <= 42 ? line : `📲 ${line.match(/(?:Ngọc[^:]*:\s*)?(?:0|\+84)\d[\d.\s-]{7,11}/i)?.[0] || line.slice(0, 36)}`;
+      continue;
+    }
+    if (/^💰|^(?:▪️|•|🌿|👉)?\s*(?:Mức giá|Giá\s*(?:bán|thuê|chào|làm việc|mong muốn)?)\s*:/i.test(line)) {
+      if (!priceLine) priceLine = line.replace(/\.$/, "");
+      continue;
+    }
+    bodyCandidates.push({ index: i, text: line });
+  }
+
+  const tailParts = [
+    (!headlineHasPrice && priceLine) ? priceLine : "",
+    linkLine,
+    phoneLine
+  ].filter(Boolean);
+  const tailBlock = tailParts.length ? `\n\n${tailParts.join("\n")}` : "";
+  const bodyBudget = Math.max(90, maxChars - threadsCharLen(tailBlock));
+
+  // Chấm điểm ưu tiên thông số thật (diện tích, kết cấu, PN/WC, pháp lý, hẻm/mặt tiền)
+  const scored = bodyCandidates.map((item) => {
+    let t = item.text;
+    // Nếu đoạn văn dài có câu thứ 2 mang tính cảm thán chung chung thì giữ câu thông số đầu tiên
+    if (t.length > 95 && /\d/.test(t) && t.includes(". ")) {
+      const firstSent = t.split(". ")[0].trim();
+      if (firstSent.length >= 20) t = `${firstSent}.`;
+    }
+    let score = 1;
+    if (/(?:diện tích|kích thước|khuôn đất|kết cấu|quy mô|phòng ngủ|\bpn\b|\bwc\b|\d+\s*[x×*]\s*\d+|\d+\s*m²|trệt|lầu|tầng)/i.test(t)) score = 4;
+    else if (/(?:pháp lý|sổ hồng|hẻm xe hơi|mặt tiền|thang máy|nội thất|sân thượng|gara)/i.test(t)) score = 3;
+    else if (iIsHookOrLocation(t)) score = 2;
+    return { ...item, text: t, score };
+  });
+
+  function iIsHookOrLocation(s) {
+    return /(?:đường|phường|quận|vị trí|đang bán|cho thuê)/i.test(s);
+  }
+
+  // Giữ tiêu đề trước, sau đó chọn các dòng điểm cao nhất nhưng xuất hiện đúng thứ tự gốc
+  let headOut = headline;
+  if (threadsCharLen(headOut) > bodyBudget) {
+    headOut = [...headOut].slice(0, Math.max(40, bodyBudget - 1)).join("").trim() + "…";
+  }
+
+  const pickedIndices = new Set();
+  let currentLen = threadsCharLen(headOut);
+  const byPriority = [...scored].sort((a, b) => b.score - a.score || a.index - b.index);
+
+  for (const cand of byPriority) {
+    const sepLen = pickedIndices.size === 0 ? 2 : 1; // khoảng trắng sau headline là \n\n, giữa các dòng thông số là \n
+    const nextLen = currentLen + sepLen + threadsCharLen(cand.text);
+    if (nextLen <= bodyBudget) {
+      pickedIndices.add(cand.index);
+      currentLen = nextLen;
+    }
+  }
+
+  const orderedBody = scored.filter((c) => pickedIndices.has(c.index)).sort((a, b) => a.index - b.index).map((c) => c.text);
+  const mainText = orderedBody.length ? `${headOut}\n\n${orderedBody.join("\n")}` : headOut;
+  let result = `${mainText}${tailBlock}`.trim();
+
+  if (threadsCharLen(result) > maxChars) {
+    const allowedMain = Math.max(60, maxChars - threadsCharLen(tailBlock) - 1);
+    const trimmedMain = [...mainText].slice(0, allowedMain).join("").replace(/\s+\S*$/, "").trim() + "…";
+    result = `${trimmedMain}${tailBlock}`.trim();
+  }
+  return result;
+}
+
+function buildThreadsCopy(property = {}, { tone = "hot", cta = DEFAULT_CTA, link = "" } = {}) {
+  const facts = buildPropertyFacts(property);
+  const corpus = [facts.propertyType, facts.structure, facts.description].join(" ");
+  const f = detectFeatures(corpus);
+  const isRent = facts.transaction === "Cho thuê";
+  const streetClean = facts.street ? `đường ${facts.street.replace(/^đường\s+/i, "")}` : "";
+  const loc = [streetClean, facts.ward, facts.district].filter(Boolean).join(", ");
+  const shortLoc = [streetClean, facts.district].filter(Boolean).join(", ") || "TP.HCM";
+  const rawType = cleanText(facts.propertyType);
+  const typeText = !rawType || /thuê|bán/i.test(rawType) ? "căn nhà" : rawType.toLowerCase();
+
+  const norm = (v) => String(v || "").toLowerCase().replace(/[\sm²]/g, "").replace(/×|\*/g, "x");
+  const areaIsDims = facts.area && /\d\s*[x×*]\s*\d/i.test(facts.area);
+  const dimSpec = (facts.area && facts.dimensions && norm(facts.area) !== norm(facts.dimensions) && !areaIsDims)
+    ? `${facts.dimensions} (${facts.area})`
+    : (facts.dimensions || facts.area || "");
+  const rooms = [
+    facts.bedrooms ? `${facts.bedrooms.replace(/\s*pn$/i, "")} PN` : "",
+    facts.bathrooms ? `${facts.bathrooms.replace(/\s*wc$/i, "")} WC` : ""
+  ].filter(Boolean).join(" · ");
+
+  const tags = [
+    f.frontage ? "Mặt tiền" : (f.carAlley ? "Hẻm xe hơi" : ""),
+    f.elevator ? "Thang máy" : "",
+    f.furnished ? "Full nội thất" : "",
+    f.rooftop ? "Sân thượng" : (f.balcony ? "Ban công thoáng" : "")
+  ].filter(Boolean).slice(0, 2).join(" · ");
+
+  let draft = "";
+  if (tone === "quick") {
+    draft = [
+      `🔑 ${isRent ? "Cho thuê" : "Bán"} ${typeText} ${shortLoc}`,
+      [dimSpec ? `📐 ${dimSpec}` : "", facts.structure || "", rooms].filter(Boolean).join(" · "),
+      tags ? `✨ ${tags}` : "",
+      facts.legal ? `📄 ${facts.legal}` : "",
+      facts.price ? `💰 ${facts.price}` : ""
+    ].filter(Boolean).join("\n");
+  } else if (tone === "detail") {
+    draft = [
+      `🏡 Cập nhật ${typeText} ${isRent ? "cho thuê" : "chính chủ gửi bán"} tại ${shortLoc}`,
+      loc ? `📍 Khu vực: ${loc.replace(/^./, (c) => c.toUpperCase())}` : "",
+      [dimSpec ? `📐 Diện tích: ${dimSpec}` : "", facts.structure ? `Kết cấu: ${facts.structure}` : ""].filter(Boolean).join(" · "),
+      [rooms ? `🛏️ Công năng: ${rooms}` : "", tags].filter(Boolean).join(" · "),
+      facts.legal ? `📄 Pháp lý: ${facts.legal}` : "",
+      facts.price ? `💰 ${isRent ? "Giá thuê" : "Giá chào"}: ${facts.price}` : ""
+    ].filter(Boolean).join("\n");
+  } else {
+    draft = [
+      `✨ Tìm ${typeText} ${isRent ? "thuê" : "ở"} khu ${shortLoc} thì căn này rất đáng ghé xem trực tiếp:`,
+      [dimSpec ? `📐 ${dimSpec}` : "", facts.structure ? `kết cấu ${facts.structure.toLowerCase()}` : "", rooms].filter(Boolean).join(" · "),
+      tags ? `🌿 Điểm cộng: ${tags} – không gian thoáng, dễ bố trí.` : "🌿 Không gian thoáng sáng, dọn vào sử dụng ngay.",
+      facts.legal ? `📄 Pháp lý: ${facts.legal}` : "",
+      facts.price ? `💰 ${isRent ? "Giá thuê" : "Giá bán"}: ${facts.price}` : ""
+    ].filter(Boolean).join("\n");
+  }
+
+  const safePhoneLine = String(cta || DEFAULT_CTA).split("\n")[0].trim() || `📲 Ngọc: ${CTA_PHONE_DIGITS}`;
+  let safeBody = stripHouseNumberMentions(draft, property.address);
+  safeBody = removePhones(safeBody).trim();
+  const compactTail = [link ? `🌐 ${link}` : "", safePhoneLine].filter(Boolean).join("\n");
+  return optimizeContentForThreads(`${safeBody}\n\n${compactTail}`, { maxChars: 465 });
+}
+
 module.exports = {
   COPYWRITER_PROMPT,
   DEFAULT_CTA,
   buildPropertyFacts,
   buildRuleBasedBody,
   buildRuleBasedVariants,
+  buildThreadsCopy,
   factsToPrompt,
   finalizePost,
+  optimizeContentForThreads,
   resolveAiConfig,
   sanitizeSourceDescription,
   writeFacebookCopy

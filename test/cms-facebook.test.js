@@ -263,3 +263,68 @@ test("Facebook Studio API handler schedules 24/7 Fanpage post via Server 50 with
   assert.equal(jsonBody.data.successCount, 2);
   assert.match(jsonBody.message, /Đã hẹn lịch đăng tự động 24\/7/);
 });
+
+test("Facebook Studio API handler sends full copy to Fanpage and <500-char optimized copy to Threads simultaneously", async () => {
+  const capturedCalls = [];
+  const longFacebookPost = [
+    "🔥 CĂN 4.1x25 Ở ĐƯỜNG NGUYỄN TƯ GIẢN, GÒ VẤP – ĐẮT HAY ĐÁNG TIỀN?",
+    "Nếu gia đình đang cần một căn nhà rộng rãi để mỗi người đều có không gian riêng tư thoải mái thì căn nhà phố này rất đáng để ghé xem trực tiếp ngay tuần này.",
+    "Kích thước 4.1x25m, kết cấu 1 trệt 3 lầu sân thượng thoáng mát – bố trí 4 phòng ngủ lớn, 5 WC riêng biệt. Phòng khách rộng để vừa xe hơi và bộ sofa lớn.",
+    "🌿 Hẻm xe hơi thông thoáng, khu dân cư đồng bộ an ninh, gần chợ và trường học các cấp, di chuyển ra sân bay chỉ khoảng 10 phút.",
+    "✨ Nhà mới sạch sẽ, ánh sáng tự nhiên ngập tràn các tầng, có ban công trồng cây xanh thư giãn cuối ngày.",
+    "📄 Pháp lý: Sổ hồng riêng hoàn công chuẩn.",
+    "💰 Giá thuê: 15 triệu/tháng.",
+    "🌐 Xem thêm nhà tại: https://www.fourland.vn",
+    "📲 Ngọc: 0376789808",
+    "✨ Hỗ trợ tìm nhà theo khu vực & ngân sách, làm việc chính chủ."
+  ].join("\n\n");
+
+  assert.ok(longFacebookPost.length > 650);
+
+  const handler = createHandler({
+    requireCmsImpl: async () => ({ id: "usr-admin-01", role: "super_admin" }),
+    request: async () => ({ data: [] }),
+    posterPublisher: async (payload) => {
+      capturedCalls.push(payload);
+      return {
+        ok: true,
+        engine: "server50-8889",
+        postId: `post_${payload.pageId}`,
+        postUrl: `https://www.threads.com/@peter.digital_art`,
+        pageName: payload.pageName
+      };
+    }
+  });
+
+  const req = {
+    method: "POST",
+    body: {
+      action: "publish",
+      content: longFacebookPost,
+      images: ["https://cdn.fourland.vn/house1.jpg"],
+      pageIds: ["104363431784609", "threads:acc_f36e9f891e8afc27"]
+    },
+    headers: {}
+  };
+
+  let statusCode = 0;
+  let jsonBody = null;
+  const res = {
+    status(code) { statusCode = code; return this; },
+    json(body) { jsonBody = body; return this; }
+  };
+
+  await handler(req, res);
+  assert.equal(statusCode, 200);
+  assert.equal(jsonBody.ok, true);
+  assert.equal(capturedCalls.length, 2);
+
+  const fbCall = capturedCalls.find((c) => !String(c.pageId).startsWith("threads:"));
+  const threadsCall = capturedCalls.find((c) => String(c.pageId).startsWith("threads:"));
+  assert.ok(fbCall && threadsCall);
+  assert.equal(fbCall.content, longFacebookPost);
+  assert.ok(threadsCall.content.length <= 475, `Threads content must be <= 475 chars, got ${threadsCall.content.length}`);
+  assert.match(threadsCall.content, /15 triệu\/tháng/);
+  assert.match(threadsCall.content, /0376789808/);
+  assert.match(threadsCall.content, /https:\/\/www\.fourland\.vn/);
+});

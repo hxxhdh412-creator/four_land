@@ -7,8 +7,8 @@
   <meta name="theme-color" content="#283d34">
   <title>FOURLAND · Trung tâm quản trị</title>
   <link rel="icon" type="image/png" href="/assets/brand/fourland-icon-192.png">
-  <link rel="stylesheet" href="/admin/admin.css?v=20261125-spin-v29">
-  <link rel="stylesheet" href="/assets/facebook-studio.css?v=20261125-spin-v29">
+  <link rel="stylesheet" href="/admin/admin.css?v=20261125-threads-v30">
+  <link rel="stylesheet" href="/assets/facebook-studio.css?v=20261125-threads-v30">
 </head>
 <body>
   <div id="cmsApp" class="cms-app" aria-busy="true">
@@ -1425,27 +1425,32 @@
                   <select id="cmsFbGroupActAsSelect" class="cms-fb-compact-input"><option value="">Nick Facebook cá nhân</option></select>
                 </label>
               </div>
-              <details id="fbGroupPicker" class="social-group-picker" open>
-                <summary><span class="cms-fb-label">
-                    <svg aria-hidden="true" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                    <span>Chọn nhóm <span class="social-picker-count"><b id="cmsFbGroupPickedCount">0</b> đã chọn</span></span>
-                  </span></summary>
-                <div class="cms-fb-channel-header social-group-heading">
-                  <div class="cms-fb-channel-quick-actions">
-                    <button type="button" id="btnCmsFbGroupPickAll" class="cms-fb-action-link">Chọn tất cả</button>
-                    <button type="button" id="btnCmsFbGroupPickInstant" class="cms-fb-action-link primary-pill" title="Chỉ chọn các nhóm cho phép đăng ngay không cần chờ duyệt">Chọn nhóm đăng ngay</button>
-                    <button type="button" id="btnCmsFbGroupPickNone" class="cms-fb-action-link">Bỏ chọn</button>
+              <div class="social-group-bar-row">
+                <details id="fbGroupPicker" class="social-group-picker" open>
+                  <summary><span class="cms-fb-label">
+                      <svg aria-hidden="true" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                      <span>Chọn nhóm <span class="social-picker-count"><b id="cmsFbGroupPickedCount">0</b> đã chọn</span></span>
+                    </span></summary>
+                  <div class="cms-fb-channel-header social-group-heading">
+                    <div class="cms-fb-channel-quick-actions">
+                      <button type="button" id="btnCmsFbGroupPickAll" class="cms-fb-action-link">Chọn tất cả</button>
+                      <button type="button" id="btnCmsFbGroupPickInstant" class="cms-fb-action-link primary-pill" title="Chỉ chọn các nhóm cho phép đăng ngay không cần chờ duyệt">Chọn nhóm đăng ngay</button>
+                      <button type="button" id="btnCmsFbGroupPickNone" class="cms-fb-action-link">Bỏ chọn</button>
+                    </div>
                   </div>
-                </div>
-                <div class="cms-fb-search-wrap">
-                  <svg aria-hidden="true" class="cms-fb-search-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                  <input type="text" id="cmsFbGroupSearchInput" aria-label="Tìm tên nhóm" class="cms-fb-compact-input cms-fb-search-input" placeholder="Tìm nhóm…">
-                </div>
-                <div id="cmsFbGroupListBox" role="group" aria-label="Danh sách nhóm đăng bài" class="cms-fb-group-list-box"></div>
-              </details>
+                  <div class="cms-fb-search-wrap">
+                    <svg aria-hidden="true" class="cms-fb-search-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <input type="text" id="cmsFbGroupSearchInput" aria-label="Tìm tên nhóm" class="cms-fb-compact-input cms-fb-search-input" placeholder="Tìm nhóm…">
+                  </div>
+                  <div id="cmsFbGroupListBox" role="group" aria-label="Danh sách nhóm đăng bài" class="cms-fb-group-list-box"></div>
+                </details>
+                <button type="button" id="btnCmsFbGroupSchedToggle" class="social-sched-icon-btn" title="Lịch hẹn & tuỳ chọn rải nhóm" aria-label="Lịch & tuỳ chọn" aria-expanded="false">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 9h18"/><path d="M12 12.5v3l2 1.2"/></svg>
+                </button>
+              </div>
               <div class="social-group-meta-row">
                 <div id="cmsFbGroupEtaText" role="status" aria-live="polite" class="cms-fb-eta-badge">Đang chọn nhóm tự động…</div>
-                <details class="social-advanced">
+                <details class="social-advanced" id="cmsFbGroupAdvDetails">
                   <summary><svg class="social-studio-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg><span>Lịch & tuỳ chọn</span></summary>
                   <div class="social-advanced-fields">
                     <label class="cms-fb-field">
@@ -1496,7 +1501,8 @@
               <div class="cms-fb-channel-header" style="margin-bottom:6px;">
                 <span class="cms-fb-label" id="cmsFbToneSectionLabel" style="margin:0;">
                   <svg aria-hidden="true" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-                  <span>Phong cách bài viết</span>
+                  <span>Nội dung</span>
+                  <em id="cmsFbThreadsCharBadge" class="social-threads-badge" hidden></em>
                 </span>
                 <div class="fb-variant-tabs" id="cmsFbVariantTabs" hidden>
                   <button type="button" class="fb-var-tab active" data-cms-fb-var="0"><span class="fb-variant-number">Bản 1 · </span>Thu hút</button>
@@ -1522,7 +1528,7 @@
             </div>
 
             <label class="cms-fb-field">
-              <textarea id="fbPostContent" aria-label="Nội dung bài đăng" rows="6" placeholder="Đang tạo nội dung bài viết..."></textarea>
+              <textarea id="fbPostContent" aria-label="Nội dung bài đăng" rows="6" spellcheck="false" placeholder="Đang tạo nội dung bài viết..."></textarea>
             </label>
 
             <div class="cms-fb-photo-section">
@@ -1896,6 +1902,6 @@
 
     <div id="toastContainer" class="cms-toast-container" aria-live="polite"></div>
   </div>
-  <script src="/admin/admin.js?v=20261125-spin-v29" defer></script>
+  <script src="/admin/admin.js?v=20261125-threads-v30" defer></script>
 </body>
 </html>

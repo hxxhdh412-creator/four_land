@@ -2208,6 +2208,128 @@ function resolveSpintaxPreview(text) {
   return out;
 }
 
+function countPortalThreadsChars(str) {
+  const s = String(str || '');
+  return Math.max([...s].length, s.length);
+}
+
+function condensePortalThreadsText(rawText, maxChars = 465) {
+  const expanded = resolveSpintaxPreview(rawText).replace(/\r/g, '').replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+  if (!expanded) return '';
+  if (countPortalThreadsChars(expanded) <= maxChars) return expanded;
+
+  const rawLines = expanded.split('\n').map(l => l.trim()).filter(Boolean);
+  if (!rawLines.length) return '';
+
+  let linkLine = '';
+  let phoneLine = '';
+  let priceLine = '';
+  const bodyCandidates = [];
+  const headline = rawLines[0].replace(/\s+/g, ' ');
+  const headlineHasPrice = /\d+(?:[.,]\d+)?\s*(?:tỷ|triệu)/i.test(headline);
+
+  for (let i = 1; i < rawLines.length; i++) {
+    const line = rawLines[i];
+    if (/^(?:✨|🌿|🤝)?\s*(?:Hỗ trợ tìm nhà|Đồng hành tìm nhà|Chào anh chị trong nhóm)/i.test(line)) continue;
+    const urlMatch = line.match(/https?:\/\/[^\s)]+/i);
+    if (urlMatch || /fourland\.vn/i.test(line)) {
+      if (!linkLine) linkLine = `🌐 ${urlMatch ? urlMatch[0] : 'https://www.fourland.vn'}`;
+      continue;
+    }
+    if (/(?:0|\+84)\d[\d.\s-]{7,11}/.test(line)) {
+      if (!phoneLine) phoneLine = line.length <= 42 ? line : `📲 ${line.match(/(?:Ngọc[^:]*:\s*)?(?:0|\+84)\d[\d.\s-]{7,11}/i)?.[0] || line.slice(0, 36)}`;
+      continue;
+    }
+    if (/^💰|^(?:▪️|•|🌿|👉)?\s*(?:Mức giá|Giá\s*(?:bán|thuê|chào|làm việc|mong muốn)?)\s*:/i.test(line)) {
+      if (!priceLine) priceLine = line.replace(/\.$/, '');
+      continue;
+    }
+    bodyCandidates.push({ index: i, text: line });
+  }
+
+  const tailParts = [(!headlineHasPrice && priceLine) ? priceLine : '', linkLine, phoneLine].filter(Boolean);
+  const tailBlock = tailParts.length ? `\n\n${tailParts.join('\n')}` : '';
+  const bodyBudget = Math.max(90, maxChars - countPortalThreadsChars(tailBlock));
+
+  const scored = bodyCandidates.map(item => {
+    let t = item.text;
+    if (t.length > 95 && /\d/.test(t) && t.includes('. ')) {
+      const firstSent = t.split('. ')[0].trim();
+      if (firstSent.length >= 20) t = `${firstSent}.`;
+    }
+    let score = 1;
+    if (/(?:diện tích|kích thước|khuôn đất|kết cấu|quy mô|phòng ngủ|\bpn\b|\bwc\b|\d+\s*[x×*]\s*\d+|\d+\s*m²|trệt|lầu|tầng)/i.test(t)) score = 4;
+    else if (/(?:pháp lý|sổ hồng|hẻm xe hơi|mặt tiền|thang máy|nội thất|sân thượng|gara)/i.test(t)) score = 3;
+    else if (/(?:đường|phường|quận|vị trí|đang bán|cho thuê)/i.test(t)) score = 2;
+    return { ...item, text: t, score };
+  });
+
+  let headOut = headline;
+  if (countPortalThreadsChars(headOut) > bodyBudget) {
+    headOut = [...headOut].slice(0, Math.max(40, bodyBudget - 1)).join('').trim() + '…';
+  }
+  const picked = new Set();
+  let curLen = countPortalThreadsChars(headOut);
+  [...scored].sort((a, b) => b.score - a.score || a.index - b.index).forEach(cand => {
+    const sepLen = picked.size === 0 ? 2 : 1;
+    if (curLen + sepLen + countPortalThreadsChars(cand.text) <= bodyBudget) {
+      picked.add(cand.index);
+      curLen += sepLen + countPortalThreadsChars(cand.text);
+    }
+  });
+  const orderedBody = scored.filter(c => picked.has(c.index)).sort((a, b) => a.index - b.index).map(c => c.text);
+  const mainText = orderedBody.length ? `${headOut}\n\n${orderedBody.join('\n')}` : headOut;
+  let result = `${mainText}${tailBlock}`.trim();
+  if (countPortalThreadsChars(result) > maxChars) {
+    const allowedMain = Math.max(60, maxChars - countPortalThreadsChars(tailBlock) - 1);
+    result = `${[...mainText].slice(0, allowedMain).join('').replace(/\s+\S*$/, '').trim()}…${tailBlock}`.trim();
+  }
+  return result;
+}
+
+function syncPortalThreadsEditorState() {
+  const badge = $('fbThreadsCharBadge');
+  const contentInput = $('fbPostContent');
+  const previewText = $('fbPreviewText');
+  if (fbPortalState.mode === 'group') {
+    if (badge) badge.hidden = true;
+    return;
+  }
+  const ids = Array.from(fbPortalState.selectedPageIds || []);
+  const hasThreads = ids.some(id => String(id).startsWith('threads:'));
+  const isThreadsOnly = ids.length === 1 && hasThreads;
+
+  if (isThreadsOnly && !fbPortalState.isThreadsEditorActive) {
+    if (fbPortalState.content) fbPortalState.fullContent = fbPortalState.content;
+    const nextThreads = fbPortalState.threadsContent || condensePortalThreadsText(fbPortalState.fullContent || fbPortalState.content, 465);
+    fbPortalState.threadsContent = nextThreads;
+    fbPortalState.content = nextThreads;
+    fbPortalState.isThreadsEditorActive = true;
+    if (contentInput) contentInput.value = nextThreads;
+    if (previewText) previewText.textContent = nextThreads;
+  } else if (!isThreadsOnly && fbPortalState.isThreadsEditorActive) {
+    if (fbPortalState.fullContent) fbPortalState.content = fbPortalState.fullContent;
+    fbPortalState.isThreadsEditorActive = false;
+    if (contentInput) contentInput.value = fbPortalState.content || '';
+    if (previewText) previewText.textContent = fbPortalState.content || '';
+  }
+
+  if (badge) {
+    if (isThreadsOnly) {
+      const len = countPortalThreadsChars(fbPortalState.content || '');
+      badge.hidden = false;
+      badge.textContent = `Threads · ${len}/500`;
+      badge.classList.toggle('is-over', len > 500);
+    } else if (hasThreads) {
+      badge.hidden = false;
+      badge.textContent = 'Threads tự tối ưu <500 ký tự';
+      badge.classList.remove('is-over');
+    } else {
+      badge.hidden = true;
+    }
+  }
+}
+
 async function revidEngineApi(method, path, body, baseUrl = fbPortalState.activeEngineUrl) {
   const res = await fetch(`${baseUrl}${path}`, {
     method,
@@ -2477,6 +2599,12 @@ function resolveScheduleTimeInput(rawVal) {
 function updateGroupRotationEta() {
   const etaEl = $('fbGroupEtaText');
   const sched = resolveScheduleTimeInput($('fbGroupStartAt')?.value);
+  const schedBtn = $('btnFbGroupSchedToggle');
+  const advDetails = $('fbGroupAdvDetails');
+  if (schedBtn) {
+    schedBtn.classList.toggle('has-schedule', Boolean(sched.iso));
+    schedBtn.classList.toggle('active', Boolean(advDetails?.open));
+  }
 
   const gapMinEl = $('fbGroupGapMin');
   const gapMaxEl = $('fbGroupGapMax');
@@ -2544,23 +2672,21 @@ function setFacebookPortalMode(mode) {
   if (toneRow) toneRow.hidden = isGroup;
   if (toneLabel) {
     const labelSpan = toneLabel.querySelector('span');
-    if (labelSpan) {
-      labelSpan.textContent = isGroup
-        ? 'Nội dung xoay vòng (4 bản · Hỗ trợ {a|b})'
-        : 'Phong cách bài viết';
-    }
+    if (labelSpan) labelSpan.textContent = 'Nội dung';
   }
 
   const contentInput = $('fbPostContent');
   const previewText = $('fbPreviewText');
   if (isGroup) {
-    const activeText = fbPortalState.variants[fbPortalState.activeVariantIdx] || fbPortalState.content || '';
+    if ($('fbThreadsCharBadge')) $('fbThreadsCharBadge').hidden = true;
+    const activeText = fbPortalState.variants[fbPortalState.activeVariantIdx] || fbPortalState.fullContent || fbPortalState.content || '';
     if (contentInput) contentInput.value = activeText;
     if (previewText) previewText.textContent = resolveSpintaxPreview(activeText);
     initRevidGroupEngine(false);
   } else {
     if (contentInput) contentInput.value = fbPortalState.content || '';
     if (previewText) previewText.textContent = fbPortalState.content || '';
+    syncPortalThreadsEditorState();
   }
   updatePortalPublishButtonState();
   updatePortalPreviewFromChannels();
@@ -2642,11 +2768,13 @@ function renderFacebookPortalChannels() {
       card.classList.toggle('checked', fbPortalState.selectedPageIds.has(pid));
       const checkbox = card.querySelector('input[type="checkbox"]');
       if (checkbox) checkbox.checked = fbPortalState.selectedPageIds.has(pid);
+      syncPortalThreadsEditorState();
       updatePortalPublishButtonState();
       updatePortalPreviewFromChannels();
     };
   });
 
+  syncPortalThreadsEditorState();
   updatePortalPublishButtonState();
   updatePortalPreviewFromChannels();
 }
@@ -2828,6 +2956,9 @@ async function loadFacebookDraft(propertyId, tone = 'hot', targetPageId = null, 
       fbPortalState.posterNode = { ...fbPortalState.posterNode, ...data.posterNode };
     }
     fbPortalState.content = data.content || '';
+    fbPortalState.fullContent = data.content || '';
+    fbPortalState.threadsContent = data.threadsContent || condensePortalThreadsText(data.content || '', 465);
+    fbPortalState.isThreadsEditorActive = false;
     fbPortalState.variants = Array.isArray(data.variants) && data.variants.length >= 4
       ? data.variants.slice(0, 4)
       : [data.content || '', data.content || '', data.content || '', data.content || ''];
@@ -2861,6 +2992,7 @@ async function loadFacebookDraft(propertyId, tone = 'hot', targetPageId = null, 
         ? resolveSpintaxPreview(activeText)
         : activeText;
     }
+    syncPortalThreadsEditorState();
     document.querySelectorAll('[data-fb-var]').forEach(tab => {
       tab.classList.toggle('active', Number(tab.dataset.fbVar) === fbPortalState.activeVariantIdx);
     });
@@ -3153,7 +3285,8 @@ async function handlePublishFacebook() {
       },
       body: JSON.stringify({
         propertyId: fbPortalState.propertyId,
-        content,
+        content: fbPortalState.isThreadsEditorActive ? (fbPortalState.fullContent || content) : content,
+        threadsContent: fbPortalState.isThreadsEditorActive ? content : (fbPortalState.threadsContent || condensePortalThreadsText(content, 465)),
         images: imagesToPublish,
         pageIds: selectedPages,
         pageId: selectedPages[0],
@@ -3238,7 +3371,27 @@ if ($('fbPostContent')) {
       updateGroupRotationEta();
     } else {
       fbPortalState.content = this.value;
+      if (fbPortalState.isThreadsEditorActive) {
+        fbPortalState.threadsContent = this.value;
+      } else {
+        fbPortalState.fullContent = this.value;
+        fbPortalState.threadsContent = condensePortalThreadsText(this.value, 465);
+      }
       if ($('fbPreviewText')) $('fbPreviewText').textContent = this.value;
+      syncPortalThreadsEditorState();
+    }
+  };
+}
+
+if ($('btnFbGroupSchedToggle')) {
+  $('btnFbGroupSchedToggle').onclick = () => {
+    const adv = $('fbGroupAdvDetails');
+    const btn = $('btnFbGroupSchedToggle');
+    if (!adv) return;
+    adv.open = !adv.open;
+    if (btn) {
+      btn.classList.toggle('active', adv.open);
+      btn.setAttribute('aria-expanded', String(adv.open));
     }
   };
 }

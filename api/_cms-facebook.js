@@ -4,7 +4,7 @@
 
 const { requireCms } = require("./_cms-auth");
 const { ACTIONS } = require("../server/cms-authorization");
-const { writeFacebookCopy, buildRuleBasedVariants } = require("../server/ai-copywriter");
+const { writeFacebookCopy, buildRuleBasedVariants, buildThreadsCopy, optimizeContentForThreads } = require("../server/ai-copywriter");
 const {
   getFacebookPages,
   getFacebookPageById,
@@ -219,8 +219,13 @@ function createHandler({
 
         const images = (property.property_images || []).map((img) => img.public_url).filter(Boolean);
         const includeLink = body.includeLink !== false;
+        const linkUrl = includeLink ? "https://www.fourland.vn" : "";
         const variants = buildRuleBasedVariants(property, {
-          link: includeLink ? "https://www.fourland.vn" : ""
+          link: linkUrl
+        });
+        const threadsContent = buildThreadsCopy(property, {
+          tone,
+          link: linkUrl
         });
 
         const posterNode = await getPosterNodeConfig(request);
@@ -231,6 +236,7 @@ function createHandler({
             propertyId,
             tone,
             content: copy.content,
+            threadsContent,
             variants,
             generator: copy.generator,
             cached: Boolean(copy.cached),
@@ -261,15 +267,6 @@ function createHandler({
           return res.status(422).json({ ok: false, error: { message: "Nội dung bài viết không được để trống" } });
         }
 
-        if (propertyId) {
-          await request(`properties?property_id=eq.${encodeURIComponent(propertyId)}`, {
-            method: "PATCH",
-            body: { raw_text: content, notes: null, updated_at: new Date().toISOString() }
-          })
-            .then(() => invalidatePropertiesCache())
-            .catch((err) => console.warn("Update property content notice:", err.message));
-        }
-
         // Deduplicate requested pageIds while keeping order
         const rawPageIds = Array.isArray(body.pageIds) && body.pageIds.length > 0
           ? body.pageIds
@@ -288,6 +285,22 @@ function createHandler({
           if (defaultPage) targetPages.push(defaultPage);
         }
 
+        const isThreadsPage = (p) => {
+          const pid = String(p?.server50PageId || p?.pageId || "");
+          const pname = String(p?.name || "");
+          return pid.startsWith("threads:") || /^threads\b/i.test(pname);
+        };
+        const allTargetsAreThreads = targetPages.length > 0 && targetPages.every(isThreadsPage);
+
+        if (propertyId && !allTargetsAreThreads) {
+          await request(`properties?property_id=eq.${encodeURIComponent(propertyId)}`, {
+            method: "PATCH",
+            body: { raw_text: content, notes: null, updated_at: new Date().toISOString() }
+          })
+            .then(() => invalidatePropertiesCache())
+            .catch((err) => console.warn("Update property content notice:", err.message));
+        }
+
         const posterNode = await getPosterNodeConfig(request);
         const requestedSchedule = String(body.scheduledAt || "").trim();
         const isFutureSchedule = Boolean(requestedSchedule && !Number.isNaN(Date.parse(requestedSchedule)) && Date.parse(requestedSchedule) > Date.now() + 15000);
@@ -298,9 +311,12 @@ function createHandler({
         for (const page of targetPages) {
           const targetPageId = page.server50PageId || page.pageId || process.env.FACEBOOK_PAGE_ID || "104363431784609";
           const targetPageName = page.name || body.pageName || "FourLand";
+          const targetContent = isThreadsPage(page)
+            ? optimizeContentForThreads(String(body.threadsContent || content), { maxChars: 465 })
+            : content;
           try {
             const resPublish = await posterPublisher({
-              content,
+              content: targetContent,
               imageUrls: photoUrls,
               pageId: targetPageId,
               pageName: targetPageName,

@@ -167,3 +167,28 @@ test("zero-AI anti-spam spin and image shuffle produce diverse non-repeating out
     prevSig = res.signature;
   }
 });
+
+test("buildThreadsCopy and optimizeContentForThreads stay strictly under 500 chars while keeping price, phone and link", () => {
+  const { buildThreadsCopy, optimizeContentForThreads, writeFacebookCopy } = require("../server/ai-copywriter");
+
+  for (const tone of ["hot", "detail", "quick"]) {
+    const tCopy = buildThreadsCopy(rental, { tone, link: "https://www.fourland.vn" });
+    assert.ok([...tCopy].length <= 470 && tCopy.length <= 480, `Threads ${tone} copy too long: ${tCopy.length}`);
+    assert.match(tCopy, /55 triệu\/tháng/i);
+    assert.match(tCopy, /0376789808/);
+    assert.match(tCopy, /https:\/\/www\.fourland\.vn/);
+    assert.match(tCopy, /Nguyễn Trọng Tuyển/i);
+    assert.doesNotMatch(tCopy, /280 Nguyễn/i);
+    assert.doesNotMatch(tCopy, /0909123456/);
+  }
+
+  return writeFacebookCopy(rental, { tone: "detail", includeLink: true, aiConfig: null }).then((longFb) => {
+    const longInput = `${longFb.content}\n\n` + "🌿 Tiện ích xung quanh đầy đủ trường học, siêu thị, bệnh viện, khu dân trí cao an ninh yên tĩnh.\n".repeat(5);
+    assert.ok(longInput.length > 750);
+    const condensed = optimizeContentForThreads(longInput, { maxChars: 465 });
+    assert.ok([...condensed].length <= 465 && condensed.length <= 475, `Condensed length exceeded limit: ${condensed.length}`);
+    assert.match(condensed, /55 triệu\/tháng/i);
+    assert.match(condensed, /0376789808/);
+    assert.match(condensed, /https:\/\/www\.fourland\.vn/);
+  });
+});

@@ -177,14 +177,36 @@
 .social-studio :is(.fb-group-input, .cms-fb-compact-input, .fb-group-node-select, .cms-fb-node-select) {
   min-width: 0;
   max-width: 100%;
-  height: 34px !important;
+  height: 38px !important;
   padding: 0 10px !important;
   border: 1px solid var(--line, #d2dcd5) !important;
-  border-radius: 7px !important;
-  font: inherit;
-  font-size: 13px !important;
+  border-radius: 8px !important;
+  font-family: inherit !important;
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+  line-height: 1.3 !important;
+  color: var(--forest, #283d34) !important;
   box-sizing: border-box;
-  background: #fff !important;
+  background-color: #fff !important;
+}
+.social-studio .social-threads-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1.5px 6px;
+  border-radius: 999px;
+  font-style: normal;
+  font-size: 10.5px;
+  font-weight: 700;
+  background: var(--sage, #e9efe9);
+  color: var(--forest, #283d34);
+  border: 1px solid #cdd8d1;
+  white-space: nowrap;
+}
+.social-studio .social-threads-badge.is-over {
+  background: #fee2e2;
+  color: #b91c1c;
+  border-color: #fca5a5;
 }
 .social-studio :is(.fb-group-search, .cms-fb-search-input) {
   padding-left: 28px !important;
@@ -348,44 +370,81 @@
   color: var(--muted);
   text-align: center;
 }
+.social-studio .social-group-bar-row {
+  position: relative;
+  min-width: 0;
+}
+.social-studio .social-group-bar-row > .social-group-picker > summary {
+  width: calc(100% - 44px);
+  min-height: 38px !important;
+  height: 38px !important;
+  box-sizing: border-box;
+  padding: 0 10px;
+  border: 1px solid var(--line, #d2dcd5);
+  border-radius: 8px;
+  background: var(--studio-surface, #fff);
+}
+.social-studio .social-group-bar-row > .social-group-picker[open] > summary {
+  margin-bottom: 6px;
+}
+.social-studio .social-sched-icon-btn {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 38px !important;
+  height: 38px !important;
+  min-height: 38px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border: 1px solid var(--line, #d2dcd5) !important;
+  border-radius: 8px !important;
+  background: var(--studio-surface, #fff) !important;
+  color: var(--forest, #283d34) !important;
+  cursor: pointer;
+  transition: all 0.14s ease;
+  box-sizing: border-box;
+}
+.social-studio .social-sched-icon-btn:hover {
+  background: var(--sage, #eaf1ed) !important;
+  border-color: var(--forest, #283d34) !important;
+}
+.social-studio .social-sched-icon-btn.active,
+.social-studio .social-sched-icon-btn.has-schedule {
+  background: var(--forest, #283d34) !important;
+  border-color: var(--forest, #283d34) !important;
+  color: #ffffff !important;
+}
+.social-studio .social-sched-icon-btn.has-schedule::after {
+  content: '';
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #4ade80;
+}
 .social-studio .social-group-meta-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: wrap;
-  padding-top: 2px;
-  border-top: 1px dashed var(--line, #e1e8e3);
+  padding-top: 0;
+  border-top: 0;
+}
+.social-studio .social-group-meta-row:has(> .social-advanced:not([open])) {
+  gap: 0;
 }
 .social-studio .social-advanced {
   width: 100%;
 }
 .social-studio .social-advanced > summary {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 28px;
-  padding: 2px 8px;
-  border-radius: 6px;
-  background: #f3f7f4;
-  border: 1px solid #d8e2db;
-  font-size: 11.5px;
-  font-weight: 700;
-  color: var(--forest);
-  list-style: none;
-  cursor: pointer;
-  user-select: none;
+  display: none !important;
 }
-.social-studio .social-advanced > summary:hover {
-  background: var(--sage, #e8efe9);
-}
-.social-studio .social-advanced > summary::-webkit-details-marker { display: none; }
-.social-studio .social-advanced > summary::after {
-  content: '▾';
-  font-size: 12px;
-  line-height: 1;
-}
-.social-studio .social-advanced[open] > summary::after { content: '▴'; }
 .social-studio .social-advanced-fields {
   display: grid;
   gap: 6px;
@@ -795,13 +854,14 @@
   .social-studio :is(.fb-group-search-wrap, .cms-fb-search-wrap) { margin: 0 0 4px; }
   .social-studio :is(.fb-group-list-box, .cms-fb-group-list-box) { grid-template-columns: minmax(0, 1fr); max-height: 128px; }
   .social-studio :is(.fb-group-eta, .cms-fb-eta-badge):has(+ .social-advanced:not([open])) { display: none; }
-  .social-studio .fb-variant-tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); width: 100%; gap: 2px; padding: 3px; border: 1px solid var(--line); border-radius: 8px; background: var(--sage, #edf0e8); }
-  .social-studio .fb-var-tab { min-height: 42px; padding-inline: 2px; font-size: 11px; }
+  .social-studio .fb-variant-tabs { display: inline-grid; grid-template-columns: repeat(4, auto); width: auto; flex: 0 1 auto; gap: 2px; padding: 2px; border: 1px solid var(--line); border-radius: 7px; background: var(--sage, #edf0e8); }
+  .social-studio .fb-var-tab { min-height: 26px; height: 26px; padding: 0 7px; font-size: 11px; white-space: nowrap; }
   .social-studio .fb-variant-number { display: none; }
   .social-studio .social-sched-title span { display: none; }
   .social-studio .social-page-schedule-bar { padding: 5px 6px; gap: 5px; }
   .social-studio :is(.fb-group-schedule-grid, .cms-fb-schedule-grid) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .social-studio :is(.fb-group-input, .cms-fb-compact-input, .fb-group-node-select, .cms-fb-node-select, textarea) { font-size: 16px !important; }
+  .social-studio :is(.fb-group-input, .cms-fb-compact-input, .fb-group-node-select, .cms-fb-node-select) { font-size: 12.5px !important; font-weight: 600 !important; height: 38px !important; }
+  .social-studio textarea { font-size: 13.5px !important; font-weight: 400 !important; }
   .social-studio .social-advanced-fields :is(.fb-group-input, .cms-fb-compact-input) { height: 32px !important; font-size: 13px !important; }
   .social-studio :is(.fb-portal-footer, .cms-fb-footer) { padding: 8px 12px calc(8px + env(safe-area-inset-bottom)) !important; gap: 4px; }
   .social-studio :is(.fb-portal-actions, .cms-fb-buttons) { display: grid !important; grid-template-columns: 74px minmax(0, 1fr) !important; }
