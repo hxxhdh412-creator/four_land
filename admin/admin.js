@@ -2646,11 +2646,11 @@ async function initCmsRevidGroupEngine(forceGroups = false) {
     if (statusEl) {
       statusEl.innerHTML = fbs.length
         ? `<b>${escapeHtml(fbState.activeEngineLabel)}</b> · ${fbs.length} tài khoản sẵn sàng`
-        : `<b>${escapeHtml(fbState.activeEngineLabel)}</b> · Chưa có tài khoản FB — bấm <b>+ Thêm TK</b>`;
+        : `<b>${escapeHtml(fbState.activeEngineLabel)}</b> · Chưa có tài khoản Facebook`;
     }
     if (accSel) {
       if (!fbs.length) {
-        accSel.innerHTML = '<option value="">Chưa có tài khoản — bấm + Thêm TK</option>';
+        accSel.innerHTML = '<option value="">Chưa có tài khoản Facebook</option>';
         populateCmsActAsOptions(null);
       } else {
         if (!fbState.selectedAccountId || !fbs.some(a => a.id === fbState.selectedAccountId)) {
@@ -2770,6 +2770,11 @@ function updateCmsGroupRotationEta() {
 
 function setCmsFacebookMode(mode) {
   fbState.mode = mode === 'group' ? 'group' : 'page';
+  const groupPicker = byId('fbGroupPicker');
+  if (fbState.mode === 'group' && groupPicker && !groupPicker.hasAttribute('data-ready')) {
+    groupPicker.open = !window.matchMedia('(max-width: 760px)').matches;
+    groupPicker.setAttribute('data-ready', '');
+  }
   if (byId('fbDestinationSelect')) byId('fbDestinationSelect').value = fbState.mode;
   const isGroup = fbState.mode === 'group';
   document.querySelectorAll('[data-cms-fb-mode]').forEach(btn => {
@@ -3253,42 +3258,6 @@ document.querySelectorAll('[data-cms-fb-mode]').forEach(tab => {
 });
 if (byId('fbDestinationSelect')) {
   byId('fbDestinationSelect').addEventListener('change', event => setCmsFacebookMode(event.target.value));
-}
-if (byId('btnCmsFbGroupAddAccount')) {
-  byId('btnCmsFbGroupAddAccount').addEventListener('click', async () => {
-    if (!fbState.engineOnline) {
-      alert('Chưa kết nối được Máy chủ 50 (8889).');
-      return;
-    }
-    const label = prompt('Nhập tên gợi nhớ cho tài khoản Facebook Fourland (VD: Nick Fourland BĐS):', 'Fourland BĐS');
-    if (label === null) return;
-    const rawCookies = prompt(
-      'Dán Cookie tài khoản Facebook mới (chuỗi "c_user=...; xs=..." hoặc JSON cookie):\n\n(Hoặc bấm Cancel để mở Bảng điều khiển Máy 50 thêm trực tiếp)'
-    );
-    if (!rawCookies || !rawCookies.trim()) {
-      if (confirm('Bạn có muốn mở Bảng điều khiển riêng của Fourland trên Máy 50 (Cổng 8889) để thêm tài khoản Facebook mới không?')) {
-        window.open(`${fbState.activeEngineUrl}/#accounts`, '_blank');
-      }
-      return;
-    }
-    try {
-      const res = await cmsRevidApi('POST', '/api/extension/sync', {
-        platform: 'facebook',
-        label: label.trim() || 'Fourland BĐS',
-        cookies: rawCookies.trim(),
-        userAgent: navigator.userAgent,
-        mode: 'upsert',
-        _relayed: true
-      });
-      if (res?.account?.id) {
-        fbState.selectedAccountId = res.account.id;
-        showToast(`Đã kết nối tài khoản "${res.account.label}" trên nhánh riêng Máy 50!`);
-        await initCmsRevidGroupEngine(true);
-      }
-    } catch (err) {
-      alert(`Không thêm được tài khoản: ${err.message}`);
-    }
-  });
 }
 if (byId('cmsFbGroupNodeSelect')) {
   byId('cmsFbGroupNodeSelect').addEventListener('change', () => {

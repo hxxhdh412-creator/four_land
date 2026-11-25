@@ -2280,14 +2280,14 @@ async function initRevidGroupEngine(forceGroups = false) {
     if (statusEl) {
       statusEl.innerHTML = fbs.length
         ? `<b>${escapeHtml(fbPortalState.activeEngineLabel)}</b> · ${fbs.length} tài khoản sẵn sàng`
-        : `<b>${escapeHtml(fbPortalState.activeEngineLabel)}</b> · Chưa có tài khoản FB — bấm <b>+ Thêm TK</b>`;
+        : `<b>${escapeHtml(fbPortalState.activeEngineLabel)}</b> · Chưa có tài khoản Facebook`;
     }
     if (accSel) {
       if (!fbs.length) {
-        accSel.innerHTML = '<option value="">Chưa có tài khoản — bấm + Thêm TK</option>';
+        accSel.innerHTML = '<option value="">Chưa có tài khoản Facebook</option>';
         populatePortalActAsOptions(null);
         const box = $('fbGroupListBox');
-        if (box) box.innerHTML = `<div class="fb-group-empty">Chưa có tài khoản Facebook. Bấm <b>+ Thêm TK</b> để kết nối tài khoản Fourland riêng.</div>`;
+        if (box) box.innerHTML = `<div class="fb-group-empty">Chưa có tài khoản Facebook trong hệ thống.</div>`;
       } else {
         if (!fbPortalState.selectedAccountId || !fbs.some(a => a.id === fbPortalState.selectedAccountId)) {
           fbPortalState.selectedAccountId = fbs[0].id;
@@ -2417,6 +2417,11 @@ function updateGroupRotationEta() {
 
 function setFacebookPortalMode(mode) {
   fbPortalState.mode = mode === 'group' ? 'group' : 'page';
+  const groupPicker = $('fbGroupPicker');
+  if (fbPortalState.mode === 'group' && groupPicker && !groupPicker.hasAttribute('data-ready')) {
+    groupPicker.open = !window.matchMedia('(max-width: 760px)').matches;
+    groupPicker.setAttribute('data-ready', '');
+  }
   if ($('fbDestinationSelect')) $('fbDestinationSelect').value = fbPortalState.mode;
   const isGroup = fbPortalState.mode === 'group';
   document.querySelectorAll('[data-fb-mode]').forEach(btn => {
@@ -2626,7 +2631,7 @@ async function openFacebookStudio(propertyId) {
   const submitBtn = $('fbSubmitBtn');
   if (submitBtn) {
     submitBtn.disabled = false;
-    submitBtn.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg><span>Đăng lên Facebook</span>`;
+    submitBtn.innerHTML = `<svg aria-hidden="true" class="social-studio-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="m22 2-7 20-4-9-9-4 20-7Z"/><path d="M22 2 11 13"/></svg><span>Đăng lên Facebook</span>`;
   }
 
   dialog.showModal();
@@ -3064,45 +3069,6 @@ if ($('fbPostContent')) {
 document.querySelectorAll('[data-fb-mode]').forEach(tab => {
   tab.onclick = () => setFacebookPortalMode(tab.dataset.fbMode);
 });
-async function promptAddFacebookGroupAccount() {
-  if (!fbPortalState.engineOnline) {
-    alert('Chưa kết nối được Máy chủ 50 (8889). Vui lòng kiểm tra kết nối trước!');
-    return;
-  }
-  const label = prompt('Nhập tên gợi nhớ cho tài khoản Facebook Fourland (VD: Nick Fourland BĐS):', 'Fourland BĐS');
-  if (label === null) return;
-  const rawCookies = prompt(
-    'Dán Cookie tài khoản Facebook mới (chuỗi "c_user=...; xs=..." hoặc JSON cookie từ tiện ích Get-Cookie / Extension):\n\n(Hoặc bấm Cancel để mở Bảng điều khiển Máy 50 thêm trực tiếp)'
-  );
-  if (!rawCookies || !rawCookies.trim()) {
-    if (confirm('Bạn có muốn mở Bảng điều khiển riêng của Fourland trên Máy 50 (Cổng 8889) để đăng nhập / đồng bộ tài khoản Facebook mới không?')) {
-      window.open(`${fbPortalState.activeEngineUrl}/#accounts`, '_blank');
-    }
-    return;
-  }
-  try {
-    showToast('Đang thêm tài khoản Facebook lên Máy 50 (Nhánh Fourland)…', 3000);
-    const res = await revidEngineApi('POST', '/api/extension/sync', {
-      platform: 'facebook',
-      label: label.trim() || 'Fourland BĐS',
-      cookies: rawCookies.trim(),
-      userAgent: navigator.userAgent,
-      mode: 'upsert',
-      _relayed: true
-    });
-    if (res?.account?.id) {
-      fbPortalState.selectedAccountId = res.account.id;
-      showToast(`✅ Đã kết nối tài khoản "${res.account.label}" trên nhánh riêng Máy 50!`);
-      await initRevidGroupEngine(true);
-    }
-  } catch (err) {
-    alert(`Không thêm được tài khoản: ${err.message}`);
-  }
-}
-
-if ($('btnFbGroupAddAccount')) {
-  $('btnFbGroupAddAccount').onclick = promptAddFacebookGroupAccount;
-}
 if ($('fbGroupActAsSelect')) {
   $('fbGroupActAsSelect').onchange = () => {
     fbPortalState.selectedActAs = $('fbGroupActAsSelect').value;
