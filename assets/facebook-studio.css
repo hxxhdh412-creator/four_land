@@ -427,7 +427,8 @@
   box-shadow: 0 3px 10px rgba(24, 43, 36, 0.2);
 }
 .social-studio #fbSubmitBtn:hover { background: var(--forest-2, #182b24) !important; }
-.social-studio .cms-fb-status-bar { min-width: 0; }
+.social-studio #fbPublishStatus { min-width: 0; }
+.social-studio #fbPublishStatus:empty { position: absolute; }
 .social-studio .cms-fb-buttons { width: auto; margin-left: auto; }
 .social-studio :is(.cms-fb-tone-chip, .fb-portal-tone-chip) {
   height: 28px;
@@ -505,7 +506,6 @@
   color: var(--forest);
   font-size: 11px;
 }
-.social-studio .cms-fb-status-tag { display: none; }
 .social-studio :is(button, a, input, select, textarea, summary):focus-visible {
   outline: 2px solid var(--forest) !important;
   outline-offset: 2px;

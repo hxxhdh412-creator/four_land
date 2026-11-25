@@ -3045,10 +3045,7 @@ async function loadFacebookDraft(propertyId, tone = 'hot', _pageId = null, regen
     renderFacebookPhotoGrid();
     renderFacebookPreviewGallery();
 
-    const count = fbState.selectedPageIds.size;
-    byId('fbPublishStatus').textContent = count > 1 
-      ? `Sẵn sàng đăng đồng thời lên ${count} Fanpage`
-      : `Sẵn sàng đăng lên Fanpage ${fbState.pageName}`;
+    byId('fbPublishStatus').textContent = '';
   } catch (error) {
     contentInput.value = '';
     previewText.textContent = `Lỗi: ${error.message}`;
