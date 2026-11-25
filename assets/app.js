@@ -2242,21 +2242,44 @@ async function resolveRevidEngineCandidates() {
 function populatePortalActAsOptions(account) {
   const actSel = $('fbGroupActAsSelect');
   if (!actSel) return;
-  if (!account) {
+  const allAccounts = Array.isArray(fbPortalState.fbAccounts) && fbPortalState.fbAccounts.length
+    ? fbPortalState.fbAccounts
+    : (account ? [account] : []);
+  if (!allAccounts.length) {
     actSel.innerHTML = '<option value="">Nick Facebook cá nhân</option>';
     fbPortalState.selectedActAs = '';
     return;
   }
-  const accPages = Array.isArray(account.pages) && account.pages.length
-    ? account.pages
-    : (fbPortalState.pages || []).map(p => ({ id: p.pageId || p.id, name: p.name }));
-  if (fbPortalState.selectedActAs && !accPages.some(p => String(p.id) === String(fbPortalState.selectedActAs))) {
-    fbPortalState.selectedActAs = '';
+  const activeAccId = fbPortalState.selectedAccountId || allAccounts[0].id;
+  const opts = [];
+  const seenPages = new Set();
+
+  // 1. Liệt kê tất cả Nick Facebook cá nhân đã kết nối (Nguyễn Ngọc, Nguyễn Bích Ngọc...)
+  for (const acc of allAccounts) {
+    const isSelected = acc.id === activeAccId && !fbPortalState.selectedActAs;
+    const gCount = acc.groupCount || (acc.groupsCache?.groups?.length) || 500;
+    opts.push(
+      `<option value="${escapeHtml(acc.id)}::" data-account-id="${escapeHtml(acc.id)}" data-act-as="" ${isSelected ? 'selected' : ''}>Cá nhân: ${escapeHtml(acc.profileName || acc.label)} (${gCount} nhóm)</option>`
+    );
   }
-  const opts = [
-    `<option value="" ${!fbPortalState.selectedActAs ? 'selected' : ''}>Cá nhân: ${escapeHtml(account.profileName || account.label)} (500 nhóm)</option>`,
-    ...accPages.map(p => `<option value="${escapeHtml(p.id)}" ${String(p.id) === String(fbPortalState.selectedActAs) ? 'selected' : ''}>Fanpage: ${escapeHtml(p.name)}</option>`)
-  ];
+
+  // 2. Liệt kê toàn bộ Fanpage (chống trùng theo ID/tên) gắn với tài khoản sở hữu
+  for (const acc of allAccounts) {
+    const pages = Array.isArray(acc.pages) && acc.pages.length ? acc.pages : [];
+    for (const p of pages) {
+      const pid = String(p.id || p.pageId || '').trim();
+      const pName = String(p.name || '').trim();
+      const nameKey = pName.toLowerCase();
+      if (!pid || !pName || seenPages.has(pid) || seenPages.has(nameKey)) continue;
+      seenPages.add(pid);
+      seenPages.add(nameKey);
+      const isSelected = String(fbPortalState.selectedActAs) === pid;
+      opts.push(
+        `<option value="${escapeHtml(acc.id)}::${escapeHtml(pid)}" data-account-id="${escapeHtml(acc.id)}" data-act-as="${escapeHtml(pid)}" ${isSelected ? 'selected' : ''}>Fanpage: ${escapeHtml(pName)}</option>`
+      );
+    }
+  }
+
   actSel.innerHTML = opts.join('');
 }
 
@@ -2333,7 +2356,7 @@ async function loadRevidAccountGroups(accountId, fresh = false) {
   if (!accountId || !box) return;
   box.innerHTML = `<div class="fb-group-empty">Đang tải danh sách nhóm Facebook đã tham gia…</div>`;
   try {
-    const actAs = $('fbGroupActAsSelect')?.value || fbPortalState.selectedActAs || '';
+    const actAs = fbPortalState.selectedActAs || '';
     const actParam = actAs ? `&actAs=${encodeURIComponent(actAs)}` : '';
     const base = `/api/accounts/${encodeURIComponent(accountId)}/groups`;
     let d = await revidEngineApi('GET', `${base}?cached=${fresh ? '0' : '1'}${actParam}`);
@@ -2689,7 +2712,7 @@ function updatePortalPreviewFromChannels() {
 
   if (fbPortalState.mode === 'group') {
     const acc = (fbPortalState.fbAccounts || []).find(a => a.id === fbPortalState.selectedAccountId) || fbPortalState.fbAccounts?.[0];
-    const actAsId = $('fbGroupActAsSelect')?.value || fbPortalState.selectedActAs || '';
+    const actAsId = fbPortalState.selectedActAs || '';
     const actAsPage = actAsId && acc?.pages ? acc.pages.find(p => String(p.id) === String(actAsId)) : null;
     const firstGrp = Array.from(fbPortalState.selectedGroups.values())[0];
     const accLabel = actAsPage ? actAsPage.name : (acc ? (acc.profileName || acc.label) : 'Tài khoản Facebook');
@@ -3002,7 +3025,7 @@ async function handlePublishGroupRotation() {
       action: 'publish-group',
       name: ($('fbGroupRotName')?.value || '').trim() || `BĐS Fourland · ${fbPortalState.propertyId || Date.now()}`,
       accountId,
-      actAs: $('fbGroupActAsSelect')?.value || fbPortalState.selectedActAs || '',
+      actAs: fbPortalState.selectedActAs || '',
       groups,
       variants,
       imageUrls: selectedImgs.slice(0, 10),
@@ -3207,7 +3230,15 @@ document.querySelectorAll('[data-fb-mode]').forEach(tab => {
 });
 if ($('fbGroupActAsSelect')) {
   $('fbGroupActAsSelect').onchange = () => {
-    fbPortalState.selectedActAs = $('fbGroupActAsSelect').value;
+    const sel = $('fbGroupActAsSelect');
+    const opt = sel.selectedOptions?.[0];
+    const rawVal = sel.value || '';
+    const [parsedAccId, parsedActAs] = rawVal.includes('::') ? rawVal.split('::') : [fbPortalState.selectedAccountId, rawVal];
+    const nextAccId = opt?.dataset?.accountId || parsedAccId || fbPortalState.selectedAccountId;
+    const nextActAs = opt?.dataset?.actAs !== undefined ? opt.dataset.actAs : (parsedActAs || '');
+    fbPortalState.selectedAccountId = nextAccId;
+    fbPortalState.selectedActAs = nextActAs;
+    if ($('fbGroupAccountSelect') && nextAccId) $('fbGroupAccountSelect').value = nextAccId;
     fbPortalState.selectedGroups.clear();
     if (fbPortalState.selectedAccountId) {
       loadRevidAccountGroups(fbPortalState.selectedAccountId, false);

@@ -2637,21 +2637,42 @@ async function resolveCmsRevidCandidates() {
 function populateCmsActAsOptions(account) {
   const actSel = byId('cmsFbGroupActAsSelect');
   if (!actSel) return;
-  if (!account) {
+  const allAccounts = Array.isArray(fbState.fbAccounts) && fbState.fbAccounts.length
+    ? fbState.fbAccounts
+    : (account ? [account] : []);
+  if (!allAccounts.length) {
     actSel.innerHTML = '<option value="">Nick Facebook cá nhân</option>';
     fbState.selectedActAs = '';
     return;
   }
-  const accPages = Array.isArray(account.pages) && account.pages.length
-    ? account.pages
-    : (fbState.pages || []).map(p => ({ id: p.pageId || p.id, name: p.name }));
-  if (fbState.selectedActAs && !accPages.some(p => String(p.id) === String(fbState.selectedActAs))) {
-    fbState.selectedActAs = '';
+  const activeAccId = fbState.selectedAccountId || allAccounts[0].id;
+  const opts = [];
+  const seenPages = new Set();
+
+  for (const acc of allAccounts) {
+    const isSelected = acc.id === activeAccId && !fbState.selectedActAs;
+    const gCount = acc.groupCount || (acc.groupsCache?.groups?.length) || 500;
+    opts.push(
+      `<option value="${escapeHtml(acc.id)}::" data-account-id="${escapeHtml(acc.id)}" data-act-as="" ${isSelected ? 'selected' : ''}>Cá nhân: ${escapeHtml(acc.profileName || acc.label)} (${gCount} nhóm)</option>`
+    );
   }
-  const opts = [
-    `<option value="" ${!fbState.selectedActAs ? 'selected' : ''}>Cá nhân: ${escapeHtml(account.profileName || account.label)} (500 nhóm)</option>`,
-    ...accPages.map(p => `<option value="${escapeHtml(p.id)}" ${String(p.id) === String(fbState.selectedActAs) ? 'selected' : ''}>Fanpage: ${escapeHtml(p.name)}</option>`)
-  ];
+
+  for (const acc of allAccounts) {
+    const pages = Array.isArray(acc.pages) && acc.pages.length ? acc.pages : [];
+    for (const p of pages) {
+      const pid = String(p.id || p.pageId || '').trim();
+      const pName = String(p.name || '').trim();
+      const nameKey = pName.toLowerCase();
+      if (!pid || !pName || seenPages.has(pid) || seenPages.has(nameKey)) continue;
+      seenPages.add(pid);
+      seenPages.add(nameKey);
+      const isSelected = String(fbState.selectedActAs) === pid;
+      opts.push(
+        `<option value="${escapeHtml(acc.id)}::${escapeHtml(pid)}" data-account-id="${escapeHtml(acc.id)}" data-act-as="${escapeHtml(pid)}" ${isSelected ? 'selected' : ''}>Fanpage: ${escapeHtml(pName)}</option>`
+      );
+    }
+  }
+
   actSel.innerHTML = opts.join('');
 }
 
@@ -2722,7 +2743,7 @@ async function loadCmsRevidGroups(accountId, fresh = false) {
   if (!accountId || !box) return;
   box.innerHTML = `<div style="grid-column:1/-1;padding:12px;text-align:center;font-size:12px;color:#64748b;">Đang tải danh sách nhóm…</div>`;
   try {
-    const actAs = byId('cmsFbGroupActAsSelect')?.value || fbState.selectedActAs || '';
+    const actAs = fbState.selectedActAs || '';
     const actParam = actAs ? `&actAs=${encodeURIComponent(actAs)}` : '';
     const base = `/api/accounts/${encodeURIComponent(accountId)}/groups`;
     let d = await cmsRevidApi('GET', `${base}?cached=${fresh ? '0' : '1'}${actParam}`);
@@ -3040,7 +3061,7 @@ function updatePreviewFromChannels() {
 
   if (fbState.mode === 'group') {
     const acc = (fbState.fbAccounts || []).find(a => a.id === fbState.selectedAccountId) || fbState.fbAccounts?.[0];
-    const actAsId = byId('cmsFbGroupActAsSelect')?.value || fbState.selectedActAs || '';
+    const actAsId = fbState.selectedActAs || '';
     const actAsPage = actAsId && acc?.pages ? acc.pages.find(p => String(p.id) === String(actAsId)) : null;
     const actorName = actAsPage ? actAsPage.name : (acc ? (acc.profileName || acc.label) : 'Tài khoản Facebook');
     const actorPic = actAsPage?.picture || acc?.picture || '';
@@ -3267,7 +3288,7 @@ async function handlePublishFacebook() {
         action: 'publish-group',
         name: (byId('cmsFbGroupRotName')?.value || '').trim() || `BĐS Fourland · ${fbState.propertyId || Date.now()}`,
         accountId,
-        actAs: byId('cmsFbGroupActAsSelect')?.value || fbState.selectedActAs || '',
+        actAs: fbState.selectedActAs || '',
         groups,
         variants,
         imageUrls: selectedImgs,
@@ -3439,7 +3460,15 @@ if (byId('cmsFbGroupAccountSelect')) {
 }
 if (byId('cmsFbGroupActAsSelect')) {
   byId('cmsFbGroupActAsSelect').addEventListener('change', (e) => {
-    fbState.selectedActAs = e.target.value;
+    const sel = e.target;
+    const opt = sel.selectedOptions?.[0];
+    const rawVal = sel.value || '';
+    const [parsedAccId, parsedActAs] = rawVal.includes('::') ? rawVal.split('::') : [fbState.selectedAccountId, rawVal];
+    const nextAccId = opt?.dataset?.accountId || parsedAccId || fbState.selectedAccountId;
+    const nextActAs = opt?.dataset?.actAs !== undefined ? opt.dataset.actAs : (parsedActAs || '');
+    fbState.selectedAccountId = nextAccId;
+    fbState.selectedActAs = nextActAs;
+    if (byId('cmsFbGroupAccountSelect') && nextAccId) byId('cmsFbGroupAccountSelect').value = nextAccId;
     fbState.selectedGroups.clear();
     if (fbState.selectedAccountId) {
       loadCmsRevidGroups(fbState.selectedAccountId, false);
