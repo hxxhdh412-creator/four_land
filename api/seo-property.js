@@ -1,3 +1,5 @@
+const fs = require("node:fs");
+const path = require("node:path");
 const { sendError, supabaseRequest } = require("./_supabase");
 const { propertyIdFromSlug, propertyPath, renderPropertyPage, value } = require("../server/seo");
 
@@ -6,6 +8,14 @@ function createHandler({ request = supabaseRequest, render = renderPropertyPage 
     if (req.method !== "GET") return res.status(405).send("Method Not Allowed");
 
     try {
+      const fbParam = Array.isArray(req.query?.fb) ? req.query.fb[0] : req.query?.fb;
+      if (fbParam === "page" || fbParam === "group") {
+        const spaHtml = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
+        res.setHeader("Content-Type", "text/html; charset=utf-8");
+        res.setHeader("Cache-Control", "no-store");
+        res.setHeader("X-Robots-Tag", "noindex");
+        return res.status(200).send(spaHtml);
+      }
       const requestSlug = Array.isArray(req.query?.slug) ? req.query.slug[0] : req.query?.slug;
       const id = propertyIdFromSlug(requestSlug);
       if (!id) {

@@ -3030,7 +3030,7 @@ function updatePreviewFromChannels() {
   const pName = pageObj?.name || 'FourLand';
 
   if (avatarImg) {
-    avatarImg.src = `https://graph.facebook.com/${selectedPid}/picture?type=large`;
+    avatarImg.src = pageObj?.avatarUrl || `https://graph.facebook.com/${selectedPid}/picture?type=large`;
     avatarImg.alt = `Avatar ${pName}`;
     avatarImg.style.display = 'block';
   }

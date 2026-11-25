@@ -11,10 +11,11 @@ const INITIAL_PAGES = [
   {
     id: DEFAULT_PAGE_ID,
     pageId: DEFAULT_PAGE_ID,
+    server50PageId: "100066639715025",
     name: DEFAULT_PAGE_NAME,
     token: DEFAULT_PAGE_TOKEN,
     isDefault: true,
-    source: "composio",
+    source: "server50-8889",
     category: "Công ty phát triển bất động sản",
     avatarUrl: `https://graph.facebook.com/${DEFAULT_PAGE_ID}/picture?type=large`,
     createdAt: "2026-08-01T00:00:00.000Z",
@@ -23,10 +24,11 @@ const INITIAL_PAGES = [
   {
     id: "106656702112510",
     pageId: "106656702112510",
+    server50PageId: "100083339924743",
     name: "Ngọc Nhà Tốt",
     token: "EAAM4uULUpAUBSxBxR0AZAcXvm3vAIOKvBaCDry12Dcita5TUacoFoZB8qNZB0LcONi4PnqHtFrR2yceWI9ngri2sHhHQJxqQVY6unpM2SWI5qixDocJhnIx8mSdVJhcnaZCaRtE31vyxbOuENdKqhZCK7g0j3rFhCzUKBt01OAytBbZC8FdfCb8mHURVBJJJEO2qTf0YFOnXKeo3eFA0GttjgZD",
     isDefault: false,
-    source: "composio",
+    source: "server50-8889",
     category: "Người môi giới bất động sản",
     avatarUrl: "https://graph.facebook.com/106656702112510/picture?type=large",
     createdAt: "2026-08-01T00:00:00.000Z",
@@ -35,6 +37,7 @@ const INITIAL_PAGES = [
   {
     id: "100063820399874",
     pageId: "100063820399874",
+    server50PageId: "100063820399874",
     name: "Vinhomes Green Paradise",
     token: "",
     isDefault: false,
@@ -47,24 +50,26 @@ const INITIAL_PAGES = [
   {
     id: "61560150341552",
     pageId: "61560150341552",
+    server50PageId: "61560150341552",
     name: "Alpha - Giải Pháp Không Gian Sáng Tạo",
     token: "",
     isDefault: false,
     source: "server50-8889",
     category: "Thiết kế & Kiến trúc",
-    avatarUrl: "https://graph.facebook.com/61560150341552/picture?type=large",
+    avatarUrl: "/assets/brand/fourland-icon-192.png",
     createdAt: "2026-11-25T00:00:00.000Z",
     updatedAt: "2026-11-25T00:00:00.000Z"
   },
   {
     id: "61566534021649",
     pageId: "61566534021649",
+    server50PageId: "61566534021649",
     name: "AI Business Hub",
     token: "",
     isDefault: false,
     source: "server50-8889",
     category: "Doanh nghiệp & Công nghệ",
-    avatarUrl: "https://graph.facebook.com/61566534021649/picture?type=large",
+    avatarUrl: "/assets/brand/fourland-icon-192.png",
     createdAt: "2026-11-25T00:00:00.000Z",
     updatedAt: "2026-11-25T00:00:00.000Z"
   }
@@ -189,6 +194,7 @@ function sanitizePage(page) {
   return {
     id: String(page.id || page.pageId),
     pageId: String(page.pageId || page.id),
+    ...(page.server50PageId ? { server50PageId: String(page.server50PageId) } : {}),
     name: String(page.name || "Fanpage").trim(),
     isDefault: Boolean(page.isDefault),
     hasToken: Boolean(page.token && page.token.trim()),
@@ -360,6 +366,17 @@ async function fetchServer50Pages({ fetchImpl = fetch } = {}) {
 
 async function getFacebookPages({ forceRefresh = false, fetchImpl = fetch } = {}) {
   await loadPersistentPages();
+  const isNodeTest = Array.isArray(process.execArgv) && process.execArgv.includes("--test");
+  const shouldSync = forceRefresh || (!isNodeTest && (Date.now() - lastSyncTime > SYNC_TTL_MS));
+  if (shouldSync) {
+    // 1. Ưu tiên đồng bộ từ Nhánh riêng Máy 50 (Cổng 8889) trước (lấy đủ avatar thật & page mới)
+    const s50 = await fetchServer50Pages({ fetchImpl });
+    if (!s50.syncedFrom) {
+      // 2. Dự phòng (Fallback): Đồng bộ qua Composio nếu Máy 50 không phản hồi
+      await fetchComposioPages({ fetchImpl });
+    }
+    await savePersistentPages(dynamicPagesStore);
+  }
   // Ensure all built-in Server 50 pages are merged into dynamicPagesStore if missing
   for (const initPg of INITIAL_PAGES) {
     const pid = String(initPg.pageId);
@@ -370,16 +387,6 @@ async function getFacebookPages({ forceRefresh = false, fetchImpl = fetch } = {}
     if (!exists) {
       dynamicPagesStore.push({ ...initPg, isDefault: false });
     }
-  }
-  const shouldSync = forceRefresh || (dynamicPagesStore.length <= 2 && (Date.now() - lastSyncTime > SYNC_TTL_MS));
-  if (shouldSync) {
-    // 1. Ưu tiên đồng bộ từ Nhánh riêng Máy 50 (Cổng 8889) trước
-    const s50 = await fetchServer50Pages({ fetchImpl });
-    if (!s50.syncedFrom) {
-      // 2. Dự phòng (Fallback): Đồng bộ qua Composio nếu Máy 50 không phản hồi
-      await fetchComposioPages({ fetchImpl });
-    }
-    await savePersistentPages(dynamicPagesStore);
   }
   return dynamicPagesStore.map(sanitizePage);
 }

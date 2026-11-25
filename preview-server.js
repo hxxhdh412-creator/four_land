@@ -1274,7 +1274,7 @@ http.createServer(async (req,res)=>{
       res.writeHead(200,{"Content-Type":"text/html; charset=utf-8","Cache-Control":"no-cache"});res.end(html);return;
     } catch(error) { return send(res,500,error.message,"text/plain; charset=utf-8") }
   }
-  if(url.pathname.startsWith("/bat-dong-san/")) {
+  if(url.pathname.startsWith("/bat-dong-san/") && !url.searchParams.get("fb")) {
     try {
       const id=propertyIdFromSlug(url.pathname.slice("/bat-dong-san/".length));
       let property;
@@ -1298,7 +1298,7 @@ http.createServer(async (req,res)=>{
       res.writeHead(200,{"Content-Type":"text/html; charset=utf-8","Cache-Control":"no-cache"});res.end(renderPropertyPage(property, { similarProperties }));return;
     } catch(error) { return send(res,500,error.message,"text/plain; charset=utf-8") }
   }
-  const requestPath=url.pathname==="/"?"/index.html":(url.pathname==="/admin"||url.pathname==="/admin/"?"/admin/index.html":url.pathname);
+  const requestPath=(url.pathname==="/"||(url.pathname.startsWith("/bat-dong-san/")&&url.searchParams.get("fb")))?"/index.html":(url.pathname==="/admin"||url.pathname==="/admin/"?"/admin/index.html":url.pathname);
   const filePath=path.resolve(root,"."+requestPath);
   if(!filePath.startsWith(root)||!fs.existsSync(filePath)||fs.statSync(filePath).isDirectory()) return send(res,404,"Not Found","text/plain; charset=utf-8");
   const ext=path.extname(filePath);

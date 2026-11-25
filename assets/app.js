@@ -2682,7 +2682,7 @@ function updatePortalPreviewFromChannels() {
   fbPortalState.selectedPageId = selectedPid;
 
   if (avatarImg) {
-    avatarImg.src = `https://graph.facebook.com/${selectedPid}/picture?type=large`;
+    avatarImg.src = pageObj?.avatarUrl || `https://graph.facebook.com/${selectedPid}/picture?type=large`;
     avatarImg.alt = `Avatar ${pName}`;
     avatarImg.style.display = 'block';
   }
