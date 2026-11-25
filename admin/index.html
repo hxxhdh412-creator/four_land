@@ -1360,8 +1360,15 @@
 
             <div class="cms-fb-group-section" id="cmsFbGroupSection" hidden style="display:grid;gap:10px;padding:12px;border-radius:10px;background:#f7faf8;border:1px solid #dce5de;margin-bottom:12px;">
               <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;padding:6px 10px;border-radius:7px;background:#fff;border:1px solid #e2e8e4;font-size:12px;">
-                <span id="cmsFbGroupEngineStatus">Đang kiểm tra kết nối RevidAPI Social (127.0.0.1:8788)…</span>
-                <a href="http://127.0.0.1:8788" target="_blank" rel="noopener noreferrer" class="cms-fb-action-link">Mở Bảng điều khiển 8788 ↗</a>
+                <span id="cmsFbGroupEngineStatus">Đang kết nối Máy chủ 50 (Nhánh Fourland 24/7)…</span>
+                <div style="display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                  <select id="cmsFbGroupNodeSelect" style="height:28px;padding:0 8px;border:1px solid #cbd5e1;border-radius:6px;font-size:11.5px;background:#fff;">
+                    <option value="auto">⚡ Tự động (Ưu tiên Máy 50 · 24/7)</option>
+                    <option value="server50">🖧 Máy chủ 50 (Nhánh riêng 8889)</option>
+                    <option value="local">💻 Máy cá nhân (Local 8788)</option>
+                  </select>
+                  <a href="https://drink-owners-prayer-partnerships.trycloudflare.com" id="cmsFbGroupDashboardLink" target="_blank" rel="noopener noreferrer" class="cms-fb-action-link">Mở Bảng điều khiển ↗</a>
+                </div>
               </div>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
                 <label class="cms-fb-field">
@@ -1803,6 +1810,6 @@
 
     <div id="toastContainer" class="cms-toast-container" aria-live="polite"></div>
   </div>
-  <script src="/admin/admin.js?v=20260930-fourland-fanpage-v1" defer></script>
+  <script src="/admin/admin.js?v=20261125-server50-poster-v3" defer></script>
 </body>
 </html>

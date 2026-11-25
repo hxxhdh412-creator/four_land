@@ -13,8 +13,84 @@ const {
 } = require("../server/cms-facebook-pages");
 const { sendError, supabaseRequest } = require("./_supabase");
 
+const DEFAULT_POSTER_NODE = {
+  tunnelUrl: process.env.FOURLAND_SOCIAL_TUNNEL_URL || "https://drink-owners-prayer-partnerships.trycloudflare.com",
+  lanUrl: process.env.FOURLAND_SOCIAL_LAN_URL || "http://192.168.1.50:8889",
+  localUrl: "http://127.0.0.1:8788",
+  port: 8889,
+  host: "hbs-server-50",
+  label: "Máy chủ 50 · Nhánh Fourland 24/7 (8889)"
+};
+
+let cachedPosterNode = null;
+let cachedPosterNodeAt = 0;
+
+async function getPosterNodeConfig(request = supabaseRequest) {
+  if (cachedPosterNode && Date.now() - cachedPosterNodeAt < 60_000) {
+    return cachedPosterNode;
+  }
+  try {
+    const res = await request("cms_settings?select=setting_value&setting_key=eq.facebook_poster_node&limit=1");
+    const raw = res?.data?.[0]?.setting_value;
+    if (raw) {
+      const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
+      if (parsed && typeof parsed === "object") {
+        cachedPosterNode = { ...DEFAULT_POSTER_NODE, ...parsed };
+        cachedPosterNodeAt = Date.now();
+        return cachedPosterNode;
+      }
+    }
+  } catch (_) {}
+  cachedPosterNode = { ...DEFAULT_POSTER_NODE };
+  cachedPosterNodeAt = Date.now();
+  return cachedPosterNode;
+}
+
+async function savePosterNodeConfig(patch = {}, request = supabaseRequest) {
+  const current = await getPosterNodeConfig(request);
+  const next = {
+    ...current,
+    ...(patch.tunnelUrl ? { tunnelUrl: String(patch.tunnelUrl).trim().replace(/\/+$/, "") } : {}),
+    ...(patch.lanUrl ? { lanUrl: String(patch.lanUrl).trim().replace(/\/+$/, "") } : {}),
+    ...(patch.port ? { port: Number(patch.port) || 8889 } : {}),
+    ...(patch.host ? { host: String(patch.host).trim() } : {}),
+    updatedAt: new Date().toISOString()
+  };
+  cachedPosterNode = next;
+  cachedPosterNodeAt = Date.now();
+  try {
+    await request("cms_settings?on_conflict=setting_key", {
+      method: "POST",
+      headers: { Prefer: "resolution=merge-duplicates,return=representation" },
+      body: {
+        setting_key: "facebook_poster_node",
+        setting_value: JSON.stringify(next),
+        updated_at: next.updatedAt
+      }
+    });
+  } catch (_) {}
+  return next;
+}
+
 function createHandler({ requireCmsImpl = requireCms, request = supabaseRequest, writer = writeFacebookCopy } = {}) {
   return async function handler(req, res) {
+    if (req.url?.includes("/poster-node")) {
+      if (req.method === "GET") {
+        const node = await getPosterNodeConfig(request);
+        return res.status(200).json({ ok: true, data: node });
+      }
+      if (req.method === "POST") {
+        const posterKey = String(req.headers?.["x-poster-key"] || "").trim();
+        if (posterKey !== "fourland-server50-8889") {
+          const principal = await requireCmsImpl(req, res, ACTIONS.PROPERTY_READ);
+          if (!principal) return;
+        }
+        const saved = await savePosterNodeConfig(req.body || {}, request);
+        return res.status(200).json({ ok: true, data: saved });
+      }
+      return res.status(405).json({ ok: false, error: { code: "METHOD_NOT_ALLOWED", message: "Method Not Allowed" } });
+    }
+
     if (req.method !== "POST") {
       return res.status(405).json({ ok: false, error: { code: "METHOD_NOT_ALLOWED", message: "Method Not Allowed" } });
     }
@@ -61,6 +137,8 @@ function createHandler({ requireCmsImpl = requireCms, request = supabaseRequest,
         });
         variants[0] = copy.content;
 
+        const posterNode = await getPosterNodeConfig(request);
+
         return res.status(200).json({
           ok: true,
           data: {
@@ -74,7 +152,8 @@ function createHandler({ requireCmsImpl = requireCms, request = supabaseRequest,
             images,
             pageId: targetPage?.pageId,
             pageName: targetPage?.name,
-            pages: availablePages
+            pages: availablePages,
+            posterNode
           }
         });
       }

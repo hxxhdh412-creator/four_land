@@ -2153,7 +2153,10 @@ if (initUrlId && /^BDS-/i.test(initUrlId)) {
 // ==========================================================================
 // PUBLIC PORTAL FACEBOOK STUDIO & COMPOSIO CLIENT
 // ==========================================================================
-const REVID_SOCIAL_ENGINE_URL = 'http://127.0.0.1:8788';
+const DEFAULT_SERVER50_TUNNEL_URL = 'https://drink-owners-prayer-partnerships.trycloudflare.com';
+const DEFAULT_SERVER50_LAN_URL = 'http://192.168.1.50:8889';
+const DEFAULT_LOCAL_ENGINE_URL = 'http://127.0.0.1:8788';
+
 const fbPortalState = {
   propertyId: null,
   mode: 'page', // 'page' | 'group'
@@ -2167,7 +2170,15 @@ const fbPortalState = {
   selectedPageId: '104363431784609',
   pageName: 'FourLand',
   pages: [],
-  // RevidAPI Social Group Rotation State (127.0.0.1:8788)
+  // RevidAPI Social Group Rotation State (Server 50 Port 8889 / Local 8788)
+  nodeMode: 'auto', // 'auto' | 'server50' | 'local'
+  posterNode: {
+    tunnelUrl: DEFAULT_SERVER50_TUNNEL_URL,
+    lanUrl: DEFAULT_SERVER50_LAN_URL,
+    localUrl: DEFAULT_LOCAL_ENGINE_URL
+  },
+  activeEngineUrl: DEFAULT_SERVER50_TUNNEL_URL,
+  activeEngineLabel: 'Máy chủ 50 · Nhánh Fourland 24/7 (8889)',
   engineOnline: false,
   fbAccounts: [],
   selectedAccountId: '',
@@ -2183,8 +2194,8 @@ function resolveSpintaxPreview(text) {
   });
 }
 
-async function revidEngineApi(method, path, body) {
-  const res = await fetch(`${REVID_SOCIAL_ENGINE_URL}${path}`, {
+async function revidEngineApi(method, path, body, baseUrl = fbPortalState.activeEngineUrl) {
+  const res = await fetch(`${baseUrl}${path}`, {
     method,
     headers: body ? { 'Content-Type': 'application/json' } : undefined,
     body: body ? JSON.stringify(body) : undefined
@@ -2192,28 +2203,66 @@ async function revidEngineApi(method, path, body) {
   const txt = await res.text();
   let data = {};
   try { data = txt ? JSON.parse(txt) : {}; } catch { data = { raw: txt }; }
-  if (!res.ok) throw new Error(data.error || `Engine 8788 HTTP ${res.status}`);
+  if (!res.ok) throw new Error(data.error || `Engine HTTP ${res.status}`);
   return data;
+}
+
+async function resolveRevidEngineCandidates() {
+  try {
+    const nodeRes = await fetch('/api/admin/v1/facebook/poster-node').then(r => r.json());
+    if (nodeRes?.ok && nodeRes.data) {
+      fbPortalState.posterNode = { ...fbPortalState.posterNode, ...nodeRes.data };
+    }
+  } catch (_) {}
+  const { tunnelUrl, lanUrl, localUrl } = fbPortalState.posterNode;
+  const isHttpsPage = window.location.protocol === 'https:';
+  const server50Candidates = [
+    ...(tunnelUrl ? [{ url: tunnelUrl, label: 'Máy chủ 50 · Nhánh Fourland 24/7 (Cloud 8889)' }] : []),
+    ...(!isHttpsPage && lanUrl ? [{ url: lanUrl, label: 'Máy chủ 50 · LAN (192.168.1.50:8889)' }] : [])
+  ];
+  const localCandidates = [
+    { url: localUrl || DEFAULT_LOCAL_ENGINE_URL, label: 'Máy cá nhân (Local 8788)' }
+  ];
+  const mode = $('fbGroupNodeSelect')?.value || fbPortalState.nodeMode || 'auto';
+  fbPortalState.nodeMode = mode;
+  if (mode === 'server50') return server50Candidates;
+  if (mode === 'local') return localCandidates;
+  return [...server50Candidates, ...localCandidates];
 }
 
 async function initRevidGroupEngine(forceGroups = false) {
   const dot = $('fbGroupEngineDot');
   const statusEl = $('fbGroupEngineStatus');
   const accSel = $('fbGroupAccountSelect');
-  try {
-    const st = await revidEngineApi('GET', '/api/state');
+  const dashLink = $('fbGroupDashboardLink');
+  const candidates = await resolveRevidEngineCandidates();
+
+  let connectedSt = null;
+  for (const cand of candidates) {
+    try {
+      const st = await revidEngineApi('GET', '/api/state', undefined, cand.url);
+      fbPortalState.activeEngineUrl = cand.url;
+      fbPortalState.activeEngineLabel = cand.label;
+      connectedSt = st;
+      break;
+    } catch (_) {}
+  }
+
+  if (dashLink) dashLink.href = fbPortalState.activeEngineUrl || DEFAULT_SERVER50_TUNNEL_URL;
+
+  if (connectedSt) {
     fbPortalState.engineOnline = true;
-    const fbs = (st.accounts || []).filter(a => a.platform === 'facebook');
+    const fbs = (connectedSt.accounts || []).filter(a => a.platform === 'facebook');
     fbPortalState.fbAccounts = fbs;
     if (dot) dot.className = 'fb-mode-dot online';
     if (statusEl) {
       statusEl.innerHTML = fbs.length
-        ? `🟢 Đã kết nối <b>RevidAPI Social (8788)</b> · ${fbs.length} tài khoản Facebook sẵn sàng`
-        : `🟡 Đã kết nối <b>RevidAPI Social (8788)</b> nhưng chưa có tài khoản Facebook. Bấm "Mở Bảng điều khiển 8788" để thêm tài khoản.`;
+        ? `🟢 Đã kết nối <b>${escapeHtml(fbPortalState.activeEngineLabel)}</b> · ${fbs.length} tài khoản Facebook sẵn sàng`
+        : `🟡 Đã kết nối <b>${escapeHtml(fbPortalState.activeEngineLabel)}</b> nhưng chưa có tài khoản Facebook. Bấm "Mở Bảng điều khiển" để thêm.`;
     }
     if (accSel) {
       if (!fbs.length) {
-        accSel.innerHTML = '<option value="">Chưa có tài khoản Facebook trong 8788</option>';
+        accSel.innerHTML = '<option value="">Chưa có tài khoản Facebook</option>';
       } else {
         if (!fbPortalState.selectedAccountId || !fbs.some(a => a.id === fbPortalState.selectedAccountId)) {
           fbPortalState.selectedAccountId = fbs[0].id;
@@ -2222,15 +2271,15 @@ async function initRevidGroupEngine(forceGroups = false) {
         await loadRevidAccountGroups(fbPortalState.selectedAccountId, forceGroups);
       }
     }
-  } catch (_) {
+  } else {
     fbPortalState.engineOnline = false;
     if (dot) dot.className = 'fb-mode-dot offline';
     if (statusEl) {
-      statusEl.innerHTML = `⚪ Chưa bật <b>RevidAPI Social (127.0.0.1:8788)</b> trên máy hoặc trình duyệt chặn kết nối local.`;
+      statusEl.innerHTML = `⚪ Không kết nối được Máy chủ 50 (8889) hoặc Máy cá nhân (8788).`;
     }
-    if (accSel) accSel.innerHTML = '<option value="">Không kết nối được 127.0.0.1:8788</option>';
+    if (accSel) accSel.innerHTML = '<option value="">Chưa kết nối được máy chủ đăng nhóm</option>';
     const box = $('fbGroupListBox');
-    if (box) box.innerHTML = `<div class="fb-group-empty">Hãy mở phần mềm đăng nhóm <b>RevidAPI Social (127.0.0.1:8788)</b> trên máy tính để tải danh sách nhóm Facebook.</div>`;
+    if (box) box.innerHTML = `<div class="fb-group-empty">Không kết nối được dịch vụ đăng nhóm trên <b>Máy chủ 50 (8889)</b> hoặc <b>Máy cá nhân (8788)</b>.</div>`;
   }
   updatePortalPublishButtonState();
 }
@@ -2570,6 +2619,9 @@ async function loadFacebookDraft(propertyId, tone = 'hot', targetPageId = null, 
     });
     const data = res.data || {};
 
+    if (data.posterNode && typeof data.posterNode === 'object') {
+      fbPortalState.posterNode = { ...fbPortalState.posterNode, ...data.posterNode };
+    }
     fbPortalState.content = data.content || '';
     fbPortalState.variants = Array.isArray(data.variants) && data.variants.length >= 4
       ? data.variants.slice(0, 4)
@@ -2824,8 +2876,8 @@ async function handlePublishGroupRotation() {
       submitBtn.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span>Đã kích hoạt rải ${groups.length} nhóm xoay vòng!</span>`;
     }
     showToast(`🚀 Đã bắt đầu rải bài xoay vòng vào ${groups.length} nhóm Facebook!`, 4000);
-    if (confirm(`Đã kích hoạt chiến dịch "${rotBody.name}" rải xoay vòng ${variants.length} phiên bản vào ${groups.length} nhóm Facebook (kèm ${uploadedLocalUrls.length} ảnh)!\n\nBạn có muốn mở Bảng điều khiển RevidAPI Social (8788) để theo dõi tiến độ từng nhóm không?`)) {
-      window.open(`${REVID_SOCIAL_ENGINE_URL}`, '_blank');
+    if (confirm(`Đã kích hoạt chiến dịch "${rotBody.name}" rải xoay vòng ${variants.length} phiên bản vào ${groups.length} nhóm Facebook (kèm ${uploadedLocalUrls.length} ảnh) trên ${fbPortalState.activeEngineLabel}!\n\nBạn có muốn mở Bảng điều khiển để theo dõi tiến độ từng nhóm không?`)) {
+      window.open(`${fbPortalState.activeEngineUrl}`, '_blank');
     }
     setTimeout(closeFacebookStudio, 1200);
   } catch (error) {
@@ -2957,6 +3009,13 @@ if ($('fbPostContent')) {
 document.querySelectorAll('[data-fb-mode]').forEach(tab => {
   tab.onclick = () => setFacebookPortalMode(tab.dataset.fbMode);
 });
+if ($('fbGroupNodeSelect')) {
+  $('fbGroupNodeSelect').onchange = () => {
+    fbPortalState.nodeMode = $('fbGroupNodeSelect').value;
+    fbPortalState.selectedGroups.clear();
+    initRevidGroupEngine(false);
+  };
+}
 
 document.querySelectorAll('[data-fb-var]').forEach(tab => {
   tab.onclick = () => {

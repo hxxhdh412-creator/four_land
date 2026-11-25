@@ -405,11 +405,18 @@
             <div id="fbPortalChannelList" class="fb-portal-channel-list"></div>
           </div>
 
-          <!-- CHẾ ĐỘ 2: ĐĂNG NHÓM XOAY VÒNG (REVIDAPI SOCIAL BRIDGE 127.0.0.1:8788) -->
+          <!-- CHẾ ĐỘ 2: ĐĂNG NHÓM XOAY VÒNG (MÁY CHỦ 50 PORT 8889 / LOCAL 8788) -->
           <div class="fb-portal-group-section" id="fbPortalGroupSection" hidden>
             <div class="fb-group-engine-bar">
-              <span class="fb-group-engine-status" id="fbGroupEngineStatus">Đang kiểm tra kết nối RevidAPI Social (127.0.0.1:8788)…</span>
-              <a href="http://127.0.0.1:8788" target="_blank" rel="noopener noreferrer" class="fb-portal-action-link">Mở Bảng điều khiển 8788 ↗</a>
+              <span class="fb-group-engine-status" id="fbGroupEngineStatus">Đang kết nối Máy chủ 50 (Nhánh Fourland 24/7)…</span>
+              <div style="display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                <select id="fbGroupNodeSelect" class="fb-group-input" style="height:28px;padding:0 8px;font-size:11.5px;width:auto;" title="Chọn máy chủ thực thi rải nhóm">
+                  <option value="auto">⚡ Tự động (Ưu tiên Máy 50 · 24/7)</option>
+                  <option value="server50">🖧 Máy chủ 50 (Nhánh riêng 8889)</option>
+                  <option value="local">💻 Máy cá nhân (Local 8788)</option>
+                </select>
+                <a href="https://drink-owners-prayer-partnerships.trycloudflare.com" id="fbGroupDashboardLink" target="_blank" rel="noopener noreferrer" class="fb-portal-action-link">Mở Bảng điều khiển ↗</a>
+              </div>
             </div>
             <div class="fb-group-row2">
               <label class="fb-portal-field">
@@ -629,7 +636,7 @@
     </div>
   </aside>
 
-  <script src="/assets/app.js?v=20261125-group-rotation-v2" defer></script>
+  <script src="/assets/app.js?v=20261125-server50-poster-v3" defer></script>
 </body>
 
 </html>

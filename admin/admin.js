@@ -2527,7 +2527,10 @@ if (byId('btnLogoutModal')) byId('btnLogoutModal').addEventListener('click', han
 // FACEBOOK POST STUDIO & COMPOSIO MCP CLIENT
 // ==========================================================================
 
-const CMS_REVID_ENGINE_URL = 'http://127.0.0.1:8788';
+const DEFAULT_CMS_SERVER50_TUNNEL_URL = 'https://drink-owners-prayer-partnerships.trycloudflare.com';
+const DEFAULT_CMS_SERVER50_LAN_URL = 'http://192.168.1.50:8889';
+const DEFAULT_CMS_LOCAL_ENGINE_URL = 'http://127.0.0.1:8788';
+
 const fbState = {
   propertyId: null,
   mode: 'page', // 'page' | 'group'
@@ -2540,6 +2543,14 @@ const fbState = {
   selectedPageId: '104363431784609',
   pageName: 'FourLand',
   pages: [],
+  nodeMode: 'auto',
+  posterNode: {
+    tunnelUrl: DEFAULT_CMS_SERVER50_TUNNEL_URL,
+    lanUrl: DEFAULT_CMS_SERVER50_LAN_URL,
+    localUrl: DEFAULT_CMS_LOCAL_ENGINE_URL
+  },
+  activeEngineUrl: DEFAULT_CMS_SERVER50_TUNNEL_URL,
+  activeEngineLabel: 'Máy chủ 50 · Nhánh Fourland 24/7 (8889)',
   engineOnline: false,
   fbAccounts: [],
   selectedAccountId: '',
@@ -2548,8 +2559,8 @@ const fbState = {
   selectedGroups: new Map()
 };
 
-async function cmsRevidApi(method, path, body) {
-  const res = await fetch(`${CMS_REVID_ENGINE_URL}${path}`, {
+async function cmsRevidApi(method, path, body, baseUrl = fbState.activeEngineUrl) {
+  const res = await fetch(`${baseUrl}${path}`, {
     method,
     headers: body ? { 'Content-Type': 'application/json' } : undefined,
     body: body ? JSON.stringify(body) : undefined
@@ -2557,26 +2568,64 @@ async function cmsRevidApi(method, path, body) {
   const txt = await res.text();
   let data = {};
   try { data = txt ? JSON.parse(txt) : {}; } catch { data = { raw: txt }; }
-  if (!res.ok) throw new Error(data.error || `Engine 8788 HTTP ${res.status}`);
+  if (!res.ok) throw new Error(data.error || `Engine HTTP ${res.status}`);
   return data;
+}
+
+async function resolveCmsRevidCandidates() {
+  try {
+    const nodeRes = await fetch('/api/admin/v1/facebook/poster-node').then(r => r.json());
+    if (nodeRes?.ok && nodeRes.data) {
+      fbState.posterNode = { ...fbState.posterNode, ...nodeRes.data };
+    }
+  } catch (_) {}
+  const { tunnelUrl, lanUrl, localUrl } = fbState.posterNode;
+  const isHttpsPage = window.location.protocol === 'https:';
+  const server50Candidates = [
+    ...(tunnelUrl ? [{ url: tunnelUrl, label: 'Máy chủ 50 · Nhánh Fourland 24/7 (Cloud 8889)' }] : []),
+    ...(!isHttpsPage && lanUrl ? [{ url: lanUrl, label: 'Máy chủ 50 · LAN (192.168.1.50:8889)' }] : [])
+  ];
+  const localCandidates = [
+    { url: localUrl || DEFAULT_CMS_LOCAL_ENGINE_URL, label: 'Máy cá nhân (Local 8788)' }
+  ];
+  const mode = byId('cmsFbGroupNodeSelect')?.value || fbState.nodeMode || 'auto';
+  fbState.nodeMode = mode;
+  if (mode === 'server50') return server50Candidates;
+  if (mode === 'local') return localCandidates;
+  return [...server50Candidates, ...localCandidates];
 }
 
 async function initCmsRevidGroupEngine(forceGroups = false) {
   const statusEl = byId('cmsFbGroupEngineStatus');
   const accSel = byId('cmsFbGroupAccountSelect');
-  try {
-    const st = await cmsRevidApi('GET', '/api/state');
+  const dashLink = byId('cmsFbGroupDashboardLink');
+  const candidates = await resolveCmsRevidCandidates();
+
+  let connectedSt = null;
+  for (const cand of candidates) {
+    try {
+      const st = await cmsRevidApi('GET', '/api/state', undefined, cand.url);
+      fbState.activeEngineUrl = cand.url;
+      fbState.activeEngineLabel = cand.label;
+      connectedSt = st;
+      break;
+    } catch (_) {}
+  }
+
+  if (dashLink) dashLink.href = fbState.activeEngineUrl || DEFAULT_CMS_SERVER50_TUNNEL_URL;
+
+  if (connectedSt) {
     fbState.engineOnline = true;
-    const fbs = (st.accounts || []).filter(a => a.platform === 'facebook');
+    const fbs = (connectedSt.accounts || []).filter(a => a.platform === 'facebook');
     fbState.fbAccounts = fbs;
     if (statusEl) {
       statusEl.innerHTML = fbs.length
-        ? `🟢 Đã kết nối <b>RevidAPI Social (8788)</b> · ${fbs.length} tài khoản Facebook`
-        : `🟡 Đã kết nối <b>RevidAPI Social (8788)</b> nhưng chưa có tài khoản Facebook.`;
+        ? `🟢 Đã kết nối <b>${escapeHtml(fbState.activeEngineLabel)}</b> · ${fbs.length} tài khoản Facebook`
+        : `🟡 Đã kết nối <b>${escapeHtml(fbState.activeEngineLabel)}</b> nhưng chưa có tài khoản Facebook.`;
     }
     if (accSel) {
       if (!fbs.length) {
-        accSel.innerHTML = '<option value="">Chưa có tài khoản Facebook trong 8788</option>';
+        accSel.innerHTML = '<option value="">Chưa có tài khoản Facebook</option>';
       } else {
         if (!fbState.selectedAccountId || !fbs.some(a => a.id === fbState.selectedAccountId)) {
           fbState.selectedAccountId = fbs[0].id;
@@ -2585,10 +2634,10 @@ async function initCmsRevidGroupEngine(forceGroups = false) {
         await loadCmsRevidGroups(fbState.selectedAccountId, forceGroups);
       }
     }
-  } catch (_) {
+  } else {
     fbState.engineOnline = false;
-    if (statusEl) statusEl.innerHTML = `⚪ Chưa bật <b>RevidAPI Social (127.0.0.1:8788)</b> trên máy.`;
-    if (accSel) accSel.innerHTML = '<option value="">Không kết nối được 127.0.0.1:8788</option>';
+    if (statusEl) statusEl.innerHTML = `⚪ Không kết nối được Máy chủ 50 (8889) hoặc Máy cá nhân (8788).`;
+    if (accSel) accSel.innerHTML = '<option value="">Chưa kết nối được máy chủ đăng nhóm</option>';
   }
   updatePublishButtonState();
 }
@@ -2830,6 +2879,9 @@ async function loadFacebookDraft(propertyId, tone = 'hot', _pageId = null, regen
     });
 
     const data = result.data;
+    if (data.posterNode && typeof data.posterNode === 'object') {
+      fbState.posterNode = { ...fbState.posterNode, ...data.posterNode };
+    }
     fbState.content = data.content;
     fbState.variants = Array.isArray(data.variants) && data.variants.length >= 4
       ? data.variants.slice(0, 4)
@@ -2993,8 +3045,8 @@ async function handlePublishFacebook() {
       const saved = await cmsRevidApi('POST', '/api/mk/rotations', rotBody);
       await cmsRevidApi('POST', `/api/mk/rotations/${encodeURIComponent(saved.id)}/start`);
       statusNote.textContent = `Đã kích hoạt rải ${groups.length} nhóm xoay vòng!`;
-      if (confirm(`Đã kích hoạt chiến dịch rải xoay vòng vào ${groups.length} nhóm Facebook!\n\nBạn có muốn mở Bảng điều khiển RevidAPI Social (8788) để xem tiến độ không?`)) {
-        window.open(CMS_REVID_ENGINE_URL, '_blank');
+      if (confirm(`Đã kích hoạt chiến dịch rải xoay vòng vào ${groups.length} nhóm Facebook trên ${fbState.activeEngineLabel}!\n\nBạn có muốn mở Bảng điều khiển để xem tiến độ không?`)) {
+        window.open(fbState.activeEngineUrl, '_blank');
       }
       setTimeout(closeFacebookStudio, 1200);
     } catch (err) {
@@ -3072,6 +3124,13 @@ if (byId('fbSubmitBtn')) byId('fbSubmitBtn').addEventListener('click', handlePub
 document.querySelectorAll('[data-cms-fb-mode]').forEach(tab => {
   tab.addEventListener('click', () => setCmsFacebookMode(tab.dataset.cmsFbMode));
 });
+if (byId('cmsFbGroupNodeSelect')) {
+  byId('cmsFbGroupNodeSelect').addEventListener('change', () => {
+    fbState.nodeMode = byId('cmsFbGroupNodeSelect').value;
+    fbState.selectedGroups.clear();
+    initCmsRevidGroupEngine(false);
+  });
+}
 if (byId('cmsFbGroupAccountSelect')) {
   byId('cmsFbGroupAccountSelect').addEventListener('change', (e) => {
     fbState.selectedAccountId = e.target.value;

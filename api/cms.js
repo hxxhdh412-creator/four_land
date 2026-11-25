@@ -69,7 +69,12 @@ module.exports = async function handler(req, res) {
     if (pathname === "/api/admin/v1/facebook/pages") {
       return cmsFacebookPages.handler(req, res);
     }
-    if (pathname === "/api/admin/v1/facebook" || pathname === "/api/admin/v1/facebook/draft" || pathname === "/api/admin/v1/facebook/publish") {
+    if (
+      pathname === "/api/admin/v1/facebook" ||
+      pathname === "/api/admin/v1/facebook/draft" ||
+      pathname === "/api/admin/v1/facebook/publish" ||
+      pathname === "/api/admin/v1/facebook/poster-node"
+    ) {
       return cmsFacebook(req, res);
     }
 
