@@ -51,24 +51,24 @@ function parsePriceInput(value) {
 }
 
 const DISTRICT_MAP = [
-  { name: 'Quận 10', patterns: [/\b(q\.?\s*10|quan\s*10|district\s*10)\b/i] },
-  { name: 'Quận 11', patterns: [/\b(q\.?\s*11|quan\s*11|district\s*11)\b/i] },
-  { name: 'Quận 12', patterns: [/\b(q\.?\s*12|quan\s*12|district\s*12)\b/i] },
-  { name: 'Quận 1', patterns: [/\b(q\.?\s*1|quan\s*1|district\s*1)\b/i] },
-  { name: 'Quận 2', patterns: [/\b(q\.?\s*2|quan\s*2|district\s*2)\b/i] },
-  { name: 'Quận 3', patterns: [/\b(q\.?\s*3|quan\s*3|district\s*3)\b/i] },
-  { name: 'Quận 4', patterns: [/\b(q\.?\s*4|quan\s*4|district\s*4)\b/i] },
-  { name: 'Quận 5', patterns: [/\b(q\.?\s*5|quan\s*5|district\s*5)\b/i] },
-  { name: 'Quận 6', patterns: [/\b(q\.?\s*6|quan\s*6|district\s*6)\b/i] },
-  { name: 'Quận 7', patterns: [/\b(q\.?\s*7|quan\s*7|district\s*7)\b/i] },
-  { name: 'Quận 8', patterns: [/\b(q\.?\s*8|quan\s*8|district\s*8)\b/i] },
-  { name: 'Quận 9', patterns: [/\b(q\.?\s*9|quan\s*9|district\s*9)\b/i] },
+  { name: 'Quận 10', patterns: [/\b(q\.?\s*10|quan\s*10|quận\s*10|district\s*10)\b/i] },
+  { name: 'Quận 11', patterns: [/\b(q\.?\s*11|quan\s*11|quận\s*11|district\s*11)\b/i] },
+  { name: 'Quận 12', patterns: [/\b(q\.?\s*12|quan\s*12|quận\s*12|district\s*12)\b/i] },
+  { name: 'Quận 1', patterns: [/\b(q\.?\s*1|quan\s*1|quận\s*1|district\s*1)\b/i] },
+  { name: 'Quận 2', patterns: [/\b(q\.?\s*2|quan\s*2|quận\s*2|district\s*2)\b/i] },
+  { name: 'Quận 3', patterns: [/\b(q\.?\s*3|quan\s*3|quận\s*3|district\s*3)\b/i] },
+  { name: 'Quận 4', patterns: [/\b(q\.?\s*4|quan\s*4|quận\s*4|district\s*4)\b/i] },
+  { name: 'Quận 5', patterns: [/\b(q\.?\s*5|quan\s*5|quận\s*5|district\s*5)\b/i] },
+  { name: 'Quận 6', patterns: [/\b(q\.?\s*6|quan\s*6|quận\s*6|district\s*6)\b/i] },
+  { name: 'Quận 7', patterns: [/\b(q\.?\s*7|quan\s*7|quận\s*7|district\s*7)\b/i] },
+  { name: 'Quận 8', patterns: [/\b(q\.?\s*8|quan\s*8|quận\s*8|district\s*8)\b/i] },
+  { name: 'Quận 9', patterns: [/\b(q\.?\s*9|quan\s*9|quận\s*9|district\s*9)\b/i] },
   { name: 'Gò Vấp', patterns: [/\b(go\s*vap|gò\s*vấp|gv)\b/i] },
   { name: 'Bình Thạnh', patterns: [/\b(binh\s*thanh|bình\s*thạnh|bt)\b/i] },
   { name: 'Tân Bình', patterns: [/\b(tan\s*binh|tân\s*bình|tb)\b/i] },
   { name: 'Tân Phú', patterns: [/\b(tan\s*phu|tân\s*phú|tp)\b/i] },
   { name: 'Phú Nhuận', patterns: [/\b(phu\s*nhuan|phú\s*nhuận|pn)\b/i] },
-  { name: 'Thủ Đức', patterns: [/\b(thu\s*duc|thủ\s*đức|tp\.?\s*thu\s*duc)\b/i] },
+  { name: 'Thủ Đức', patterns: [/\b(thu\s*duc|thủ\s*đức|tp\.?\s*thu\s*duc|tp\.?\s*thủ\s*đức)\b/i] },
   { name: 'Bình Tân', patterns: [/\b(binh\s*tan|bình\s*tân)\b/i] },
   { name: 'Bình Chánh', patterns: [/\b(binh\s*chanh|bình\s*chánh)\b/i] },
   { name: 'Hóc Môn', patterns: [/\b(hoc\s*mon|hóc\s*môn|hm)\b/i] },
@@ -120,6 +120,7 @@ function parseNaturalQuery(rawInput) {
 
   const parsed = {
     district: null,
+    districts: [],
     ward: null,
     propertyType: null,
     bedrooms: null,
@@ -159,16 +160,20 @@ function parseNaturalQuery(rawInput) {
     working = working.replace(dimMatch[0], ' ');
   }
 
-  // 4. Nhận diện Quận / Huyện
+  // 4. Nhận diện Quận / Huyện (Hỗ trợ gõ 1 hoặc nhiều quận cùng lúc: "Quận 1, Quận 3, Phú Nhuận")
   for (const item of DISTRICT_MAP) {
     for (const pat of item.patterns) {
-      if (pat.test(working)) {
-        parsed.district = item.name;
-        working = working.replace(pat, ' ');
-        break;
+      const globalPat = new RegExp(pat.source, 'gi');
+      if (globalPat.test(working)) {
+        if (!parsed.districts.includes(item.name)) {
+          parsed.districts.push(item.name);
+        }
+        working = working.replace(globalPat, ' ');
       }
     }
-    if (parsed.district) break;
+  }
+  if (parsed.districts.length > 0) {
+    parsed.district = parsed.districts.length === 1 ? parsed.districts[0] : parsed.districts.join(',');
   }
 
   // 5. Nhận diện Phường / Xã (P3, P.12, Phường 5, Phường Linh Đông...)
@@ -279,16 +284,26 @@ function parseNaturalQuery(rawInput) {
   };
 }
 
+function parseDistrictList(rawDistrict) {
+  if (!rawDistrict) return [];
+  const list = Array.isArray(rawDistrict)
+    ? rawDistrict
+    : String(rawDistrict).split(/[,;|]+/);
+  return list
+    .map(item => canonicalDistrictCode(item))
+    .filter(Boolean);
+}
+
 /**
  * Thuật toán tính điểm liên quan & lọc hồ sơ đa tầng
  */
 function matchAndScoreProperty(property, parsedNlp, explicitFilters = {}) {
   // 1. Kiểm tra các bộ lọc cứng (Explicit Filters hoặc NLP Filters)
-  const district = explicitFilters.district || parsedNlp.filters.district;
-  if (district) {
+  const rawDistrictFilter = explicitFilters.district || (parsedNlp.filters.districts?.length ? parsedNlp.filters.districts : parsedNlp.filters.district);
+  const searchDistricts = parseDistrictList(rawDistrictFilter);
+  if (searchDistricts.length > 0) {
     const propClean = canonicalDistrictCode(property.district || '');
-    const searchClean = canonicalDistrictCode(district);
-    if (!propClean || !searchClean || propClean !== searchClean) return -1;
+    if (!propClean || !searchDistricts.includes(propClean)) return -1;
   }
 
   const ward = explicitFilters.ward || parsedNlp.filters.ward;
@@ -444,6 +459,7 @@ module.exports = {
   canonicalDistrictCode,
   canonicalWardCode,
   matchAndScoreProperty,
+  parseDistrictList,
   parseNaturalQuery,
   parsePriceInput,
   removeVietnameseTones

@@ -112,3 +112,26 @@ test('lọc Quận 10 hoặc Quận 1 tuyệt đối không khớp nhầm lẫn 
   assert.ok(matchAndScoreProperty(binhTan, nlp, { district: 'Bình Tân' }) > 0);
   assert.equal(matchAndScoreProperty(tanBinh, nlp, { district: 'Bình Tân' }), -1);
 });
+
+test('hỗ trợ lọc nhiều quận cùng lúc từ bộ lọc (multi-select) hoặc câu tìm kiếm tự nhiên', () => {
+  const q1 = { property_id: 'Q1-A', district: 'Quận 1' };
+  const q3 = { property_id: 'Q3-A', district: 'Quận 3' };
+  const q10 = { property_id: 'Q10-A', district: 'Quận 10' };
+  const phuNhuan = { property_id: 'PN-A', district: 'Phú Nhuận' };
+
+  // 1. Chọn nhiều quận từ dropdown: "Quận 1,Quận 10"
+  const emptyNlp = parseNaturalQuery('');
+  assert.ok(matchAndScoreProperty(q1, emptyNlp, { district: 'Quận 1,Quận 10' }) > 0);
+  assert.ok(matchAndScoreProperty(q10, emptyNlp, { district: 'Quận 1,Quận 10' }) > 0);
+  assert.equal(matchAndScoreProperty(q3, emptyNlp, { district: 'Quận 1,Quận 10' }), -1);
+  assert.equal(matchAndScoreProperty(phuNhuan, emptyNlp, { district: 'Quận 1,Quận 10' }), -1);
+
+  // 2. Gõ nhiều quận trên thanh tìm kiếm: "nhà Quận 1 Quận 3 Phú Nhuận"
+  const multiNlp = parseNaturalQuery('nhà Quận 1 Quận 3 Phú Nhuận');
+  assert.deepEqual(multiNlp.filters.districts, ['Quận 1', 'Quận 3', 'Phú Nhuận']);
+  assert.ok(matchAndScoreProperty({ ...q1, address: 'Nhà Lê Lợi' }, multiNlp) > 0);
+  assert.ok(matchAndScoreProperty({ ...q3, address: 'Nhà Lê Văn Sỹ' }, multiNlp) > 0);
+  assert.ok(matchAndScoreProperty({ ...phuNhuan, address: 'Nhà Phan Xích Long' }, multiNlp) > 0);
+  assert.equal(matchAndScoreProperty({ ...q10, address: 'Nhà Ba Tháng Hai' }, multiNlp), -1);
+});
+

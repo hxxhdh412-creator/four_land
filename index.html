@@ -59,7 +59,7 @@
     window.FOURLAND_ONESIGNAL_APP_ID = "524d4fcf-2075-4aaf-8862-a306e670f31d";
   </script>
 
-  <link rel="stylesheet" href="/assets/app.css?v=20261004-swr-load-v1">
+  <link rel="stylesheet" href="/assets/app.css?v=20261125-multi-district-v1">
 
   <!-- Schema.org JSON-LD Structured Data -->
   <script type="application/ld+json">
@@ -181,9 +181,22 @@
             </svg></button></div>
       </div>
       <div class="filters" id="filters">
-        <label>Quận / Huyện<select id="district">
-            <option value="">Tất cả quận huyện</option>
-          </select></label>
+        <div class="filter-field multi-district-field" id="districtMultiField">
+          <span class="filter-field-label">Quận / Huyện</span>
+          <input type="hidden" id="district" value="">
+          <button type="button" class="multi-select-trigger" id="districtTrigger" aria-expanded="false" aria-haspopup="listbox">
+            <span class="multi-select-text" id="districtTriggerText">Tất cả quận huyện</span>
+            <span class="multi-select-badge" id="districtCountBadge" hidden>0</span>
+            <svg class="multi-select-chevron" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </button>
+          <div class="multi-select-popover" id="districtPopover" role="listbox" aria-multiselectable="true" hidden>
+            <div class="multi-select-head">
+              <span>Chọn 1 hoặc nhiều quận</span>
+              <button type="button" class="multi-select-clear" id="districtClearBtn">Bỏ chọn hết</button>
+            </div>
+            <div class="multi-select-list" id="districtOptionsList"></div>
+          </div>
+        </div>
         <label>Phường / Xã<select id="ward">
             <option value="">Tất cả phường xã</option>
           </select></label>
@@ -552,7 +565,7 @@
     </div>
   </aside>
 
-  <script src="/assets/app.js?v=20261021-device-auth-v1" defer></script>
+  <script src="/assets/app.js?v=20261125-multi-district-v1" defer></script>
 </body>
 
 </html>

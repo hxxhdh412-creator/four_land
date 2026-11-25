@@ -456,7 +456,132 @@ async function api(path,options={},retries=1){
   }
 }
 function setOptions(id,items,label){const select=$(id);if(!select)return;const current=select.value;const seen=new Set();const list=[];for(const item of(items||[])){const s=String(item||'').trim();if(!s)continue;const k=s.toLowerCase();if(!seen.has(k)){seen.add(k);list.push(s);}}select.innerHTML=`<option value="">${label}</option>`+list.map(item=>`<option value="${escapeHtml(item)}">${escapeHtml(item)}</option>`).join('');select.value=current}
-async function loadFacets(){try{const data=await api('/api/facets');state.facets=data;setOptions('district',data.districts,'Tất cả quận huyện');setOptions('ward',data.wards,'Tất cả phường xã');setOptions('street',data.streets,'Tất cả tuyến đường');setOptions('type',data.types,'Tất cả loại hình')}catch{}}
+
+const selectedDistricts = new Set();
+
+function syncDistrictInputAndLabel(triggerLoad = false) {
+  const hiddenInput = $('district');
+  const textEl = $('districtTriggerText');
+  const badgeEl = $('districtCountBadge');
+  const triggerBtn = $('districtTrigger');
+  const listEl = $('districtOptionsList');
+  const arr = Array.from(selectedDistricts);
+
+  if (hiddenInput) hiddenInput.value = arr.join(',');
+
+  if (textEl) {
+    if (arr.length === 0) {
+      textEl.textContent = 'Tất cả quận huyện';
+    } else if (arr.length <= 2) {
+      textEl.textContent = arr.join(', ');
+    } else {
+      textEl.textContent = `${arr.slice(0, 2).join(', ')} (+${arr.length - 2})`;
+    }
+  }
+  if (badgeEl) {
+    badgeEl.textContent = String(arr.length);
+    badgeEl.hidden = arr.length === 0;
+  }
+  if (triggerBtn) {
+    triggerBtn.classList.toggle('has-selection', arr.length > 0);
+    triggerBtn.title = arr.length ? `Đã chọn: ${arr.join(', ')}` : 'Tất cả quận huyện';
+  }
+  if (listEl) {
+    listEl.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+      const checked = selectedDistricts.has(cb.value);
+      cb.checked = checked;
+      const row = cb.closest('.multi-select-option');
+      if (row) row.classList.toggle('is-selected', checked);
+    });
+  }
+  if (triggerLoad && typeof scheduleLoad === 'function') {
+    scheduleLoad(0);
+  }
+}
+
+function setDistrictOptions(items) {
+  const listEl = $('districtOptionsList');
+  const select = $('district');
+  if (!listEl) {
+    if (select && select.tagName === 'SELECT') setOptions('district', items, 'Tất cả quận huyện');
+    return;
+  }
+  const seen = new Set();
+  const list = [];
+  for (const item of (items || [])) {
+    const s = String(item || '').trim();
+    if (!s) continue;
+    const k = s.toLowerCase();
+    if (!seen.has(k)) {
+      seen.add(k);
+      list.push(s);
+    }
+  }
+  listEl.innerHTML = list.map(item => {
+    const checked = selectedDistricts.has(item);
+    return `<label class="multi-select-option ${checked ? 'is-selected' : ''}">
+      <input type="checkbox" value="${escapeHtml(item)}" ${checked ? 'checked' : ''}>
+      <span class="multi-select-box"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
+      <span class="multi-select-name">${escapeHtml(item)}</span>
+    </label>`;
+  }).join('');
+
+  listEl.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+    cb.onchange = () => {
+      if (cb.checked) selectedDistricts.add(cb.value);
+      else selectedDistricts.delete(cb.value);
+      syncDistrictInputAndLabel(true);
+    };
+  });
+  syncDistrictInputAndLabel(false);
+}
+
+(function setupMultiDistrictDropdown() {
+  const field = $('districtMultiField');
+  const trigger = $('districtTrigger');
+  const popover = $('districtPopover');
+  const clearBtn = $('districtClearBtn');
+  if (!field || !trigger || !popover) return;
+
+  function closePopover() {
+    popover.hidden = true;
+    trigger.setAttribute('aria-expanded', 'false');
+    field.classList.remove('is-open');
+  }
+
+  trigger.onclick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const willOpen = popover.hidden;
+    popover.hidden = !willOpen;
+    trigger.setAttribute('aria-expanded', String(willOpen));
+    field.classList.toggle('is-open', willOpen);
+  };
+
+  if (clearBtn) {
+    clearBtn.onclick = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (selectedDistricts.size === 0) return;
+      selectedDistricts.clear();
+      syncDistrictInputAndLabel(true);
+    };
+  }
+
+  document.addEventListener('click', (e) => {
+    if (!popover.hidden && !field.contains(e.target)) {
+      closePopover();
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !popover.hidden) {
+      closePopover();
+    }
+  });
+})();
+
+async function loadFacets(){try{const data=await api('/api/facets');state.facets=data;setDistrictOptions(data.districts);setOptions('ward',data.wards,'Tất cả phường xã');setOptions('street',data.streets,'Tất cả tuyến đường');setOptions('type',data.types,'Tất cả loại hình')}catch{}}
 function skeleton(){
   return Array.from({length:8},()=>`
     <div class="skeleton">
@@ -1826,6 +1951,15 @@ function resetAllFilters(event) {
 
   if (searchInputEl) searchInputEl.value = '';
   if (searchClearBtn) searchClearBtn.hidden = true;
+
+  selectedDistricts.clear();
+  syncDistrictInputAndLabel(false);
+  const districtPopover = $('districtPopover');
+  const districtTrigger = $('districtTrigger');
+  const districtField = $('districtMultiField');
+  if (districtPopover) districtPopover.hidden = true;
+  if (districtTrigger) districtTrigger.setAttribute('aria-expanded', 'false');
+  if (districtField) districtField.classList.remove('is-open');
 
   ['district', 'ward', 'street', 'type', 'rentalStatus', 'timeRange'].forEach(id => {
     const el = $(id);
