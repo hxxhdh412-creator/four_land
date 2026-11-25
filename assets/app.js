@@ -3422,7 +3422,9 @@ const PORTAL_Q_ICONS = {
 
 function cleanPortalQueueTitle(str = '') {
   return String(str || '')
-    .replace(/^[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\uFE0F\s•▪️\-]+/gu, '')
+    .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\uFE0F]/gu, '')
+    .replace(/^[\s•▪️\-]+/, '')
+    .replace(/\s{2,}/g, ' ')
     .trim();
 }
 
@@ -3451,7 +3453,8 @@ function formatPortalRemaining(targetMs) {
 
 function computePortalScheduleCaption(it = {}) {
   if (it.isRunningNow || it.status === 'running') {
-    return { text: it.currentTarget ? `Đang đăng: ${it.currentTarget}` : 'Đang mở trình duyệt xuất bản…', cls: 'is-live', icon: PORTAL_Q_ICONS.spin };
+    const cleanTarget = cleanPortalQueueTitle(it.currentTarget);
+    return { text: cleanTarget ? `Đang đăng: ${cleanTarget}` : 'Đang xuất bản…', cls: 'is-live', icon: PORTAL_Q_ICONS.spin };
   }
   const nextMs = it.nextRunAt ? Date.parse(it.nextRunAt) : NaN;
   const setupTime = it.setupStartAt ? formatPortalQueueTime(it.setupStartAt, true) : '';

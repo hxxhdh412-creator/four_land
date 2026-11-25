@@ -937,8 +937,10 @@
   display: flex;
   flex-direction: column;
   width: 100%;
+  max-width: 100%;
   height: 100%;
   background: #fff;
+  overflow-x: hidden;
 }
 .social-queue-header {
   display: flex;
@@ -1027,8 +1029,12 @@
 
 .social-queue-table-wrap {
   flex: 1 1 auto;
-  overflow: auto;
+  width: 100%;
+  max-width: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
   padding: 0;
+  box-sizing: border-box;
 }
 .social-queue-table {
   width: 100%;
@@ -1174,24 +1180,43 @@
   flex-direction: column;
   gap: 4px;
   min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
 }
 .social-q-prog-top {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 6px;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
   font-size: 11px;
   font-weight: 700;
   color: #1e293b;
   white-space: nowrap;
 }
+.social-q-prog-top > span:first-child {
+  flex-shrink: 0;
+}
 .social-q-sched-meta {
-  display: inline-flex;
+  display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 4px;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
   font-size: 10.5px;
   font-weight: 600;
   color: #4b6358;
+  white-space: nowrap;
+}
+.social-q-sched-meta > span {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 .social-q-sched-meta.is-future {
@@ -1312,8 +1337,10 @@
   .social-q-mobile-only { display: block; }
   .social-queue-table, .social-queue-table tbody, .social-queue-table tr, .social-queue-table td {
     display: block;
-    width: 100%;
-    box-sizing: border-box;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
   }
   .social-queue-table tbody tr {
     padding: 10px 12px;
@@ -1351,23 +1378,31 @@
     min-width: 0;
   }
   .social-q-m-prog-row {
-    display: flex;
+    display: grid;
+    grid-template-columns: auto minmax(42px, 1fr) minmax(0, 52%);
     align-items: center;
-    justify-content: space-between;
     gap: 7px;
     margin-top: 6px;
+    width: 100%;
+    max-width: 100%;
     min-width: 0;
-  }
-  .social-q-m-prog-row .social-q-rt-track {
-    flex: 1 1 56px;
-    min-width: 44px;
-  }
-  .social-q-m-prog-row .social-q-sched-meta {
-    min-width: 0;
-    max-width: 55%;
     overflow: hidden;
   }
-  .social-q-m-prog-row .social-q-sched-meta span {
+  .social-q-m-prog-row .social-q-rt-track {
+    width: 100%;
+    min-width: 0;
+  }
+  .social-q-m-prog-row .social-q-sched-meta {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    justify-content: flex-end;
+    overflow: hidden;
+  }
+  .social-q-m-prog-row .social-q-sched-meta > span {
+    flex: 0 1 auto;
+    min-width: 0;
+    max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
