@@ -339,8 +339,47 @@
   grid-template-columns: 95px 95px minmax(150px, 1fr);
   gap: 8px;
 }
-.social-studio :is(.fb-group-schedule-grid, .cms-fb-schedule-grid) > label:nth-child(4) {
+.social-studio :is(.fb-group-schedule-grid, .cms-fb-schedule-grid) > :is(label, .social-schedule-field):nth-child(n+3) {
   grid-column: 1 / -1;
+}
+.social-studio .social-schedule-row {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
+}
+.social-studio .social-schedule-presets {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.social-studio .social-time-chip {
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid #cfd8d2;
+  border-radius: 6px;
+  background: #ffffff;
+  color: var(--forest, #283d34);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.14s ease;
+  white-space: nowrap;
+}
+.social-studio .social-time-chip:hover {
+  background: var(--sage, #eaf1ed);
+  border-color: var(--forest, #283d34);
+}
+.social-studio .social-time-chip.active {
+  background: var(--forest, #283d34);
+  border-color: var(--forest, #283d34);
+  color: #ffffff;
+}
+.social-studio .social-schedule-hint {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--forest, #283d34);
 }
 .social-studio .social-group-checks {
   display: flex;

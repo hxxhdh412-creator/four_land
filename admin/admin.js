@@ -2776,11 +2776,7 @@ function renderCmsRevidGroupsList() {
       updatePublishButtonState();
     };
   });
-  const etaEl = byId('cmsFbGroupEtaText');
-  if (etaEl) {
-    const n = fbState.selectedGroups.size;
-    etaEl.textContent = n ? `Đã chọn ${n} nhóm · Xoay vòng 4 bản chống spam` : 'Chọn ít nhất 1 nhóm để rải xoay vòng';
-  }
+  updateCmsGroupRotationEta();
 }
 
 function resolveCmsSpintaxPreview(text) {
@@ -2790,8 +2786,41 @@ function resolveCmsSpintaxPreview(text) {
   });
 }
 
+function resolveCmsScheduleTimeInput(rawVal) {
+  const val = String(rawVal || '').trim();
+  if (!val) return { iso: '', label: 'Chạy ngay' };
+  const timeMatch = val.match(/^(\d{1,2}):(\d{2})$/);
+  if (timeMatch) {
+    const now = new Date();
+    const target = new Date(now.getFullYear(), now.getMonth(), now.getDate(), Number(timeMatch[1]), Number(timeMatch[2]), 0, 0);
+    let dayLabel = 'Hôm nay';
+    if (target.getTime() <= now.getTime() - 60000) {
+      target.setDate(target.getDate() + 1);
+      dayLabel = 'Ngày mai';
+    }
+    const dd = String(target.getDate()).padStart(2, '0');
+    const mm = String(target.getMonth() + 1).padStart(2, '0');
+    return {
+      iso: target.toISOString(),
+      label: `⏰ ${timeMatch[1].padStart(2, '0')}:${timeMatch[2]} · ${dayLabel} (${dd}/${mm})`
+    };
+  }
+  const parsed = Date.parse(val);
+  if (!Number.isNaN(parsed)) {
+    const d = new Date(parsed);
+    return {
+      iso: d.toISOString(),
+      label: `⏰ ${d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} · ${d.toLocaleDateString('vi-VN')}`
+    };
+  }
+  return { iso: '', label: 'Chạy ngay' };
+}
+
 function updateCmsGroupRotationEta() {
   const etaEl = byId('cmsFbGroupEtaText');
+  const hintEl = byId('cmsFbGroupStartAtHint');
+  const sched = resolveCmsScheduleTimeInput(byId('cmsFbGroupStartAt')?.value);
+  if (hintEl) hintEl.textContent = sched.label;
   if (!etaEl) return;
   const n = fbState.selectedGroups.size;
   const a = Number(byId('cmsFbGroupGapMin')?.value) || 60;
@@ -2802,7 +2831,7 @@ function updateCmsGroupRotationEta() {
     return;
   }
   const mins = Math.max(1, Math.round((n * 45 + (n - 1) * (a + b) / 2) / 60));
-  etaEl.textContent = `Đã chọn ${n} nhóm · ${filledVars} bản xoay vòng · ~${mins} phút`;
+  etaEl.textContent = `Đã chọn ${n} nhóm · ${filledVars} bản xoay vòng · ~${mins} phút${sched.iso ? ` · ${sched.label}` : ''}`;
 }
 
 function setCmsFacebookMode(mode) {
@@ -3206,8 +3235,7 @@ async function handlePublishFacebook() {
       variants[0] = content;
       const gapMin = Math.max(30, Number(byId('cmsFbGroupGapMin')?.value) || 60);
       const gapMax = Math.max(gapMin, Number(byId('cmsFbGroupGapMax')?.value) || 120);
-      const rawStartAt = (byId('cmsFbGroupStartAt')?.value || '').trim();
-      const startAtIso = rawStartAt && !Number.isNaN(Date.parse(rawStartAt)) ? new Date(rawStartAt).toISOString() : '';
+      const startAtIso = resolveCmsScheduleTimeInput(byId('cmsFbGroupStartAt')?.value).iso;
       const rotBody = {
         name: (byId('cmsFbGroupRotName')?.value || '').trim() || `BĐS Fourland · ${fbState.propertyId || Date.now()}`,
         accountId,
@@ -3348,6 +3376,33 @@ document.querySelectorAll('[data-cms-fb-var]').forEach(tab => {
 });
 if (byId('cmsFbGroupGapMin')) byId('cmsFbGroupGapMin').addEventListener('input', updateCmsGroupRotationEta);
 if (byId('cmsFbGroupGapMax')) byId('cmsFbGroupGapMax').addEventListener('input', updateCmsGroupRotationEta);
+if (byId('cmsFbGroupStartAt')) {
+  byId('cmsFbGroupStartAt').addEventListener('input', () => {
+    const curVal = (byId('cmsFbGroupStartAt')?.value || '').trim();
+    document.querySelectorAll('[data-cms-fb-time]').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.cmsFbTime === curVal);
+    });
+    updateCmsGroupRotationEta();
+  });
+}
+document.querySelectorAll('[data-cms-fb-time]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const raw = btn.dataset.cmsFbTime || '';
+    const input = byId('cmsFbGroupStartAt');
+    if (!input) return;
+    if (!raw) {
+      input.value = '';
+    } else if (raw.startsWith('+')) {
+      const addMins = Number(raw.slice(1)) || 30;
+      const d = new Date(Date.now() + addMins * 60000);
+      input.value = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+    } else {
+      input.value = raw;
+    }
+    document.querySelectorAll('[data-cms-fb-time]').forEach(b => b.classList.toggle('active', b === btn));
+    updateCmsGroupRotationEta();
+  });
+});
 if (byId('cmsFbGroupSearchInput')) {
   byId('cmsFbGroupSearchInput').addEventListener('input', renderCmsRevidGroupsList);
 }

@@ -494,10 +494,23 @@
                       <span class="fb-portal-label">Nghỉ max (s)</span>
                       <input type="number" id="fbGroupGapMax" class="fb-group-input" min="30" value="120">
                     </label>
-                    <label class="fb-portal-field">
-                      <span class="fb-portal-label">Hẹn giờ chạy 24/7 (để trống = chạy ngay)</span>
-                      <input type="datetime-local" id="fbGroupStartAt" class="fb-group-input">
-                    </label>
+                    <div class="fb-portal-field social-schedule-field">
+                      <div class="fb-field-head">
+                        <span class="fb-portal-label">Giờ chạy 24/7 (tự lấy ngày hôm nay)</span>
+                        <span class="social-schedule-hint" id="fbGroupStartAtHint">Chạy ngay</span>
+                      </div>
+                      <div class="social-schedule-row">
+                        <input type="time" id="fbGroupStartAt" aria-label="Giờ hẹn chạy" class="fb-group-input">
+                        <div class="social-schedule-presets" id="fbGroupTimePresets">
+                          <button type="button" class="social-time-chip active" data-fb-time="">Chạy ngay</button>
+                          <button type="button" class="social-time-chip" data-fb-time="+30">+30p</button>
+                          <button type="button" class="social-time-chip" data-fb-time="+60">+1h</button>
+                          <button type="button" class="social-time-chip" data-fb-time="12:00">12:00</button>
+                          <button type="button" class="social-time-chip" data-fb-time="19:30">19:30</button>
+                          <button type="button" class="social-time-chip" data-fb-time="08:00">08:00</button>
+                        </div>
+                      </div>
+                    </div>
                     <label class="fb-portal-field">
                       <span class="fb-portal-label">Bình luận đầu tiên (Seeding)</span>
                       <input type="text" id="fbGroupFirstComment" class="fb-group-input" value="{Inbox|Nhắn tin} hoặc gọi trực tiếp 037.6789.808 để xem nhà thực tế nhé!">
