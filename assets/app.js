@@ -3409,10 +3409,18 @@ const portalQueueState = {
 };
 
 function formatPortalQueueTime(iso) {
-  if (!iso) return '—';
+  if (!iso) return '';
   const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '—';
-  return `${d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} · ${d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })}`;
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+}
+
+function shortenPortalChan(label = '') {
+  return String(label)
+    .replace(/^Nhóm FB\s*·\s*(?:Page:\s*)?/i, 'Nhóm · ')
+    .replace(/^Fanpage\s*·\s*/i, 'Page · ')
+    .replace(/^FB Cá nhân\s*·\s*/i, 'FB · ')
+    .trim();
 }
 
 function updatePortalQueueBadges(summary) {
@@ -3445,7 +3453,8 @@ function renderPortalQueueTable() {
 
   const s = portalQueueState.summary || { runningCount: 0, waitingCount: 0, doneCount: 0, failedCount: 0 };
   if (sub) {
-    sub.textContent = `Đang chạy: ${s.runningCount || 0} · Chờ đăng/Hẹn lịch: ${s.waitingCount || 0} · Đã xong: ${s.doneCount || 0}${s.failedCount ? ` · Lỗi: ${s.failedCount}` : ''} (Tự làm mới mỗi 6 giây)`;
+    const activeSum = (s.runningCount || 0) + (s.waitingCount || 0);
+    sub.textContent = activeSum > 0 ? `${activeSum} đang chờ` : `${s.doneCount || 0} đã xong`;
   }
 
   const f = portalQueueState.filter;
@@ -3456,57 +3465,74 @@ function renderPortalQueueTable() {
   });
 
   if (!filtered.length) {
-    tbody.innerHTML = `<tr><td colspan="5" class="social-queue-empty">${f === 'active' ? 'Hiện không có bài đăng nào đang chờ trong luồng. Bấm tab "Tất cả" để xem lịch sử các bài vừa chạy.' : 'Chưa có bài đăng nào trong mục này.'}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5" class="social-queue-empty">${f === 'active' ? 'Trống — chưa có bài nào đang chờ đăng.' : 'Chưa có dữ liệu.'}</td></tr>`;
     return;
   }
 
   const statusMeta = {
-    running: { label: '🟢 Đang đăng...', cls: 'st-running' },
-    queued: { label: '⏳ Chờ luồng', cls: 'st-queued' },
-    scheduled: { label: '⏰ Hẹn lịch', cls: 'st-scheduled' },
-    paused: { label: '⏸ Tạm dừng', cls: 'st-paused' },
-    draft: { label: '⏸ Tạm hoãn', cls: 'st-draft' },
-    done: { label: '✅ Hoàn tất', cls: 'st-done' },
-    partial: { label: '⚠️ Xong một phần', cls: 'st-partial' },
-    failed: { label: '❌ Lỗi', cls: 'st-failed' }
+    running: { label: 'Chạy', cls: 'st-running' },
+    queued: { label: 'Chờ', cls: 'st-queued' },
+    scheduled: { label: 'Hẹn', cls: 'st-scheduled' },
+    paused: { label: 'Dừng', cls: 'st-paused' },
+    draft: { label: 'Hoãn', cls: 'st-draft' },
+    done: { label: 'Xong', cls: 'st-done' },
+    partial: { label: '1 phần', cls: 'st-partial' },
+    failed: { label: 'Lỗi', cls: 'st-failed' }
   };
 
   tbody.innerHTML = filtered.map((it, idx) => {
     const st = statusMeta[it.status] || { label: it.status, cls: 'st-queued' };
     const prog = it.progress || { done: 0, total: 1 };
-    const pct = Math.min(100, Math.round(((prog.done || 0) / Math.max(1, prog.total || 1)) * 100));
+    const total = Math.max(1, prog.total || 1);
+    const done = prog.done || 0;
+    const pct = Math.min(100, Math.round((done / total) * 100));
     const isPrio = Boolean(it.priorityAt && ['running', 'queued', 'scheduled'].includes(it.status));
     const rowCls = it.status === 'running' ? 'is-running-row' : (isPrio ? 'is-priority-row' : '');
-    const linkHtml = it.postUrl
-      ? ` <a href="${escapeHtml(it.postUrl)}" target="_blank" rel="noopener noreferrer" style="font-size:11px;font-weight:700;color:var(--forest);">Mở bài ↗</a>`
-      : '';
+    const chanShort = shortenPortalChan(it.channelLabel || 'Kênh');
+    const timeShort = formatPortalQueueTime(it.scheduledAt);
+    const titleLine = it.error ? `Lỗi: ${it.error}` : (it.title || '(Bài đăng)');
+    const stText = `${isPrio ? '⚡ ' : ''}${st.label}${it.queuePosition ? ` #${it.queuePosition}` : ''}`;
+
+    const actionsHtml = `
+      <div class="social-q-actions">
+        ${(it.canPrioritize && (idx > 0 || it.status === 'scheduled')) ? `<button type="button" class="social-q-btn btn-prioritize" data-q-op="prioritize" data-q-type="${escapeHtml(it.itemType)}" data-q-id="${escapeHtml(it.id)}" title="Đẩy lên chạy đầu tiên">⚡ Ưu tiên</button>` : ''}
+        ${it.canPause ? `<button type="button" class="social-q-btn" data-q-op="pause" data-q-type="${escapeHtml(it.itemType)}" data-q-id="${escapeHtml(it.id)}" title="Tạm dừng">⏸</button>` : ''}
+        ${it.canResume ? `<button type="button" class="social-q-btn" data-q-op="resume" data-q-type="${escapeHtml(it.itemType)}" data-q-id="${escapeHtml(it.id)}" title="Chạy tiếp">▶</button>` : ''}
+        ${it.canRetry ? `<button type="button" class="social-q-btn" data-q-op="retry" data-q-type="${escapeHtml(it.itemType)}" data-q-id="${escapeHtml(it.id)}" title="Thử lại các mục lỗi">↻</button>` : ''}
+        <button type="button" class="social-q-btn btn-danger" data-q-op="delete" data-q-type="${escapeHtml(it.itemType)}" data-q-id="${escapeHtml(it.id)}" title="Xoá">✕</button>
+      </div>
+    `;
+
     return `
       <tr class="${rowCls}">
-        <td>
-          <span class="social-q-status ${st.cls}">${st.label}</span>
-          ${it.queuePosition ? `<div class="social-q-chan-sub">Vị trí #${it.queuePosition}</div>` : ''}
-          ${isPrio ? `<div class="social-q-prio-tag">⚡ Ưu tiên lên trước</div>` : ''}
+        <td class="social-q-desk-only"><span class="social-q-status ${st.cls}"><i class="social-q-dot"></i>${escapeHtml(stText)}</span></td>
+        <td class="social-q-desk-only"><div class="social-q-chan-line" title="${escapeHtml(it.channelLabel || '')}">${escapeHtml(chanShort)}</div></td>
+        <td class="social-q-desk-only">
+          <div class="social-q-post-line">
+            <span class="social-q-post-title ${it.error ? 'is-err' : ''}" title="${escapeHtml(titleLine)}">${escapeHtml(titleLine)}</span>
+            ${it.postUrl ? `<a class="social-q-ext" href="${escapeHtml(it.postUrl)}" target="_blank" rel="noopener noreferrer" title="Mở bài đã đăng">↗</a>` : ''}
+          </div>
         </td>
-        <td>
-          <div class="social-q-chan-title">${escapeHtml(it.channelLabel || 'Kênh xuất bản')}</div>
-          <div class="social-q-chan-sub">${escapeHtml(it.targetSummary || '')}${linkHtml}</div>
+        <td class="social-q-desk-only">
+          <div class="social-q-prog-inline">
+            <span>${done}/${total}</span>
+            ${total > 1 ? `<span class="social-q-prog-mini"><span style="width:${pct}%"></span></span>` : ''}
+            ${timeShort ? `<span class="social-q-time-sub">${escapeHtml(timeShort)}</span>` : ''}
+          </div>
         </td>
-        <td>
-          <div class="social-q-post-title" title="${escapeHtml(it.title || '')}">${escapeHtml(it.title || '(Bài đăng)')}</div>
-          <div class="social-q-post-snip">${escapeHtml(it.error ? `Lỗi: ${it.error}` : (it.snippet || ''))}</div>
-        </td>
-        <td>
-          <div class="social-q-chan-title">${prog.done || 0}/${prog.total || 1} (${pct}%)</div>
-          <div class="social-q-prog-bar"><span style="width:${pct}%"></span></div>
-          <div class="social-q-chan-sub" style="margin-top:4px;">${escapeHtml(formatPortalQueueTime(it.scheduledAt))}</div>
-        </td>
-        <td>
-          <div class="social-q-actions">
-            ${it.canPrioritize && idx > 0 ? `<button type="button" class="social-q-btn btn-prioritize" data-q-op="prioritize" data-q-type="${escapeHtml(it.itemType)}" data-q-id="${escapeHtml(it.id)}">⚡ Ưu tiên lên trước</button>` : (it.canPrioritize && it.status === 'scheduled' ? `<button type="button" class="social-q-btn btn-prioritize" data-q-op="prioritize" data-q-type="${escapeHtml(it.itemType)}" data-q-id="${escapeHtml(it.id)}">⚡ Chạy ngay trước</button>` : '')}
-            ${it.canPause ? `<button type="button" class="social-q-btn" data-q-op="pause" data-q-type="${escapeHtml(it.itemType)}" data-q-id="${escapeHtml(it.id)}">⏸ Dừng</button>` : ''}
-            ${it.canResume ? `<button type="button" class="social-q-btn" data-q-op="resume" data-q-type="${escapeHtml(it.itemType)}" data-q-id="${escapeHtml(it.id)}">▶ Chạy tiếp</button>` : ''}
-            ${it.canRetry ? `<button type="button" class="social-q-btn" data-q-op="retry" data-q-type="${escapeHtml(it.itemType)}" data-q-id="${escapeHtml(it.id)}">↻ Thử lại</button>` : ''}
-            <button type="button" class="social-q-btn btn-danger" data-q-op="delete" data-q-type="${escapeHtml(it.itemType)}" data-q-id="${escapeHtml(it.id)}" title="Xoá khỏi danh sách">🗑</button>
+        <td class="social-q-desk-only">${actionsHtml}</td>
+        <td class="social-q-mobile-only" colspan="5">
+          <div class="social-q-m-top">
+            <div class="social-q-m-meta">
+              <span class="social-q-status ${st.cls}"><i class="social-q-dot"></i>${escapeHtml(stText)}</span>
+              <span class="social-q-m-chan">${escapeHtml(chanShort)}</span>
+              <span class="social-q-m-stat">${done}/${total}${timeShort ? ` · ${escapeHtml(timeShort)}` : ''}</span>
+            </div>
+            ${actionsHtml}
+          </div>
+          <div class="social-q-m-bot">
+            <span class="social-q-m-title ${it.error ? 'is-err' : ''}">${escapeHtml(titleLine)}</span>
+            ${it.postUrl ? `<a class="social-q-ext" href="${escapeHtml(it.postUrl)}" target="_blank" rel="noopener noreferrer">↗</a>` : ''}
           </div>
         </td>
       </tr>
