@@ -2667,7 +2667,8 @@ function updatePortalPublishButtonState() {
     submitBtn.disabled = false;
     const selectedPid = Array.from(fbPortalState.selectedPageIds)[0];
     const pageObj = (fbPortalState.pages || []).find(p => String(p.pageId) === selectedPid);
-    const pName = pageObj?.name || fbPortalState.pageName || 'Fanpage';
+    const rawName = pageObj?.name || fbPortalState.pageName || 'FourLand';
+    const pName = /^fanpage\b/i.test(rawName) ? 'FourLand' : rawName;
     if (span) span.textContent = pageSched.iso ? `Hẹn lịch ${pName}${shortTime}` : `Đăng lên Fanpage ${pName}`;
   } else {
     submitBtn.disabled = false;
@@ -2744,6 +2745,7 @@ async function openFacebookStudio(propertyId, updateUrl = true) {
   }
 
   if (!dialog.open) dialog.showModal();
+  renderFacebookPortalChannels();
   setFacebookPortalMode(fbPortalState.mode);
   await loadFacebookDraft(propertyId, fbPortalState.tone);
 }
@@ -3287,7 +3289,7 @@ if ($('fbPageStartAt')) {
     const customChip = $('fbPageCustomTimeChip');
     const customLbl = $('fbPageCustomTimeLabel');
     if (customChip) customChip.classList.toggle('active', Boolean(curVal && !matchedPreset));
-    if (customLbl) customLbl.textContent = (curVal && !matchedPreset) ? curVal : 'Giờ khác';
+    if (customLbl) customLbl.textContent = (curVal && !matchedPreset) ? curVal : 'Khác';
     updatePortalPublishButtonState();
   };
 }
@@ -3307,7 +3309,7 @@ document.querySelectorAll('[data-fb-page-time]').forEach(btn => {
     }
     document.querySelectorAll('[data-fb-page-time]').forEach(b => b.classList.toggle('active', b === btn));
     if ($('fbPageCustomTimeChip')) $('fbPageCustomTimeChip').classList.remove('active');
-    if ($('fbPageCustomTimeLabel')) $('fbPageCustomTimeLabel').textContent = 'Giờ khác';
+    if ($('fbPageCustomTimeLabel')) $('fbPageCustomTimeLabel').textContent = 'Khác';
     updatePortalPublishButtonState();
   };
 });
@@ -3333,7 +3335,7 @@ if ($('fbGroupStartAt')) {
       if (isMatch) matchedPreset = true;
     });
     if ($('fbGroupCustomTimeChip')) $('fbGroupCustomTimeChip').classList.toggle('active', Boolean(curVal && !matchedPreset));
-    if ($('fbGroupCustomTimeLabel')) $('fbGroupCustomTimeLabel').textContent = (curVal && !matchedPreset) ? curVal : 'Giờ khác';
+    if ($('fbGroupCustomTimeLabel')) $('fbGroupCustomTimeLabel').textContent = (curVal && !matchedPreset) ? curVal : 'Khác';
     updateGroupRotationEta();
   };
 }
@@ -3353,7 +3355,7 @@ document.querySelectorAll('[data-fb-time]').forEach(btn => {
     }
     document.querySelectorAll('[data-fb-time]').forEach(b => b.classList.toggle('active', b === btn));
     if ($('fbGroupCustomTimeChip')) $('fbGroupCustomTimeChip').classList.remove('active');
-    if ($('fbGroupCustomTimeLabel')) $('fbGroupCustomTimeLabel').textContent = 'Giờ khác';
+    if ($('fbGroupCustomTimeLabel')) $('fbGroupCustomTimeLabel').textContent = 'Khác';
     updateGroupRotationEta();
   };
 });

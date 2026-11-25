@@ -3469,7 +3469,7 @@ if (byId('cmsFbPageStartAt')) {
       if (isMatch) matchedPreset = true;
     });
     if (byId('cmsFbPageCustomTimeChip')) byId('cmsFbPageCustomTimeChip').classList.toggle('active', Boolean(curVal && !matchedPreset));
-    if (byId('cmsFbPageCustomTimeLabel')) byId('cmsFbPageCustomTimeLabel').textContent = (curVal && !matchedPreset) ? curVal : 'Giờ khác';
+    if (byId('cmsFbPageCustomTimeLabel')) byId('cmsFbPageCustomTimeLabel').textContent = (curVal && !matchedPreset) ? curVal : 'Khác';
     updatePublishButtonState();
   });
 }
@@ -3489,7 +3489,7 @@ document.querySelectorAll('[data-cms-fb-page-time]').forEach(btn => {
     }
     document.querySelectorAll('[data-cms-fb-page-time]').forEach(b => b.classList.toggle('active', b === btn));
     if (byId('cmsFbPageCustomTimeChip')) byId('cmsFbPageCustomTimeChip').classList.remove('active');
-    if (byId('cmsFbPageCustomTimeLabel')) byId('cmsFbPageCustomTimeLabel').textContent = 'Giờ khác';
+    if (byId('cmsFbPageCustomTimeLabel')) byId('cmsFbPageCustomTimeLabel').textContent = 'Khác';
     updatePublishButtonState();
   });
 });
@@ -3515,7 +3515,7 @@ if (byId('cmsFbGroupStartAt')) {
       if (isMatch) matchedPreset = true;
     });
     if (byId('cmsFbGroupCustomTimeChip')) byId('cmsFbGroupCustomTimeChip').classList.toggle('active', Boolean(curVal && !matchedPreset));
-    if (byId('cmsFbGroupCustomTimeLabel')) byId('cmsFbGroupCustomTimeLabel').textContent = (curVal && !matchedPreset) ? curVal : 'Giờ khác';
+    if (byId('cmsFbGroupCustomTimeLabel')) byId('cmsFbGroupCustomTimeLabel').textContent = (curVal && !matchedPreset) ? curVal : 'Khác';
     updateCmsGroupRotationEta();
   });
 }
@@ -3535,7 +3535,7 @@ document.querySelectorAll('[data-cms-fb-time]').forEach(btn => {
     }
     document.querySelectorAll('[data-cms-fb-time]').forEach(b => b.classList.toggle('active', b === btn));
     if (byId('cmsFbGroupCustomTimeChip')) byId('cmsFbGroupCustomTimeChip').classList.remove('active');
-    if (byId('cmsFbGroupCustomTimeLabel')) byId('cmsFbGroupCustomTimeLabel').textContent = 'Giờ khác';
+    if (byId('cmsFbGroupCustomTimeLabel')) byId('cmsFbGroupCustomTimeLabel').textContent = 'Khác';
     updateCmsGroupRotationEta();
   });
 });
