@@ -1,6 +1,7 @@
 const crypto = require("crypto");
 const { isAdmin, requireAdmin } = require("./_admin");
 const { configuration, sendError, supabaseRequest, text } = require("./_supabase");
+const { invalidatePropertiesCache } = require("./properties");
 
 module.exports = async function handler(req, res) {
   if (!["POST", "DELETE"].includes(req.method)) return res.status(405).json({ ok: false, error: "Method Not Allowed" });
@@ -29,6 +30,7 @@ module.exports = async function handler(req, res) {
       await supabaseRequest(`property_images?property_id=eq.${encodeURIComponent(propertyId)}&position=eq.${position}`, { method: "PATCH", body: { storage_path: `hidden:${storagePath || `${propertyId}:${position}`}`, public_url: null, source_url: null } });
       const visible = await supabaseRequest(`property_images?select=position&property_id=eq.${encodeURIComponent(propertyId)}&public_url=not.is.null`);
       await supabaseRequest(`properties?property_id=eq.${encodeURIComponent(propertyId)}`, { method: "PATCH", body: { image_count: visible.data.length, updated_at: new Date().toISOString() } });
+      invalidatePropertiesCache();
       return res.status(200).json({ ok: true, message: "Đã xóa hình ảnh khỏi web" });
     }
     const match = String(req.body?.dataUrl || "").match(/^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/);
@@ -52,6 +54,7 @@ module.exports = async function handler(req, res) {
     await supabaseRequest("property_images", { method: "POST", body: { property_id: propertyId, position, storage_path: storagePath, public_url: publicUrl }, prefer: "return=representation" });
     const visibleCount = current.data.filter(item => item.public_url).length + 1;
     await supabaseRequest(`properties?property_id=eq.${encodeURIComponent(propertyId)}`, { method: "PATCH", body: { image_count: visibleCount, updated_at: new Date().toISOString() } });
+    invalidatePropertiesCache();
     res.status(201).json({ ok: true, image: { position, public_url: publicUrl }, message: "Đã thêm hình ảnh" });
   } catch (error) { sendError(res, error); }
 };

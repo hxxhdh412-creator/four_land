@@ -10,6 +10,13 @@ let memoryCachedArchivedRows = null;
 let memoryCachedArchivedTime = 0;
 const CACHE_TTL_MS = 25000; // 25 giây cache RAM để phản hồi trong 1-5ms
 
+function invalidatePropertiesCache() {
+  memoryCachedActiveRows = null;
+  memoryCachedActiveTime = 0;
+  memoryCachedArchivedRows = null;
+  memoryCachedArchivedTime = 0;
+}
+
 async function getPropertiesData(archivedOnly = false, bypassCache = false) {
   const now = Date.now();
   if (!archivedOnly && !bypassCache && memoryCachedActiveRows && (now - memoryCachedActiveTime < CACHE_TTL_MS)) {
@@ -90,7 +97,7 @@ module.exports = async function handler(req, res) {
     const idsParam = String(req.query.ids || "").trim();
     const idsFilter = idsParam ? new Set(idsParam.split(",").map(s => s.trim()).filter(Boolean)) : null;
     const sortBy = text(req.query.sortBy) || "newest";
-    const bypassCache = Boolean(isAdmin(req) || req.query.archived);
+    const bypassCache = Boolean(req.query.fresh === "1");
 
     const explicitFilters = {
       district: text(req.query.district),
@@ -187,5 +194,7 @@ module.exports = async function handler(req, res) {
     res.status(200).json({ ok: true, rows: paginatedRows, total, page, pageSize, parsedNlp: nlp.filters });
   } catch (error) { sendError(res, error); }
 };
+
+module.exports.invalidatePropertiesCache = invalidatePropertiesCache;
 
 

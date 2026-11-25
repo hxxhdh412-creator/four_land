@@ -1,6 +1,7 @@
 const { requireAdmin } = require("./_admin");
 const { sendError, supabaseRequest, text } = require("./_supabase");
 const { markOverrideFields } = require("../server/property-field-ownership");
+const { invalidatePropertiesCache } = require("./properties");
 
 const TEXT_FIELDS = ["address","district","ward","street","price_text","area_text","dimensions","structure","legal","phone","property_type","raw_text","notes"];
 const NUMBER_FIELDS = ["bedrooms","bathrooms"];
@@ -42,6 +43,7 @@ module.exports = async function handler(req, res) {
     const query = new URLSearchParams({ property_id: `eq.${propertyId}` });
     const result = await supabaseRequest(`properties?${query}`, { method: "PATCH", body: update, prefer: "return=representation" });
     if (!result.data[0]) return res.status(404).json({ ok: false, error: "Không tìm thấy bất động sản" });
+    invalidatePropertiesCache();
     
     let message = "Đã cập nhật thông tin nhà";
     if (Object.prototype.hasOwnProperty.call(req.body || {}, "is_rented")) {

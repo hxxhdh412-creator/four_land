@@ -2527,17 +2527,140 @@ if (byId('btnLogoutModal')) byId('btnLogoutModal').addEventListener('click', han
 // FACEBOOK POST STUDIO & COMPOSIO MCP CLIENT
 // ==========================================================================
 
+const CMS_REVID_ENGINE_URL = 'http://127.0.0.1:8788';
 const fbState = {
   propertyId: null,
+  mode: 'page', // 'page' | 'group'
   tone: 'hot',
   content: '',
+  variants: ['', '', '', ''],
   allImages: [],
   selectedImages: new Set(),
   selectedPageIds: new Set(['104363431784609']),
   selectedPageId: '104363431784609',
   pageName: 'FourLand',
-  pages: []
+  pages: [],
+  engineOnline: false,
+  fbAccounts: [],
+  selectedAccountId: '',
+  groups: [],
+  groupApprovals: {},
+  selectedGroups: new Map()
 };
+
+async function cmsRevidApi(method, path, body) {
+  const res = await fetch(`${CMS_REVID_ENGINE_URL}${path}`, {
+    method,
+    headers: body ? { 'Content-Type': 'application/json' } : undefined,
+    body: body ? JSON.stringify(body) : undefined
+  });
+  const txt = await res.text();
+  let data = {};
+  try { data = txt ? JSON.parse(txt) : {}; } catch { data = { raw: txt }; }
+  if (!res.ok) throw new Error(data.error || `Engine 8788 HTTP ${res.status}`);
+  return data;
+}
+
+async function initCmsRevidGroupEngine(forceGroups = false) {
+  const statusEl = byId('cmsFbGroupEngineStatus');
+  const accSel = byId('cmsFbGroupAccountSelect');
+  try {
+    const st = await cmsRevidApi('GET', '/api/state');
+    fbState.engineOnline = true;
+    const fbs = (st.accounts || []).filter(a => a.platform === 'facebook');
+    fbState.fbAccounts = fbs;
+    if (statusEl) {
+      statusEl.innerHTML = fbs.length
+        ? `🟢 Đã kết nối <b>RevidAPI Social (8788)</b> · ${fbs.length} tài khoản Facebook`
+        : `🟡 Đã kết nối <b>RevidAPI Social (8788)</b> nhưng chưa có tài khoản Facebook.`;
+    }
+    if (accSel) {
+      if (!fbs.length) {
+        accSel.innerHTML = '<option value="">Chưa có tài khoản Facebook trong 8788</option>';
+      } else {
+        if (!fbState.selectedAccountId || !fbs.some(a => a.id === fbState.selectedAccountId)) {
+          fbState.selectedAccountId = fbs[0].id;
+        }
+        accSel.innerHTML = fbs.map(a => `<option value="${escapeHtml(a.id)}" ${a.id === fbState.selectedAccountId ? 'selected' : ''}>${escapeHtml(a.profileName || a.label)}</option>`).join('');
+        await loadCmsRevidGroups(fbState.selectedAccountId, forceGroups);
+      }
+    }
+  } catch (_) {
+    fbState.engineOnline = false;
+    if (statusEl) statusEl.innerHTML = `⚪ Chưa bật <b>RevidAPI Social (127.0.0.1:8788)</b> trên máy.`;
+    if (accSel) accSel.innerHTML = '<option value="">Không kết nối được 127.0.0.1:8788</option>';
+  }
+  updatePublishButtonState();
+}
+
+async function loadCmsRevidGroups(accountId, fresh = false) {
+  const box = byId('cmsFbGroupListBox');
+  if (!accountId || !box) return;
+  box.innerHTML = `<div style="grid-column:1/-1;padding:12px;text-align:center;font-size:12px;color:#64748b;">Đang tải danh sách nhóm…</div>`;
+  try {
+    const base = `/api/accounts/${encodeURIComponent(accountId)}/groups`;
+    let d = await cmsRevidApi('GET', base + (fresh ? '' : '?cached=1'));
+    if (fresh || !(d.groups || []).length) d = await cmsRevidApi('GET', base);
+    fbState.groups = d.groups || [];
+    fbState.groupApprovals = await cmsRevidApi('GET', `/api/mk/approvals/${encodeURIComponent(accountId)}`).catch(() => ({}));
+    renderCmsRevidGroupsList();
+  } catch (err) {
+    box.innerHTML = `<div style="grid-column:1/-1;padding:12px;text-align:center;font-size:12px;color:#dc2626;">Lỗi: ${escapeHtml(err.message)}</div>`;
+  }
+}
+
+function renderCmsRevidGroupsList() {
+  const box = byId('cmsFbGroupListBox');
+  const countEl = byId('cmsFbGroupPickedCount');
+  const q = (byId('cmsFbGroupSearchInput')?.value || '').trim().toLowerCase();
+  if (!box) return;
+  if (countEl) countEl.textContent = String(fbState.selectedGroups.size);
+  const groups = (fbState.groups || []).filter(g => !q || String(g.name || '').toLowerCase().includes(q));
+  if (!groups.length) {
+    box.innerHTML = `<div style="grid-column:1/-1;padding:12px;text-align:center;font-size:12px;color:#64748b;">Không có nhóm phù hợp.</div>`;
+    updatePublishButtonState();
+    return;
+  }
+  box.innerHTML = groups.map(g => {
+    const gid = String(g.id);
+    const isChecked = fbState.selectedGroups.has(gid);
+    return `<label style="display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:6px;border:1px solid ${isChecked ? '#34d399' : '#e2e8f0'};background:${isChecked ? '#ecfdf5' : '#f8fafc'};font-size:12px;cursor:pointer;" data-gid="${escapeHtml(gid)}">
+      <input type="checkbox" value="${escapeHtml(gid)}" ${isChecked ? 'checked' : ''} style="width:14px;height:14px;margin:0;">
+      <span style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(g.name)}</span>
+    </label>`;
+  }).join('');
+  box.querySelectorAll('label[data-gid]').forEach(row => {
+    const cb = row.querySelector('input[type="checkbox"]');
+    cb.onchange = () => {
+      const gid = row.dataset.gid;
+      const gObj = (fbState.groups || []).find(x => String(x.id) === gid);
+      if (cb.checked && gObj) fbState.selectedGroups.set(gid, { id: gObj.id, name: gObj.name });
+      else fbState.selectedGroups.delete(gid);
+      renderCmsRevidGroupsList();
+      updatePublishButtonState();
+    };
+  });
+  const etaEl = byId('cmsFbGroupEtaText');
+  if (etaEl) {
+    const n = fbState.selectedGroups.size;
+    etaEl.textContent = n ? `⚡ Đã chọn ${n} nhóm · Hệ thống tự động xoay vòng 4 phiên bản nội dung chống spam.` : 'Chọn ít nhất 1 nhóm Facebook để rải bài xoay vòng.';
+  }
+}
+
+function setCmsFacebookMode(mode) {
+  fbState.mode = mode === 'group' ? 'group' : 'page';
+  const isGroup = fbState.mode === 'group';
+  document.querySelectorAll('[data-cms-fb-mode]').forEach(btn => {
+    const active = btn.dataset.cmsFbMode === fbState.mode;
+    btn.classList.toggle('active', active);
+    btn.style.background = active ? '#fff' : 'transparent';
+    btn.style.color = active ? '#283d34' : '#526059';
+  });
+  if (byId('cmsFbPageSection')) byId('cmsFbPageSection').hidden = isGroup;
+  if (byId('cmsFbGroupSection')) byId('cmsFbGroupSection').hidden = !isGroup;
+  if (isGroup) initCmsRevidGroupEngine(false);
+  updatePublishButtonState();
+}
 
 function renderFacebookChannels() {
   const container = byId('fbChannelList');
@@ -2601,8 +2724,22 @@ function renderFacebookChannels() {
 function updatePublishButtonState() {
   const submitBtn = byId('fbSubmitBtn');
   if (!submitBtn) return;
-  const count = fbState.selectedPageIds.size;
   const span = submitBtn.querySelector('span');
+  if (fbState.mode === 'group') {
+    const gCount = fbState.selectedGroups.size;
+    if (!fbState.engineOnline) {
+      submitBtn.disabled = true;
+      if (span) span.textContent = 'Chưa bật RevidAPI Social (8788)';
+    } else if (gCount === 0) {
+      submitBtn.disabled = true;
+      if (span) span.textContent = 'Chọn ít nhất 1 Nhóm Facebook';
+    } else {
+      submitBtn.disabled = false;
+      if (span) span.textContent = `Rải bài xoay vòng vào ${gCount} Nhóm`;
+    }
+    return;
+  }
+  const count = fbState.selectedPageIds.size;
 
   if (count === 0) {
     submitBtn.disabled = true;
@@ -2694,9 +2831,15 @@ async function loadFacebookDraft(propertyId, tone = 'hot', _pageId = null, regen
 
     const data = result.data;
     fbState.content = data.content;
+    fbState.variants = Array.isArray(data.variants) && data.variants.length >= 4
+      ? data.variants.slice(0, 4)
+      : [data.content || '', data.content || '', data.content || '', data.content || ''];
     fbState.allImages = data.images || [];
     fbState.pageName = data.pageName || 'FourLand';
     fbState.pages = data.pages || fbState.pages;
+    if (byId('cmsFbGroupRotName') && !byId('cmsFbGroupRotName').value.trim()) {
+      byId('cmsFbGroupRotName').value = `BĐS Fourland · ${propertyId}`;
+    }
 
     renderFacebookChannels();
 
@@ -2797,6 +2940,72 @@ async function handlePublishFacebook() {
     return;
   }
 
+  if (fbState.mode === 'group') {
+    const groups = Array.from(fbState.selectedGroups.values());
+    if (!groups.length) {
+      alert('Vui lòng chọn ít nhất 1 Nhóm Facebook!');
+      return;
+    }
+    const accountId = byId('cmsFbGroupAccountSelect')?.value || fbState.selectedAccountId;
+    submitBtn.disabled = true;
+    statusNote.textContent = `Đang chuyển ảnh & kích hoạt rải ${groups.length} nhóm…`;
+    try {
+      const selectedImgs = Array.from(fbState.selectedImages);
+      const uploadedLocalUrls = [];
+      for (let i = 0; i < Math.min(selectedImgs.length, 10); i++) {
+        try {
+          const proxyUrl = `/api/download-image?url=${encodeURIComponent(selectedImgs[i])}&filename=bds_${i + 1}.jpg`;
+          const imgRes = await fetch(proxyUrl);
+          if (imgRes.ok) {
+            const blob = await imgRes.blob();
+            const dataUrl = await new Promise((resolve, reject) => {
+              const fr = new FileReader();
+              fr.onload = () => resolve(fr.result);
+              fr.onerror = reject;
+              fr.readAsDataURL(blob);
+            });
+            const up = await cmsRevidApi('POST', '/api/media/upload', { dataUrl });
+            if (up?.url) uploadedLocalUrls.push(up.url);
+          }
+        } catch (_) {}
+      }
+      const variants = (fbState.variants || []).map(v => String(v || '').trim()).filter(Boolean);
+      variants[0] = content;
+      const gapMin = Math.max(30, Number(byId('cmsFbGroupGapMin')?.value) || 60);
+      const gapMax = Math.max(gapMin, Number(byId('cmsFbGroupGapMax')?.value) || 120);
+      const rotBody = {
+        name: (byId('cmsFbGroupRotName')?.value || '').trim() || `BĐS Fourland · ${fbState.propertyId || Date.now()}`,
+        accountId,
+        groups,
+        variants,
+        images: uploadedLocalUrls,
+        link: (byId('fbIncludeLink')?.checked !== false) ? 'https://www.fourland.vn' : '',
+        format: uploadedLocalUrls.length ? 'photo' : 'status',
+        background: 1,
+        gapMin,
+        gapMax,
+        skipApproval: byId('cmsFbGroupSkipApproval')?.checked !== false,
+        autoLike: byId('cmsFbGroupAutoLike')?.checked !== false,
+        firstComment: (byId('cmsFbGroupFirstComment')?.value || '').trim(),
+        startAt: '',
+        dryRun: false
+      };
+      const saved = await cmsRevidApi('POST', '/api/mk/rotations', rotBody);
+      await cmsRevidApi('POST', `/api/mk/rotations/${encodeURIComponent(saved.id)}/start`);
+      statusNote.textContent = `Đã kích hoạt rải ${groups.length} nhóm xoay vòng!`;
+      if (confirm(`Đã kích hoạt chiến dịch rải xoay vòng vào ${groups.length} nhóm Facebook!\n\nBạn có muốn mở Bảng điều khiển RevidAPI Social (8788) để xem tiến độ không?`)) {
+        window.open(CMS_REVID_ENGINE_URL, '_blank');
+      }
+      setTimeout(closeFacebookStudio, 1200);
+    } catch (err) {
+      submitBtn.disabled = false;
+      updatePublishButtonState();
+      statusNote.textContent = `Lỗi: ${err.message}`;
+      alert(`Không thể kích hoạt đăng nhóm: ${err.message}`);
+    }
+    return;
+  }
+
   const pageIds = Array.from(fbState.selectedPageIds);
   if (pageIds.length === 0) {
     alert('Vui lòng chọn ít nhất một Fanpage để đăng bài!');
@@ -2859,6 +3068,42 @@ async function handlePublishFacebook() {
 if (byId('fbDialogClose')) byId('fbDialogClose').addEventListener('click', closeFacebookStudio);
 if (byId('fbCancelBtn')) byId('fbCancelBtn').addEventListener('click', closeFacebookStudio);
 if (byId('fbSubmitBtn')) byId('fbSubmitBtn').addEventListener('click', handlePublishFacebook);
+
+document.querySelectorAll('[data-cms-fb-mode]').forEach(tab => {
+  tab.addEventListener('click', () => setCmsFacebookMode(tab.dataset.cmsFbMode));
+});
+if (byId('cmsFbGroupAccountSelect')) {
+  byId('cmsFbGroupAccountSelect').addEventListener('change', (e) => {
+    fbState.selectedAccountId = e.target.value;
+    fbState.selectedGroups.clear();
+    loadCmsRevidGroups(fbState.selectedAccountId, false);
+  });
+}
+if (byId('cmsFbGroupSearchInput')) {
+  byId('cmsFbGroupSearchInput').addEventListener('input', renderCmsRevidGroupsList);
+}
+if (byId('btnCmsFbGroupPickInstant')) {
+  byId('btnCmsFbGroupPickInstant').addEventListener('click', () => {
+    (fbState.groups || []).forEach(g => {
+      const gid = String(g.id);
+      if (fbState.groupApprovals?.[gid]?.approval !== 'required') {
+        fbState.selectedGroups.set(gid, { id: g.id, name: g.name });
+      }
+    });
+    renderCmsRevidGroupsList();
+    updatePublishButtonState();
+  });
+}
+if (byId('btnCmsFbGroupPickNone')) {
+  byId('btnCmsFbGroupPickNone').addEventListener('click', () => {
+    fbState.selectedGroups.clear();
+    renderCmsRevidGroupsList();
+    updatePublishButtonState();
+  });
+}
+if (byId('btnCmsFbGroupReload')) {
+  byId('btnCmsFbGroupReload').addEventListener('click', () => loadCmsRevidGroups(fbState.selectedAccountId, true));
+}
 
 if (byId('fbPageSelect')) {
   byId('fbPageSelect').addEventListener('change', function() {

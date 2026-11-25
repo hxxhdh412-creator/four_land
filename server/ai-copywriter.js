@@ -375,11 +375,36 @@ async function writeFacebookCopy(property = {}, options = {}) {
   return { content: finalizePost(buildRuleBasedBody(facts, tone), property, { cta, link }), generator: "rules" };
 }
 
+function buildRuleBasedVariants(property = {}, { cta = DEFAULT_CTA, link = "" } = {}) {
+  const facts = buildPropertyFacts(property);
+  const tones = ["hot", "detail", "quick"];
+  const v1 = finalizePost(buildRuleBasedBody(facts, "hot"), property, { cta, link });
+  const v2 = finalizePost(buildRuleBasedBody(facts, "detail"), property, { cta, link });
+  const v3 = finalizePost(buildRuleBasedBody(facts, "quick"), property, { cta, link });
+
+  // Bản 4: Spintax xoay vòng mở đầu & lời kêu gọi để đăng nhóm không bị trùng lặp
+  const isRent = facts.transaction === "Cho thuê";
+  const loc = [facts.street ? `đường ${facts.street.replace(/^đường\s+/i, "")}` : "", facts.ward, facts.district].filter(Boolean).join(", ");
+  const spintaxHead = `{🔥|✨|🏡} {CẦN ${isRent ? "CHO THUÊ" : "BÁN"}|${isRent ? "CHO THUÊ NHANH" : "CHÍNH CHỦ GỬI"}|NGUỒN NHÀ ĐẸP} ${loc ? loc.toUpperCase() : "TP.HCM"}`;
+  const spintaxIntro = `{Chào anh chị trong nhóm,|Gửi anh chị đang tìm nhà khu vực ${facts.district || "TP.HCM"},|Mình mới nhận ký gửi căn này rất đáng xem:}`;
+  const spintaxSpecs = [
+    facts.dimensions || facts.area ? `• {Diện tích|Kích thước}: ${[facts.dimensions, facts.area].filter(Boolean).join(" - ")}` : "",
+    facts.structure ? `• {Kết cấu|Hiện trạng}: ${facts.structure}` : "",
+    facts.bedrooms ? `• {Số phòng|Công năng}: ${facts.bedrooms}${facts.bathrooms ? ` · ${facts.bathrooms}` : ""}` : "",
+    facts.price ? `• {Giá ${isRent ? "thuê" : "chào"}|Mức giá}: ${facts.price}` : ""
+  ].filter(Boolean).join("\n");
+  const spintaxRaw = `${spintaxHead}\n\n${spintaxIntro}\n\n${spintaxSpecs}\n\n{Anh chị quan tâm|Ai cần xem thực tế} {nhắn mình|liên hệ trực tiếp} để xem nhà nhé!`;
+  const v4 = finalizePost(spintaxRaw, property, { cta, link });
+
+  return [v1, v2, v3, v4];
+}
+
 module.exports = {
   COPYWRITER_PROMPT,
   DEFAULT_CTA,
   buildPropertyFacts,
   buildRuleBasedBody,
+  buildRuleBasedVariants,
   factsToPrompt,
   finalizePost,
   resolveAiConfig,

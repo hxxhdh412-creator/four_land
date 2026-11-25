@@ -59,7 +59,7 @@
     window.FOURLAND_ONESIGNAL_APP_ID = "524d4fcf-2075-4aaf-8862-a306e670f31d";
   </script>
 
-  <link rel="stylesheet" href="/assets/app.css?v=20261125-multi-district-v1">
+  <link rel="stylesheet" href="/assets/app.css?v=20261125-group-rotation-v2">
 
   <!-- Schema.org JSON-LD Structured Data -->
   <script type="application/ld+json">
@@ -378,6 +378,10 @@
           <p class="fb-portal-eyebrow">Marketing & Mạng Xã Hội</p>
           <h2 id="fbDialogTitle" class="fb-portal-title">Đăng bài lên Facebook Studio</h2>
         </div>
+        <div class="fb-portal-mode-tabs" id="fbPortalModeTabs" role="tablist">
+          <button type="button" class="fb-mode-tab active" data-fb-mode="page">📘 Đăng Fanpage</button>
+          <button type="button" class="fb-mode-tab" data-fb-mode="group">⟳ Đăng nhóm xoay vòng <span class="fb-mode-dot" id="fbGroupEngineDot" title="Trạng thái kết nối hệ thống đăng nhóm 127.0.0.1:8788"></span></button>
+        </div>
         <button id="fbDialogClose" class="fb-portal-close" type="button" aria-label="Đóng Facebook Studio">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
@@ -385,7 +389,8 @@
 
       <div class="fb-portal-body">
         <div class="fb-portal-editor">
-          <div class="fb-portal-channel-section">
+          <!-- CHẾ ĐỘ 1: ĐĂNG FANPAGE (COMPOSIO / GRAPH API) -->
+          <div class="fb-portal-channel-section" id="fbPortalPageSection">
             <div class="fb-portal-channel-header">
               <span class="fb-portal-label">Chọn kênh Fanpage đăng bài:</span>
               <div class="fb-portal-channel-actions">
@@ -400,9 +405,68 @@
             <div id="fbPortalChannelList" class="fb-portal-channel-list"></div>
           </div>
 
+          <!-- CHẾ ĐỘ 2: ĐĂNG NHÓM XOAY VÒNG (REVIDAPI SOCIAL BRIDGE 127.0.0.1:8788) -->
+          <div class="fb-portal-group-section" id="fbPortalGroupSection" hidden>
+            <div class="fb-group-engine-bar">
+              <span class="fb-group-engine-status" id="fbGroupEngineStatus">Đang kiểm tra kết nối RevidAPI Social (127.0.0.1:8788)…</span>
+              <a href="http://127.0.0.1:8788" target="_blank" rel="noopener noreferrer" class="fb-portal-action-link">Mở Bảng điều khiển 8788 ↗</a>
+            </div>
+            <div class="fb-group-row2">
+              <label class="fb-portal-field">
+                <span class="fb-portal-label">Tài khoản Facebook rải nhóm:</span>
+                <select id="fbGroupAccountSelect" class="fb-group-input"><option value="">Đang tải tài khoản…</option></select>
+              </label>
+              <label class="fb-portal-field">
+                <span class="fb-portal-label">Tên chiến dịch đăng nhóm:</span>
+                <input type="text" id="fbGroupRotName" class="fb-group-input" placeholder="VD: Rải nhóm BĐS Fourland">
+              </label>
+            </div>
+            <div class="fb-group-picker-wrap">
+              <div class="fb-portal-channel-header">
+                <span class="fb-portal-label">Chọn các nhóm Facebook sẽ đăng (<b id="fbGroupPickedCount">0</b> đã chọn):</span>
+                <div class="fb-portal-channel-actions">
+                  <button type="button" id="btnFbGroupPickInstant" class="fb-portal-action-link">Chọn hết (trừ nhóm cần duyệt)</button>
+                  <span class="fb-portal-divider">·</span>
+                  <button type="button" id="btnFbGroupPickNone" class="fb-portal-action-link">Bỏ chọn</button>
+                  <span class="fb-portal-divider">·</span>
+                  <button type="button" id="btnFbGroupReload" class="fb-portal-action-link" title="Tải lại danh sách nhóm">↻ Tải lại</button>
+                </div>
+              </div>
+              <input type="text" id="fbGroupSearchInput" class="fb-group-input fb-group-search" placeholder="Tìm nhanh nhóm BĐS theo tên…">
+              <div id="fbGroupListBox" class="fb-group-list-box"><div class="fb-group-empty">Đang tải danh sách nhóm đã tham gia…</div></div>
+            </div>
+            <div class="fb-group-row3">
+              <label class="fb-portal-field">
+                <span class="fb-portal-label">Cách nhau ít nhất (giây):</span>
+                <input type="number" id="fbGroupGapMin" class="fb-group-input" min="30" value="60">
+              </label>
+              <label class="fb-portal-field">
+                <span class="fb-portal-label">Nhiều nhất (giây):</span>
+                <input type="number" id="fbGroupGapMax" class="fb-group-input" min="30" value="120">
+              </label>
+              <label class="fb-portal-field">
+                <span class="fb-portal-label">Bình luận đầu tiên (Seeding):</span>
+                <input type="text" id="fbGroupFirstComment" class="fb-group-input" value="{Inbox|Nhắn tin} hoặc gọi trực tiếp 037.6789.808 để xem nhà thực tế nhé!">
+              </label>
+            </div>
+            <div class="fb-group-checks">
+              <label class="fb-portal-checkbox"><input type="checkbox" id="fbGroupSkipApproval" checked><span>Tự bỏ qua nhóm phải chờ Quản trị viên duyệt</span></label>
+              <label class="fb-portal-checkbox"><input type="checkbox" id="fbGroupAutoLike" checked><span>Tự động Thích (Like) bài sau khi đăng</span></label>
+            </div>
+            <div class="fb-group-eta" id="fbGroupEtaText"></div>
+          </div>
+
           <div class="fb-portal-tone-section">
-            <span class="fb-portal-label">Chọn phong cách bài viết:</span>
-            <div class="fb-portal-tone-chips">
+            <div class="fb-portal-channel-header">
+              <span class="fb-portal-label" id="fbToneSectionLabel">Chọn phong cách bài viết:</span>
+              <div class="fb-variant-tabs" id="fbVariantTabs" hidden>
+                <button type="button" class="fb-var-tab active" data-fb-var="0">Bản 1 (Thu hút)</button>
+                <button type="button" class="fb-var-tab" data-fb-var="1">Bản 2 (Chi tiết)</button>
+                <button type="button" class="fb-var-tab" data-fb-var="2">Bản 3 (Súc tích)</button>
+                <button type="button" class="fb-var-tab" data-fb-var="3">Bản 4 (Spintax {a|b})</button>
+              </div>
+            </div>
+            <div class="fb-portal-tone-chips" id="fbToneChipsRow">
               <button type="button" class="fb-portal-tone-chip active" data-fb-tone="hot">
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
                 <span>Thu hút</span>
@@ -565,7 +629,7 @@
     </div>
   </aside>
 
-  <script src="/assets/app.js?v=20261125-multi-district-v1" defer></script>
+  <script src="/assets/app.js?v=20261125-group-rotation-v2" defer></script>
 </body>
 
 </html>

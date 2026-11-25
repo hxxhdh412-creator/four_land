@@ -1329,6 +1329,10 @@
             <p class="cms-eyebrow">Marketing & Mạng Xã Hội</p>
             <h1 id="fbDialogTitle">Đăng bài lên Fanpage Ngọc Nhà Tốt</h1>
           </div>
+          <div class="cms-fb-mode-tabs" id="cmsFbModeTabs" role="tablist" style="display:inline-flex;align-items:center;gap:4px;padding:3px;background:#eff2ef;border:1px solid #d5ddd8;border-radius:9px;margin-left:auto;margin-right:12px;">
+            <button type="button" class="cms-fb-mode-tab active" data-cms-fb-mode="page" style="height:32px;padding:0 12px;border:0;border-radius:7px;background:#fff;color:#283d34;font-size:12px;font-weight:700;cursor:pointer;">📘 Đăng Fanpage</button>
+            <button type="button" class="cms-fb-mode-tab" data-cms-fb-mode="group" style="height:32px;padding:0 12px;border:0;border-radius:7px;background:transparent;color:#526059;font-size:12px;font-weight:700;cursor:pointer;">⟳ Đăng nhóm xoay vòng</button>
+          </div>
           <div class="cms-detail-actions">
             <button id="fbDialogClose" class="cms-close-btn" type="button" aria-label="Đóng Facebook Studio">
               <svg class="cms-close-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -1337,7 +1341,7 @@
         </header>
         <div class="cms-fb-studio-body">
           <div class="cms-fb-editor-col">
-            <div class="cms-fb-page-section">
+            <div class="cms-fb-page-section" id="cmsFbPageSection">
               <div class="cms-fb-channel-header">
                 <span class="cms-fb-label">Chọn các kênh Fanpage đăng bài:</span>
                 <div class="cms-fb-channel-quick-actions">
@@ -1352,6 +1356,56 @@
               <div id="fbChannelList" class="cms-fb-channel-list">
                 <!-- Được render động từ danh sách Fanpage -->
               </div>
+            </div>
+
+            <div class="cms-fb-group-section" id="cmsFbGroupSection" hidden style="display:grid;gap:10px;padding:12px;border-radius:10px;background:#f7faf8;border:1px solid #dce5de;margin-bottom:12px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;padding:6px 10px;border-radius:7px;background:#fff;border:1px solid #e2e8e4;font-size:12px;">
+                <span id="cmsFbGroupEngineStatus">Đang kiểm tra kết nối RevidAPI Social (127.0.0.1:8788)…</span>
+                <a href="http://127.0.0.1:8788" target="_blank" rel="noopener noreferrer" class="cms-fb-action-link">Mở Bảng điều khiển 8788 ↗</a>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                <label class="cms-fb-field">
+                  <span class="cms-fb-label">Tài khoản Facebook rải nhóm:</span>
+                  <select id="cmsFbGroupAccountSelect" style="height:36px;padding:0 10px;border:1px solid #cbd5e1;border-radius:7px;font-size:12.5px;background:#fff;"><option value="">Đang tải tài khoản…</option></select>
+                </label>
+                <label class="cms-fb-field">
+                  <span class="cms-fb-label">Tên chiến dịch đăng nhóm:</span>
+                  <input type="text" id="cmsFbGroupRotName" placeholder="VD: Rải nhóm BĐS Fourland" style="height:36px;padding:0 10px;border:1px solid #cbd5e1;border-radius:7px;font-size:12.5px;background:#fff;">
+                </label>
+              </div>
+              <div>
+                <div class="cms-fb-channel-header">
+                  <span class="cms-fb-label">Chọn nhóm sẽ đăng (<b id="cmsFbGroupPickedCount">0</b> đã chọn):</span>
+                  <div class="cms-fb-channel-quick-actions">
+                    <button type="button" id="btnCmsFbGroupPickInstant" class="cms-fb-action-link">Chọn hết (trừ nhóm cần duyệt)</button>
+                    <span class="cms-fb-divider">·</span>
+                    <button type="button" id="btnCmsFbGroupPickNone" class="cms-fb-action-link">Bỏ chọn</button>
+                    <span class="cms-fb-divider">·</span>
+                    <button type="button" id="btnCmsFbGroupReload" class="cms-fb-action-link">↻ Tải lại</button>
+                  </div>
+                </div>
+                <input type="text" id="cmsFbGroupSearchInput" placeholder="Tìm nhanh nhóm BĐS theo tên…" style="width:100%;height:34px;padding:0 10px;margin:4px 0 6px;border:1px solid #cbd5e1;border-radius:7px;font-size:12.5px;background:#fff;">
+                <div id="cmsFbGroupListBox" style="max-height:150px;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:5px;padding:6px;background:#fff;border:1px solid #dbe3dd;border-radius:8px;"></div>
+              </div>
+              <div style="display:grid;grid-template-columns:100px 100px 1fr;gap:8px;">
+                <label class="cms-fb-field">
+                  <span class="cms-fb-label">Cách tối thiểu (s):</span>
+                  <input type="number" id="cmsFbGroupGapMin" min="30" value="60" style="height:34px;padding:0 8px;border:1px solid #cbd5e1;border-radius:7px;font-size:12.5px;background:#fff;">
+                </label>
+                <label class="cms-fb-field">
+                  <span class="cms-fb-label">Tối đa (s):</span>
+                  <input type="number" id="cmsFbGroupGapMax" min="30" value="120" style="height:34px;padding:0 8px;border:1px solid #cbd5e1;border-radius:7px;font-size:12.5px;background:#fff;">
+                </label>
+                <label class="cms-fb-field">
+                  <span class="cms-fb-label">Bình luận đầu tiên (Seeding):</span>
+                  <input type="text" id="cmsFbGroupFirstComment" value="{Inbox|Nhắn tin} hoặc gọi 037.6789.808 để xem nhà thực tế nhé!" style="height:34px;padding:0 8px;border:1px solid #cbd5e1;border-radius:7px;font-size:12.5px;background:#fff;">
+                </label>
+              </div>
+              <div style="display:flex;gap:14px;flex-wrap:wrap;font-size:12px;">
+                <label class="cms-fb-checkbox"><input type="checkbox" id="cmsFbGroupSkipApproval" checked><span>Bỏ qua nhóm chờ duyệt</span></label>
+                <label class="cms-fb-checkbox"><input type="checkbox" id="cmsFbGroupAutoLike" checked><span>Tự động Like bài sau khi đăng</span></label>
+              </div>
+              <div id="cmsFbGroupEtaText" style="font-size:11.5px;font-weight:600;color:#283d34;background:#eef5f0;padding:6px 10px;border-radius:6px;"></div>
             </div>
 
             <div class="cms-fb-tone-section">

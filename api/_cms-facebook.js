@@ -5,7 +5,7 @@
 const { requireCms } = require("./_cms-auth");
 const { ACTIONS } = require("../server/cms-authorization");
 const { publishToComposioFacebook } = require("../server/cms-facebook");
-const { writeFacebookCopy } = require("../server/ai-copywriter");
+const { writeFacebookCopy, buildRuleBasedVariants } = require("../server/ai-copywriter");
 const {
   getFacebookPages,
   getFacebookPageById,
@@ -55,6 +55,11 @@ function createHandler({ requireCmsImpl = requireCms, request = supabaseRequest,
         });
 
         const images = (property.property_images || []).map(img => img.public_url).filter(Boolean);
+        const includeLink = body.includeLink !== false;
+        const variants = buildRuleBasedVariants(property, {
+          link: includeLink ? "https://www.fourland.vn" : ""
+        });
+        variants[0] = copy.content;
 
         return res.status(200).json({
           ok: true,
@@ -62,6 +67,7 @@ function createHandler({ requireCmsImpl = requireCms, request = supabaseRequest,
             propertyId,
             tone,
             content: copy.content,
+            variants,
             generator: copy.generator,
             cached: Boolean(copy.cached),
             aiWarning: copy.aiError ? "AI tạm lỗi, đã dùng bộ viết dự phòng" : undefined,

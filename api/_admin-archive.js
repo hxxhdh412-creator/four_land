@@ -1,5 +1,6 @@
 const { requireAdmin } = require("./_admin");
 const { sendError, supabaseRequest, text } = require("./_supabase");
+const { invalidatePropertiesCache } = require("./properties");
 
 module.exports = async function handler(req, res) {
   if (!["PATCH", "DELETE"].includes(req.method)) {
@@ -22,6 +23,7 @@ module.exports = async function handler(req, res) {
     if (req.method === "DELETE") {
       await supabaseRequest(`property_images?property_id=in.(${inList})`, { method: "DELETE" }).catch(() => {});
       await supabaseRequest(`properties?property_id=in.(${inList})`, { method: "DELETE" });
+      invalidatePropertiesCache();
       return res.status(200).json({
         ok: true,
         deletedCount: propertyIds.length,
@@ -38,6 +40,7 @@ module.exports = async function handler(req, res) {
       prefer: "return=representation"
     });
     const updatedCount = result.data?.length || propertyIds.length;
+    invalidatePropertiesCache();
     res.status(200).json({
       ok: true,
       updatedCount,
