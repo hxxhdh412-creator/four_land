@@ -89,7 +89,7 @@ Chỉ viết hoa toàn bộ cho eyebrow/label ngắn. Không viết hoa đoạn 
 
 - Dùng chung `assets/facebook-studio.css`; xanh rừng, nền trắng, font Be Vietnam Pro.
 - Desktop tối đa 1120 px, cột biên tập và xem trước dùng `minmax(0, ...)`.
-- Mobile ≤760 px toàn màn hình: header hai hàng, chuyển chế độ ở hàng riêng; body cuộn, footer giữ nút đăng 48 px và safe-area.
+- Mobile ≤760 px toàn màn hình. Hai nút icon chọn nơi đăng nằm cùng hàng với tiêu đề. Body cuộn, footer giữ nút đăng 48 px và safe-area.
 - Mobile thu gọn tiêu đề, giới hạn chiều cao danh sách nhóm, hiện ước tính khi mở lịch và đặt bốn phiên bản bài viết trên một hàng.
 - Danh sách nhóm mặc định thu gọn trên điện thoại và mở trên desktop. Dòng “Chọn nhóm” luôn hiện số nhóm đã chọn, kể cả khi danh sách được thu gọn.
 - Ô tài khoản chỉ liệt kê các tài khoản Facebook đã có trong hệ thống. Việc nạp tài khoản thực hiện bên ngoài popup.
@@ -98,7 +98,8 @@ Chỉ viết hoa toàn bộ cho eyebrow/label ngắn. Không viết hoa đoạn 
 - Nhóm có hàng chọn tối thiểu 44 px, trạng thái bằng chữ, tên đầy đủ qua tooltip; ô nhập mobile 16 px. Nút chuyển chế độ có `aria-pressed`, tổng nhóm có `aria-live`.
 - Popup trong `admin.html` phải đồng bộ với `admin/index.html` vì Vercel và preview dùng hai entry khác nhau.
 - Popup ẩn thanh tên/chọn máy chủ và liên kết quản trị máy chủ. Các control nội bộ vẫn giữ trong DOM để bảo toàn cấu hình và cơ chế kết nối hiện tại.
-- Fanpage và Nhóm dùng một popup, chọn chế độ bằng dropdown “Nơi đăng”; dùng chung khung soạn nội dung, ảnh, xem trước và nút đăng. Mỗi lượt gửi theo chế độ đã chọn, không gửi đồng thời sang hai loại đích.
+- Fanpage và Nhóm dùng một popup. Hai nút icon có tên truy cập và `aria-pressed`, với nền xanh rừng cho nơi đăng đang chọn. Nội dung, ảnh, xem trước và nút đăng dùng chung khung soạn.
+- Hai nút ưu tiên ảnh đại diện Fanpage đã chọn và ảnh nhóm trong danh sách. Khi thiếu ảnh, Fanpage dùng logo Fourland, Nhóm dùng biểu tượng nhóm.
 
 - Tương phản chữ thường tối thiểu 4.5:1.
 - Mọi icon button phải có `aria-label` và focus visible.

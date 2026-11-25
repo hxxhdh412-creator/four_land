@@ -2775,7 +2775,6 @@ function setCmsFacebookMode(mode) {
     groupPicker.open = !window.matchMedia('(max-width: 760px)').matches;
     groupPicker.setAttribute('data-ready', '');
   }
-  if (byId('fbDestinationSelect')) byId('fbDestinationSelect').value = fbState.mode;
   const isGroup = fbState.mode === 'group';
   document.querySelectorAll('[data-cms-fb-mode]').forEach(btn => {
     const active = btn.dataset.cmsFbMode === fbState.mode;
@@ -2873,6 +2872,20 @@ function updatePublishButtonState() {
   const submitBtn = byId('fbSubmitBtn');
   if (!submitBtn) return;
   const span = submitBtn.querySelector('span');
+  const pageId = fbState.selectedPageIds.values().next().value;
+  const groupId = fbState.selectedGroups.keys().next().value;
+  const groups = fbState.groups || [];
+  const group = groupId ? groups.find(item => String(item.id) === groupId) : groups.find(item => item.picture);
+  for (const [id, url] of [
+    ['fbPageDestinationPhoto', /^\d+$/.test(pageId) ? `https://graph.facebook.com/${pageId}/picture?type=large` : ''],
+    ['fbGroupDestinationPhoto', group?.picture || '']
+  ]) {
+    const photo = byId(id);
+    if (!photo || photo.getAttribute('src') === (url || null)) continue;
+    photo.hidden = true;
+    if (/^https?:\/\//i.test(url)) photo.src = url;
+    else photo.removeAttribute('src');
+  }
   if (fbState.mode === 'group') {
     const gCount = fbState.selectedGroups.size;
     if (!fbState.engineOnline) {
@@ -3256,9 +3269,6 @@ if (byId('fbSubmitBtn')) byId('fbSubmitBtn').addEventListener('click', handlePub
 document.querySelectorAll('[data-cms-fb-mode]').forEach(tab => {
   tab.addEventListener('click', () => setCmsFacebookMode(tab.dataset.cmsFbMode));
 });
-if (byId('fbDestinationSelect')) {
-  byId('fbDestinationSelect').addEventListener('change', event => setCmsFacebookMode(event.target.value));
-}
 if (byId('cmsFbGroupNodeSelect')) {
   byId('cmsFbGroupNodeSelect').addEventListener('change', () => {
     fbState.nodeMode = byId('cmsFbGroupNodeSelect').value;

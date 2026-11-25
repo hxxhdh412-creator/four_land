@@ -2422,7 +2422,6 @@ function setFacebookPortalMode(mode) {
     groupPicker.open = !window.matchMedia('(max-width: 760px)').matches;
     groupPicker.setAttribute('data-ready', '');
   }
-  if ($('fbDestinationSelect')) $('fbDestinationSelect').value = fbPortalState.mode;
   const isGroup = fbPortalState.mode === 'group';
   document.querySelectorAll('[data-fb-mode]').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.fbMode === fbPortalState.mode);
@@ -2534,6 +2533,20 @@ function updatePortalPublishButtonState() {
   const submitBtn = $('fbSubmitBtn');
   if (!submitBtn) return;
   const span = submitBtn.querySelector('span');
+  const pageId = fbPortalState.selectedPageIds.values().next().value;
+  const groupId = fbPortalState.selectedGroups.keys().next().value;
+  const groups = fbPortalState.groups || [];
+  const group = groupId ? groups.find(item => String(item.id) === groupId) : groups.find(item => item.picture);
+  for (const [id, url] of [
+    ['fbPageDestinationPhoto', /^\d+$/.test(pageId) ? `https://graph.facebook.com/${pageId}/picture?type=large` : ''],
+    ['fbGroupDestinationPhoto', group?.picture || '']
+  ]) {
+    const photo = $(id);
+    if (!photo || photo.getAttribute('src') === (url || null)) continue;
+    photo.hidden = true;
+    if (/^https?:\/\//i.test(url)) photo.src = url;
+    else photo.removeAttribute('src');
+  }
 
   if (fbPortalState.mode === 'group') {
     const gCount = fbPortalState.selectedGroups.size;
@@ -3020,7 +3033,6 @@ async function handlePublishFacebook() {
 }
 
 // Facebook Studio Event Listeners
-if ($('fbDestinationSelect')) $('fbDestinationSelect').onchange = event => setFacebookPortalMode(event.target.value);
 if ($('fbDialogClose')) $('fbDialogClose').onclick = closeFacebookStudio;
 if ($('fbCancelBtn')) $('fbCancelBtn').onclick = closeFacebookStudio;
 if ($('fbSubmitBtn')) $('fbSubmitBtn').onclick = handlePublishFacebook;

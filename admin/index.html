@@ -8,7 +8,7 @@
   <title>FOURLAND · Trung tâm quản trị</title>
   <link rel="icon" type="image/png" href="/assets/brand/fourland-icon-192.png">
   <link rel="stylesheet" href="/admin/admin.css?v=20261125-compact-studio-v2">
-  <link rel="stylesheet" href="/assets/facebook-studio.css?v=20261125-ergonomic-v5">
+  <link rel="stylesheet" href="/assets/facebook-studio.css?v=20261125-destination-v10">
 </head>
 <body>
   <div id="cmsApp" class="cms-app" aria-busy="true">
@@ -1337,7 +1337,16 @@
               <h1 id="fbDialogTitle" style="font-size:16px;margin:0;">Đăng bài lên Fanpage FourLand</h1>
             </div>
           </div>
-          <label class="social-destination"><span>Nơi đăng</span><select id="fbDestinationSelect" aria-label="Nơi đăng"><option value="page">Fanpage</option><option value="group">Nhóm Facebook</option></select></label>
+          <div class="social-destination" role="group" aria-label="Nơi đăng">
+            <button type="button" data-cms-fb-mode="group" aria-label="Nhóm Facebook" title="Nhóm Facebook" aria-pressed="false">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/><circle cx="9" cy="7" r="4"/></svg>
+            <img id="fbGroupDestinationPhoto" class="social-destination-photo" alt="" hidden referrerpolicy="no-referrer" onload="this.hidden=false" onerror="this.hidden=true">
+            </button>
+            <button type="button" data-cms-fb-mode="page" aria-label="Fanpage" title="Fanpage" aria-pressed="true">
+              <img src="/assets/brand/fourland-icon-192.png" class="social-destination-brand" alt="">
+            <img id="fbPageDestinationPhoto" class="social-destination-photo" alt="" hidden referrerpolicy="no-referrer" onload="this.hidden=false" onerror="this.hidden=true">
+            </button>
+          </div>
           <div class="cms-detail-actions">
             <button id="fbDialogClose" class="cms-close-btn" type="button" aria-label="Đóng Facebook Studio">
               <svg aria-hidden="true" class="cms-close-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -1860,6 +1869,6 @@
 
     <div id="toastContainer" class="cms-toast-container" aria-live="polite"></div>
   </div>
-  <script src="/admin/admin.js?v=20261125-accounts-v8" defer></script>
+  <script src="/admin/admin.js?v=20261125-destination-v10" defer></script>
 </body>
 </html>
