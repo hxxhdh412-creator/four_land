@@ -23,7 +23,7 @@ const DEFAULT_POSTER_NODE = {
   label: "Máy chủ 50 · Nhánh Fourland 24/7 (8889)"
 };
 
-async function publishViaServer50Poster({ content, imageUrls = [], pageId, pageName, posterNode, waitMs = 35000 }) {
+async function publishViaServer50Poster({ content, imageUrls = [], pageId, pageName, scheduledAt = "", posterNode, waitMs = 35000 }) {
   const isMockFixture = (Array.isArray(imageUrls) ? imageUrls : []).some((u) => {
     try { return new URL(String(u)).hostname === "example.com"; } catch { return false; }
   });
@@ -45,6 +45,7 @@ async function publishViaServer50Poster({ content, imageUrls = [], pageId, pageN
           imageUrls,
           pageId,
           pageName,
+          scheduledAt: scheduledAt || undefined,
           waitMs
         }),
         signal: AbortSignal.timeout(waitMs + 7000)
@@ -57,6 +58,8 @@ async function publishViaServer50Poster({ content, imageUrls = [], pageId, pageN
         ok: true,
         engine: "server50-8889",
         queued: Boolean(data.queued),
+        scheduled: Boolean(data.scheduled),
+        scheduledAt: data.scheduledAt || null,
         postId: data.postId,
         postUrl: data.postUrl || `https://www.facebook.com/profile.php?id=${pageId}`,
         pageName: data.pageName || pageName,
@@ -119,7 +122,7 @@ async function savePosterNodeConfig(patch = {}, request = supabaseRequest) {
   return next;
 }
 
-function createHandler({ requireCmsImpl = requireCms, request = supabaseRequest, writer = writeFacebookCopy } = {}) {
+function createHandler({ requireCmsImpl = requireCms, request = supabaseRequest, writer = writeFacebookCopy, posterPublisher = publishViaServer50Poster } = {}) {
   return async function handler(req, res) {
     if (req.url?.includes("/poster-node")) {
       if (req.method === "GET") {
@@ -244,11 +247,13 @@ function createHandler({ requireCmsImpl = requireCms, request = supabaseRequest,
         }
 
         const posterNode = await getPosterNodeConfig(request);
-        const perPageWaitMs = targetPages.length > 1 ? 15000 : 35000;
+        const requestedSchedule = String(body.scheduledAt || "").trim();
+        const isFutureSchedule = Boolean(requestedSchedule && !Number.isNaN(Date.parse(requestedSchedule)) && Date.parse(requestedSchedule) > Date.now() + 15000);
+        const perPageWaitMs = isFutureSchedule ? 8000 : (targetPages.length > 1 ? 15000 : 35000);
 
         // Publish across all target pages:
-        // BƯỚC 1 (CHÍNH): Đăng qua Nhánh riêng Máy 50 (Cổng 8889 - tài khoản Nguyễn Ngọc)
-        // BƯỚC 2 (DỰ PHÒNG): Chỉ khi Máy 50 lỗi / không phản hồi mới fallback qua Composio / Graph API
+        // BƯỚC 1 (CHÍNH): Đăng / hẹn lịch 24/7 qua Nhánh riêng Máy 50 (Cổng 8889 - tài khoản Nguyễn Ngọc)
+        // BƯỚC 2 (DỰ PHÒNG): Chỉ khi đăng ngay (không hẹn giờ) mà Máy 50 lỗi mới fallback qua Composio
         const publishResults = [];
         for (const page of targetPages) {
           const targetPageId = page.server50PageId || page.pageId || process.env.FACEBOOK_PAGE_ID || "104363431784609";
@@ -257,15 +262,19 @@ function createHandler({ requireCmsImpl = requireCms, request = supabaseRequest,
             let resPublish = null;
             let usedEngine = "server50-8889";
             try {
-              resPublish = await publishViaServer50Poster({
+              resPublish = await posterPublisher({
                 content,
                 imageUrls: photoUrls,
                 pageId: targetPageId,
                 pageName: targetPageName,
+                scheduledAt: isFutureSchedule ? requestedSchedule : "",
                 posterNode,
                 waitMs: perPageWaitMs
               });
             } catch (server50Err) {
+              if (isFutureSchedule) {
+                throw new Error(`Không đặt được lịch hẹn 24/7 trên Máy 50 (8889): ${server50Err.message}`);
+              }
               // Fallback dự phòng qua Composio / Graph API
               usedEngine = "composio-fallback";
               try {
@@ -305,6 +314,8 @@ function createHandler({ requireCmsImpl = requireCms, request = supabaseRequest,
               pageName: targetPageName,
               engine: resPublish.engine || usedEngine,
               queued: Boolean(resPublish.queued),
+              scheduled: Boolean(resPublish.scheduled),
+              scheduledAt: resPublish.scheduledAt || null,
               success: true,
               postUrl: resPublish.postUrl,
               message: resPublish.message
@@ -328,7 +339,9 @@ function createHandler({ requireCmsImpl = requireCms, request = supabaseRequest,
               ? `${publishResults[0].message || "Đã xuất bản bài viết thành công"} (Đã lưu nội dung vào kho nhà)`
               : (publishResults[0].error || "Đăng bài lên Facebook thất bại"))
           : (successCount > 0
-              ? `Đã xuất bản thành công lên ${successCount}/${publishResults.length} Fanpage! (Đã lưu nội dung vào kho nhà)`
+              ? (isFutureSchedule
+                  ? `⏰ Đã hẹn lịch đăng tự động 24/7 lên ${successCount}/${publishResults.length} Fanpage trên Máy 50!`
+                  : `Đã xuất bản thành công lên ${successCount}/${publishResults.length} Fanpage! (Đã lưu nội dung vào kho nhà)`)
               : `Đăng bài thất bại trên toàn bộ ${publishResults.length} Fanpage!`);
 
         return res.status(200).json({

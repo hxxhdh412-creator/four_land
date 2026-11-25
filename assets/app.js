@@ -2626,6 +2626,9 @@ function updatePortalPublishButtonState() {
   }
 
   const count = fbPortalState.selectedPageIds.size;
+  const pageSched = resolveScheduleTimeInput($('fbPageStartAt')?.value);
+  const pageHint = $('fbPageStartAtHint');
+  if (pageHint) pageHint.textContent = pageSched.iso ? pageSched.label : 'Đăng ngay';
 
   if (count === 0) {
     submitBtn.disabled = true;
@@ -2635,10 +2638,10 @@ function updatePortalPublishButtonState() {
     const selectedPid = Array.from(fbPortalState.selectedPageIds)[0];
     const pageObj = (fbPortalState.pages || []).find(p => String(p.pageId) === selectedPid);
     const pName = pageObj?.name || fbPortalState.pageName || 'Fanpage';
-    if (span) span.textContent = `Đăng lên Fanpage ${pName}`;
+    if (span) span.textContent = pageSched.iso ? `Hẹn lịch đăng ${pName}` : `Đăng lên Fanpage ${pName}`;
   } else {
     submitBtn.disabled = false;
-    if (span) span.textContent = `Đăng đồng thời lên ${count} Fanpage đã chọn`;
+    if (span) span.textContent = pageSched.iso ? `Hẹn lịch đăng ${count} Fanpage` : `Đăng đồng thời lên ${count} Fanpage đã chọn`;
   }
 
   const btnSelectAll = $('btnFbPortalSelectAll');
@@ -3073,13 +3076,14 @@ async function handlePublishFacebook() {
     return;
   }
 
+  const pageSched = resolveScheduleTimeInput($('fbPageStartAt')?.value);
   const submitBtn = $('fbSubmitBtn');
   const statusNote = $('fbPublishStatus');
   if (submitBtn) {
     submitBtn.disabled = true;
-    submitBtn.innerHTML = `<span>Đang đăng lên Facebook…</span>`;
+    submitBtn.innerHTML = `<span>${pageSched.iso ? 'Đang đặt lịch hẹn 24/7 trên Máy 50…' : 'Đang đăng lên Facebook…'}</span>`;
   }
-  if (statusNote) statusNote.textContent = 'Đang xuất bản bài viết…';
+  if (statusNote) statusNote.textContent = pageSched.iso ? 'Đang lưu lịch hẹn đăng tự động…' : 'Đang xuất bản bài viết…';
 
   try {
     const selectedList = Array.from(fbPortalState.selectedImages);
@@ -3096,19 +3100,23 @@ async function handlePublishFacebook() {
         images: imagesToPublish,
         pageIds: selectedPages,
         pageId: selectedPages[0],
-        pageName: fbPortalState.pageName
+        pageName: fbPortalState.pageName,
+        scheduledAt: pageSched.iso || undefined
       })
     });
 
-    if (statusNote) statusNote.textContent = result.message || 'Đã đăng thành công!';
-    if (submitBtn) submitBtn.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span>Đã xuất bản & Lưu thành công</span>`;
+    if (statusNote) statusNote.textContent = result.message || 'Đã xử lý thành công!';
+    if (submitBtn) submitBtn.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span>${result.data?.scheduled ? 'Đã đặt lịch hẹn 24/7 thành công' : 'Đã xuất bản & Lưu thành công'}</span>`;
 
     // Update open detail view
     if (fbPortalState.propertyId && $('detail').open) {
       openDetail(fbPortalState.propertyId);
     }
 
-    if (result.data?.postUrl) {
+    if (result.data?.scheduled) {
+      showToast(result.message || '⏰ Đã đặt lịch hẹn đăng Fanpage tự động 24/7!', 4500);
+      alert(result.message || '⏰ Đã đặt lịch hẹn đăng Fanpage tự động 24/7 trên Máy 50!');
+    } else if (result.data?.postUrl) {
       const reportMsg = result.message || 'Đã xuất bản bài viết thành công lên Facebook!';
       if (confirm(`${reportMsg}\n\nBạn có muốn mở xem bài viết trên Facebook không?`)) {
         window.open(result.data.postUrl, '_blank');
@@ -3252,6 +3260,33 @@ if ($('btnFbGroupPickNone')) {
 if ($('btnFbGroupReload')) {
   $('btnFbGroupReload').onclick = () => loadRevidAccountGroups(fbPortalState.selectedAccountId, true);
 }
+if ($('fbPageStartAt')) {
+  $('fbPageStartAt').oninput = () => {
+    const curVal = ($('fbPageStartAt')?.value || '').trim();
+    document.querySelectorAll('[data-fb-page-time]').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.fbPageTime === curVal);
+    });
+    updatePortalPublishButtonState();
+  };
+}
+document.querySelectorAll('[data-fb-page-time]').forEach(btn => {
+  btn.onclick = () => {
+    const raw = btn.dataset.fbPageTime || '';
+    const input = $('fbPageStartAt');
+    if (!input) return;
+    if (!raw) {
+      input.value = '';
+    } else if (raw.startsWith('+')) {
+      const addMins = Number(raw.slice(1)) || 30;
+      const d = new Date(Date.now() + addMins * 60000);
+      input.value = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+    } else {
+      input.value = raw;
+    }
+    document.querySelectorAll('[data-fb-page-time]').forEach(b => b.classList.toggle('active', b === btn));
+    updatePortalPublishButtonState();
+  };
+});
 if ($('fbGroupGapMin')) $('fbGroupGapMin').oninput = updateGroupRotationEta;
 if ($('fbGroupGapMax')) $('fbGroupGapMax').oninput = updateGroupRotationEta;
 if ($('fbGroupStartAt')) {

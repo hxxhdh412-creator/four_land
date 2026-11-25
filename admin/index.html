@@ -7,8 +7,8 @@
   <meta name="theme-color" content="#283d34">
   <title>FOURLAND · Trung tâm quản trị</title>
   <link rel="icon" type="image/png" href="/assets/brand/fourland-icon-192.png">
-  <link rel="stylesheet" href="/admin/admin.css?v=20261125-clean-v20">
-  <link rel="stylesheet" href="/assets/facebook-studio.css?v=20261125-clean-v20">
+  <link rel="stylesheet" href="/admin/admin.css?v=20261125-schedule-v21">
+  <link rel="stylesheet" href="/assets/facebook-studio.css?v=20261125-schedule-v21">
 </head>
 <body>
   <div id="cmsApp" class="cms-app" aria-busy="true">
@@ -1379,6 +1379,23 @@
               <div id="fbChannelList" class="cms-fb-channel-list">
                 <!-- Được render động từ danh sách Fanpage -->
               </div>
+              <div class="social-page-schedule-bar">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;">
+                  <span class="cms-fb-label">⏰ Hẹn lịch đăng 24/7</span>
+                  <span class="social-schedule-hint" id="cmsFbPageStartAtHint">Đăng ngay</span>
+                </div>
+                <div class="social-schedule-row">
+                  <input type="time" id="cmsFbPageStartAt" aria-label="Giờ hẹn đăng Fanpage" class="cms-fb-compact-input">
+                  <div class="social-schedule-presets" id="cmsFbPageTimePresets">
+                    <button type="button" class="social-time-chip active" data-cms-fb-page-time="">Ngay</button>
+                    <button type="button" class="social-time-chip" data-cms-fb-page-time="+30">+30p</button>
+                    <button type="button" class="social-time-chip" data-cms-fb-page-time="+60">+1h</button>
+                    <button type="button" class="social-time-chip" data-cms-fb-page-time="12:00">12h</button>
+                    <button type="button" class="social-time-chip" data-cms-fb-page-time="19:30">19h30</button>
+                    <button type="button" class="social-time-chip" data-cms-fb-page-time="08:00">8h</button>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div class="cms-fb-group-section" id="cmsFbGroupSection" hidden>
@@ -1884,6 +1901,6 @@
 
     <div id="toastContainer" class="cms-toast-container" aria-live="polite"></div>
   </div>
-  <script src="/admin/admin.js?v=20261125-clean-v20" defer></script>
+  <script src="/admin/admin.js?v=20261125-schedule-v21" defer></script>
 </body>
 </html>

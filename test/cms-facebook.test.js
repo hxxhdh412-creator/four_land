@@ -212,3 +212,54 @@ test("Facebook Studio API handler publishes post successfully", async () => {
   assert.equal(jsonBody.ok, true);
   assert.match(jsonBody.data.postUrl, /facebook\.com/);
 });
+
+test("Facebook Studio API handler schedules 24/7 Fanpage post via Server 50 without immediate Composio publish", async () => {
+  const futureIso = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+  const capturedCalls = [];
+  const handler = createHandler({
+    requireCmsImpl: async () => ({ id: "usr-admin-01", role: "super_admin" }),
+    request: async () => ({ data: [] }),
+    posterPublisher: async (payload) => {
+      capturedCalls.push(payload);
+      return {
+        ok: true,
+        engine: "server50-8889",
+        scheduled: true,
+        scheduledAt: payload.scheduledAt,
+        postId: "post_sched_001",
+        postUrl: `https://www.facebook.com/profile.php?id=${payload.pageId}`,
+        pageName: payload.pageName,
+        message: `⏰ Đã hẹn lịch đăng Fanpage ${payload.pageName} lúc 19:30`
+      };
+    }
+  });
+
+  const req = {
+    method: "POST",
+    body: {
+      action: "publish",
+      content: "Nhà đẹp Tân Bình hẹn giờ đăng 24/7",
+      images: ["https://cdn.fourland.vn/house1.jpg"],
+      pageIds: ["104363431784609", "106656702112510"],
+      scheduledAt: futureIso
+    },
+    headers: {}
+  };
+
+  let statusCode = 0;
+  let jsonBody = null;
+  const res = {
+    status(code) { statusCode = code; return this; },
+    json(body) { jsonBody = body; return this; }
+  };
+
+  await handler(req, res);
+  assert.equal(statusCode, 200);
+  assert.equal(jsonBody.ok, true);
+  assert.equal(capturedCalls.length, 2);
+  assert.equal(capturedCalls[0].scheduledAt, futureIso);
+  assert.equal(jsonBody.data.scheduled, true);
+  assert.equal(jsonBody.data.scheduledAt, futureIso);
+  assert.equal(jsonBody.data.successCount, 2);
+  assert.match(jsonBody.message, /Đã hẹn lịch đăng tự động 24\/7/);
+});

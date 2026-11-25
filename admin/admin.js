@@ -2978,6 +2978,9 @@ function updatePublishButtonState() {
     return;
   }
   const count = fbState.selectedPageIds.size;
+  const pageSched = resolveCmsScheduleTimeInput(byId('cmsFbPageStartAt')?.value);
+  const pageHint = byId('cmsFbPageStartAtHint');
+  if (pageHint) pageHint.textContent = pageSched.iso ? pageSched.label : 'Đăng ngay';
 
   if (count === 0) {
     submitBtn.disabled = true;
@@ -2987,10 +2990,10 @@ function updatePublishButtonState() {
     const selectedPid = Array.from(fbState.selectedPageIds)[0];
     const pageObj = (fbState.pages || []).find(p => String(p.pageId) === selectedPid);
     const pName = pageObj?.name || fbState.pageName || 'Fanpage';
-    if (span) span.textContent = `Đăng lên Fanpage ${pName}`;
+    if (span) span.textContent = pageSched.iso ? `Hẹn lịch đăng ${pName}` : `Đăng lên Fanpage ${pName}`;
   } else {
     submitBtn.disabled = false;
-    if (span) span.textContent = `Đăng đồng thời lên ${count} Fanpage đã chọn`;
+    if (span) span.textContent = pageSched.iso ? `Hẹn lịch đăng ${count} Fanpage` : `Đăng đồng thời lên ${count} Fanpage đã chọn`;
   }
 
   const btnSelectAll = byId('btnFbSelectAllPages');
@@ -3316,9 +3319,10 @@ async function handlePublishFacebook() {
     return;
   }
 
+  const pageSched = resolveCmsScheduleTimeInput(byId('cmsFbPageStartAt')?.value);
   submitBtn.disabled = true;
-  submitBtn.innerHTML = `<svg class="cms-btn-icon spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg><span>Đang xuất bản lên ${pageIds.length} Fanpage…</span>`;
-  statusNote.textContent = `Đang xuất bản bài viết lên ${pageIds.length} Fanpage…`;
+  submitBtn.innerHTML = `<svg class="cms-btn-icon spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg><span>${pageSched.iso ? `Đang hẹn lịch ${pageIds.length} Fanpage trên Máy 50…` : `Đang xuất bản lên ${pageIds.length} Fanpage…`}</span>`;
+  statusNote.textContent = pageSched.iso ? `Đang lưu lịch hẹn tự động 24/7…` : `Đang xuất bản bài viết lên ${pageIds.length} Fanpage…`;
 
   try {
     const result = await cmsApi('/api/admin/v1/facebook/publish', {
@@ -3327,12 +3331,13 @@ async function handlePublishFacebook() {
         propertyId: fbState.propertyId,
         content,
         images: Array.from(fbState.selectedImages),
-        pageIds: pageIds
+        pageIds: pageIds,
+        scheduledAt: pageSched.iso || undefined
       }
     });
 
-    statusNote.textContent = result.message || 'Đã đăng thành công!';
-    submitBtn.innerHTML = `<svg class="cms-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span>Đã xuất bản & Lưu thành công</span>`;
+    statusNote.textContent = result.message || 'Đã xử lý thành công!';
+    submitBtn.innerHTML = `<svg class="cms-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span>${result.data?.scheduled ? 'Đã đặt lịch hẹn 24/7 thành công' : 'Đã xuất bản & Lưu thành công'}</span>`;
 
     if (fbState.propertyId) {
       if (cmsState.currentProperty && cmsState.currentProperty.id === fbState.propertyId) {
@@ -3345,7 +3350,10 @@ async function handlePublishFacebook() {
 
     const results = result.data?.results || [];
     const successfulPages = results.filter(r => r.success);
-    if (successfulPages.length > 0) {
+    if (result.data?.scheduled) {
+      showToast(result.message || '⏰ Đã đặt lịch hẹn đăng Fanpage 24/7!');
+      alert(result.message || '⏰ Đã đặt lịch hẹn đăng Fanpage tự động 24/7 trên Máy 50!');
+    } else if (successfulPages.length > 0) {
       let reportMsg = result.message || `Đã xuất bản thành công lên ${successfulPages.length} Fanpage!\n`;
       if (successfulPages.length === 1 && successfulPages[0].postUrl) {
         if (confirm(`${reportMsg}\n\nBạn có muốn mở xem bài viết trên Facebook không?`)) {
@@ -3412,6 +3420,33 @@ document.querySelectorAll('[data-cms-fb-var]').forEach(tab => {
     const txt = fbState.variants[idx] || fbState.content || '';
     if (byId('fbPostContent')) byId('fbPostContent').value = txt;
     if (byId('fbPreviewText')) byId('fbPreviewText').textContent = resolveCmsSpintaxPreview(txt);
+  });
+});
+if (byId('cmsFbPageStartAt')) {
+  byId('cmsFbPageStartAt').addEventListener('input', () => {
+    const curVal = (byId('cmsFbPageStartAt')?.value || '').trim();
+    document.querySelectorAll('[data-cms-fb-page-time]').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.cmsFbPageTime === curVal);
+    });
+    updatePublishButtonState();
+  });
+}
+document.querySelectorAll('[data-cms-fb-page-time]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const raw = btn.dataset.cmsFbPageTime || '';
+    const input = byId('cmsFbPageStartAt');
+    if (!input) return;
+    if (!raw) {
+      input.value = '';
+    } else if (raw.startsWith('+')) {
+      const addMins = Number(raw.slice(1)) || 30;
+      const d = new Date(Date.now() + addMins * 60000);
+      input.value = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+    } else {
+      input.value = raw;
+    }
+    document.querySelectorAll('[data-cms-fb-page-time]').forEach(b => b.classList.toggle('active', b === btn));
+    updatePublishButtonState();
   });
 });
 if (byId('cmsFbGroupGapMin')) byId('cmsFbGroupGapMin').addEventListener('input', updateCmsGroupRotationEta);

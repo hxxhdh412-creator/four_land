@@ -638,57 +638,37 @@ http.createServer(async (req,res)=>{
       } catch(error) { return send(res,500,{ok:false,error:{code:"DEPENDENCY_UNAVAILABLE",message:error.message}}); }
     }
   }
-  if(url.pathname==="/api/admin/v1/facebook/draft" || url.pathname==="/api/admin/v1/facebook/publish" || url.pathname==="/api/admin/v1/facebook") {
-    if(req.method!=="POST") return send(res,405,{ok:false,error:{code:"METHOD_NOT_ALLOWED",message:"Method Not Allowed"}});
+  if(
+    url.pathname==="/api/admin/v1/facebook" ||
+    url.pathname==="/api/admin/v1/facebook/draft" ||
+    url.pathname==="/api/admin/v1/facebook/publish" ||
+    url.pathname==="/api/admin/v1/facebook/poster-node"
+  ) {
     try {
-      const body=await readBody(req);
-      const action = body.action || (url.pathname.includes("/draft") ? "draft" : "publish");
-      if (action === "draft") {
-        const propertyId = body.propertyId;
-        const current = databaseEnabled ? (await dbRequest(buildPropertyDetailRoute(propertyId))).data[0] : rows.find(item => item.property_id === propertyId);
-        if (!current) return send(res, 404, { ok: false, error: { message: "Không tìm thấy bất động sản" } });
-        const tone = body.tone || "hot";
-        const copy = await writeFacebookCopy(current, {
-          tone,
-          includeLink: body.includeLink !== false,
-          regenerate: body.regenerate === true
-        });
-        const content = copy.content;
-        const images = (current.property_images || []).map(img => img.public_url).filter(Boolean);
-        return send(res, 200, { ok: true, data: { propertyId, tone, content, generator: copy.generator, images, pageName: process.env.FACEBOOK_PAGE_NAME || "Ngọc Nhà Tốt" } });
-      }
-      if (action === "publish") {
-        const content = String(body.content || "").trim();
-        const propertyId = body.propertyId;
-        const photoUrls = Array.isArray(body.images) ? body.images : [];
-        const pageName = body.pageName || process.env.FACEBOOK_PAGE_NAME || "Ngọc Nhà Tốt";
-
-        if (propertyId) {
-          invalidateCmsCache();
-          if (databaseEnabled) {
-            await dbRequest(`properties?property_id=eq.${encodeURIComponent(propertyId)}`, {
-              method: "PATCH",
-              body: { raw_text: content, notes: null, updated_at: new Date().toISOString() }
-            }).catch(err => console.warn("Update property content notice:", err.message));
-        } else {
-            const target = rows.find(item => item.property_id === propertyId);
-            if (target) {
-              target.raw_text = content;
-              target.notes = null;
-              target.updated_at = new Date().toISOString();
-            }
+      const { createHandler } = require("./api/_cms-facebook");
+      req.body = req.method === "POST" ? await readBody(req) : {};
+      res.status = (code) => ({ json: (payload) => send(res, code, payload) });
+      const previewFacebookHandler = createHandler({
+        requireCmsImpl: async () => ({ id: "preview-user", role: currentSimulatedRole || "super_admin" }),
+        request: async (route, options = {}) => {
+          if (databaseEnabled) return dbRequest(route, options);
+          if (route.startsWith("properties?") && (options.method || "GET") === "GET") {
+            const match = route.match(/property_id=eq\.([^&]+)/);
+            const targetId = match ? decodeURIComponent(match[1]) : "";
+            const found = rows.find((item) => item.property_id === targetId);
+            return { data: found ? [found] : [] };
           }
+          if (route.startsWith("properties?") && options.method === "PATCH") {
+            const match = route.match(/property_id=eq\.([^&]+)/);
+            const targetId = match ? decodeURIComponent(match[1]) : "";
+            const found = rows.find((item) => item.property_id === targetId);
+            if (found && options.body) Object.assign(found, options.body);
+            return { data: found ? [found] : [] };
+          }
+          return { data: [] };
         }
-
-        const publishResult = await publishToComposioFacebook({
-          content,
-          imageUrls: photoUrls,
-          pageName,
-          apiKey: process.env.COMPOSIO_API_KEY || "ck_e4AHzIDYFZKwFT8XrkwX",
-          pageId: process.env.FACEBOOK_PAGE_ID || "106656702112510"
-        });
-        return send(res, 200, { ok: true, data: publishResult, message: `${publishResult.message} (Đã lưu nội dung vào kho nhà)` });
-      }
+      });
+      return await previewFacebookHandler(req, res);
     } catch(error) {
       return send(res, 500, { ok: false, error: { message: error.message } });
     }

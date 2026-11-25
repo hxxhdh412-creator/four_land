@@ -59,8 +59,8 @@
     window.FOURLAND_ONESIGNAL_APP_ID = "524d4fcf-2075-4aaf-8862-a306e670f31d";
   </script>
 
-  <link rel="stylesheet" href="/assets/app.css?v=20261125-clean-v20">
-  <link rel="stylesheet" href="/assets/facebook-studio.css?v=20261125-clean-v20">
+  <link rel="stylesheet" href="/assets/app.css?v=20261125-schedule-v21">
+  <link rel="stylesheet" href="/assets/facebook-studio.css?v=20261125-schedule-v21">
 
   <!-- Schema.org JSON-LD Structured Data -->
   <script type="application/ld+json">
@@ -426,6 +426,23 @@
               </div>
             </div>
             <div id="fbPortalChannelList" class="fb-portal-channel-list"></div>
+            <div class="social-page-schedule-bar">
+              <div class="fb-field-head">
+                <span class="fb-portal-label">⏰ Hẹn lịch đăng 24/7</span>
+                <span class="social-schedule-hint" id="fbPageStartAtHint">Đăng ngay</span>
+              </div>
+              <div class="social-schedule-row">
+                <input type="time" id="fbPageStartAt" aria-label="Giờ hẹn đăng Fanpage" class="fb-group-input">
+                <div class="social-schedule-presets" id="fbPageTimePresets">
+                  <button type="button" class="social-time-chip active" data-fb-page-time="">Ngay</button>
+                  <button type="button" class="social-time-chip" data-fb-page-time="+30">+30p</button>
+                  <button type="button" class="social-time-chip" data-fb-page-time="+60">+1h</button>
+                  <button type="button" class="social-time-chip" data-fb-page-time="12:00">12h</button>
+                  <button type="button" class="social-time-chip" data-fb-page-time="19:30">19h30</button>
+                  <button type="button" class="social-time-chip" data-fb-page-time="08:00">8h</button>
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- CHẾ ĐỘ 2: ĐĂNG NHÓM XOAY VÒNG (MÁY CHỦ 50 PORT 8889 / LOCAL 8788) -->
@@ -708,7 +725,7 @@
     </div>
   </aside>
 
-  <script src="/assets/app.js?v=20261125-clean-v20" defer></script>
+  <script src="/assets/app.js?v=20261125-schedule-v21" defer></script>
 </body>
 
 </html>

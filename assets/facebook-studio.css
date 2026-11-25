@@ -591,6 +591,15 @@
 .social-studio :is(.fb-portal-card-id, .cms-fb-card-id, .fb-portal-badge, .cms-fb-badge) {
   display: none !important;
 }
+.social-studio .social-page-schedule-bar {
+  display: grid;
+  gap: 5px;
+  margin-top: 6px;
+  padding: 7px 9px;
+  border-radius: 8px;
+  background: #f6f9f7;
+  border: 1px solid #dce5df;
+}
 .social-studio :is(.fb-portal-channel-card.checked, .cms-fb-channel-card.checked) {
   background: var(--sage, #edf0e8) !important;
   border-color: var(--forest, #283d34) !important;
