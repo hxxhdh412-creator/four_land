@@ -2554,6 +2554,7 @@ const fbState = {
   engineOnline: false,
   fbAccounts: [],
   selectedAccountId: '',
+  selectedActAs: '',
   groups: [],
   groupApprovals: {},
   selectedGroups: new Map()
@@ -2595,6 +2596,25 @@ async function resolveCmsRevidCandidates() {
   return [...server50Candidates, ...localCandidates];
 }
 
+function populateCmsActAsOptions(account) {
+  const actSel = byId('cmsFbGroupActAsSelect');
+  if (!actSel) return;
+  if (!account) {
+    actSel.innerHTML = '<option value="">👤 Nick Facebook cá nhân</option>';
+    fbState.selectedActAs = '';
+    return;
+  }
+  const pages = Array.isArray(account.pages) ? account.pages : [];
+  if (fbState.selectedActAs && !pages.some(p => String(p.id) === String(fbState.selectedActAs))) {
+    fbState.selectedActAs = '';
+  }
+  const opts = [
+    `<option value="" ${!fbState.selectedActAs ? 'selected' : ''}>👤 Nick cá nhân: ${escapeHtml(account.profileName || account.label)}</option>`,
+    ...pages.map(p => `<option value="${escapeHtml(p.id)}" ${String(p.id) === String(fbState.selectedActAs) ? 'selected' : ''}>📘 Fanpage: ${escapeHtml(p.name)}</option>`)
+  ];
+  actSel.innerHTML = opts.join('');
+}
+
 async function initCmsRevidGroupEngine(forceGroups = false) {
   const statusEl = byId('cmsFbGroupEngineStatus');
   const accSel = byId('cmsFbGroupAccountSelect');
@@ -2620,17 +2640,20 @@ async function initCmsRevidGroupEngine(forceGroups = false) {
     fbState.fbAccounts = fbs;
     if (statusEl) {
       statusEl.innerHTML = fbs.length
-        ? `🟢 Đã kết nối <b>${escapeHtml(fbState.activeEngineLabel)}</b> · ${fbs.length} tài khoản Facebook`
-        : `🟡 Đã kết nối <b>${escapeHtml(fbState.activeEngineLabel)}</b> nhưng chưa có tài khoản Facebook.`;
+        ? `🟢 Đã kết nối <b>${escapeHtml(fbState.activeEngineLabel)}</b> · ${fbs.length} tài khoản Facebook riêng`
+        : `🟡 Đã kết nối <b>${escapeHtml(fbState.activeEngineLabel)}</b> · Chưa có tài khoản FB — bấm <b>+ Thêm tài khoản FB</b> để kết nối.`;
     }
     if (accSel) {
       if (!fbs.length) {
-        accSel.innerHTML = '<option value="">Chưa có tài khoản Facebook</option>';
+        accSel.innerHTML = '<option value="">Chưa có tài khoản — bấm + Thêm tài khoản FB</option>';
+        populateCmsActAsOptions(null);
       } else {
         if (!fbState.selectedAccountId || !fbs.some(a => a.id === fbState.selectedAccountId)) {
           fbState.selectedAccountId = fbs[0].id;
         }
         accSel.innerHTML = fbs.map(a => `<option value="${escapeHtml(a.id)}" ${a.id === fbState.selectedAccountId ? 'selected' : ''}>${escapeHtml(a.profileName || a.label)}</option>`).join('');
+        const currentAcc = fbs.find(a => a.id === fbState.selectedAccountId) || fbs[0];
+        populateCmsActAsOptions(currentAcc);
         await loadCmsRevidGroups(fbState.selectedAccountId, forceGroups);
       }
     }
@@ -2647,9 +2670,11 @@ async function loadCmsRevidGroups(accountId, fresh = false) {
   if (!accountId || !box) return;
   box.innerHTML = `<div style="grid-column:1/-1;padding:12px;text-align:center;font-size:12px;color:#64748b;">Đang tải danh sách nhóm…</div>`;
   try {
+    const actAs = byId('cmsFbGroupActAsSelect')?.value || fbState.selectedActAs || '';
+    const actParam = actAs ? `&actAs=${encodeURIComponent(actAs)}` : '';
     const base = `/api/accounts/${encodeURIComponent(accountId)}/groups`;
-    let d = await cmsRevidApi('GET', base + (fresh ? '' : '?cached=1'));
-    if (fresh || !(d.groups || []).length) d = await cmsRevidApi('GET', base);
+    let d = await cmsRevidApi('GET', `${base}?cached=${fresh ? '0' : '1'}${actParam}`);
+    if (fresh || !(d.groups || []).length) d = await cmsRevidApi('GET', `${base}?cached=0${actParam}`);
     fbState.groups = d.groups || [];
     fbState.groupApprovals = await cmsRevidApi('GET', `/api/mk/approvals/${encodeURIComponent(accountId)}`).catch(() => ({}));
     renderCmsRevidGroupsList();
@@ -3028,6 +3053,7 @@ async function handlePublishFacebook() {
       const rotBody = {
         name: (byId('cmsFbGroupRotName')?.value || '').trim() || `BĐS Fourland · ${fbState.propertyId || Date.now()}`,
         accountId,
+        actAs: byId('cmsFbGroupActAsSelect')?.value || fbState.selectedActAs || '',
         groups,
         variants,
         images: uploadedLocalUrls,
@@ -3124,6 +3150,42 @@ if (byId('fbSubmitBtn')) byId('fbSubmitBtn').addEventListener('click', handlePub
 document.querySelectorAll('[data-cms-fb-mode]').forEach(tab => {
   tab.addEventListener('click', () => setCmsFacebookMode(tab.dataset.cmsFbMode));
 });
+if (byId('btnCmsFbGroupAddAccount')) {
+  byId('btnCmsFbGroupAddAccount').addEventListener('click', async () => {
+    if (!fbState.engineOnline) {
+      alert('Chưa kết nối được Máy chủ 50 (8889).');
+      return;
+    }
+    const label = prompt('Nhập tên gợi nhớ cho tài khoản Facebook Fourland (VD: Nick Fourland BĐS):', 'Fourland BĐS');
+    if (label === null) return;
+    const rawCookies = prompt(
+      'Dán Cookie tài khoản Facebook mới (chuỗi "c_user=...; xs=..." hoặc JSON cookie):\n\n(Hoặc bấm Cancel để mở Bảng điều khiển Máy 50 thêm trực tiếp)'
+    );
+    if (!rawCookies || !rawCookies.trim()) {
+      if (confirm('Bạn có muốn mở Bảng điều khiển riêng của Fourland trên Máy 50 (Cổng 8889) để thêm tài khoản Facebook mới không?')) {
+        window.open(`${fbState.activeEngineUrl}/#accounts`, '_blank');
+      }
+      return;
+    }
+    try {
+      const res = await cmsRevidApi('POST', '/api/extension/sync', {
+        platform: 'facebook',
+        label: label.trim() || 'Fourland BĐS',
+        cookies: rawCookies.trim(),
+        userAgent: navigator.userAgent,
+        mode: 'upsert',
+        _relayed: true
+      });
+      if (res?.account?.id) {
+        fbState.selectedAccountId = res.account.id;
+        showToast(`Đã kết nối tài khoản "${res.account.label}" trên nhánh riêng Máy 50!`);
+        await initCmsRevidGroupEngine(true);
+      }
+    } catch (err) {
+      alert(`Không thêm được tài khoản: ${err.message}`);
+    }
+  });
+}
 if (byId('cmsFbGroupNodeSelect')) {
   byId('cmsFbGroupNodeSelect').addEventListener('change', () => {
     fbState.nodeMode = byId('cmsFbGroupNodeSelect').value;
@@ -3135,7 +3197,18 @@ if (byId('cmsFbGroupAccountSelect')) {
   byId('cmsFbGroupAccountSelect').addEventListener('change', (e) => {
     fbState.selectedAccountId = e.target.value;
     fbState.selectedGroups.clear();
+    const acc = (fbState.fbAccounts || []).find(a => a.id === fbState.selectedAccountId);
+    populateCmsActAsOptions(acc || null);
     loadCmsRevidGroups(fbState.selectedAccountId, false);
+  });
+}
+if (byId('cmsFbGroupActAsSelect')) {
+  byId('cmsFbGroupActAsSelect').addEventListener('change', (e) => {
+    fbState.selectedActAs = e.target.value;
+    fbState.selectedGroups.clear();
+    if (fbState.selectedAccountId) {
+      loadCmsRevidGroups(fbState.selectedAccountId, false);
+    }
   });
 }
 if (byId('cmsFbGroupSearchInput')) {

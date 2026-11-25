@@ -2182,6 +2182,7 @@ const fbPortalState = {
   engineOnline: false,
   fbAccounts: [],
   selectedAccountId: '',
+  selectedActAs: '',
   groups: [],
   groupApprovals: {},
   selectedGroups: new Map()
@@ -2230,6 +2231,25 @@ async function resolveRevidEngineCandidates() {
   return [...server50Candidates, ...localCandidates];
 }
 
+function populatePortalActAsOptions(account) {
+  const actSel = $('fbGroupActAsSelect');
+  if (!actSel) return;
+  if (!account) {
+    actSel.innerHTML = '<option value="">👤 Nick Facebook cá nhân</option>';
+    fbPortalState.selectedActAs = '';
+    return;
+  }
+  const pages = Array.isArray(account.pages) ? account.pages : [];
+  if (fbPortalState.selectedActAs && !pages.some(p => String(p.id) === String(fbPortalState.selectedActAs))) {
+    fbPortalState.selectedActAs = '';
+  }
+  const opts = [
+    `<option value="" ${!fbPortalState.selectedActAs ? 'selected' : ''}>👤 Nick cá nhân: ${escapeHtml(account.profileName || account.label)}</option>`,
+    ...pages.map(p => `<option value="${escapeHtml(p.id)}" ${String(p.id) === String(fbPortalState.selectedActAs) ? 'selected' : ''}>📘 Fanpage: ${escapeHtml(p.name)}</option>`)
+  ];
+  actSel.innerHTML = opts.join('');
+}
+
 async function initRevidGroupEngine(forceGroups = false) {
   const dot = $('fbGroupEngineDot');
   const statusEl = $('fbGroupEngineStatus');
@@ -2257,17 +2277,22 @@ async function initRevidGroupEngine(forceGroups = false) {
     if (dot) dot.className = 'fb-mode-dot online';
     if (statusEl) {
       statusEl.innerHTML = fbs.length
-        ? `🟢 Đã kết nối <b>${escapeHtml(fbPortalState.activeEngineLabel)}</b> · ${fbs.length} tài khoản Facebook sẵn sàng`
-        : `🟡 Đã kết nối <b>${escapeHtml(fbPortalState.activeEngineLabel)}</b> nhưng chưa có tài khoản Facebook. Bấm "Mở Bảng điều khiển" để thêm.`;
+        ? `🟢 Đã kết nối <b>${escapeHtml(fbPortalState.activeEngineLabel)}</b> · ${fbs.length} tài khoản Facebook riêng`
+        : `🟡 Đã kết nối <b>${escapeHtml(fbPortalState.activeEngineLabel)}</b> · Chưa có tài khoản FB — bấm <b>+ Thêm tài khoản FB</b> bên dưới để kết nối tài khoản Fourland riêng.`;
     }
     if (accSel) {
       if (!fbs.length) {
-        accSel.innerHTML = '<option value="">Chưa có tài khoản Facebook</option>';
+        accSel.innerHTML = '<option value="">Chưa có tài khoản — bấm + Thêm tài khoản FB</option>';
+        populatePortalActAsOptions(null);
+        const box = $('fbGroupListBox');
+        if (box) box.innerHTML = `<div class="fb-group-empty">Nhánh riêng Fourland trên Máy 50 đang trống để không dùng chung tài khoản dự án khác. Hãy bấm <b>+ Thêm tài khoản FB</b> để gắn tài khoản / Fanpage Fourland riêng của bạn.</div>`;
       } else {
         if (!fbPortalState.selectedAccountId || !fbs.some(a => a.id === fbPortalState.selectedAccountId)) {
           fbPortalState.selectedAccountId = fbs[0].id;
         }
         accSel.innerHTML = fbs.map(a => `<option value="${escapeHtml(a.id)}" ${a.id === fbPortalState.selectedAccountId ? 'selected' : ''}>${escapeHtml(a.profileName || a.label)}</option>`).join('');
+        const currentAcc = fbs.find(a => a.id === fbPortalState.selectedAccountId) || fbs[0];
+        populatePortalActAsOptions(currentAcc);
         await loadRevidAccountGroups(fbPortalState.selectedAccountId, forceGroups);
       }
     }
@@ -2289,10 +2314,12 @@ async function loadRevidAccountGroups(accountId, fresh = false) {
   if (!accountId || !box) return;
   box.innerHTML = `<div class="fb-group-empty">Đang tải danh sách nhóm Facebook đã tham gia…</div>`;
   try {
+    const actAs = $('fbGroupActAsSelect')?.value || fbPortalState.selectedActAs || '';
+    const actParam = actAs ? `&actAs=${encodeURIComponent(actAs)}` : '';
     const base = `/api/accounts/${encodeURIComponent(accountId)}/groups`;
-    let d = await revidEngineApi('GET', base + (fresh ? '' : '?cached=1'));
+    let d = await revidEngineApi('GET', `${base}?cached=${fresh ? '0' : '1'}${actParam}`);
     if (fresh || !(d.groups || []).length) {
-      d = await revidEngineApi('GET', base);
+      d = await revidEngineApi('GET', `${base}?cached=0${actParam}`);
     }
     fbPortalState.groups = d.groups || [];
     fbPortalState.groupApprovals = await revidEngineApi('GET', `/api/mk/approvals/${encodeURIComponent(accountId)}`).catch(() => ({}));
@@ -2853,6 +2880,7 @@ async function handlePublishGroupRotation() {
     const rotBody = {
       name: ($('fbGroupRotName')?.value || '').trim() || `BĐS Fourland · ${fbPortalState.propertyId || Date.now()}`,
       accountId,
+      actAs: $('fbGroupActAsSelect')?.value || fbPortalState.selectedActAs || '',
       groups,
       variants,
       images: uploadedLocalUrls,
@@ -3009,6 +3037,55 @@ if ($('fbPostContent')) {
 document.querySelectorAll('[data-fb-mode]').forEach(tab => {
   tab.onclick = () => setFacebookPortalMode(tab.dataset.fbMode);
 });
+async function promptAddFacebookGroupAccount() {
+  if (!fbPortalState.engineOnline) {
+    alert('Chưa kết nối được Máy chủ 50 (8889). Vui lòng kiểm tra kết nối trước!');
+    return;
+  }
+  const label = prompt('Nhập tên gợi nhớ cho tài khoản Facebook Fourland (VD: Nick Fourland BĐS):', 'Fourland BĐS');
+  if (label === null) return;
+  const rawCookies = prompt(
+    'Dán Cookie tài khoản Facebook mới (chuỗi "c_user=...; xs=..." hoặc JSON cookie từ tiện ích Get-Cookie / Extension):\n\n(Hoặc bấm Cancel để mở Bảng điều khiển Máy 50 thêm trực tiếp)'
+  );
+  if (!rawCookies || !rawCookies.trim()) {
+    if (confirm('Bạn có muốn mở Bảng điều khiển riêng của Fourland trên Máy 50 (Cổng 8889) để đăng nhập / đồng bộ tài khoản Facebook mới không?')) {
+      window.open(`${fbPortalState.activeEngineUrl}/#accounts`, '_blank');
+    }
+    return;
+  }
+  try {
+    showToast('Đang thêm tài khoản Facebook lên Máy 50 (Nhánh Fourland)…', 3000);
+    const res = await revidEngineApi('POST', '/api/extension/sync', {
+      platform: 'facebook',
+      label: label.trim() || 'Fourland BĐS',
+      cookies: rawCookies.trim(),
+      userAgent: navigator.userAgent,
+      mode: 'upsert',
+      _relayed: true
+    });
+    if (res?.account?.id) {
+      fbPortalState.selectedAccountId = res.account.id;
+      showToast(`✅ Đã kết nối tài khoản "${res.account.label}" trên nhánh riêng Máy 50!`);
+      await initRevidGroupEngine(true);
+    }
+  } catch (err) {
+    alert(`Không thêm được tài khoản: ${err.message}`);
+  }
+}
+
+if ($('btnFbGroupAddAccount')) {
+  $('btnFbGroupAddAccount').onclick = promptAddFacebookGroupAccount;
+}
+if ($('fbGroupActAsSelect')) {
+  $('fbGroupActAsSelect').onchange = () => {
+    fbPortalState.selectedActAs = $('fbGroupActAsSelect').value;
+    fbPortalState.selectedGroups.clear();
+    if (fbPortalState.selectedAccountId) {
+      loadRevidAccountGroups(fbPortalState.selectedAccountId, false);
+    }
+    updatePortalPreviewFromChannels();
+  };
+}
 if ($('fbGroupNodeSelect')) {
   $('fbGroupNodeSelect').onchange = () => {
     fbPortalState.nodeMode = $('fbGroupNodeSelect').value;

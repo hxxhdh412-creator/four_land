@@ -1370,10 +1370,17 @@
                   <a href="https://drink-owners-prayer-partnerships.trycloudflare.com" id="cmsFbGroupDashboardLink" target="_blank" rel="noopener noreferrer" class="cms-fb-action-link">Mở Bảng điều khiển ↗</a>
                 </div>
               </div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
                 <label class="cms-fb-field">
-                  <span class="cms-fb-label">Tài khoản Facebook rải nhóm:</span>
-                  <select id="cmsFbGroupAccountSelect" style="height:36px;padding:0 10px;border:1px solid #cbd5e1;border-radius:7px;font-size:12.5px;background:#fff;"><option value="">Đang tải tài khoản…</option></select>
+                  <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;">
+                    <span class="cms-fb-label">Tài khoản Facebook riêng:</span>
+                    <button type="button" id="btnCmsFbGroupAddAccount" class="cms-fb-action-link">+ Thêm tài khoản FB</button>
+                  </div>
+                  <select id="cmsFbGroupAccountSelect" style="height:36px;padding:0 10px;border:1px solid #cbd5e1;border-radius:7px;font-size:12.5px;background:#fff;"><option value="">Chưa có tài khoản — bấm + Thêm tài khoản FB</option></select>
+                </label>
+                <label class="cms-fb-field">
+                  <span class="cms-fb-label">Đăng nhóm với tư cách:</span>
+                  <select id="cmsFbGroupActAsSelect" style="height:36px;padding:0 10px;border:1px solid #cbd5e1;border-radius:7px;font-size:12.5px;background:#fff;"><option value="">👤 Nick Facebook cá nhân</option></select>
                 </label>
                 <label class="cms-fb-field">
                   <span class="cms-fb-label">Tên chiến dịch đăng nhóm:</span>
@@ -1810,6 +1817,6 @@
 
     <div id="toastContainer" class="cms-toast-container" aria-live="polite"></div>
   </div>
-  <script src="/admin/admin.js?v=20261125-server50-poster-v3" defer></script>
+  <script src="/admin/admin.js?v=20261125-server50-poster-v5" defer></script>
 </body>
 </html>

@@ -418,10 +418,17 @@
                 <a href="https://drink-owners-prayer-partnerships.trycloudflare.com" id="fbGroupDashboardLink" target="_blank" rel="noopener noreferrer" class="fb-portal-action-link">Mở Bảng điều khiển ↗</a>
               </div>
             </div>
-            <div class="fb-group-row2">
+            <div class="fb-group-row3">
               <label class="fb-portal-field">
-                <span class="fb-portal-label">Tài khoản Facebook rải nhóm:</span>
-                <select id="fbGroupAccountSelect" class="fb-group-input"><option value="">Đang tải tài khoản…</option></select>
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;">
+                  <span class="fb-portal-label">Tài khoản Facebook riêng:</span>
+                  <button type="button" id="btnFbGroupAddAccount" class="fb-portal-action-link" title="Thêm tài khoản Facebook riêng cho Fourland">+ Thêm tài khoản FB</button>
+                </div>
+                <select id="fbGroupAccountSelect" class="fb-group-input"><option value="">Chưa có tài khoản — bấm + Thêm tài khoản FB</option></select>
+              </label>
+              <label class="fb-portal-field">
+                <span class="fb-portal-label">Đăng nhóm với tư cách:</span>
+                <select id="fbGroupActAsSelect" class="fb-group-input"><option value="">👤 Nick Facebook cá nhân</option></select>
               </label>
               <label class="fb-portal-field">
                 <span class="fb-portal-label">Tên chiến dịch đăng nhóm:</span>
@@ -636,7 +643,7 @@
     </div>
   </aside>
 
-  <script src="/assets/app.js?v=20261125-server50-poster-v3" defer></script>
+  <script src="/assets/app.js?v=20261125-server50-poster-v5" defer></script>
 </body>
 
 </html>
