@@ -2326,7 +2326,19 @@ async function loadRevidAccountGroups(accountId, fresh = false) {
     }
     fbPortalState.groups = d.groups || [];
     fbPortalState.groupApprovals = await revidEngineApi('GET', `/api/mk/approvals/${encodeURIComponent(accountId)}`).catch(() => ({}));
+    if (fbPortalState.selectedGroups.size === 0 && fbPortalState.groups.length > 0) {
+      const bdsRe = /bất động sản|bds|nhà đất|nhà phố|cho thuê|mua bán nhà|căn hộ|mặt bằng|phòng trọ/i;
+      const autoCandidates = fbPortalState.groups.filter(g => {
+        const gid = String(g.id);
+        return fbPortalState.groupApprovals?.[gid]?.approval !== 'required' && bdsRe.test(String(g.name || ''));
+      });
+      const pickPool = autoCandidates.length >= 3
+        ? autoCandidates.slice(0, 15)
+        : fbPortalState.groups.filter(g => fbPortalState.groupApprovals?.[String(g.id)]?.approval !== 'required').slice(0, 10);
+      pickPool.forEach(g => fbPortalState.selectedGroups.set(String(g.id), { id: g.id, name: g.name }));
+    }
     renderRevidGroupsList();
+    updatePortalPreviewFromChannels();
   } catch (err) {
     box.innerHTML = `<div class="fb-group-empty">Không tải được danh sách nhóm: ${escapeHtml(err.message)}</div>`;
   }
@@ -3131,9 +3143,22 @@ if ($('fbGroupAccountSelect')) {
 if ($('fbGroupSearchInput')) {
   $('fbGroupSearchInput').oninput = () => renderRevidGroupsList();
 }
+if ($('btnFbGroupPickAll')) {
+  $('btnFbGroupPickAll').onclick = () => {
+    const q = ($('fbGroupSearchInput')?.value || '').trim().toLowerCase();
+    const visible = (fbPortalState.groups || []).filter(g => !q || String(g.name || '').toLowerCase().includes(q));
+    visible.forEach(g => {
+      fbPortalState.selectedGroups.set(String(g.id), { id: g.id, name: g.name });
+    });
+    renderRevidGroupsList();
+    updatePortalPreviewFromChannels();
+  };
+}
 if ($('btnFbGroupPickInstant')) {
   $('btnFbGroupPickInstant').onclick = () => {
-    (fbPortalState.groups || []).forEach(g => {
+    const q = ($('fbGroupSearchInput')?.value || '').trim().toLowerCase();
+    const visible = (fbPortalState.groups || []).filter(g => !q || String(g.name || '').toLowerCase().includes(q));
+    visible.forEach(g => {
       const gid = String(g.id);
       if (fbPortalState.groupApprovals?.[gid]?.approval !== 'required') {
         fbPortalState.selectedGroups.set(gid, { id: g.id, name: g.name });

@@ -2684,7 +2684,19 @@ async function loadCmsRevidGroups(accountId, fresh = false) {
     if (fresh || !(d.groups || []).length) d = await cmsRevidApi('GET', `${base}?cached=0${actParam}`);
     fbState.groups = d.groups || [];
     fbState.groupApprovals = await cmsRevidApi('GET', `/api/mk/approvals/${encodeURIComponent(accountId)}`).catch(() => ({}));
+    if (fbState.selectedGroups.size === 0 && fbState.groups.length > 0) {
+      const bdsRe = /bất động sản|bds|nhà đất|nhà phố|cho thuê|mua bán nhà|căn hộ|mặt bằng|phòng trọ/i;
+      const autoCandidates = fbState.groups.filter(g => {
+        const gid = String(g.id);
+        return fbState.groupApprovals?.[gid]?.approval !== 'required' && bdsRe.test(String(g.name || ''));
+      });
+      const pickPool = autoCandidates.length >= 3
+        ? autoCandidates.slice(0, 15)
+        : fbState.groups.filter(g => fbState.groupApprovals?.[String(g.id)]?.approval !== 'required').slice(0, 10);
+      pickPool.forEach(g => fbState.selectedGroups.set(String(g.id), { id: g.id, name: g.name }));
+    }
     renderCmsRevidGroupsList();
+    updatePreviewFromChannels();
   } catch (err) {
     box.innerHTML = `<div style="grid-column:1/-1;padding:12px;text-align:center;font-size:12px;color:#dc2626;">Lỗi: ${escapeHtml(err.message)}</div>`;
   }
@@ -3321,9 +3333,23 @@ if (byId('cmsFbGroupGapMax')) byId('cmsFbGroupGapMax').addEventListener('input',
 if (byId('cmsFbGroupSearchInput')) {
   byId('cmsFbGroupSearchInput').addEventListener('input', renderCmsRevidGroupsList);
 }
+if (byId('btnCmsFbGroupPickAll')) {
+  byId('btnCmsFbGroupPickAll').addEventListener('click', () => {
+    const q = (byId('cmsFbGroupSearchInput')?.value || '').trim().toLowerCase();
+    const visible = (fbState.groups || []).filter(g => !q || String(g.name || '').toLowerCase().includes(q));
+    visible.forEach(g => {
+      fbState.selectedGroups.set(String(g.id), { id: g.id, name: g.name });
+    });
+    renderCmsRevidGroupsList();
+    updatePublishButtonState();
+    updatePreviewFromChannels();
+  });
+}
 if (byId('btnCmsFbGroupPickInstant')) {
   byId('btnCmsFbGroupPickInstant').addEventListener('click', () => {
-    (fbState.groups || []).forEach(g => {
+    const q = (byId('cmsFbGroupSearchInput')?.value || '').trim().toLowerCase();
+    const visible = (fbState.groups || []).filter(g => !q || String(g.name || '').toLowerCase().includes(q));
+    visible.forEach(g => {
       const gid = String(g.id);
       if (fbState.groupApprovals?.[gid]?.approval !== 'required') {
         fbState.selectedGroups.set(gid, { id: g.id, name: g.name });
@@ -3331,6 +3357,7 @@ if (byId('btnCmsFbGroupPickInstant')) {
     });
     renderCmsRevidGroupsList();
     updatePublishButtonState();
+    updatePreviewFromChannels();
   });
 }
 if (byId('btnCmsFbGroupPickNone')) {

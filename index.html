@@ -59,8 +59,8 @@
     window.FOURLAND_ONESIGNAL_APP_ID = "524d4fcf-2075-4aaf-8862-a306e670f31d";
   </script>
 
-  <link rel="stylesheet" href="/assets/app.css?v=20261125-compact-studio-v1">
-  <link rel="stylesheet" href="/assets/facebook-studio.css?v=20261125-unified-v3">
+  <link rel="stylesheet" href="/assets/app.css?v=20261125-compact-studio-v2">
+  <link rel="stylesheet" href="/assets/facebook-studio.css?v=20261125-ergonomic-v5">
 
   <!-- Schema.org JSON-LD Structured Data -->
   <script type="application/ld+json">
@@ -458,10 +458,9 @@
                   <span>Nhóm đăng bài (<b id="fbGroupPickedCount">0</b> đã chọn)</span>
                 </span>
                 <div class="fb-portal-channel-actions">
-                  <button type="button" id="btnFbGroupPickInstant" class="fb-portal-action-link">Chọn nhóm đăng ngay</button>
-                  <span class="fb-portal-divider">·</span>
+                  <button type="button" id="btnFbGroupPickAll" class="fb-portal-action-link">Chọn tất cả</button>
+                  <button type="button" id="btnFbGroupPickInstant" class="fb-portal-action-link primary-pill" title="Chỉ chọn các nhóm cho phép đăng ngay không cần chờ duyệt">Chọn nhóm đăng ngay</button>
                   <button type="button" id="btnFbGroupPickNone" class="fb-portal-action-link">Bỏ chọn</button>
-                  <span class="fb-portal-divider">·</span>
                   <button type="button" id="btnFbGroupReload" class="fb-portal-action-link" title="Quét lại danh sách nhóm">
                     <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
                     <span>Tải lại</span>
@@ -470,43 +469,45 @@
               </div>
               <div class="fb-group-search-wrap">
                 <svg class="fb-group-search-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                <input type="text" id="fbGroupSearchInput" aria-label="Tìm tên nhóm" class="fb-group-input fb-group-search" placeholder="Tìm tên nhóm…">
+                <input type="text" id="fbGroupSearchInput" aria-label="Tìm tên nhóm" class="fb-group-input fb-group-search" placeholder="Tìm tên nhóm (VD: Nhà đất, Quận 10, Cho thuê…)">
               </div>
               <div id="fbGroupListBox" role="group" aria-label="Danh sách nhóm đăng bài" class="fb-group-list-box"><div class="fb-group-empty">Đang tải danh sách nhóm đã tham gia…</div></div>
             </div>
 
-            <details class="social-advanced">
-              <summary>Lịch đăng & tuỳ chọn</summary>
-              <div class="social-advanced-fields">
-                <label class="fb-portal-field">
-                  <span class="fb-portal-label">Tên chiến dịch</span>
-                  <input type="text" id="fbGroupRotName" class="fb-group-input" placeholder="VD: BĐS Fourland">
-                </label>
-                <div class="fb-group-schedule-grid">
+            <div class="social-group-meta-row">
+              <div class="fb-group-eta" id="fbGroupEtaText" role="status" aria-live="polite">Đang chọn nhóm tự động…</div>
+              <details class="social-advanced">
+                <summary>⚙️ Lịch hẹn giờ & tuỳ chọn nâng cao</summary>
+                <div class="social-advanced-fields">
                   <label class="fb-portal-field">
-                    <span class="fb-portal-label">Nghỉ tối thiểu (giây)</span>
-                    <input type="number" id="fbGroupGapMin" class="fb-group-input" min="30" value="60">
+                    <span class="fb-portal-label">Tên chiến dịch</span>
+                    <input type="text" id="fbGroupRotName" class="fb-group-input" placeholder="VD: BĐS Fourland">
                   </label>
-                  <label class="fb-portal-field">
-                    <span class="fb-portal-label">Tối đa (giây)</span>
-                    <input type="number" id="fbGroupGapMax" class="fb-group-input" min="30" value="120">
-                  </label>
-                  <label class="fb-portal-field">
-                    <span class="fb-portal-label">Hẹn giờ · để trống để đăng ngay</span>
-                    <input type="datetime-local" id="fbGroupStartAt" class="fb-group-input">
-                  </label>
-                  <label class="fb-portal-field">
-                    <span class="fb-portal-label">Bình luận đầu tiên</span>
-                    <input type="text" id="fbGroupFirstComment" class="fb-group-input" value="{Inbox|Nhắn tin} hoặc gọi trực tiếp 037.6789.808 để xem nhà thực tế nhé!">
-                  </label>
+                  <div class="fb-group-schedule-grid">
+                    <label class="fb-portal-field">
+                      <span class="fb-portal-label">Nghỉ min (s)</span>
+                      <input type="number" id="fbGroupGapMin" class="fb-group-input" min="30" value="60">
+                    </label>
+                    <label class="fb-portal-field">
+                      <span class="fb-portal-label">Nghỉ max (s)</span>
+                      <input type="number" id="fbGroupGapMax" class="fb-group-input" min="30" value="120">
+                    </label>
+                    <label class="fb-portal-field">
+                      <span class="fb-portal-label">Hẹn giờ chạy 24/7 (để trống = chạy ngay)</span>
+                      <input type="datetime-local" id="fbGroupStartAt" class="fb-group-input">
+                    </label>
+                    <label class="fb-portal-field">
+                      <span class="fb-portal-label">Bình luận đầu tiên (Seeding)</span>
+                      <input type="text" id="fbGroupFirstComment" class="fb-group-input" value="{Inbox|Nhắn tin} hoặc gọi trực tiếp 037.6789.808 để xem nhà thực tế nhé!">
+                    </label>
+                  </div>
+                  <div class="social-group-checks">
+                    <label class="fb-portal-checkbox"><input type="checkbox" id="fbGroupSkipApproval" checked><span>Bỏ qua nhóm chờ duyệt</span></label>
+                    <label class="fb-portal-checkbox"><input type="checkbox" id="fbGroupAutoLike" checked><span>Tự thích bài đăng</span></label>
+                  </div>
                 </div>
-                <div class="social-group-checks">
-                  <label class="fb-portal-checkbox"><input type="checkbox" id="fbGroupSkipApproval" checked><span>Bỏ qua nhóm chờ duyệt</span></label>
-                  <label class="fb-portal-checkbox"><input type="checkbox" id="fbGroupAutoLike" checked><span>Tự thích bài đăng</span></label>
-                </div>
-              </div>
-            </details>
-            <div class="fb-group-eta" id="fbGroupEtaText" role="status" aria-live="polite">Chọn nhóm để bắt đầu</div>
+              </details>
+            </div>
           </div>
 
           <div class="fb-portal-tone-section">
@@ -516,10 +517,10 @@
                 <span>Phong cách bài viết</span>
               </span>
               <div class="fb-variant-tabs" id="fbVariantTabs" hidden>
-                <button type="button" class="fb-var-tab active" data-fb-var="0">Bản 1 · Thu hút</button>
-                <button type="button" class="fb-var-tab" data-fb-var="1">Bản 2 · Chi tiết</button>
-                <button type="button" class="fb-var-tab" data-fb-var="2">Bản 3 · Súc tích</button>
-                <button type="button" class="fb-var-tab" data-fb-var="3">Bản 4 · Spintax</button>
+                <button type="button" class="fb-var-tab active" data-fb-var="0"><span class="fb-variant-number">Bản 1 · </span>Thu hút</button>
+                <button type="button" class="fb-var-tab" data-fb-var="1"><span class="fb-variant-number">Bản 2 · </span>Chi tiết</button>
+                <button type="button" class="fb-var-tab" data-fb-var="2"><span class="fb-variant-number">Bản 3 · </span>Súc tích</button>
+                <button type="button" class="fb-var-tab" data-fb-var="3"><span class="fb-variant-number">Bản 4 · </span>Spintax</button>
               </div>
             </div>
             <div class="fb-portal-tone-chips" id="fbToneChipsRow">

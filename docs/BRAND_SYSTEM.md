@@ -90,6 +90,7 @@ Chỉ viết hoa toàn bộ cho eyebrow/label ngắn. Không viết hoa đoạn 
 - Dùng chung `assets/facebook-studio.css`; xanh rừng, nền trắng, font Be Vietnam Pro.
 - Desktop tối đa 1120 px, cột biên tập và xem trước dùng `minmax(0, ...)`.
 - Mobile ≤760 px toàn màn hình: header hai hàng, chuyển chế độ ở hàng riêng; body cuộn, footer giữ nút đăng 48 px và safe-area.
+- Mobile thu gọn tiêu đề, giới hạn chiều cao danh sách nhóm, hiện ước tính khi mở lịch và đặt bốn phiên bản bài viết trên một hàng.
 - Tài khoản và danh sách nhóm hiển thị trước. Tên chiến dịch, thời gian nghỉ, hẹn giờ, bình luận và tuỳ chọn nằm trong `details` “Lịch đăng & tuỳ chọn”, mặc định thu gọn; giữ nguyên giá trị đã nhập khi đóng/mở.
 - Nhóm có hàng chọn tối thiểu 44 px, trạng thái bằng chữ, tên đầy đủ qua tooltip; ô nhập mobile 16 px. Nút chuyển chế độ có `aria-pressed`, tổng nhóm có `aria-live`.
 - Popup trong `admin.html` phải đồng bộ với `admin/index.html` vì Vercel và preview dùng hai entry khác nhau.
