@@ -19,6 +19,40 @@ const cmsState = {
 const byId = id => document.getElementById(id);
 const escapeHtml = value => String(value || '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
 
+function syncCmsUrlState(extra = {}) {
+  try {
+    const url = new URL(window.location.href);
+    for (const [k, v] of Object.entries(extra)) {
+      if (v === null || v === undefined || v === '') url.searchParams.delete(k);
+      else url.searchParams.set(k, String(v));
+    }
+    const newUrl = url.pathname + (url.search ? url.search : '');
+    if (window.location.pathname + window.location.search !== newUrl) {
+      history.replaceState(null, '', newUrl);
+    }
+  } catch (_) {}
+}
+
+async function restoreCmsModalsFromUrl() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const propId = params.get('id') || params.get('bds');
+    const fbMode = params.get('fb');
+    if (!propId) return;
+    const detailDlg = byId('propertyDetail');
+    if (detailDlg && !detailDlg.open) {
+      await openPropertyDetail(propId, false);
+    }
+    if (fbMode) {
+      fbState.mode = fbMode === 'group' ? 'group' : 'page';
+      const fbDlg = byId('facebookPostDialog');
+      if (fbDlg && !fbDlg.open) {
+        await openFacebookStudio(propId, false);
+      }
+    }
+  } catch (_) {}
+}
+
 function getPageFromUrl() {
   try {
     const params = new URLSearchParams(window.location.search);
@@ -185,6 +219,7 @@ async function handleLogin(credentials = {}) {
     const initialPage = getPageFromUrl();
     setActivePage(initialPage, false);
     loadDashboard().catch(() => {});
+    restoreCmsModalsFromUrl();
   } catch (error) {
     errorBox.hidden = false;
     errorBox.textContent = error.message || 'Đăng nhập thất bại';
@@ -257,6 +292,7 @@ async function bootstrapCms() {
     const initialPage = getPageFromUrl();
     setActivePage(initialPage, false);
     loadDashboard().catch(err => console.warn('Dashboard summary error:', err));
+    restoreCmsModalsFromUrl();
   } catch (error) {
     cmsState.accessToken = '';
     localStorage.removeItem('fourland_cms_access_token');
@@ -627,7 +663,8 @@ function detailRow(label, value) {
   return wrapper;
 }
 
-async function openPropertyDetail(id) {
+async function openPropertyDetail(id, updateUrl = true) {
+  if (updateUrl) syncCmsUrlState({ id });
   const dialog = byId('propertyDetail');
   byId('detailTitle').textContent = 'Đang tải hồ sơ…';
   byId('detailLoading').hidden = false;
@@ -2770,6 +2807,9 @@ function updateCmsGroupRotationEta() {
 
 function setCmsFacebookMode(mode) {
   fbState.mode = mode === 'group' ? 'group' : 'page';
+  if (byId('facebookPostDialog')?.open && fbState.propertyId) {
+    syncCmsUrlState({ id: fbState.propertyId, fb: fbState.mode });
+  }
   const groupPicker = byId('fbGroupPicker');
   if (fbState.mode === 'group' && groupPicker && !groupPicker.hasAttribute('data-ready')) {
     groupPicker.open = !window.matchMedia('(max-width: 760px)').matches;
@@ -2967,21 +3007,23 @@ function updatePreviewFromChannels() {
   }
 }
 
-async function openFacebookStudio(propertyId) {
+async function openFacebookStudio(propertyId, updateUrl = true) {
   fbState.propertyId = propertyId;
   const dialog = byId('facebookPostDialog');
   if (!dialog) return;
+  if (updateUrl) syncCmsUrlState({ id: propertyId, fb: fbState.mode || 'page' });
 
   renderFacebookChannels();
   byId('fbPublishStatus').textContent = 'Đang chuẩn bị bài viết…';
-  dialog.showModal();
+  if (!dialog.open) dialog.showModal();
   setCmsFacebookMode(fbState.mode);
   await loadFacebookDraft(propertyId, fbState.tone);
 }
 
 function closeFacebookStudio() {
   const dialog = byId('facebookPostDialog');
-  if (dialog) dialog.close();
+  if (dialog && dialog.open) dialog.close();
+  syncCmsUrlState({ fb: null });
 }
 
 async function loadFacebookDraft(propertyId, tone = 'hot', _pageId = null, regenerate = false) {
@@ -3988,6 +4030,7 @@ function closePropertyDetail() {
   if (dialog && dialog.open) dialog.close();
   if (byId('detailMobileActionMenu')) byId('detailMobileActionMenu').hidden = true;
   if (byId('detailMobileBottomBar')) byId('detailMobileBottomBar').hidden = true;
+  syncCmsUrlState({ id: null, bds: null, fb: null });
 }
 
 function setMobileDetailTab(tab) {

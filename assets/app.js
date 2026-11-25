@@ -1373,7 +1373,7 @@ async function openDetail(id,seoPath=''){
       similarList = findClientSimilarProperties(p, state.rows).slice(0, 5);
     }
     const similarHtml = renderSimilarPropertiesHtml(similarList);
-    const nextPath=seoPath||propertyPath(p);history.pushState({id},'',nextPath);
+    const nextPath=(seoPath||propertyPath(p))+(window.location.search||'');history.pushState({id},'',nextPath);
     const imageItems=(p.property_images||[]).filter(i=>(i.public_url||i.source_url)&&String(i.public_url||i.source_url).startsWith('http')).sort((a,b)=>a.position-b.position);
     const images=imageItems.map(i=>driveImage(i.public_url||i.source_url)).filter(Boolean);
     const customerPhone=p.phone||'';
@@ -2140,11 +2140,19 @@ let rawHash = window.location.hash ? window.location.hash.replace(/^#/, '') : ''
 if (rawHash.startsWith('q=')) rawHash = rawHash.slice(2);
 const decodedHash = decodeURIComponent(rawHash.replace(/\+/g, ' ')).trim();
 
-const urlSearchId = new URLSearchParams(window.location.search).get('id') || new URLSearchParams(window.location.search).get('bds');
+const urlSearchParams = new URLSearchParams(window.location.search);
+const urlSearchId = urlSearchParams.get('id') || urlSearchParams.get('bds');
+const urlSearchFb = urlSearchParams.get('fb');
 const initUrlId = extractedSlugId || urlSearchId || (/^BDS-/i.test(decodedHash) ? decodedHash : '');
 
 if (initUrlId && /^BDS-/i.test(initUrlId)) {
-  setTimeout(() => openDetail(initUrlId, window.location.pathname), 150);
+  setTimeout(async () => {
+    await openDetail(initUrlId, window.location.pathname);
+    if (urlSearchFb) {
+      fbPortalState.mode = urlSearchFb === 'group' ? 'group' : 'page';
+      openFacebookStudio(initUrlId, false);
+    }
+  }, 150);
 } else {
   handleSearchFromHash();
 }
@@ -2415,8 +2423,29 @@ function updateGroupRotationEta() {
   etaEl.textContent = `Đã chọn ${n} nhóm · ${filledVars} bản xoay vòng · ~${mins} phút`;
 }
 
+function syncPortalFbUrl(propertyId, fbMode) {
+  try {
+    const url = new URL(window.location.href);
+    if (fbMode) {
+      url.searchParams.set('fb', fbMode);
+      if (!url.pathname.startsWith('/bat-dong-san/') && propertyId) {
+        url.searchParams.set('id', propertyId);
+      }
+    } else {
+      url.searchParams.delete('fb');
+    }
+    const newUrl = url.pathname + (url.search ? url.search : '');
+    if (window.location.pathname + window.location.search !== newUrl) {
+      history.replaceState(null, '', newUrl);
+    }
+  } catch (_) {}
+}
+
 function setFacebookPortalMode(mode) {
   fbPortalState.mode = mode === 'group' ? 'group' : 'page';
+  if ($('facebookPostDialog')?.open && fbPortalState.propertyId) {
+    syncPortalFbUrl(fbPortalState.propertyId, fbPortalState.mode);
+  }
   const groupPicker = $('fbGroupPicker');
   if (fbPortalState.mode === 'group' && groupPicker && !groupPicker.hasAttribute('data-ready')) {
     groupPicker.open = !window.matchMedia('(max-width: 760px)').matches;
@@ -2634,10 +2663,11 @@ function updatePortalPreviewFromChannels() {
   }
 }
 
-async function openFacebookStudio(propertyId) {
+async function openFacebookStudio(propertyId, updateUrl = true) {
   fbPortalState.propertyId = propertyId;
   const dialog = $('facebookPostDialog');
   if (!dialog) return;
+  if (updateUrl) syncPortalFbUrl(propertyId, fbPortalState.mode || 'page');
 
   const statusNote = $('fbPublishStatus');
   if (statusNote) statusNote.textContent = 'Đang chuẩn bị bài viết…';
@@ -2647,14 +2677,15 @@ async function openFacebookStudio(propertyId) {
     submitBtn.innerHTML = `<svg aria-hidden="true" class="social-studio-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="m22 2-7 20-4-9-9-4 20-7Z"/><path d="M22 2 11 13"/></svg><span>Đăng lên Facebook</span>`;
   }
 
-  dialog.showModal();
+  if (!dialog.open) dialog.showModal();
   setFacebookPortalMode(fbPortalState.mode);
   await loadFacebookDraft(propertyId, fbPortalState.tone);
 }
 
 function closeFacebookStudio() {
   const dialog = $('facebookPostDialog');
-  if (dialog) dialog.close();
+  if (dialog && dialog.open) dialog.close();
+  syncPortalFbUrl(fbPortalState.propertyId, null);
 }
 
 async function loadFacebookDraft(propertyId, tone = 'hot', targetPageId = null, regenerate = false) {
