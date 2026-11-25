@@ -3415,12 +3415,25 @@ function formatPortalQueueTime(iso) {
   return d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
 }
 
-function shortenPortalChan(label = '') {
-  return String(label)
-    .replace(/^Nhóm FB\s*·\s*(?:Page:\s*)?/i, 'Nhóm · ')
-    .replace(/^Fanpage\s*·\s*/i, 'Page · ')
-    .replace(/^FB Cá nhân\s*·\s*/i, 'FB · ')
-    .trim();
+function parsePortalChanMeta(it = {}) {
+  const raw = String(it.channelLabel || 'Kênh xuất bản')
+    .replace(/\bFourland BDS 2\b/gi, 'Nguyễn Bích Ngọc')
+    .replace(/\bFourland BDS\b/gi, 'Nguyễn Ngọc');
+  const cType = String(it.channelType || '').toLowerCase();
+  if (cType === 'threads' || /^threads/i.test(raw)) {
+    const name = raw.replace(/^threads\s*·\s*/i, '').trim() || '@threads';
+    return { cls: 'ch-threads', tag: 'Threads', name };
+  }
+  if (cType === 'group' || /^nhóm/i.test(raw)) {
+    const name = raw.replace(/^nhóm(?:\s*fb)?\s*·\s*(?:page:\s*)?/i, '').trim() || 'Facebook';
+    return { cls: 'ch-group', tag: 'Nhóm', name };
+  }
+  if (cType === 'profile' || /^fb(?:\s*cá nhân)?\s*·/i.test(raw)) {
+    const name = raw.replace(/^fb(?:\s*cá nhân)?\s*·\s*/i, '').trim();
+    return { cls: 'ch-profile', tag: 'Cá nhân', name };
+  }
+  const name = raw.replace(/^fanpage\s*·\s*|^page\s*·\s*/i, '').trim();
+  return { cls: 'ch-page', tag: 'Page', name };
 }
 
 function updatePortalQueueBadges(summary) {
@@ -3488,7 +3501,8 @@ function renderPortalQueueTable() {
     const pct = Math.min(100, Math.round((done / total) * 100));
     const isPrio = Boolean(it.priorityAt && ['running', 'queued', 'scheduled'].includes(it.status));
     const rowCls = it.status === 'running' ? 'is-running-row' : (isPrio ? 'is-priority-row' : '');
-    const chanShort = shortenPortalChan(it.channelLabel || 'Kênh');
+    const chan = parsePortalChanMeta(it);
+    const chanBadgeHtml = `<span class="social-q-chan-pill ${chan.cls}" title="${escapeHtml(`${chan.tag}: ${chan.name}`)}"><b class="social-q-chan-tag">${escapeHtml(chan.tag)}</b><span class="social-q-chan-name">${escapeHtml(chan.name)}</span></span>`;
     const timeShort = formatPortalQueueTime(it.scheduledAt);
     const titleLine = it.error ? `Lỗi: ${it.error}` : (it.title || '(Bài đăng)');
     const stText = `${isPrio ? '⚡ ' : ''}${st.label}${it.queuePosition ? ` #${it.queuePosition}` : ''}`;
@@ -3506,7 +3520,7 @@ function renderPortalQueueTable() {
     return `
       <tr class="${rowCls}">
         <td class="social-q-desk-only"><span class="social-q-status ${st.cls}"><i class="social-q-dot"></i>${escapeHtml(stText)}</span></td>
-        <td class="social-q-desk-only"><div class="social-q-chan-line" title="${escapeHtml(it.channelLabel || '')}">${escapeHtml(chanShort)}</div></td>
+        <td class="social-q-desk-only">${chanBadgeHtml}</td>
         <td class="social-q-desk-only">
           <div class="social-q-post-line">
             <span class="social-q-post-title ${it.error ? 'is-err' : ''}" title="${escapeHtml(titleLine)}">${escapeHtml(titleLine)}</span>
@@ -3525,12 +3539,12 @@ function renderPortalQueueTable() {
           <div class="social-q-m-top">
             <div class="social-q-m-meta">
               <span class="social-q-status ${st.cls}"><i class="social-q-dot"></i>${escapeHtml(stText)}</span>
-              <span class="social-q-m-chan">${escapeHtml(chanShort)}</span>
-              <span class="social-q-m-stat">${done}/${total}${timeShort ? ` · ${escapeHtml(timeShort)}` : ''}</span>
+              ${chanBadgeHtml}
             </div>
             ${actionsHtml}
           </div>
           <div class="social-q-m-bot">
+            <span class="social-q-m-stat">${done}/${total}${timeShort ? ` · ${escapeHtml(timeShort)}` : ''}</span>
             <span class="social-q-m-title ${it.error ? 'is-err' : ''}">${escapeHtml(titleLine)}</span>
             ${it.postUrl ? `<a class="social-q-ext" href="${escapeHtml(it.postUrl)}" target="_blank" rel="noopener noreferrer">↗</a>` : ''}
           </div>

@@ -1052,9 +1052,9 @@
   border-bottom: 1px solid #dde6df;
   white-space: nowrap;
 }
-.social-queue-table thead th:nth-child(1) { width: 92px; }
-.social-queue-table thead th:nth-child(2) { width: 175px; }
-.social-queue-table thead th:nth-child(4) { width: 128px; }
+.social-queue-table thead th:nth-child(1) { width: 88px; }
+.social-queue-table thead th:nth-child(2) { width: 225px; }
+.social-queue-table thead th:nth-child(4) { width: 124px; }
 .social-queue-table thead th:nth-child(5) { width: 132px; }
 
 .social-queue-table tbody td {
@@ -1091,16 +1091,41 @@
 .social-q-status.st-done { background: #eaf1ed; color: #283d34; }
 .social-q-status.st-failed, .social-q-status.st-partial { background: #fee2e2; color: #b91c1c; }
 
-.social-q-chan-line {
-  display: flex;
+.social-q-chan-pill {
+  display: inline-flex;
   align-items: center;
   gap: 5px;
-  min-width: 0;
-  font-weight: 700;
+  max-width: 100%;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: #edf3ef;
+  border: 1px solid #d5e1d9;
   color: var(--forest, #283d34);
+  font-size: 11.5px;
+  font-weight: 800;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.social-q-chan-pill.ch-threads { background: #f3f4f6; border-color: #d1d5db; color: #111827; }
+.social-q-chan-pill.ch-group { background: #eff6ff; border-color: #bfdbfe; color: #1e40af; }
+.social-q-chan-pill.ch-profile { background: #f0f9ff; border-color: #bae6fd; color: #0369a1; }
+.social-q-chan-tag {
+  font-size: 9.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: rgba(40, 61, 52, 0.12);
+  flex-shrink: 0;
+}
+.social-q-chan-pill.ch-threads .social-q-chan-tag { background: #111827; color: #fff; }
+.social-q-chan-pill.ch-group .social-q-chan-tag { background: #dbeafe; color: #1e40af; }
+.social-q-chan-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
 }
 .social-q-post-line {
   display: flex;
@@ -1240,35 +1265,35 @@
     gap: 6px;
     min-width: 0;
   }
+  .social-q-m-top .social-q-actions {
+    width: auto !important;
+    flex: 0 0 auto;
+  }
   .social-q-m-meta {
     display: flex;
     align-items: center;
     gap: 5px;
     min-width: 0;
-    flex: 1;
+    flex: 1 1 auto;
     overflow: hidden;
-  }
-  .social-q-m-chan {
-    font-size: 11.5px;
-    font-weight: 700;
-    color: var(--forest, #283d34);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .social-q-m-stat {
-    font-size: 10.5px;
-    color: #64748b;
-    white-space: nowrap;
-    flex-shrink: 0;
   }
   .social-q-m-bot {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 6px;
-    margin-top: 3px;
+    margin-top: 4px;
     min-width: 0;
+  }
+  .social-q-m-stat {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #475569;
+    background: #f1f5f9;
+    padding: 1px 5px;
+    border-radius: 4px;
+    white-space: nowrap;
+    flex-shrink: 0;
   }
   .social-q-m-title {
     font-size: 11.5px;
