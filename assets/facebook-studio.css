@@ -383,18 +383,26 @@
 .social-studio .social-schedule-row {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 6px;
+  min-width: 0;
 }
-.social-studio .social-schedule-row input[type="time"] {
-  width: 96px;
+.social-studio .social-sched-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--forest, #283d34);
+  white-space: nowrap;
   flex-shrink: 0;
-  height: 30px !important;
-  padding: 0 6px !important;
-  font-size: 12.5px !important;
 }
 .social-studio .social-schedule-presets {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
+  flex: 1 1 auto;
+  min-width: 0;
   flex-wrap: nowrap;
   overflow-x: auto;
   gap: 4px;
@@ -402,18 +410,25 @@
 }
 .social-studio .social-schedule-presets::-webkit-scrollbar { display: none; }
 .social-studio .social-time-chip {
-  height: 28px;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  height: 27px;
   padding: 0 7px;
-  border: 1px solid #cfd8d2;
+  border: 1px solid #d2dcd5;
   border-radius: 6px;
   background: #ffffff;
   color: var(--forest, #283d34);
   font-size: 11px;
   font-weight: 700;
+  line-height: 1;
   cursor: pointer;
   transition: all 0.14s ease;
   white-space: nowrap;
   flex-shrink: 0;
+  box-sizing: border-box;
 }
 .social-studio .social-time-chip:hover {
   background: var(--sage, #eaf1ed);
@@ -423,6 +438,24 @@
   background: var(--forest, #283d34);
   border-color: var(--forest, #283d34);
   color: #ffffff;
+}
+.social-studio .social-time-custom {
+  border-style: dashed;
+  overflow: hidden;
+}
+.social-studio .social-time-custom.active {
+  border-style: solid;
+}
+.social-studio .social-time-custom input[type="time"] {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  opacity: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  cursor: pointer;
 }
 .social-studio .social-schedule-hint {
   font-size: 11px;
@@ -592,12 +625,14 @@
   display: none !important;
 }
 .social-studio .social-page-schedule-bar {
-  display: grid;
-  gap: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
   margin-top: 6px;
-  padding: 7px 9px;
+  padding: 5px 8px;
   border-radius: 8px;
-  background: #f6f9f7;
+  background: #f5f8f6;
   border: 1px solid #dce5df;
 }
 .social-studio :is(.fb-portal-channel-card.checked, .cms-fb-channel-card.checked) {

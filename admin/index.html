@@ -7,8 +7,8 @@
   <meta name="theme-color" content="#283d34">
   <title>FOURLAND · Trung tâm quản trị</title>
   <link rel="icon" type="image/png" href="/assets/brand/fourland-icon-192.png">
-  <link rel="stylesheet" href="/admin/admin.css?v=20261125-clean-v22">
-  <link rel="stylesheet" href="/assets/facebook-studio.css?v=20261125-clean-v22">
+  <link rel="stylesheet" href="/admin/admin.css?v=20261125-clean-v23">
+  <link rel="stylesheet" href="/assets/facebook-studio.css?v=20261125-clean-v23">
 </head>
 <body>
   <div id="cmsApp" class="cms-app" aria-busy="true">
@@ -1380,20 +1380,21 @@
                 <!-- Được render động từ danh sách Fanpage -->
               </div>
               <div class="social-page-schedule-bar">
-                <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;">
-                  <span class="cms-fb-label">⏰ Hẹn lịch đăng 24/7</span>
-                  <span class="social-schedule-hint" id="cmsFbPageStartAtHint">Đăng ngay</span>
-                </div>
-                <div class="social-schedule-row">
-                  <input type="time" id="cmsFbPageStartAt" aria-label="Giờ hẹn đăng Fanpage" class="cms-fb-compact-input">
-                  <div class="social-schedule-presets" id="cmsFbPageTimePresets">
-                    <button type="button" class="social-time-chip active" data-cms-fb-page-time="">Ngay</button>
-                    <button type="button" class="social-time-chip" data-cms-fb-page-time="+30">+30p</button>
-                    <button type="button" class="social-time-chip" data-cms-fb-page-time="+60">+1h</button>
-                    <button type="button" class="social-time-chip" data-cms-fb-page-time="12:00">12h</button>
-                    <button type="button" class="social-time-chip" data-cms-fb-page-time="19:30">19h30</button>
-                    <button type="button" class="social-time-chip" data-cms-fb-page-time="08:00">8h</button>
-                  </div>
+                <span class="social-sched-title" id="cmsFbPageStartAtHint" title="Hẹn lịch đăng tự động 24/7">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
+                  <span>Lịch</span>
+                </span>
+                <div class="social-schedule-presets" id="cmsFbPageTimePresets">
+                  <button type="button" class="social-time-chip active" data-cms-fb-page-time="">Ngay</button>
+                  <button type="button" class="social-time-chip" data-cms-fb-page-time="+30">+30p</button>
+                  <button type="button" class="social-time-chip" data-cms-fb-page-time="+60">+1h</button>
+                  <button type="button" class="social-time-chip" data-cms-fb-page-time="12:00">12h</button>
+                  <button type="button" class="social-time-chip" data-cms-fb-page-time="19:30">19h30</button>
+                  <label class="social-time-chip social-time-custom" id="cmsFbPageCustomTimeChip" title="Chọn giờ bất kỳ">
+                    <svg aria-hidden="true" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.3"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
+                    <span id="cmsFbPageCustomTimeLabel">Giờ khác</span>
+                    <input type="time" id="cmsFbPageStartAt" aria-label="Giờ hẹn đăng Fanpage" onclick="this.showPicker&&this.showPicker()">
+                  </label>
                 </div>
               </div>
             </div>
@@ -1463,19 +1464,19 @@
                         <input type="number" id="cmsFbGroupGapMax" class="cms-fb-compact-input" min="10" value="25">
                       </label>
                       <div class="cms-fb-field social-schedule-field">
-                        <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;">
-                          <span class="cms-fb-label">Hẹn giờ 24/7</span>
-                          <span class="social-schedule-hint" id="cmsFbGroupStartAtHint">Chạy ngay</span>
-                        </div>
                         <div class="social-schedule-row">
-                          <input type="time" id="cmsFbGroupStartAt" aria-label="Giờ hẹn chạy" class="cms-fb-compact-input">
+                          <span class="social-sched-title" id="cmsFbGroupStartAtHint">Lịch 24/7</span>
                           <div class="social-schedule-presets" id="cmsFbGroupTimePresets">
                             <button type="button" class="social-time-chip active" data-cms-fb-time="">Ngay</button>
                             <button type="button" class="social-time-chip" data-cms-fb-time="+30">+30p</button>
                             <button type="button" class="social-time-chip" data-cms-fb-time="+60">+1h</button>
                             <button type="button" class="social-time-chip" data-cms-fb-time="12:00">12h</button>
                             <button type="button" class="social-time-chip" data-cms-fb-time="19:30">19h30</button>
-                            <button type="button" class="social-time-chip" data-cms-fb-time="08:00">8h</button>
+                            <label class="social-time-chip social-time-custom" id="cmsFbGroupCustomTimeChip" title="Chọn giờ bất kỳ">
+                              <svg aria-hidden="true" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.3"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
+                              <span id="cmsFbGroupCustomTimeLabel">Giờ khác</span>
+                              <input type="time" id="cmsFbGroupStartAt" aria-label="Giờ hẹn chạy" onclick="this.showPicker&&this.showPicker()">
+                            </label>
                           </div>
                         </div>
                       </div>
@@ -1897,6 +1898,6 @@
 
     <div id="toastContainer" class="cms-toast-container" aria-live="polite"></div>
   </div>
-  <script src="/admin/admin.js?v=20261125-clean-v22" defer></script>
+  <script src="/admin/admin.js?v=20261125-clean-v23" defer></script>
 </body>
 </html>

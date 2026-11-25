@@ -2826,9 +2826,7 @@ function resolveCmsScheduleTimeInput(rawVal) {
 
 function updateCmsGroupRotationEta() {
   const etaEl = byId('cmsFbGroupEtaText');
-  const hintEl = byId('cmsFbGroupStartAtHint');
   const sched = resolveCmsScheduleTimeInput(byId('cmsFbGroupStartAt')?.value);
-  if (hintEl) hintEl.textContent = sched.label;
 
   const gapMinEl = byId('cmsFbGroupGapMin');
   const gapMaxEl = byId('cmsFbGroupGapMax');
@@ -3010,9 +3008,9 @@ function updatePublishButtonState() {
     return;
   }
   const count = fbState.selectedPageIds.size;
-  const pageSched = resolveCmsScheduleTimeInput(byId('cmsFbPageStartAt')?.value);
-  const pageHint = byId('cmsFbPageStartAtHint');
-  if (pageHint) pageHint.textContent = pageSched.iso ? pageSched.label : 'Đăng ngay';
+  const pageTimeVal = (byId('cmsFbPageStartAt')?.value || '').trim();
+  const pageSched = resolveCmsScheduleTimeInput(pageTimeVal);
+  const shortTime = pageTimeVal ? ` · ${pageTimeVal}` : '';
 
   if (count === 0) {
     submitBtn.disabled = true;
@@ -3022,10 +3020,10 @@ function updatePublishButtonState() {
     const selectedPid = Array.from(fbState.selectedPageIds)[0];
     const pageObj = (fbState.pages || []).find(p => String(p.pageId) === selectedPid);
     const pName = pageObj?.name || fbState.pageName || 'Fanpage';
-    if (span) span.textContent = pageSched.iso ? `Hẹn lịch đăng ${pName}` : `Đăng lên Fanpage ${pName}`;
+    if (span) span.textContent = pageSched.iso ? `Hẹn lịch ${pName}${shortTime}` : `Đăng lên Fanpage ${pName}`;
   } else {
     submitBtn.disabled = false;
-    if (span) span.textContent = pageSched.iso ? `Hẹn lịch đăng ${count} Fanpage` : `Đăng đồng thời lên ${count} Fanpage đã chọn`;
+    if (span) span.textContent = pageSched.iso ? `Hẹn lịch ${count} Fanpage${shortTime}` : `Đăng đồng thời lên ${count} Fanpage`;
   }
 
   const btnSelectAll = byId('btnFbSelectAllPages');
@@ -3464,9 +3462,14 @@ document.querySelectorAll('[data-cms-fb-var]').forEach(tab => {
 if (byId('cmsFbPageStartAt')) {
   byId('cmsFbPageStartAt').addEventListener('input', () => {
     const curVal = (byId('cmsFbPageStartAt')?.value || '').trim();
+    let matchedPreset = false;
     document.querySelectorAll('[data-cms-fb-page-time]').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.cmsFbPageTime === curVal);
+      const isMatch = btn.dataset.cmsFbPageTime === curVal;
+      btn.classList.toggle('active', isMatch);
+      if (isMatch) matchedPreset = true;
     });
+    if (byId('cmsFbPageCustomTimeChip')) byId('cmsFbPageCustomTimeChip').classList.toggle('active', Boolean(curVal && !matchedPreset));
+    if (byId('cmsFbPageCustomTimeLabel')) byId('cmsFbPageCustomTimeLabel').textContent = (curVal && !matchedPreset) ? curVal : 'Giờ khác';
     updatePublishButtonState();
   });
 }
@@ -3485,6 +3488,8 @@ document.querySelectorAll('[data-cms-fb-page-time]').forEach(btn => {
       input.value = raw;
     }
     document.querySelectorAll('[data-cms-fb-page-time]').forEach(b => b.classList.toggle('active', b === btn));
+    if (byId('cmsFbPageCustomTimeChip')) byId('cmsFbPageCustomTimeChip').classList.remove('active');
+    if (byId('cmsFbPageCustomTimeLabel')) byId('cmsFbPageCustomTimeLabel').textContent = 'Giờ khác';
     updatePublishButtonState();
   });
 });
@@ -3503,9 +3508,14 @@ if (byId('cmsFbGroupGapMax')) {
 if (byId('cmsFbGroupStartAt')) {
   byId('cmsFbGroupStartAt').addEventListener('input', () => {
     const curVal = (byId('cmsFbGroupStartAt')?.value || '').trim();
+    let matchedPreset = false;
     document.querySelectorAll('[data-cms-fb-time]').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.cmsFbTime === curVal);
+      const isMatch = btn.dataset.cmsFbTime === curVal;
+      btn.classList.toggle('active', isMatch);
+      if (isMatch) matchedPreset = true;
     });
+    if (byId('cmsFbGroupCustomTimeChip')) byId('cmsFbGroupCustomTimeChip').classList.toggle('active', Boolean(curVal && !matchedPreset));
+    if (byId('cmsFbGroupCustomTimeLabel')) byId('cmsFbGroupCustomTimeLabel').textContent = (curVal && !matchedPreset) ? curVal : 'Giờ khác';
     updateCmsGroupRotationEta();
   });
 }
@@ -3524,6 +3534,8 @@ document.querySelectorAll('[data-cms-fb-time]').forEach(btn => {
       input.value = raw;
     }
     document.querySelectorAll('[data-cms-fb-time]').forEach(b => b.classList.toggle('active', b === btn));
+    if (byId('cmsFbGroupCustomTimeChip')) byId('cmsFbGroupCustomTimeChip').classList.remove('active');
+    if (byId('cmsFbGroupCustomTimeLabel')) byId('cmsFbGroupCustomTimeLabel').textContent = 'Giờ khác';
     updateCmsGroupRotationEta();
   });
 });

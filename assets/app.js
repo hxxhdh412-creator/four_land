@@ -2448,9 +2448,7 @@ function resolveScheduleTimeInput(rawVal) {
 
 function updateGroupRotationEta() {
   const etaEl = $('fbGroupEtaText');
-  const hintEl = $('fbGroupStartAtHint');
   const sched = resolveScheduleTimeInput($('fbGroupStartAt')?.value);
-  if (hintEl) hintEl.textContent = sched.label;
 
   const gapMinEl = $('fbGroupGapMin');
   const gapMaxEl = $('fbGroupGapMax');
@@ -2658,9 +2656,9 @@ function updatePortalPublishButtonState() {
   }
 
   const count = fbPortalState.selectedPageIds.size;
-  const pageSched = resolveScheduleTimeInput($('fbPageStartAt')?.value);
-  const pageHint = $('fbPageStartAtHint');
-  if (pageHint) pageHint.textContent = pageSched.iso ? pageSched.label : 'Đăng ngay';
+  const pageTimeVal = ($('fbPageStartAt')?.value || '').trim();
+  const pageSched = resolveScheduleTimeInput(pageTimeVal);
+  const shortTime = pageTimeVal ? ` · ${pageTimeVal}` : '';
 
   if (count === 0) {
     submitBtn.disabled = true;
@@ -2670,10 +2668,10 @@ function updatePortalPublishButtonState() {
     const selectedPid = Array.from(fbPortalState.selectedPageIds)[0];
     const pageObj = (fbPortalState.pages || []).find(p => String(p.pageId) === selectedPid);
     const pName = pageObj?.name || fbPortalState.pageName || 'Fanpage';
-    if (span) span.textContent = pageSched.iso ? `Hẹn lịch đăng ${pName}` : `Đăng lên Fanpage ${pName}`;
+    if (span) span.textContent = pageSched.iso ? `Hẹn lịch ${pName}${shortTime}` : `Đăng lên Fanpage ${pName}`;
   } else {
     submitBtn.disabled = false;
-    if (span) span.textContent = pageSched.iso ? `Hẹn lịch đăng ${count} Fanpage` : `Đăng đồng thời lên ${count} Fanpage đã chọn`;
+    if (span) span.textContent = pageSched.iso ? `Hẹn lịch ${count} Fanpage${shortTime}` : `Đăng đồng thời lên ${count} Fanpage`;
   }
 
   const btnSelectAll = $('btnFbPortalSelectAll');
@@ -3280,9 +3278,16 @@ if ($('btnFbGroupPickNone')) {
 if ($('fbPageStartAt')) {
   $('fbPageStartAt').oninput = () => {
     const curVal = ($('fbPageStartAt')?.value || '').trim();
+    let matchedPreset = false;
     document.querySelectorAll('[data-fb-page-time]').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.fbPageTime === curVal);
+      const isMatch = btn.dataset.fbPageTime === curVal;
+      btn.classList.toggle('active', isMatch);
+      if (isMatch) matchedPreset = true;
     });
+    const customChip = $('fbPageCustomTimeChip');
+    const customLbl = $('fbPageCustomTimeLabel');
+    if (customChip) customChip.classList.toggle('active', Boolean(curVal && !matchedPreset));
+    if (customLbl) customLbl.textContent = (curVal && !matchedPreset) ? curVal : 'Giờ khác';
     updatePortalPublishButtonState();
   };
 }
@@ -3301,6 +3306,8 @@ document.querySelectorAll('[data-fb-page-time]').forEach(btn => {
       input.value = raw;
     }
     document.querySelectorAll('[data-fb-page-time]').forEach(b => b.classList.toggle('active', b === btn));
+    if ($('fbPageCustomTimeChip')) $('fbPageCustomTimeChip').classList.remove('active');
+    if ($('fbPageCustomTimeLabel')) $('fbPageCustomTimeLabel').textContent = 'Giờ khác';
     updatePortalPublishButtonState();
   };
 });
@@ -3319,9 +3326,14 @@ if ($('fbGroupGapMax')) {
 if ($('fbGroupStartAt')) {
   $('fbGroupStartAt').oninput = () => {
     const curVal = ($('fbGroupStartAt')?.value || '').trim();
+    let matchedPreset = false;
     document.querySelectorAll('[data-fb-time]').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.fbTime === curVal);
+      const isMatch = btn.dataset.fbTime === curVal;
+      btn.classList.toggle('active', isMatch);
+      if (isMatch) matchedPreset = true;
     });
+    if ($('fbGroupCustomTimeChip')) $('fbGroupCustomTimeChip').classList.toggle('active', Boolean(curVal && !matchedPreset));
+    if ($('fbGroupCustomTimeLabel')) $('fbGroupCustomTimeLabel').textContent = (curVal && !matchedPreset) ? curVal : 'Giờ khác';
     updateGroupRotationEta();
   };
 }
@@ -3340,6 +3352,8 @@ document.querySelectorAll('[data-fb-time]').forEach(btn => {
       input.value = raw;
     }
     document.querySelectorAll('[data-fb-time]').forEach(b => b.classList.toggle('active', b === btn));
+    if ($('fbGroupCustomTimeChip')) $('fbGroupCustomTimeChip').classList.remove('active');
+    if ($('fbGroupCustomTimeLabel')) $('fbGroupCustomTimeLabel').textContent = 'Giờ khác';
     updateGroupRotationEta();
   };
 });
