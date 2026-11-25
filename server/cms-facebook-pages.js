@@ -70,6 +70,20 @@ const INITIAL_PAGES = [
     avatarUrl: "/assets/brand/fourland-icon-192.png",
     createdAt: "2026-11-25T00:00:00.000Z",
     updatedAt: "2026-11-25T00:00:00.000Z"
+  },
+  {
+    id: "threads:acc_bad950fd100190ff",
+    pageId: "threads:acc_bad950fd100190ff",
+    server50PageId: "threads:acc_bad950fd100190ff",
+    platform: "threads",
+    name: "Threads · @rosemary.beautyhouse",
+    token: "",
+    isDefault: false,
+    source: "server50-8889",
+    category: "Kênh Threads",
+    avatarUrl: "/assets/brand/threads-icon.svg",
+    createdAt: "2026-11-25T00:00:00.000Z",
+    updatedAt: "2026-11-25T00:00:00.000Z"
   }
 ];
 
@@ -312,7 +326,7 @@ async function fetchServer50Pages({ fetchImpl = fetch } = {}) {
 
   for (const baseUrl of candidates) {
     try {
-      const res = await fetchImpl(`${baseUrl.replace(/\/+$/, "")}/api/accounts?platform=facebook`, {
+      const res = await fetchImpl(`${baseUrl.replace(/\/+$/, "")}/api/accounts`, {
         signal: AbortSignal.timeout(8000)
       });
       if (!res || !res.ok) continue;
@@ -320,8 +334,19 @@ async function fetchServer50Pages({ fetchImpl = fetch } = {}) {
       if (!Array.isArray(accounts) || !accounts.length) continue;
       const allPages = [];
       for (const acc of accounts) {
-        for (const pg of acc.pages || []) {
-          if (pg?.id && pg?.name) allPages.push(pg);
+        if (acc.platform === "facebook") {
+          for (const pg of acc.pages || []) {
+            if (pg?.id && pg?.name) allPages.push({ ...pg, platform: "facebook" });
+          }
+        } else if (acc.platform === "threads" && acc.id) {
+          const handleMatch = String(acc.label || "").match(/@([\w.]+)/);
+          const display = handleMatch ? `Threads · @${handleMatch[1]}` : (acc.label || "Threads");
+          allPages.push({
+            id: `threads:${acc.id}`,
+            name: display,
+            picture: acc.picture || "/assets/brand/threads-icon.svg",
+            platform: "threads"
+          });
         }
       }
       if (!allPages.length) continue;

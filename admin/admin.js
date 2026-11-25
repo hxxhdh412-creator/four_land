@@ -2944,7 +2944,8 @@ function renderFacebookChannels() {
         { pageId: '106656702112510', name: 'Ngọc Nhà Tốt', isDefault: false },
         { pageId: '100063820399874', name: 'Vinhomes Green Paradise', isDefault: false },
         { pageId: '61560150341552', name: 'Alpha - Giải Pháp Không Gian Sáng Tạo', isDefault: false },
-        { pageId: '61566534021649', name: 'AI Business Hub', isDefault: false }
+        { pageId: '61566534021649', name: 'AI Business Hub', isDefault: false },
+        { pageId: 'threads:acc_bad950fd100190ff', name: 'Threads · @rosemary.beautyhouse', avatarUrl: '/assets/brand/threads-icon.svg', isDefault: false }
       ]);
   const pages = dedupeCmsPages(rawPages);
   fbState.pages = pages;
@@ -3041,10 +3042,11 @@ function updatePublishButtonState() {
     const selectedPid = Array.from(fbState.selectedPageIds)[0];
     const pageObj = (fbState.pages || []).find(p => String(p.pageId) === selectedPid);
     const pName = pageObj?.name || fbState.pageName || 'Fanpage';
-    if (span) span.textContent = pageSched.iso ? `Hẹn lịch ${pName}${shortTime}` : `Đăng lên Fanpage ${pName}`;
+    const isThreads = String(selectedPid).startsWith('threads:') || /^threads\b/i.test(pName);
+    if (span) span.textContent = pageSched.iso ? `Hẹn lịch ${pName}${shortTime}` : (isThreads ? `Đăng lên ${pName}` : `Đăng lên Fanpage ${pName}`);
   } else {
     submitBtn.disabled = false;
-    if (span) span.textContent = pageSched.iso ? `Hẹn lịch ${count} Fanpage${shortTime}` : `Đăng đồng thời lên ${count} Fanpage`;
+    if (span) span.textContent = pageSched.iso ? `Hẹn lịch ${count} kênh${shortTime}` : `Đăng đồng thời lên ${count} kênh`;
   }
 
   const btnSelectAll = byId('btnFbSelectAllPages');
