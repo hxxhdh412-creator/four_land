@@ -3,7 +3,7 @@
 // Multi-Criteria Weighted Scoring Algorithm & One-Click Zalo Pitch Generator
 // ============================================================================
 
-const { removeVietnameseTones } = require('../api/_smartSearch');
+const { removeVietnameseTones, canonicalDistrictCode } = require('../api/_smartSearch');
 
 /**
  * Danh sách quận lân cận trong TP.HCM để tính điểm gần đúng
@@ -69,17 +69,17 @@ function scorePropertyMatch(property, criteria = {}) {
 
   // 1. TIÊU CHÍ KHU VỰC (Trọng số 30%)
   if (criteria.district) {
-    const targetNorm = removeVietnameseTones(criteria.district);
-    const propNorm = removeVietnameseTones(propDistrict);
+    const targetNorm = canonicalDistrictCode(criteria.district);
+    const propNorm = canonicalDistrictCode(propDistrict);
     
-    if (propNorm && propNorm.includes(targetNorm)) {
+    if (propNorm && targetNorm && propNorm === targetNorm) {
       score += 30;
       reasons.push({ pass: true, label: `Đúng quận yêu cầu: ${criteria.district}` });
       highlights.push(`Đúng ${criteria.district}`);
     } else {
       // Kiểm tra quận lân cận
       const neighbors = NEIGHBOR_DISTRICTS[criteria.district] || [];
-      const isNeighbor = neighbors.some(n => removeVietnameseTones(n) === propNorm);
+      const isNeighbor = neighbors.some(n => canonicalDistrictCode(n) === propNorm);
       if (isNeighbor) {
         score += 18;
         reasons.push({ pass: true, label: `Khu vực lân cận (${propDistrict}) tiếp giáp ${criteria.district}` });

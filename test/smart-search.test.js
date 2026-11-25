@@ -76,3 +76,39 @@ test('lọc giá 15–20 triệu: đúng khoảng, loại tin không có giá VN
   const noFilter = Object.entries(rows).filter(([, r]) => matchAndScoreProperty(r, nlp, {}) > 0).map(([k]) => k);
   assert.equal(noFilter.length, 5, 'không lọc giá thì vẫn hiện tin Liên hệ / USD');
 });
+
+test('lọc Quận 10 hoặc Quận 1 tuyệt đối không khớp nhầm lẫn nhau', () => {
+  const nlp = parseNaturalQuery('');
+  const q1 = { property_id: 'Q1-A', district: 'Quận 1', ward: 'Phường 1' };
+  const q1Short = { property_id: 'Q1-B', district: '1', ward: '1' };
+  const q10 = { property_id: 'Q10-A', district: 'Quận 10', ward: 'Phường 10' };
+  const q10Short = { property_id: 'Q10-B', district: 'Q.10', ward: 'P.10' };
+  const q11 = { property_id: 'Q11-A', district: 'Quận 11', ward: 'Phường 11' };
+  const binhTan = { property_id: 'BT-A', district: 'Bình Tân', ward: 'Phường Bình Hưng Hòa' };
+  const tanBinh = { property_id: 'TB-A', district: 'Tân Bình', ward: 'Phường 12' };
+
+  // Khi chọn Quận 10 -> chỉ khớp đúng Quận 10, không lọt Quận 1
+  assert.ok(matchAndScoreProperty(q10, nlp, { district: 'Quận 10' }) > 0);
+  assert.ok(matchAndScoreProperty(q10Short, nlp, { district: 'Quận 10' }) > 0);
+  assert.equal(matchAndScoreProperty(q1, nlp, { district: 'Quận 10' }), -1);
+  assert.equal(matchAndScoreProperty(q1Short, nlp, { district: 'Quận 10' }), -1);
+  assert.equal(matchAndScoreProperty(q11, nlp, { district: 'Quận 10' }), -1);
+
+  // Khi chọn Quận 1 -> chỉ khớp đúng Quận 1, không lọt Quận 10, 11, 12
+  assert.ok(matchAndScoreProperty(q1, nlp, { district: 'Quận 1' }) > 0);
+  assert.ok(matchAndScoreProperty(q1Short, nlp, { district: 'Quận 1' }) > 0);
+  assert.equal(matchAndScoreProperty(q10, nlp, { district: 'Quận 1' }), -1);
+  assert.equal(matchAndScoreProperty(q10Short, nlp, { district: 'Quận 1' }), -1);
+  assert.equal(matchAndScoreProperty(q11, nlp, { district: 'Quận 1' }), -1);
+
+  // Khi chọn Phường 10 hoặc Phường 1 -> không khớp chéo Phường 1 và Phường 10
+  assert.ok(matchAndScoreProperty(q10, nlp, { ward: 'Phường 10' }) > 0);
+  assert.ok(matchAndScoreProperty(q10Short, nlp, { ward: 'Phường 10' }) > 0);
+  assert.equal(matchAndScoreProperty(q1, nlp, { ward: 'Phường 10' }), -1);
+  assert.equal(matchAndScoreProperty(q1Short, nlp, { ward: 'Phường 10' }), -1);
+  assert.equal(matchAndScoreProperty(q10, nlp, { ward: 'Phường 1' }), -1);
+
+  // Không khớp nhầm Bình Tân vs Tân Bình
+  assert.ok(matchAndScoreProperty(binhTan, nlp, { district: 'Bình Tân' }) > 0);
+  assert.equal(matchAndScoreProperty(tanBinh, nlp, { district: 'Bình Tân' }), -1);
+});

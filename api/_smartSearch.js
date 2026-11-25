@@ -51,6 +51,9 @@ function parsePriceInput(value) {
 }
 
 const DISTRICT_MAP = [
+  { name: 'Quận 10', patterns: [/\b(q\.?\s*10|quan\s*10|district\s*10)\b/i] },
+  { name: 'Quận 11', patterns: [/\b(q\.?\s*11|quan\s*11|district\s*11)\b/i] },
+  { name: 'Quận 12', patterns: [/\b(q\.?\s*12|quan\s*12|district\s*12)\b/i] },
   { name: 'Quận 1', patterns: [/\b(q\.?\s*1|quan\s*1|district\s*1)\b/i] },
   { name: 'Quận 2', patterns: [/\b(q\.?\s*2|quan\s*2|district\s*2)\b/i] },
   { name: 'Quận 3', patterns: [/\b(q\.?\s*3|quan\s*3|district\s*3)\b/i] },
@@ -60,9 +63,6 @@ const DISTRICT_MAP = [
   { name: 'Quận 7', patterns: [/\b(q\.?\s*7|quan\s*7|district\s*7)\b/i] },
   { name: 'Quận 8', patterns: [/\b(q\.?\s*8|quan\s*8|district\s*8)\b/i] },
   { name: 'Quận 9', patterns: [/\b(q\.?\s*9|quan\s*9|district\s*9)\b/i] },
-  { name: 'Quận 10', patterns: [/\b(q\.?\s*10|quan\s*10|district\s*10)\b/i] },
-  { name: 'Quận 11', patterns: [/\b(q\.?\s*11|quan\s*11|district\s*11)\b/i] },
-  { name: 'Quận 12', patterns: [/\b(q\.?\s*12|quan\s*12|district\s*12)\b/i] },
   { name: 'Gò Vấp', patterns: [/\b(go\s*vap|gò\s*vấp|gv)\b/i] },
   { name: 'Bình Thạnh', patterns: [/\b(binh\s*thanh|bình\s*thạnh|bt)\b/i] },
   { name: 'Tân Bình', patterns: [/\b(tan\s*binh|tân\s*bình|tb)\b/i] },
@@ -76,6 +76,32 @@ const DISTRICT_MAP = [
   { name: 'Củ Chi', patterns: [/\b(cu\s*chi|củ\s*chi)\b/i] },
   { name: 'Cần Giờ', patterns: [/\b(can\s*gio|cần\s*giờ)\b/i] }
 ];
+
+function canonicalDistrictCode(raw) {
+  const s = removeVietnameseTones(raw)
+    .replace(/^(?:tp\.?\s*hcm|thanh\s*pho\s*ho\s*chi\s*minh)[,\s-]*/i, '')
+    .replace(/^(?:quan|huyen|thanh\s*pho|tp\.?|q\.?)\s*/i, '')
+    .replace(/^0+(\d+)$/, '$1')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return s;
+}
+
+function canonicalWardCode(raw) {
+  let s = removeVietnameseTones(raw)
+    .replace(/[,/]?\s*(?:q\b|quan|tp\b|thanh\s*pho|thu\s*duc|huyen)\.?\s*.*$/i, '')
+    .replace(/^(?:phuong|xa|thi\s*tran|p\.?)\s*/i, '')
+    .replace(/^0+(\d+)$/, '$1')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (s === 'dakao') s = 'da kao';
+  else if (s === 'ben ngh') s = 'ben nghe';
+  else if (s === 'son k') s = 'son ky';
+  else if (s === 'tan son nh') s = 'tan son nhi';
+  else if (s === 'hbc') s = 'hiep binh chanh';
+  else if (/^huong\s*(\d+)$/.test(s)) s = s.match(/\d+/)[0];
+  return s;
+}
 
 const TYPE_MAP = [
   { name: 'Nhà phố', patterns: [/\b(nha\s*pho|nhà\s*phố|nha\s*o|nhà\s*ở)\b/i] },
@@ -260,29 +286,23 @@ function matchAndScoreProperty(property, parsedNlp, explicitFilters = {}) {
   // 1. Kiểm tra các bộ lọc cứng (Explicit Filters hoặc NLP Filters)
   const district = explicitFilters.district || parsedNlp.filters.district;
   if (district) {
-    const propDist = removeVietnameseTones(property.district || '');
-    const searchDist = removeVietnameseTones(district);
-    const propClean = propDist.replace(/^(?:quan|huyen|thanh pho|tp)\s+/i, '').trim();
-    const searchClean = searchDist.replace(/^(?:quan|huyen|thanh pho|tp)\s+/i, '').trim();
-    const matched = propDist.includes(searchDist) || searchDist.includes(propDist) || (propClean && propClean === searchClean);
-    if (!matched) return -1;
+    const propClean = canonicalDistrictCode(property.district || '');
+    const searchClean = canonicalDistrictCode(district);
+    if (!propClean || !searchClean || propClean !== searchClean) return -1;
   }
 
   const ward = explicitFilters.ward || parsedNlp.filters.ward;
   if (ward) {
-    const propWard = removeVietnameseTones(property.ward || '');
-    const searchWard = removeVietnameseTones(ward);
-    const propClean = propWard.replace(/^(?:phuong|xa|thi tran|p\.?)\s+/i, '').trim();
-    const searchClean = searchWard.replace(/^(?:phuong|xa|thi tran|p\.?)\s+/i, '').trim();
-    const matched = propWard.includes(searchWard) || searchWard.includes(propWard) || (propClean && propClean === searchClean);
-    if (!matched) return -1;
+    const propClean = canonicalWardCode(property.ward || '');
+    const searchClean = canonicalWardCode(ward);
+    if (!propClean || !searchClean || propClean !== searchClean) return -1;
   }
 
   const street = explicitFilters.street;
   if (street) {
-    const propStreet = removeVietnameseTones(property.street || '');
-    const searchStreet = removeVietnameseTones(street);
-    if (!propStreet.includes(searchStreet)) return -1;
+    const propStreet = removeVietnameseTones([property.street, property.address].filter(Boolean).join(' '));
+    const searchStreet = removeVietnameseTones(street).replace(/^duong\s+/i, '').trim();
+    if (!searchStreet || !propStreet.includes(searchStreet)) return -1;
   }
 
   const pType = explicitFilters.property_type || parsedNlp.filters.propertyType;
@@ -421,6 +441,8 @@ module.exports = {
   DISTRICT_MAP,
   MIN_VALID_VND_PRICE,
   TYPE_MAP,
+  canonicalDistrictCode,
+  canonicalWardCode,
   matchAndScoreProperty,
   parseNaturalQuery,
   parsePriceInput,

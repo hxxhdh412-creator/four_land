@@ -1,5 +1,6 @@
 const { isAdmin } = require("./_admin");
 const { sendError, supabaseRequest, text } = require("./_supabase");
+const { canonicalWardCode } = require("./_smartSearch");
 
 function extractPriceNumber(priceText) {
   if (!priceText) return null;
@@ -26,7 +27,7 @@ function normalizeStreetName(street) {
 function rankSimilarProperties(target, candidates) {
   if (!Array.isArray(candidates) || candidates.length === 0) return [];
   const targetStreet = normalizeStreetName(target.street);
-  const targetWard = String(target.ward || "").trim().toLowerCase();
+  const targetWard = canonicalWardCode(target.ward || "");
   const targetPrice = extractPriceNumber(target.price_text);
   const targetType = String(target.property_type || "").trim().toLowerCase();
 
@@ -37,14 +38,14 @@ function rankSimilarProperties(target, candidates) {
       let badge = "";
 
       const cStreet = normalizeStreetName(c.street);
-      const cWard = String(c.ward || "").trim().toLowerCase();
+      const cWard = canonicalWardCode(c.ward || "");
       const cPrice = extractPriceNumber(c.price_text);
       const cType = String(c.property_type || "").trim().toLowerCase();
 
       if (targetStreet && cStreet && (targetStreet === cStreet || targetStreet.includes(cStreet) || cStreet.includes(targetStreet))) {
         score += 60;
         badge = "Cùng tuyến đường";
-      } else if (targetWard && cWard && (targetWard === cWard || targetWard.includes(cWard) || cWard.includes(targetWard))) {
+      } else if (targetWard && cWard && targetWard === cWard) {
         score += 40;
         badge = `Cùng ${target.ward || "phường"}`;
       } else if (c.district) {
