@@ -249,11 +249,89 @@ async function fetchComposioPages({ apiKey = COMPOSIO_API_KEY, fetchImpl = fetch
   return dynamicPagesStore.map(sanitizePage);
 }
 
+async function fetchServer50Pages({ fetchImpl = fetch } = {}) {
+  const candidates = [
+    process.env.FOURLAND_SOCIAL_TUNNEL_URL || "https://drink-owners-prayer-partnerships.trycloudflare.com",
+    process.env.FOURLAND_SOCIAL_LAN_URL || "http://192.168.1.50:8889"
+  ].filter(Boolean);
+
+  try {
+    const { supabaseRequest } = require("../api/_supabase");
+    const res = await supabaseRequest("cms_settings?select=setting_value&setting_key=eq.facebook_poster_node&limit=1").catch(() => null);
+    const raw = res?.data?.[0]?.setting_value;
+    if (raw) {
+      const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
+      if (parsed?.tunnelUrl && !candidates.includes(parsed.tunnelUrl)) candidates.unshift(parsed.tunnelUrl);
+    }
+  } catch (_) {}
+
+  for (const baseUrl of candidates) {
+    try {
+      const res = await fetchImpl(`${baseUrl.replace(/\/+$/, "")}/api/accounts?platform=facebook`, {
+        signal: AbortSignal.timeout(8000)
+      });
+      if (!res || !res.ok) continue;
+      const accounts = await res.json();
+      if (!Array.isArray(accounts) || !accounts.length) continue;
+      const allPages = [];
+      for (const acc of accounts) {
+        for (const pg of acc.pages || []) {
+          if (pg?.id && pg?.name) allPages.push(pg);
+        }
+      }
+      if (!allPages.length) continue;
+
+      allPages.forEach((sp) => {
+        const pid = String(sp.id);
+        const normName = String(sp.name || "").trim().toLowerCase();
+        const existingIndex = dynamicPagesStore.findIndex(
+          (p) =>
+            String(p.pageId) === pid ||
+            String(p.id) === pid ||
+            String(p.name || "").trim().toLowerCase() === normName
+        );
+        const keepId = existingIndex >= 0 ? dynamicPagesStore[existingIndex].pageId : pid;
+        const pageObj = {
+          id: keepId,
+          pageId: keepId,
+          server50PageId: pid,
+          name: sp.name,
+          token: existingIndex >= 0 ? dynamicPagesStore[existingIndex].token : DEFAULT_PAGE_TOKEN,
+          source: "server50-8889",
+          category: "Fanpage kết nối Máy 50 (8889)",
+          avatarUrl: sp.picture || `https://graph.facebook.com/${keepId}/picture?type=large`,
+          isDefault: existingIndex >= 0 ? dynamicPagesStore[existingIndex].isDefault : normName === "fourland",
+          createdAt: existingIndex >= 0 ? dynamicPagesStore[existingIndex].createdAt : new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+        if (existingIndex >= 0) {
+          dynamicPagesStore[existingIndex] = { ...dynamicPagesStore[existingIndex], ...pageObj };
+        } else {
+          dynamicPagesStore.push(pageObj);
+        }
+      });
+
+      if (!dynamicPagesStore.some((p) => p.isDefault) && dynamicPagesStore.length > 0) {
+        const fl = dynamicPagesStore.find((p) => String(p.name).toLowerCase().includes("fourland")) || dynamicPagesStore[0];
+        fl.isDefault = true;
+      }
+      lastSyncTime = Date.now();
+      return { syncedFrom: "server50-8889", pages: dynamicPagesStore.map(sanitizePage) };
+    } catch (_) {}
+  }
+  return { syncedFrom: null, pages: null };
+}
+
 async function getFacebookPages({ forceRefresh = false, fetchImpl = fetch } = {}) {
   await loadPersistentPages();
   const shouldSync = forceRefresh || (dynamicPagesStore.length <= 1 && (Date.now() - lastSyncTime > SYNC_TTL_MS));
   if (shouldSync) {
-    await fetchComposioPages({ fetchImpl });
+    // 1. Ưu tiên đồng bộ từ Nhánh riêng Máy 50 (Cổng 8889) trước
+    const s50 = await fetchServer50Pages({ fetchImpl });
+    if (!s50.syncedFrom) {
+      // 2. Dự phòng (Fallback): Đồng bộ qua Composio nếu Máy 50 không phản hồi
+      await fetchComposioPages({ fetchImpl });
+    }
     await savePersistentPages(dynamicPagesStore);
   }
   return dynamicPagesStore.map(sanitizePage);

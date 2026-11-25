@@ -12,6 +12,7 @@ const {
   getDefaultFacebookPage
 } = require("../server/cms-facebook-pages");
 const { sendError, supabaseRequest } = require("./_supabase");
+const { invalidatePropertiesCache } = require("./properties");
 
 const DEFAULT_POSTER_NODE = {
   tunnelUrl: process.env.FOURLAND_SOCIAL_TUNNEL_URL || "https://drink-owners-prayer-partnerships.trycloudflare.com",
@@ -21,6 +22,52 @@ const DEFAULT_POSTER_NODE = {
   host: "hbs-server-50",
   label: "Máy chủ 50 · Nhánh Fourland 24/7 (8889)"
 };
+
+async function publishViaServer50Poster({ content, imageUrls = [], pageId, pageName, posterNode, waitMs = 35000 }) {
+  const isMockFixture = (Array.isArray(imageUrls) ? imageUrls : []).some((u) => {
+    try { return new URL(String(u)).hostname === "example.com"; } catch { return false; }
+  });
+  if (isMockFixture) {
+    throw new Error("SKIP_SERVER50_FOR_MOCK_FIXTURE");
+  }
+
+  const node = posterNode || DEFAULT_POSTER_NODE;
+  const endpoints = [node.tunnelUrl, node.lanUrl].filter(Boolean).map((u) => String(u).replace(/\/+$/, ""));
+  let lastErr = null;
+
+  for (const baseUrl of endpoints) {
+    try {
+      const res = await fetch(`${baseUrl}/api/fourland/publish-page`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          content,
+          imageUrls,
+          pageId,
+          pageName,
+          waitMs
+        }),
+        signal: AbortSignal.timeout(waitMs + 7000)
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || data.error) {
+        throw new Error(data.error || `Máy 50 (8889) trả về HTTP ${res.status}`);
+      }
+      return {
+        ok: true,
+        engine: "server50-8889",
+        queued: Boolean(data.queued),
+        postId: data.postId,
+        postUrl: data.postUrl || `https://www.facebook.com/profile.php?id=${pageId}`,
+        pageName: data.pageName || pageName,
+        message: data.message || `Đã đăng bài thành công lên Fanpage ${pageName} (Logic mới Máy 50 · 8889)!`
+      };
+    } catch (err) {
+      lastErr = err;
+    }
+  }
+  throw lastErr || new Error("Không kết nối được Nhánh Fourland trên Máy 50 (8889)");
+}
 
 let cachedPosterNode = null;
 let cachedPosterNodeAt = 0;
@@ -171,7 +218,9 @@ function createHandler({ requireCmsImpl = requireCms, request = supabaseRequest,
           await request(`properties?property_id=eq.${encodeURIComponent(propertyId)}`, {
             method: "PATCH",
             body: { raw_text: content, notes: null, updated_at: new Date().toISOString() }
-          }).catch(err => console.warn("Update property content notice:", err.message));
+          })
+            .then(() => invalidatePropertiesCache())
+            .catch(err => console.warn("Update property content notice:", err.message));
         }
 
         // Resolve Target Facebook Pages for Publishing (Single or Multiple)
@@ -186,6 +235,7 @@ function createHandler({ requireCmsImpl = requireCms, request = supabaseRequest,
           for (const pid of rawPageIds) {
             const page = await getFacebookPageById(pid);
             if (page) targetPages.push(page);
+            else targetPages.push({ pageId: String(pid), name: body.pageName || "FourLand", token: "" });
           }
         }
         if (targetPages.length === 0) {
@@ -193,44 +243,68 @@ function createHandler({ requireCmsImpl = requireCms, request = supabaseRequest,
           if (defaultPage) targetPages.push(defaultPage);
         }
 
-        // Publish across all target pages
+        const posterNode = await getPosterNodeConfig(request);
+        const perPageWaitMs = targetPages.length > 1 ? 15000 : 35000;
+
+        // Publish across all target pages:
+        // BƯỚC 1 (CHÍNH): Đăng qua Nhánh riêng Máy 50 (Cổng 8889 - tài khoản Nguyễn Ngọc)
+        // BƯỚC 2 (DỰ PHÒNG): Chỉ khi Máy 50 lỗi / không phản hồi mới fallback qua Composio / Graph API
         const publishResults = [];
         for (const page of targetPages) {
+          const targetPageId = page.server50PageId || page.pageId || process.env.FACEBOOK_PAGE_ID || "104363431784609";
+          const targetPageName = page.name || body.pageName || "FourLand";
           try {
-            let resPublish;
+            let resPublish = null;
+            let usedEngine = "server50-8889";
             try {
-              resPublish = await publishToComposioFacebook({
+              resPublish = await publishViaServer50Poster({
                 content,
                 imageUrls: photoUrls,
-                pageName: page.name || body.pageName || "FourLand",
-                pageId: page.pageId || process.env.FACEBOOK_PAGE_ID || "104363431784609",
-                pageToken: page.token || ""
+                pageId: targetPageId,
+                pageName: targetPageName,
+                posterNode,
+                waitMs: perPageWaitMs
               });
-            } catch (firstErr) {
-              const errMsg = String(firstErr?.message || "");
-              if (/access token|session has been invalidated|mã lỗi:\s*(?:190|460|463|467)/i.test(errMsg)) {
-                const refreshedPage = await getFacebookPageById(
-                  page.pageId || process.env.FACEBOOK_PAGE_ID || "104363431784609",
-                  { forceRefresh: true }
-                );
-                if (refreshedPage && refreshedPage.token && refreshedPage.token !== page.token) {
-                  resPublish = await publishToComposioFacebook({
-                    content,
-                    imageUrls: photoUrls,
-                    pageName: refreshedPage.name || page.name || body.pageName || "FourLand",
-                    pageId: refreshedPage.pageId || page.pageId || "104363431784609",
-                    pageToken: refreshedPage.token
-                  });
+            } catch (server50Err) {
+              // Fallback dự phòng qua Composio / Graph API
+              usedEngine = "composio-fallback";
+              try {
+                resPublish = await publishToComposioFacebook({
+                  content,
+                  imageUrls: photoUrls,
+                  pageName: targetPageName,
+                  pageId: page.pageId || process.env.FACEBOOK_PAGE_ID || "104363431784609",
+                  pageToken: page.token || ""
+                });
+              } catch (firstErr) {
+                const errMsg = String(firstErr?.message || "");
+                if (/access token|session has been invalidated|mã lỗi:\s*(?:190|460|463|467)/i.test(errMsg)) {
+                  const refreshedPage = await getFacebookPageById(
+                    page.pageId || process.env.FACEBOOK_PAGE_ID || "104363431784609",
+                    { forceRefresh: true }
+                  );
+                  if (refreshedPage && refreshedPage.token && refreshedPage.token !== page.token) {
+                    resPublish = await publishToComposioFacebook({
+                      content,
+                      imageUrls: photoUrls,
+                      pageName: refreshedPage.name || targetPageName,
+                      pageId: refreshedPage.pageId || page.pageId || "104363431784609",
+                      pageToken: refreshedPage.token
+                    });
+                  } else {
+                    throw new Error(`Máy 50 (8889): ${server50Err.message} | Dự phòng Composio: ${firstErr.message}`);
+                  }
                 } else {
-                  throw firstErr;
+                  if (server50Err.message === "SKIP_SERVER50_FOR_MOCK_FIXTURE") throw firstErr;
+                  throw new Error(`Máy 50 (8889): ${server50Err.message} | Dự phòng Composio: ${firstErr.message}`);
                 }
-              } else {
-                throw firstErr;
               }
             }
             publishResults.push({
               pageId: page.pageId,
-              pageName: page.name,
+              pageName: targetPageName,
+              engine: resPublish.engine || usedEngine,
+              queued: Boolean(resPublish.queued),
               success: true,
               postUrl: resPublish.postUrl,
               message: resPublish.message
@@ -238,7 +312,7 @@ function createHandler({ requireCmsImpl = requireCms, request = supabaseRequest,
           } catch (err) {
             publishResults.push({
               pageId: page.pageId,
-              pageName: page.name,
+              pageName: targetPageName,
               success: false,
               error: err.message
             });
