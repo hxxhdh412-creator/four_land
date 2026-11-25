@@ -3405,14 +3405,90 @@ const portalQueueState = {
   items: [],
   summary: null,
   timer: null,
+  tickTimer: null,
   loading: false
 };
 
-function formatPortalQueueTime(iso) {
+const PORTAL_Q_ICONS = {
+  spin: '<svg class="social-q-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>',
+  clock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>',
+  up: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>',
+  pause: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>',
+  play: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 4 20 12 6 20 6 4"/></svg>',
+  retry: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>',
+  close: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+  ext: '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><path d="M7 7h10v10"/></svg>'
+};
+
+function cleanPortalQueueTitle(str = '') {
+  return String(str || '')
+    .replace(/^[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\uFE0F\s•▪️\-]+/gu, '')
+    .trim();
+}
+
+function formatPortalQueueTime(iso, withDateIfTomorrow = false) {
   if (!iso) return '';
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return '';
-  return d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+  const hhmm = d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+  if (!withDateIfTomorrow) return hhmm;
+  const now = new Date();
+  const sameDay = d.getDate() === now.getDate() && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  return sameDay ? hhmm : `${hhmm} (${d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })})`;
+}
+
+function formatPortalRemaining(targetMs) {
+  const diffSec = Math.max(0, Math.round((targetMs - Date.now()) / 1000));
+  if (diffSec <= 0) return 'Đến lượt chạy…';
+  if (diffSec < 60) return `${diffSec}s`;
+  const mins = Math.floor(diffSec / 60);
+  const secs = diffSec % 60;
+  if (mins < 60) return `${mins}p ${String(secs).padStart(2, '0')}s`;
+  const hrs = Math.floor(mins / 60);
+  const remM = mins % 60;
+  return `${hrs}h ${String(remM).padStart(2, '0')}p`;
+}
+
+function computePortalScheduleCaption(it = {}) {
+  if (it.isRunningNow || it.status === 'running') {
+    return { text: it.currentTarget ? `Đang đăng: ${it.currentTarget}` : 'Đang mở trình duyệt xuất bản…', cls: 'is-live', icon: PORTAL_Q_ICONS.spin };
+  }
+  const nextMs = it.nextRunAt ? Date.parse(it.nextRunAt) : NaN;
+  const setupTime = it.setupStartAt ? formatPortalQueueTime(it.setupStartAt, true) : '';
+  if (it.status === 'scheduled' && Number.isFinite(nextMs)) {
+    const schedClock = formatPortalQueueTime(it.nextRunAt, true);
+    return {
+      text: `Lịch ${schedClock} · Còn ${formatPortalRemaining(nextMs)}`,
+      cls: 'is-future',
+      icon: PORTAL_Q_ICONS.clock
+    };
+  }
+  if ((it.status === 'pacing' || it.status === 'queued') && Number.isFinite(nextMs)) {
+    const diffSec = Math.round((nextMs - Date.now()) / 1000);
+    const prefix = setupTime ? `Lịch ${setupTime} · ` : '';
+    if (diffSec > 0) {
+      return { text: `${prefix}Kế tiếp sau ${formatPortalRemaining(nextMs)}`, cls: 'is-live', icon: PORTAL_Q_ICONS.clock };
+    }
+    return { text: `${prefix}Đang chuẩn bị mở trình duyệt…`, cls: 'is-live', icon: PORTAL_Q_ICONS.spin };
+  }
+  if (it.status === 'paused' || it.status === 'draft') {
+    return { text: setupTime ? `Tạm dừng (Lịch ${setupTime})` : 'Đang tạm dừng', cls: '', icon: '' };
+  }
+  const doneClock = formatPortalQueueTime(it.scheduledAt, true);
+  return { text: doneClock ? `Lúc ${doneClock}` : '', cls: '', icon: '' };
+}
+
+function tickPortalQueueCountdowns() {
+  const dlg = $('fbQueueManagerDialog');
+  if (!dlg || !dlg.open) return;
+  const mapById = new Map((portalQueueState.items || []).map(x => [String(x.id), x]));
+  dlg.querySelectorAll('[data-q-live-id]').forEach(el => {
+    const it = mapById.get(el.dataset.qLiveId);
+    if (!it) return;
+    const cap = computePortalScheduleCaption(it);
+    el.className = `social-q-sched-meta ${cap.cls}`;
+    el.innerHTML = `${cap.icon}<span>${escapeHtml(cap.text)}</span>`;
+  });
 }
 
 function parsePortalChanMeta(it = {}) {
@@ -3467,30 +3543,31 @@ function renderPortalQueueTable() {
   const s = portalQueueState.summary || { runningCount: 0, waitingCount: 0, doneCount: 0, failedCount: 0 };
   if (sub) {
     const activeSum = (s.runningCount || 0) + (s.waitingCount || 0);
-    sub.textContent = activeSum > 0 ? `${activeSum} đang chờ` : `${s.doneCount || 0} đã xong`;
+    sub.textContent = activeSum > 0 ? `${activeSum} luồng hoạt động` : `${s.doneCount || 0} hoàn tất`;
   }
 
   const f = portalQueueState.filter;
   const filtered = (portalQueueState.items || []).filter(it => {
-    if (f === 'active') return ['running', 'queued', 'scheduled', 'paused', 'draft'].includes(it.status);
+    if (f === 'active') return ['running', 'pacing', 'queued', 'scheduled', 'paused', 'draft'].includes(it.status);
     if (f === 'done') return ['done', 'failed', 'partial'].includes(it.status);
     return true;
   });
 
   if (!filtered.length) {
-    tbody.innerHTML = `<tr><td colspan="5" class="social-queue-empty">${f === 'active' ? 'Trống — chưa có bài nào đang chờ đăng.' : 'Chưa có dữ liệu.'}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5" class="social-queue-empty">${f === 'active' ? 'Chưa có bài đăng hoặc lịch hẹn nào đang chờ trong luồng.' : 'Chưa có dữ liệu lịch sử.'}</td></tr>`;
     return;
   }
 
   const statusMeta = {
-    running: { label: 'Chạy', cls: 'st-running' },
-    queued: { label: 'Chờ', cls: 'st-queued' },
-    scheduled: { label: 'Hẹn', cls: 'st-scheduled' },
-    paused: { label: 'Dừng', cls: 'st-paused' },
-    draft: { label: 'Hoãn', cls: 'st-draft' },
-    done: { label: 'Xong', cls: 'st-done' },
-    partial: { label: '1 phần', cls: 'st-partial' },
-    failed: { label: 'Lỗi', cls: 'st-failed' }
+    running: { label: 'Đang đăng', cls: 'st-running', spin: true },
+    pacing: { label: 'Đang rải', cls: 'st-pacing', spin: false },
+    queued: { label: 'Chờ lượt', cls: 'st-queued', spin: false },
+    scheduled: { label: 'Hẹn lịch', cls: 'st-scheduled', clock: true },
+    paused: { label: 'Tạm dừng', cls: 'st-paused', spin: false },
+    draft: { label: 'Tạm hoãn', cls: 'st-draft', spin: false },
+    done: { label: 'Hoàn tất', cls: 'st-done', spin: false },
+    partial: { label: 'Một phần', cls: 'st-partial', spin: false },
+    failed: { label: 'Lỗi', cls: 'st-failed', spin: false }
   };
 
   tbody.innerHTML = filtered.map((it, idx) => {
@@ -3498,55 +3575,67 @@ function renderPortalQueueTable() {
     const prog = it.progress || { done: 0, total: 1 };
     const total = Math.max(1, prog.total || 1);
     const done = prog.done || 0;
-    const pct = Math.min(100, Math.round((done / total) * 100));
-    const isPrio = Boolean(it.priorityAt && ['running', 'queued', 'scheduled'].includes(it.status));
-    const rowCls = it.status === 'running' ? 'is-running-row' : (isPrio ? 'is-priority-row' : '');
+    const pct = it.status === 'done' ? 100 : Math.min(100, Math.round((done / total) * 100));
+    const isPrio = Boolean(it.priorityAt && ['running', 'pacing', 'queued', 'scheduled'].includes(it.status));
+    const rowCls = (it.isRunningNow || it.status === 'running') ? 'is-running-row' : (isPrio ? 'is-priority-row' : '');
     const chan = parsePortalChanMeta(it);
     const chanBadgeHtml = `<span class="social-q-chan-pill ${chan.cls}" title="${escapeHtml(`${chan.tag}: ${chan.name}`)}"><b class="social-q-chan-tag">${escapeHtml(chan.tag)}</b><span class="social-q-chan-name">${escapeHtml(chan.name)}</span></span>`;
-    const timeShort = formatPortalQueueTime(it.scheduledAt);
-    const titleLine = it.error ? `Lỗi: ${it.error}` : (it.title || '(Bài đăng)');
-    const stText = `${isPrio ? '⚡ ' : ''}${st.label}${it.queuePosition ? ` #${it.queuePosition}` : ''}`;
+    const rawTitle = cleanPortalQueueTitle(it.title) || '(Bài đăng)';
+    const titleLine = it.error ? `Lỗi: ${it.error}` : rawTitle;
+    const stIcon = st.spin ? PORTAL_Q_ICONS.spin : (st.clock ? PORTAL_Q_ICONS.clock : '<i class="social-q-dot"></i>');
+    const stText = `${st.label}${it.queuePosition ? ` #${it.queuePosition}` : ''}`;
+    const cap = computePortalScheduleCaption(it);
+    const isActiveTrack = it.isRunningNow || it.status === 'running' || it.status === 'pacing';
+    const isIndeterminate = (it.isRunningNow || it.status === 'running') && total <= 1 && pct === 0;
+    const trackCls = `social-q-rt-track${isActiveTrack ? ' is-active' : ''}${isIndeterminate ? ' is-indeterminate' : ''}`;
+    const fillWidth = isActiveTrack && pct < 6 ? 6 : pct;
 
     const actionsHtml = `
       <div class="social-q-actions">
-        ${(it.canPrioritize && (idx > 0 || it.status === 'scheduled')) ? `<button type="button" class="social-q-btn btn-prioritize" data-q-op="prioritize" data-q-type="${escapeHtml(it.itemType)}" data-q-id="${escapeHtml(it.id)}" title="Đẩy lên chạy đầu tiên">⚡ Ưu tiên</button>` : ''}
-        ${it.canPause ? `<button type="button" class="social-q-btn" data-q-op="pause" data-q-type="${escapeHtml(it.itemType)}" data-q-id="${escapeHtml(it.id)}" title="Tạm dừng">⏸</button>` : ''}
-        ${it.canResume ? `<button type="button" class="social-q-btn" data-q-op="resume" data-q-type="${escapeHtml(it.itemType)}" data-q-id="${escapeHtml(it.id)}" title="Chạy tiếp">▶</button>` : ''}
-        ${it.canRetry ? `<button type="button" class="social-q-btn" data-q-op="retry" data-q-type="${escapeHtml(it.itemType)}" data-q-id="${escapeHtml(it.id)}" title="Thử lại các mục lỗi">↻</button>` : ''}
-        <button type="button" class="social-q-btn btn-danger" data-q-op="delete" data-q-type="${escapeHtml(it.itemType)}" data-q-id="${escapeHtml(it.id)}" title="Xoá">✕</button>
+        ${(it.canPrioritize && (idx > 0 || it.status === 'scheduled')) ? `<button type="button" class="social-q-btn btn-prioritize" data-q-op="prioritize" data-q-type="${escapeHtml(it.itemType)}" data-q-id="${escapeHtml(it.id)}" title="Đẩy lên chạy đầu tiên">${PORTAL_Q_ICONS.up}<span>Ưu tiên</span></button>` : ''}
+        ${it.canPause ? `<button type="button" class="social-q-btn" data-q-op="pause" data-q-type="${escapeHtml(it.itemType)}" data-q-id="${escapeHtml(it.id)}" title="Tạm dừng">${PORTAL_Q_ICONS.pause}</button>` : ''}
+        ${it.canResume ? `<button type="button" class="social-q-btn" data-q-op="resume" data-q-type="${escapeHtml(it.itemType)}" data-q-id="${escapeHtml(it.id)}" title="Chạy tiếp">${PORTAL_Q_ICONS.play}</button>` : ''}
+        ${it.canRetry ? `<button type="button" class="social-q-btn" data-q-op="retry" data-q-type="${escapeHtml(it.itemType)}" data-q-id="${escapeHtml(it.id)}" title="Thử lại">${PORTAL_Q_ICONS.retry}</button>` : ''}
+        <button type="button" class="social-q-btn btn-danger" data-q-op="delete" data-q-type="${escapeHtml(it.itemType)}" data-q-id="${escapeHtml(it.id)}" title="Xoá">${PORTAL_Q_ICONS.close}</button>
       </div>
     `;
 
     return `
       <tr class="${rowCls}">
-        <td class="social-q-desk-only"><span class="social-q-status ${st.cls}"><i class="social-q-dot"></i>${escapeHtml(stText)}</span></td>
+        <td class="social-q-desk-only"><span class="social-q-status ${st.cls}">${stIcon}<span>${escapeHtml(stText)}</span></span></td>
         <td class="social-q-desk-only">${chanBadgeHtml}</td>
         <td class="social-q-desk-only">
           <div class="social-q-post-line">
             <span class="social-q-post-title ${it.error ? 'is-err' : ''}" title="${escapeHtml(titleLine)}">${escapeHtml(titleLine)}</span>
-            ${it.postUrl ? `<a class="social-q-ext" href="${escapeHtml(it.postUrl)}" target="_blank" rel="noopener noreferrer" title="Mở bài đã đăng">↗</a>` : ''}
+            ${it.postUrl ? `<a class="social-q-ext" href="${escapeHtml(it.postUrl)}" target="_blank" rel="noopener noreferrer" title="Mở bài đã đăng">${PORTAL_Q_ICONS.ext}</a>` : ''}
           </div>
         </td>
         <td class="social-q-desk-only">
-          <div class="social-q-prog-inline">
-            <span>${done}/${total}</span>
-            ${total > 1 ? `<span class="social-q-prog-mini"><span style="width:${pct}%"></span></span>` : ''}
-            ${timeShort ? `<span class="social-q-time-sub">${escapeHtml(timeShort)}</span>` : ''}
+          <div class="social-q-prog-stack">
+            <div class="social-q-prog-top">
+              <span>${done}/${total} (${pct}%)</span>
+              <span class="social-q-sched-meta ${cap.cls}" data-q-live-id="${escapeHtml(it.id)}">${cap.icon}<span>${escapeHtml(cap.text)}</span></span>
+            </div>
+            <div class="${trackCls}"><span class="social-q-rt-fill" style="width:${fillWidth}%"></span></div>
           </div>
         </td>
         <td class="social-q-desk-only">${actionsHtml}</td>
         <td class="social-q-mobile-only" colspan="5">
           <div class="social-q-m-top">
             <div class="social-q-m-meta">
-              <span class="social-q-status ${st.cls}"><i class="social-q-dot"></i>${escapeHtml(stText)}</span>
+              <span class="social-q-status ${st.cls}">${stIcon}<span>${escapeHtml(stText)}</span></span>
               ${chanBadgeHtml}
             </div>
             ${actionsHtml}
           </div>
+          <div class="social-q-m-prog-row">
+            <span class="social-q-m-stat">${done}/${total} (${pct}%)</span>
+            <div class="${trackCls}"><span class="social-q-rt-fill" style="width:${fillWidth}%"></span></div>
+            <span class="social-q-sched-meta ${cap.cls}" data-q-live-id="${escapeHtml(it.id)}">${cap.icon}<span>${escapeHtml(cap.text)}</span></span>
+          </div>
           <div class="social-q-m-bot">
-            <span class="social-q-m-stat">${done}/${total}${timeShort ? ` · ${escapeHtml(timeShort)}` : ''}</span>
             <span class="social-q-m-title ${it.error ? 'is-err' : ''}">${escapeHtml(titleLine)}</span>
-            ${it.postUrl ? `<a class="social-q-ext" href="${escapeHtml(it.postUrl)}" target="_blank" rel="noopener noreferrer">↗</a>` : ''}
+            ${it.postUrl ? `<a class="social-q-ext" href="${escapeHtml(it.postUrl)}" target="_blank" rel="noopener noreferrer" title="Mở bài đã đăng">${PORTAL_Q_ICONS.ext}</a>` : ''}
           </div>
         </td>
       </tr>
@@ -3583,18 +3672,27 @@ function openPortalQueueDialog() {
   renderPortalQueueTable();
   refreshPortalQueueBadge();
   clearInterval(portalQueueState.timer);
+  clearInterval(portalQueueState.tickTimer);
   portalQueueState.timer = setInterval(() => {
     if (!dlg.open) {
       clearInterval(portalQueueState.timer);
       return;
     }
     refreshPortalQueueBadge();
-  }, 6000);
+  }, 3500);
+  portalQueueState.tickTimer = setInterval(() => {
+    if (!dlg.open) {
+      clearInterval(portalQueueState.tickTimer);
+      return;
+    }
+    tickPortalQueueCountdowns();
+  }, 1000);
 }
 
 function closePortalQueueDialog() {
   const dlg = $('fbQueueManagerDialog');
   clearInterval(portalQueueState.timer);
+  clearInterval(portalQueueState.tickTimer);
   if (dlg && dlg.open) dlg.close();
 }
 
