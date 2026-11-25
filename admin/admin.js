@@ -2600,7 +2600,7 @@ function populateCmsActAsOptions(account) {
   const actSel = byId('cmsFbGroupActAsSelect');
   if (!actSel) return;
   if (!account) {
-    actSel.innerHTML = '<option value="">👤 Nick Facebook cá nhân</option>';
+    actSel.innerHTML = '<option value="">Nick Facebook cá nhân</option>';
     fbState.selectedActAs = '';
     return;
   }
@@ -2609,13 +2609,15 @@ function populateCmsActAsOptions(account) {
     fbState.selectedActAs = '';
   }
   const opts = [
-    `<option value="" ${!fbState.selectedActAs ? 'selected' : ''}>👤 Nick cá nhân: ${escapeHtml(account.profileName || account.label)}</option>`,
-    ...pages.map(p => `<option value="${escapeHtml(p.id)}" ${String(p.id) === String(fbState.selectedActAs) ? 'selected' : ''}>📘 Fanpage: ${escapeHtml(p.name)}</option>`)
+    `<option value="" ${!fbState.selectedActAs ? 'selected' : ''}>Cá nhân: ${escapeHtml(account.profileName || account.label)}</option>`,
+    ...pages.map(p => `<option value="${escapeHtml(p.id)}" ${String(p.id) === String(fbState.selectedActAs) ? 'selected' : ''}>Fanpage: ${escapeHtml(p.name)}</option>`)
   ];
   actSel.innerHTML = opts.join('');
 }
 
 async function initCmsRevidGroupEngine(forceGroups = false) {
+  const dot = byId('cmsFbGroupEngineDot');
+  const statusBadge = byId('cmsFbGroupStatusBadge');
   const statusEl = byId('cmsFbGroupEngineStatus');
   const accSel = byId('cmsFbGroupAccountSelect');
   const dashLink = byId('cmsFbGroupDashboardLink');
@@ -2638,14 +2640,16 @@ async function initCmsRevidGroupEngine(forceGroups = false) {
     fbState.engineOnline = true;
     const fbs = (connectedSt.accounts || []).filter(a => a.platform === 'facebook');
     fbState.fbAccounts = fbs;
+    if (dot) dot.className = fbs.length ? 'cms-fb-status-dot online' : 'cms-fb-status-dot warn';
+    if (statusBadge) statusBadge.className = fbs.length ? 'cms-fb-status-dot online' : 'cms-fb-status-dot warn';
     if (statusEl) {
       statusEl.innerHTML = fbs.length
-        ? `🟢 Đã kết nối <b>${escapeHtml(fbState.activeEngineLabel)}</b> · ${fbs.length} tài khoản Facebook riêng`
-        : `🟡 Đã kết nối <b>${escapeHtml(fbState.activeEngineLabel)}</b> · Chưa có tài khoản FB — bấm <b>+ Thêm tài khoản FB</b> để kết nối.`;
+        ? `<b>${escapeHtml(fbState.activeEngineLabel)}</b> · ${fbs.length} tài khoản sẵn sàng`
+        : `<b>${escapeHtml(fbState.activeEngineLabel)}</b> · Chưa có tài khoản FB — bấm <b>+ Thêm TK</b>`;
     }
     if (accSel) {
       if (!fbs.length) {
-        accSel.innerHTML = '<option value="">Chưa có tài khoản — bấm + Thêm tài khoản FB</option>';
+        accSel.innerHTML = '<option value="">Chưa có tài khoản — bấm + Thêm TK</option>';
         populateCmsActAsOptions(null);
       } else {
         if (!fbState.selectedAccountId || !fbs.some(a => a.id === fbState.selectedAccountId)) {
@@ -2659,8 +2663,10 @@ async function initCmsRevidGroupEngine(forceGroups = false) {
     }
   } else {
     fbState.engineOnline = false;
-    if (statusEl) statusEl.innerHTML = `⚪ Không kết nối được Máy chủ 50 (8889) hoặc Máy cá nhân (8788).`;
-    if (accSel) accSel.innerHTML = '<option value="">Chưa kết nối được máy chủ đăng nhóm</option>';
+    if (dot) dot.className = 'cms-fb-status-dot offline';
+    if (statusBadge) statusBadge.className = 'cms-fb-status-dot offline';
+    if (statusEl) statusEl.innerHTML = `Chưa kết nối được Máy chủ 50 (8889) hoặc Local (8788)`;
+    if (accSel) accSel.innerHTML = '<option value="">Mất kết nối máy chủ</option>';
   }
   updatePublishButtonState();
 }
@@ -2717,7 +2723,7 @@ function renderCmsRevidGroupsList() {
   const etaEl = byId('cmsFbGroupEtaText');
   if (etaEl) {
     const n = fbState.selectedGroups.size;
-    etaEl.textContent = n ? `⚡ Đã chọn ${n} nhóm · Hệ thống tự động xoay vòng 4 phiên bản nội dung chống spam.` : 'Chọn ít nhất 1 nhóm Facebook để rải bài xoay vòng.';
+    etaEl.textContent = n ? `Đã chọn ${n} nhóm · Xoay vòng 4 bản chống spam` : 'Chọn ít nhất 1 nhóm để rải xoay vòng';
   }
 }
 
@@ -2727,8 +2733,6 @@ function setCmsFacebookMode(mode) {
   document.querySelectorAll('[data-cms-fb-mode]').forEach(btn => {
     const active = btn.dataset.cmsFbMode === fbState.mode;
     btn.classList.toggle('active', active);
-    btn.style.background = active ? '#fff' : 'transparent';
-    btn.style.color = active ? '#283d34' : '#526059';
   });
   if (byId('cmsFbPageSection')) byId('cmsFbPageSection').hidden = isGroup;
   if (byId('cmsFbGroupSection')) byId('cmsFbGroupSection').hidden = !isGroup;

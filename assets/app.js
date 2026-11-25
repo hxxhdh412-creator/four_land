@@ -2235,7 +2235,7 @@ function populatePortalActAsOptions(account) {
   const actSel = $('fbGroupActAsSelect');
   if (!actSel) return;
   if (!account) {
-    actSel.innerHTML = '<option value="">👤 Nick Facebook cá nhân</option>';
+    actSel.innerHTML = '<option value="">Nick Facebook cá nhân</option>';
     fbPortalState.selectedActAs = '';
     return;
   }
@@ -2244,14 +2244,15 @@ function populatePortalActAsOptions(account) {
     fbPortalState.selectedActAs = '';
   }
   const opts = [
-    `<option value="" ${!fbPortalState.selectedActAs ? 'selected' : ''}>👤 Nick cá nhân: ${escapeHtml(account.profileName || account.label)}</option>`,
-    ...pages.map(p => `<option value="${escapeHtml(p.id)}" ${String(p.id) === String(fbPortalState.selectedActAs) ? 'selected' : ''}>📘 Fanpage: ${escapeHtml(p.name)}</option>`)
+    `<option value="" ${!fbPortalState.selectedActAs ? 'selected' : ''}>Cá nhân: ${escapeHtml(account.profileName || account.label)}</option>`,
+    ...pages.map(p => `<option value="${escapeHtml(p.id)}" ${String(p.id) === String(fbPortalState.selectedActAs) ? 'selected' : ''}>Fanpage: ${escapeHtml(p.name)}</option>`)
   ];
   actSel.innerHTML = opts.join('');
 }
 
 async function initRevidGroupEngine(forceGroups = false) {
   const dot = $('fbGroupEngineDot');
+  const statusBadge = $('fbGroupStatusBadge');
   const statusEl = $('fbGroupEngineStatus');
   const accSel = $('fbGroupAccountSelect');
   const dashLink = $('fbGroupDashboardLink');
@@ -2274,18 +2275,19 @@ async function initRevidGroupEngine(forceGroups = false) {
     fbPortalState.engineOnline = true;
     const fbs = (connectedSt.accounts || []).filter(a => a.platform === 'facebook');
     fbPortalState.fbAccounts = fbs;
-    if (dot) dot.className = 'fb-mode-dot online';
+    if (dot) dot.className = fbs.length ? 'fb-mode-dot online' : 'fb-mode-dot warn';
+    if (statusBadge) statusBadge.className = fbs.length ? 'fb-status-indicator online' : 'fb-status-indicator warn';
     if (statusEl) {
       statusEl.innerHTML = fbs.length
-        ? `🟢 Đã kết nối <b>${escapeHtml(fbPortalState.activeEngineLabel)}</b> · ${fbs.length} tài khoản Facebook riêng`
-        : `🟡 Đã kết nối <b>${escapeHtml(fbPortalState.activeEngineLabel)}</b> · Chưa có tài khoản FB — bấm <b>+ Thêm tài khoản FB</b> bên dưới để kết nối tài khoản Fourland riêng.`;
+        ? `<b>${escapeHtml(fbPortalState.activeEngineLabel)}</b> · ${fbs.length} tài khoản sẵn sàng`
+        : `<b>${escapeHtml(fbPortalState.activeEngineLabel)}</b> · Chưa có tài khoản FB — bấm <b>+ Thêm TK</b>`;
     }
     if (accSel) {
       if (!fbs.length) {
-        accSel.innerHTML = '<option value="">Chưa có tài khoản — bấm + Thêm tài khoản FB</option>';
+        accSel.innerHTML = '<option value="">Chưa có tài khoản — bấm + Thêm TK</option>';
         populatePortalActAsOptions(null);
         const box = $('fbGroupListBox');
-        if (box) box.innerHTML = `<div class="fb-group-empty">Nhánh riêng Fourland trên Máy 50 đang trống để không dùng chung tài khoản dự án khác. Hãy bấm <b>+ Thêm tài khoản FB</b> để gắn tài khoản / Fanpage Fourland riêng của bạn.</div>`;
+        if (box) box.innerHTML = `<div class="fb-group-empty">Chưa có tài khoản Facebook. Bấm <b>+ Thêm TK</b> để kết nối tài khoản Fourland riêng.</div>`;
       } else {
         if (!fbPortalState.selectedAccountId || !fbs.some(a => a.id === fbPortalState.selectedAccountId)) {
           fbPortalState.selectedAccountId = fbs[0].id;
@@ -2299,10 +2301,11 @@ async function initRevidGroupEngine(forceGroups = false) {
   } else {
     fbPortalState.engineOnline = false;
     if (dot) dot.className = 'fb-mode-dot offline';
+    if (statusBadge) statusBadge.className = 'fb-status-indicator offline';
     if (statusEl) {
-      statusEl.innerHTML = `⚪ Không kết nối được Máy chủ 50 (8889) hoặc Máy cá nhân (8788).`;
+      statusEl.innerHTML = `Chưa kết nối được Máy chủ 50 (8889) hoặc Local (8788)`;
     }
-    if (accSel) accSel.innerHTML = '<option value="">Chưa kết nối được máy chủ đăng nhóm</option>';
+    if (accSel) accSel.innerHTML = '<option value="">Mất kết nối máy chủ</option>';
     const box = $('fbGroupListBox');
     if (box) box.innerHTML = `<div class="fb-group-empty">Không kết nối được dịch vụ đăng nhóm trên <b>Máy chủ 50 (8889)</b> hoặc <b>Máy cá nhân (8788)</b>.</div>`;
   }
@@ -2393,11 +2396,11 @@ function updateGroupRotationEta() {
   const b = Math.max(a, Number($('fbGroupGapMax')?.value) || 120);
   const filledVars = (fbPortalState.variants || []).filter(v => String(v || '').trim()).length || 1;
   if (!n) {
-    etaEl.textContent = 'Chọn ít nhất 1 nhóm Facebook để hệ thống tự động rải bài xoay vòng.';
+    etaEl.textContent = 'Chọn ít nhất 1 nhóm để rải xoay vòng';
     return;
   }
   const mins = Math.max(1, Math.round((n * 45 + (n - 1) * (a + b) / 2) / 60));
-  etaEl.textContent = `⚡ Đã chọn ${n} nhóm · Xoay vòng ${filledVars} phiên bản nội dung · Ước tính rải xong sau ~${mins} phút (chống khóa tài khoản).`;
+  etaEl.textContent = `Đã chọn ${n} nhóm · ${filledVars} bản xoay vòng · ~${mins} phút`;
 }
 
 function setFacebookPortalMode(mode) {
@@ -2416,9 +2419,12 @@ function setFacebookPortalMode(mode) {
   if (varTabs) varTabs.hidden = !isGroup;
   if (toneRow) toneRow.hidden = isGroup;
   if (toneLabel) {
-    toneLabel.textContent = isGroup
-      ? '4 phiên bản xoay vòng chống spam (Nhóm 1 → Bản 1, Nhóm 2 → Bản 2… Hỗ trợ {a|b}):'
-      : 'Chọn phong cách bài viết:';
+    const labelSpan = toneLabel.querySelector('span');
+    if (labelSpan) {
+      labelSpan.textContent = isGroup
+        ? 'Nội dung xoay vòng (4 bản · Hỗ trợ {a|b})'
+        : 'Phong cách bài viết';
+    }
   }
 
   const contentInput = $('fbPostContent');

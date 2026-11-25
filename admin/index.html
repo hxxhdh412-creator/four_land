@@ -1324,14 +1324,28 @@
 
     <dialog id="facebookPostDialog" class="cms-detail-dialog cms-fb-dialog" aria-labelledby="fbDialogTitle">
       <div class="cms-detail-shell">
-        <header>
-          <div>
-            <p class="cms-eyebrow">Marketing & Mạng Xã Hội</p>
-            <h1 id="fbDialogTitle">Đăng bài lên Fanpage Ngọc Nhà Tốt</h1>
+        <header class="cms-fb-header">
+          <div class="cms-fb-head-brand">
+            <span class="cms-fb-head-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
+              </svg>
+            </span>
+            <div>
+              <p class="cms-eyebrow" style="margin:0 0 1px;">Fourland Social Studio</p>
+              <h1 id="fbDialogTitle" style="font-size:16px;margin:0;">Đăng bài lên Fanpage FourLand</h1>
+            </div>
           </div>
-          <div class="cms-fb-mode-tabs" id="cmsFbModeTabs" role="tablist" style="display:inline-flex;align-items:center;gap:4px;padding:3px;background:#eff2ef;border:1px solid #d5ddd8;border-radius:9px;margin-left:auto;margin-right:12px;">
-            <button type="button" class="cms-fb-mode-tab active" data-cms-fb-mode="page" style="height:32px;padding:0 12px;border:0;border-radius:7px;background:#fff;color:#283d34;font-size:12px;font-weight:700;cursor:pointer;">📘 Đăng Fanpage</button>
-            <button type="button" class="cms-fb-mode-tab" data-cms-fb-mode="group" style="height:32px;padding:0 12px;border:0;border-radius:7px;background:transparent;color:#526059;font-size:12px;font-weight:700;cursor:pointer;">⟳ Đăng nhóm xoay vòng</button>
+          <div class="cms-fb-mode-tabs" id="cmsFbModeTabs" role="tablist">
+            <button type="button" class="cms-fb-mode-tab active" data-cms-fb-mode="page">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/></svg>
+              <span>Đăng Fanpage</span>
+            </button>
+            <button type="button" class="cms-fb-mode-tab" data-cms-fb-mode="group">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              <span>Đăng nhóm xoay vòng</span>
+              <span class="cms-fb-status-dot" id="cmsFbGroupEngineDot"></span>
+            </button>
           </div>
           <div class="cms-detail-actions">
             <button id="fbDialogClose" class="cms-close-btn" type="button" aria-label="Đóng Facebook Studio">
@@ -1343,13 +1357,16 @@
           <div class="cms-fb-editor-col">
             <div class="cms-fb-page-section" id="cmsFbPageSection">
               <div class="cms-fb-channel-header">
-                <span class="cms-fb-label">Chọn các kênh Fanpage đăng bài:</span>
+                <span class="cms-fb-label">
+                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                  <span>Kênh Fanpage xuất bản</span>
+                </span>
                 <div class="cms-fb-channel-quick-actions">
                   <button type="button" id="btnFbSelectAllPages" class="cms-fb-action-link">Chọn tất cả</button>
                   <span class="cms-fb-divider">·</span>
                   <a href="#" id="linkManageFbPages" class="cms-fb-action-link">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-                    <span>Cấu hình kênh</span>
+                    <span>Cấu hình</span>
                   </a>
                 </div>
               </div>
@@ -1358,117 +1375,143 @@
               </div>
             </div>
 
-            <div class="cms-fb-group-section" id="cmsFbGroupSection" hidden style="display:grid;gap:10px;padding:12px;border-radius:10px;background:#f7faf8;border:1px solid #dce5de;margin-bottom:12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;padding:6px 10px;border-radius:7px;background:#fff;border:1px solid #e2e8e4;font-size:12px;">
-                <span id="cmsFbGroupEngineStatus">Đang kết nối Máy chủ 50 (Nhánh Fourland 24/7)…</span>
-                <div style="display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                  <select id="cmsFbGroupNodeSelect" style="height:28px;padding:0 8px;border:1px solid #cbd5e1;border-radius:6px;font-size:11.5px;background:#fff;">
-                    <option value="auto">⚡ Tự động (Ưu tiên Máy 50 · 24/7)</option>
-                    <option value="server50">🖧 Máy chủ 50 (Nhánh riêng 8889)</option>
-                    <option value="local">💻 Máy cá nhân (Local 8788)</option>
+            <div class="cms-fb-group-section" id="cmsFbGroupSection" hidden>
+              <div class="cms-fb-engine-bar">
+                <div class="cms-fb-engine-left">
+                  <span class="cms-fb-status-dot" id="cmsFbGroupStatusBadge"></span>
+                  <span id="cmsFbGroupEngineStatus">Đang kết nối Máy chủ 50 (24/7)…</span>
+                </div>
+                <div class="cms-fb-engine-right">
+                  <select id="cmsFbGroupNodeSelect" class="cms-fb-node-select">
+                    <option value="auto">Tự động (Máy 50 · 24/7)</option>
+                    <option value="server50">Máy chủ 50 (Cổng 8889)</option>
+                    <option value="local">Máy cá nhân (Local 8788)</option>
                   </select>
-                  <a href="https://drink-owners-prayer-partnerships.trycloudflare.com" id="cmsFbGroupDashboardLink" target="_blank" rel="noopener noreferrer" class="cms-fb-action-link">Mở Bảng điều khiển ↗</a>
+                  <a href="https://drink-owners-prayer-partnerships.trycloudflare.com" id="cmsFbGroupDashboardLink" target="_blank" rel="noopener noreferrer" class="cms-fb-action-link">
+                    <span>Bảng điều khiển</span>
+                    <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                  </a>
                 </div>
               </div>
-              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+              <div class="cms-fb-account-grid">
                 <label class="cms-fb-field">
                   <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;">
-                    <span class="cms-fb-label">Tài khoản Facebook riêng:</span>
-                    <button type="button" id="btnCmsFbGroupAddAccount" class="cms-fb-action-link">+ Thêm tài khoản FB</button>
+                    <span class="cms-fb-label">Tài khoản Facebook</span>
+                    <button type="button" id="btnCmsFbGroupAddAccount" class="cms-fb-action-link">
+                      <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                      <span>Thêm TK</span>
+                    </button>
                   </div>
-                  <select id="cmsFbGroupAccountSelect" style="height:36px;padding:0 10px;border:1px solid #cbd5e1;border-radius:7px;font-size:12.5px;background:#fff;"><option value="">Chưa có tài khoản — bấm + Thêm tài khoản FB</option></select>
+                  <select id="cmsFbGroupAccountSelect" class="cms-fb-compact-input"><option value="">Chưa có tài khoản</option></select>
                 </label>
                 <label class="cms-fb-field">
-                  <span class="cms-fb-label">Đăng nhóm với tư cách:</span>
-                  <select id="cmsFbGroupActAsSelect" style="height:36px;padding:0 10px;border:1px solid #cbd5e1;border-radius:7px;font-size:12.5px;background:#fff;"><option value="">👤 Nick Facebook cá nhân</option></select>
+                  <span class="cms-fb-label">Tư cách đăng bài</span>
+                  <select id="cmsFbGroupActAsSelect" class="cms-fb-compact-input"><option value="">Nick Facebook cá nhân</option></select>
                 </label>
                 <label class="cms-fb-field">
-                  <span class="cms-fb-label">Tên chiến dịch đăng nhóm:</span>
-                  <input type="text" id="cmsFbGroupRotName" placeholder="VD: Rải nhóm BĐS Fourland" style="height:36px;padding:0 10px;border:1px solid #cbd5e1;border-radius:7px;font-size:12.5px;background:#fff;">
+                  <span class="cms-fb-label">Tên chiến dịch</span>
+                  <input type="text" id="cmsFbGroupRotName" class="cms-fb-compact-input" placeholder="VD: BĐS Fourland">
                 </label>
               </div>
               <div>
                 <div class="cms-fb-channel-header">
-                  <span class="cms-fb-label">Chọn nhóm sẽ đăng (<b id="cmsFbGroupPickedCount">0</b> đã chọn):</span>
+                  <span class="cms-fb-label">
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    <span>Hội nhóm mục tiêu (<b id="cmsFbGroupPickedCount">0</b> đã chọn)</span>
+                  </span>
                   <div class="cms-fb-channel-quick-actions">
-                    <button type="button" id="btnCmsFbGroupPickInstant" class="cms-fb-action-link">Chọn hết (trừ nhóm cần duyệt)</button>
+                    <button type="button" id="btnCmsFbGroupPickInstant" class="cms-fb-action-link">Chọn nhóm đăng ngay</button>
                     <span class="cms-fb-divider">·</span>
                     <button type="button" id="btnCmsFbGroupPickNone" class="cms-fb-action-link">Bỏ chọn</button>
                     <span class="cms-fb-divider">·</span>
-                    <button type="button" id="btnCmsFbGroupReload" class="cms-fb-action-link">↻ Tải lại</button>
+                    <button type="button" id="btnCmsFbGroupReload" class="cms-fb-action-link">
+                      <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                      <span>Tải lại</span>
+                    </button>
                   </div>
                 </div>
-                <input type="text" id="cmsFbGroupSearchInput" placeholder="Tìm nhanh nhóm BĐS theo tên…" style="width:100%;height:34px;padding:0 10px;margin:4px 0 6px;border:1px solid #cbd5e1;border-radius:7px;font-size:12.5px;background:#fff;">
-                <div id="cmsFbGroupListBox" style="max-height:150px;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:5px;padding:6px;background:#fff;border:1px solid #dbe3dd;border-radius:8px;"></div>
+                <div class="cms-fb-search-wrap">
+                  <svg class="cms-fb-search-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                  <input type="text" id="cmsFbGroupSearchInput" class="cms-fb-compact-input cms-fb-search-input" placeholder="Tìm nhanh nhóm BĐS theo tên…">
+                </div>
+                <div id="cmsFbGroupListBox" class="cms-fb-group-list-box"></div>
               </div>
-              <div style="display:grid;grid-template-columns:100px 100px 180px 1fr;gap:8px;">
+              <div class="cms-fb-schedule-grid">
                 <label class="cms-fb-field">
-                  <span class="cms-fb-label">Cách tối thiểu (s):</span>
-                  <input type="number" id="cmsFbGroupGapMin" min="30" value="60" style="height:34px;padding:0 8px;border:1px solid #cbd5e1;border-radius:7px;font-size:12.5px;background:#fff;">
+                  <span class="cms-fb-label">Nghỉ tối thiểu (s)</span>
+                  <input type="number" id="cmsFbGroupGapMin" class="cms-fb-compact-input" min="30" value="60">
                 </label>
                 <label class="cms-fb-field">
-                  <span class="cms-fb-label">Tối đa (s):</span>
-                  <input type="number" id="cmsFbGroupGapMax" min="30" value="120" style="height:34px;padding:0 8px;border:1px solid #cbd5e1;border-radius:7px;font-size:12.5px;background:#fff;">
+                  <span class="cms-fb-label">Tối đa (s)</span>
+                  <input type="number" id="cmsFbGroupGapMax" class="cms-fb-compact-input" min="30" value="120">
                 </label>
                 <label class="cms-fb-field">
-                  <span class="cms-fb-label">⏰ Hẹn giờ chạy:</span>
-                  <input type="datetime-local" id="cmsFbGroupStartAt" style="height:34px;padding:0 8px;border:1px solid #cbd5e1;border-radius:7px;font-size:12px;background:#fff;">
+                  <span class="cms-fb-label">Hẹn lịch chạy (Trống = Ngay)</span>
+                  <input type="datetime-local" id="cmsFbGroupStartAt" class="cms-fb-compact-input">
                 </label>
                 <label class="cms-fb-field">
-                  <span class="cms-fb-label">Bình luận đầu tiên (Seeding):</span>
-                  <input type="text" id="cmsFbGroupFirstComment" value="{Inbox|Nhắn tin} hoặc gọi 037.6789.808 để xem nhà thực tế nhé!" style="height:34px;padding:0 8px;border:1px solid #cbd5e1;border-radius:7px;font-size:12.5px;background:#fff;">
+                  <span class="cms-fb-label">Bình luận đầu (Seeding)</span>
+                  <input type="text" id="cmsFbGroupFirstComment" class="cms-fb-compact-input" value="{Inbox|Nhắn tin} hoặc gọi 037.6789.808 để xem nhà thực tế nhé!">
                 </label>
               </div>
-              <div style="display:flex;gap:14px;flex-wrap:wrap;font-size:12px;">
-                <label class="cms-fb-checkbox"><input type="checkbox" id="cmsFbGroupSkipApproval" checked><span>Bỏ qua nhóm chờ duyệt</span></label>
-                <label class="cms-fb-checkbox"><input type="checkbox" id="cmsFbGroupAutoLike" checked><span>Tự động Like bài sau khi đăng</span></label>
+              <div class="cms-fb-group-bottom">
+                <div style="display:flex;gap:12px;flex-wrap:wrap;font-size:11.5px;">
+                  <label class="cms-fb-checkbox"><input type="checkbox" id="cmsFbGroupSkipApproval" checked><span>Bỏ qua nhóm chờ duyệt</span></label>
+                  <label class="cms-fb-checkbox"><input type="checkbox" id="cmsFbGroupAutoLike" checked><span>Tự động Like bài</span></label>
+                </div>
+                <div id="cmsFbGroupEtaText" class="cms-fb-eta-badge"></div>
               </div>
-              <div id="cmsFbGroupEtaText" style="font-size:11.5px;font-weight:600;color:#283d34;background:#eef5f0;padding:6px 10px;border-radius:6px;"></div>
             </div>
 
             <div class="cms-fb-tone-section">
-              <span class="cms-fb-label">Chọn phong cách bài viết:</span>
+              <div class="cms-fb-channel-header" style="margin-bottom:6px;">
+                <span class="cms-fb-label" style="margin:0;">
+                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                  <span>Phong cách bài viết</span>
+                </span>
+              </div>
               <div class="cms-fb-tone-chips">
                 <button type="button" class="cms-fb-tone-chip active" data-fb-tone="hot">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-                  <span>Thu hút & Nổi bật</span>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                  <span>Thu hút</span>
                 </button>
                 <button type="button" class="cms-fb-tone-chip" data-fb-tone="detail">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-                  <span>Đầy đủ & Chi tiết</span>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                  <span>Chi tiết</span>
                 </button>
                 <button type="button" class="cms-fb-tone-chip" data-fb-tone="quick">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                  <span>Súc tích & Gọn</span>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  <span>Súc tích</span>
                 </button>
               </div>
             </div>
 
             <label class="cms-fb-field">
-              <span class="cms-fb-label">Nội dung bài viết (Có thể chỉnh sửa):</span>
-              <textarea id="fbPostContent" rows="9" placeholder="Đang tạo nội dung bài viết..."></textarea>
+              <textarea id="fbPostContent" rows="6" placeholder="Đang tạo nội dung bài viết..."></textarea>
             </label>
 
             <div class="cms-fb-photo-section">
               <div class="cms-fb-photo-header">
-                <span class="cms-fb-label">Chọn hình ảnh đăng kèm:</span>
-                <span id="fbPhotoCount" class="cms-fb-photo-count">Đã chọn 0 ảnh</span>
+                <span class="cms-fb-label">
+                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                  <span>Hình ảnh đính kèm</span>
+                </span>
+                <div style="display:inline-flex;align-items:center;gap:10px;">
+                  <label class="cms-fb-checkbox">
+                    <input type="checkbox" id="fbIncludeLink" checked>
+                    <span>Kèm link kho Fourland</span>
+                  </label>
+                  <span id="fbPhotoCount" class="cms-fb-photo-count">Đã chọn 0 ảnh</span>
+                </div>
               </div>
               <div id="fbPhotoGrid" class="cms-fb-photo-grid"></div>
-            </div>
-
-            <div class="cms-fb-options">
-              <label class="cms-fb-checkbox">
-                <input type="checkbox" id="fbIncludeLink" checked>
-                <span>Gắn link xem kho nhà Fourland ở cuối bài</span>
-              </label>
             </div>
           </div>
 
           <div class="cms-fb-preview-col">
             <div class="cms-fb-preview-title">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-              <span>Xem trước bài viết trên Facebook</span>
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              <span>Bản xem trước trực tiếp</span>
             </div>
 
             <div class="fb-mock-card">
@@ -1821,6 +1864,6 @@
 
     <div id="toastContainer" class="cms-toast-container" aria-live="polite"></div>
   </div>
-  <script src="/admin/admin.js?v=20261125-server50-poster-v6" defer></script>
+  <script src="/admin/admin.js?v=20261125-server50-poster-v7" defer></script>
 </body>
 </html>
