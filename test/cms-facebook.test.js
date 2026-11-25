@@ -328,3 +328,57 @@ test("Facebook Studio API handler sends full copy to Fanpage and <500-char optim
   assert.match(threadsCall.content, /0376789808/);
   assert.match(threadsCall.content, /https:\/\/www\.fourland\.vn/);
 });
+
+test("Facebook Studio API handler lists queue overview and prioritizes queued item", async () => {
+  const actionsReceived = [];
+  const handler = createHandler({
+    requireCmsImpl: async () => ({ id: "usr-admin-01", role: "super_admin" }),
+    request: async () => ({ data: [] }),
+    queueOverviewFetcher: async () => ({
+      ok: true,
+      summary: { activeTotal: 2, runningCount: 1, waitingCount: 1, doneCount: 5, failedCount: 0 },
+      items: [
+        { id: "rot_1", itemType: "rotation", status: "running", channelLabel: "Nhóm FB · Nguyễn Ngọc", canPrioritize: false },
+        { id: "post_2", itemType: "post", status: "queued", channelLabel: "Threads · @peter.digital_art", canPrioritize: true }
+      ]
+    }),
+    queueController: async ({ payload }) => {
+      actionsReceived.push(payload);
+      return {
+        ok: true,
+        message: "⚡ Đã đẩy bài đăng lên đầu hàng đợi ưu tiên!",
+        summary: { activeTotal: 2, runningCount: 1, waitingCount: 1, doneCount: 5, failedCount: 0 },
+        items: [
+          { id: "post_2", itemType: "post", status: "queued", priorityAt: new Date().toISOString(), channelLabel: "Threads · @peter.digital_art", canPrioritize: true },
+          { id: "rot_1", itemType: "rotation", status: "running", channelLabel: "Nhóm FB · Nguyễn Ngọc", canPrioritize: true }
+        ]
+      };
+    }
+  });
+
+  const makeRes = () => {
+    const out = { code: 0, body: null };
+    return {
+      out,
+      res: {
+        status(c) { out.code = c; return this; },
+        json(b) { out.body = b; return this; }
+      }
+    };
+  };
+
+  const listCall = makeRes();
+  await handler({ method: "POST", body: { action: "queue-list" }, headers: {} }, listCall.res);
+  assert.equal(listCall.out.code, 200);
+  assert.equal(listCall.out.body.ok, true);
+  assert.equal(listCall.out.body.data.summary.activeTotal, 2);
+  assert.equal(listCall.out.body.data.items.length, 2);
+
+  const prioCall = makeRes();
+  await handler({ method: "POST", body: { action: "queue-action", itemType: "post", id: "post_2", op: "prioritize" }, headers: {} }, prioCall.res);
+  assert.equal(prioCall.out.code, 200);
+  assert.equal(prioCall.out.body.ok, true);
+  assert.equal(actionsReceived.length, 1);
+  assert.deepEqual(actionsReceived[0], { itemType: "post", id: "post_2", op: "prioritize" });
+  assert.match(prioCall.out.body.message, /ưu tiên/i);
+});

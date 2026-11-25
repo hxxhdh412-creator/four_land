@@ -81,6 +81,48 @@ async function publishViaServer50Poster({ content, imageUrls = [], pageId, pageN
   throw lastErr || new Error("Không kết nối được Nhánh Fourland trên Máy 50 (8889)");
 }
 
+async function fetchQueueOverviewViaServer50({ posterNode }) {
+  const node = posterNode || DEFAULT_POSTER_NODE;
+  const endpoints = [node.tunnelUrl, node.lanUrl].filter(Boolean).map((u) => String(u).replace(/\/+$/, ""));
+  let lastErr = null;
+  for (const baseUrl of endpoints) {
+    try {
+      const res = await fetch(`${baseUrl}/api/fourland/queue-overview`, {
+        method: "GET",
+        signal: AbortSignal.timeout(12000)
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || data.error) throw new Error(data.error || `Máy 50 (8889) trả về HTTP ${res.status}`);
+      return data;
+    } catch (err) {
+      lastErr = err;
+    }
+  }
+  throw lastErr || new Error("Không kết nối được hàng đợi trên Máy 50 (8889)");
+}
+
+async function controlQueueViaServer50({ payload, posterNode }) {
+  const node = posterNode || DEFAULT_POSTER_NODE;
+  const endpoints = [node.tunnelUrl, node.lanUrl].filter(Boolean).map((u) => String(u).replace(/\/+$/, ""));
+  let lastErr = null;
+  for (const baseUrl of endpoints) {
+    try {
+      const res = await fetch(`${baseUrl}/api/fourland/queue-action`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(15000)
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || data.error) throw new Error(data.error || `Máy 50 (8889) trả về HTTP ${res.status}`);
+      return data;
+    } catch (err) {
+      lastErr = err;
+    }
+  }
+  throw lastErr || new Error("Không gửi được lệnh điều khiển hàng đợi tới Máy 50 (8889)");
+}
+
 async function startGroupRotationViaServer50({ payload, posterNode }) {
   const node = posterNode || DEFAULT_POSTER_NODE;
   const endpoints = [node.tunnelUrl, node.lanUrl].filter(Boolean).map((u) => String(u).replace(/\/+$/, ""));
@@ -161,7 +203,9 @@ function createHandler({
   request = supabaseRequest,
   writer = writeFacebookCopy,
   posterPublisher = publishViaServer50Poster,
-  groupRotationStarter = startGroupRotationViaServer50
+  groupRotationStarter = startGroupRotationViaServer50,
+  queueOverviewFetcher = fetchQueueOverviewViaServer50,
+  queueController = controlQueueViaServer50
 } = {}) {
   return async function handler(req, res) {
     if (req.url?.includes("/poster-node")) {
@@ -247,6 +291,29 @@ function createHandler({
             pages: availablePages,
             posterNode
           }
+        });
+      }
+
+      if (action === "queue-list") {
+        const posterNode = await getPosterNodeConfig(request);
+        const overview = await queueOverviewFetcher({ posterNode });
+        return res.status(200).json({ ok: true, data: overview });
+      }
+
+      if (action === "queue-action") {
+        const posterNode = await getPosterNodeConfig(request);
+        const updated = await queueController({
+          payload: {
+            itemType: body.itemType,
+            id: body.id,
+            op: body.op
+          },
+          posterNode
+        });
+        return res.status(200).json({
+          ok: true,
+          data: updated,
+          message: updated.message || "Đã cập nhật thứ tự ưu tiên luồng đăng bài!"
         });
       }
 

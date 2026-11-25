@@ -59,8 +59,8 @@
     window.FOURLAND_ONESIGNAL_APP_ID = "524d4fcf-2075-4aaf-8862-a306e670f31d";
   </script>
 
-  <link rel="stylesheet" href="/assets/app.css?v=20261125-threads-v30">
-  <link rel="stylesheet" href="/assets/facebook-studio.css?v=20261125-threads-v30">
+  <link rel="stylesheet" href="/assets/app.css?v=20261125-queue-v31">
+  <link rel="stylesheet" href="/assets/facebook-studio.css?v=20261125-queue-v31">
 
   <!-- Schema.org JSON-LD Structured Data -->
   <script type="application/ld+json">
@@ -415,6 +415,10 @@
               <span class="fb-portal-label">
                 <svg aria-hidden="true" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
                 <span>Chọn kênh xuất bản</span>
+                <button type="button" class="social-queue-icon-btn" data-open-fb-queue title="Xem danh sách bài đang chạy & Chọn ưu tiên lên trước" aria-label="Danh sách bài đang chạy trong luồng">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><polyline points="3 6 4 7 6 5"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg>
+                  <span class="social-queue-count-dot" data-fb-queue-badge hidden>0</span>
+                </button>
               </span>
               <label class="social-select-all-check" title="Chọn hoặc bỏ chọn tất cả kênh">
                 <input type="checkbox" id="btnFbPortalSelectAll">
@@ -467,10 +471,16 @@
                 <span class="fb-portal-label">Tài khoản</span>
                 <select id="fbGroupAccountSelect" aria-label="Tài khoản Facebook" class="fb-group-input"><option value="">Chưa có tài khoản</option></select>
               </label>
-              <label class="fb-portal-field">
-                <span class="fb-portal-label">Kênh đăng vào nhóm</span>
-                <select id="fbGroupActAsSelect" class="fb-group-input"><option value="">Nick Facebook cá nhân</option></select>
-              </label>
+              <div class="fb-portal-field">
+                <span class="fb-portal-label">
+                  <span>Kênh đăng vào nhóm</span>
+                  <button type="button" class="social-queue-icon-btn" data-open-fb-queue title="Xem danh sách bài đang chạy & Chọn ưu tiên lên trước" aria-label="Danh sách bài đang chạy trong luồng">
+                    <svg aria-hidden="true" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><polyline points="3 6 4 7 6 5"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg>
+                    <span class="social-queue-count-dot" data-fb-queue-badge hidden>0</span>
+                  </button>
+                </span>
+                <select id="fbGroupActAsSelect" aria-label="Kênh đăng vào nhóm" class="fb-group-input"><option value="">Nick Facebook cá nhân</option></select>
+              </div>
             </div>
 
             <div class="social-group-bar-row">
@@ -724,7 +734,53 @@
     </div>
   </aside>
 
-  <script src="/assets/app.js?v=20261125-threads-v30" defer></script>
+  <dialog id="fbQueueManagerDialog" class="social-queue-dialog" aria-labelledby="fbQueueDialogTitle">
+    <div class="social-queue-shell">
+      <header class="social-queue-header">
+        <div class="social-queue-title-wrap">
+          <span class="social-queue-head-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><polyline points="3 6 4 7 6 5"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg>
+          </span>
+          <div>
+            <h2 id="fbQueueDialogTitle">Luồng đăng bài &amp; Hàng đợi 24/7</h2>
+            <p id="fbQueueSummarySub" class="social-queue-sub">Đang đồng bộ danh sách bài đăng từ Máy chủ 24/7…</p>
+          </div>
+        </div>
+        <div class="social-queue-head-actions">
+          <div class="social-queue-filters" role="tablist" aria-label="Bộ lọc trạng thái luồng">
+            <button type="button" class="social-q-filter active" data-fb-q-filter="active">Đang chạy &amp; Chờ</button>
+            <button type="button" class="social-q-filter" data-fb-q-filter="all">Tất cả</button>
+            <button type="button" class="social-q-filter" data-fb-q-filter="done">Đã xong / Lỗi</button>
+          </div>
+          <button type="button" id="btnFbQueueRefresh" class="social-q-refresh-btn" title="Làm mới danh sách">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            <span>Làm mới</span>
+          </button>
+          <button type="button" id="btnFbQueueClose" class="social-q-close-btn" aria-label="Đóng cửa sổ hàng đợi">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+      </header>
+      <div class="social-queue-table-wrap">
+        <table class="social-queue-table">
+          <thead>
+            <tr>
+              <th>Trạng thái</th>
+              <th>Kênh / Chiến dịch</th>
+              <th>Nội dung bài đăng</th>
+              <th>Tiến độ / Lịch</th>
+              <th>Ưu tiên &amp; Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="fbQueueTableBody">
+            <tr><td colspan="5" class="social-queue-empty">Đang tải danh sách bài trong luồng…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </dialog>
+
+  <script src="/assets/app.js?v=20261125-queue-v31" defer></script>
 </body>
 
 </html>

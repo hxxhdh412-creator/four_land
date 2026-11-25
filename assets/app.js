@@ -2912,6 +2912,7 @@ async function openFacebookStudio(propertyId, updateUrl = true) {
   if (!dialog.open) dialog.showModal();
   renderFacebookPortalChannels();
   setFacebookPortalMode(fbPortalState.mode);
+  refreshPortalQueueBadge();
   await loadFacebookDraft(propertyId, fbPortalState.tone);
 }
 
@@ -3393,6 +3394,196 @@ if ($('btnFbGroupSchedToggle')) {
       btn.classList.toggle('active', adv.open);
       btn.setAttribute('aria-expanded', String(adv.open));
     }
+  };
+}
+
+// ============================================================================
+// POPUP FULL MÀN HÌNH QUẢN LÝ LUỒNG ĐĂNG BÀI & ƯU TIÊN LÊN TRƯỚC (PORTAL)
+// ============================================================================
+const portalQueueState = {
+  filter: 'active',
+  items: [],
+  summary: null,
+  timer: null,
+  loading: false
+};
+
+function formatPortalQueueTime(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '—';
+  return `${d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} · ${d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })}`;
+}
+
+function updatePortalQueueBadges(summary) {
+  const activeCount = Number(summary?.activeTotal || 0);
+  document.querySelectorAll('[data-fb-queue-badge]').forEach(el => {
+    el.textContent = String(activeCount);
+    el.hidden = activeCount <= 0;
+  });
+}
+
+async function refreshPortalQueueBadge() {
+  try {
+    const res = await api('/api/admin/v1/facebook/publish', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer fourland-preview-cms' },
+      body: JSON.stringify({ action: 'queue-list' })
+    });
+    const ov = res?.data || {};
+    portalQueueState.items = Array.isArray(ov.items) ? ov.items : [];
+    portalQueueState.summary = ov.summary || null;
+    updatePortalQueueBadges(portalQueueState.summary);
+    if ($('fbQueueManagerDialog')?.open) renderPortalQueueTable();
+  } catch (_) {}
+}
+
+function renderPortalQueueTable() {
+  const tbody = $('fbQueueTableBody');
+  const sub = $('fbQueueSummarySub');
+  if (!tbody) return;
+
+  const s = portalQueueState.summary || { runningCount: 0, waitingCount: 0, doneCount: 0, failedCount: 0 };
+  if (sub) {
+    sub.textContent = `Đang chạy: ${s.runningCount || 0} · Chờ đăng/Hẹn lịch: ${s.waitingCount || 0} · Đã xong: ${s.doneCount || 0}${s.failedCount ? ` · Lỗi: ${s.failedCount}` : ''} (Tự làm mới mỗi 6 giây)`;
+  }
+
+  const f = portalQueueState.filter;
+  const filtered = (portalQueueState.items || []).filter(it => {
+    if (f === 'active') return ['running', 'queued', 'scheduled', 'paused', 'draft'].includes(it.status);
+    if (f === 'done') return ['done', 'failed', 'partial'].includes(it.status);
+    return true;
+  });
+
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr><td colspan="5" class="social-queue-empty">${f === 'active' ? 'Hiện không có bài đăng nào đang chờ trong luồng. Bấm tab "Tất cả" để xem lịch sử các bài vừa chạy.' : 'Chưa có bài đăng nào trong mục này.'}</td></tr>`;
+    return;
+  }
+
+  const statusMeta = {
+    running: { label: '🟢 Đang đăng...', cls: 'st-running' },
+    queued: { label: '⏳ Chờ luồng', cls: 'st-queued' },
+    scheduled: { label: '⏰ Hẹn lịch', cls: 'st-scheduled' },
+    paused: { label: '⏸ Tạm dừng', cls: 'st-paused' },
+    draft: { label: '⏸ Tạm hoãn', cls: 'st-draft' },
+    done: { label: '✅ Hoàn tất', cls: 'st-done' },
+    partial: { label: '⚠️ Xong một phần', cls: 'st-partial' },
+    failed: { label: '❌ Lỗi', cls: 'st-failed' }
+  };
+
+  tbody.innerHTML = filtered.map((it, idx) => {
+    const st = statusMeta[it.status] || { label: it.status, cls: 'st-queued' };
+    const prog = it.progress || { done: 0, total: 1 };
+    const pct = Math.min(100, Math.round(((prog.done || 0) / Math.max(1, prog.total || 1)) * 100));
+    const isPrio = Boolean(it.priorityAt && ['running', 'queued', 'scheduled'].includes(it.status));
+    const rowCls = it.status === 'running' ? 'is-running-row' : (isPrio ? 'is-priority-row' : '');
+    const linkHtml = it.postUrl
+      ? ` <a href="${escapeHtml(it.postUrl)}" target="_blank" rel="noopener noreferrer" style="font-size:11px;font-weight:700;color:var(--forest);">Mở bài ↗</a>`
+      : '';
+    return `
+      <tr class="${rowCls}">
+        <td>
+          <span class="social-q-status ${st.cls}">${st.label}</span>
+          ${it.queuePosition ? `<div class="social-q-chan-sub">Vị trí #${it.queuePosition}</div>` : ''}
+          ${isPrio ? `<div class="social-q-prio-tag">⚡ Ưu tiên lên trước</div>` : ''}
+        </td>
+        <td>
+          <div class="social-q-chan-title">${escapeHtml(it.channelLabel || 'Kênh xuất bản')}</div>
+          <div class="social-q-chan-sub">${escapeHtml(it.targetSummary || '')}${linkHtml}</div>
+        </td>
+        <td>
+          <div class="social-q-post-title" title="${escapeHtml(it.title || '')}">${escapeHtml(it.title || '(Bài đăng)')}</div>
+          <div class="social-q-post-snip">${escapeHtml(it.error ? `Lỗi: ${it.error}` : (it.snippet || ''))}</div>
+        </td>
+        <td>
+          <div class="social-q-chan-title">${prog.done || 0}/${prog.total || 1} (${pct}%)</div>
+          <div class="social-q-prog-bar"><span style="width:${pct}%"></span></div>
+          <div class="social-q-chan-sub" style="margin-top:4px;">${escapeHtml(formatPortalQueueTime(it.scheduledAt))}</div>
+        </td>
+        <td>
+          <div class="social-q-actions">
+            ${it.canPrioritize && idx > 0 ? `<button type="button" class="social-q-btn btn-prioritize" data-q-op="prioritize" data-q-type="${escapeHtml(it.itemType)}" data-q-id="${escapeHtml(it.id)}">⚡ Ưu tiên lên trước</button>` : (it.canPrioritize && it.status === 'scheduled' ? `<button type="button" class="social-q-btn btn-prioritize" data-q-op="prioritize" data-q-type="${escapeHtml(it.itemType)}" data-q-id="${escapeHtml(it.id)}">⚡ Chạy ngay trước</button>` : '')}
+            ${it.canPause ? `<button type="button" class="social-q-btn" data-q-op="pause" data-q-type="${escapeHtml(it.itemType)}" data-q-id="${escapeHtml(it.id)}">⏸ Dừng</button>` : ''}
+            ${it.canResume ? `<button type="button" class="social-q-btn" data-q-op="resume" data-q-type="${escapeHtml(it.itemType)}" data-q-id="${escapeHtml(it.id)}">▶ Chạy tiếp</button>` : ''}
+            ${it.canRetry ? `<button type="button" class="social-q-btn" data-q-op="retry" data-q-type="${escapeHtml(it.itemType)}" data-q-id="${escapeHtml(it.id)}">↻ Thử lại</button>` : ''}
+            <button type="button" class="social-q-btn btn-danger" data-q-op="delete" data-q-type="${escapeHtml(it.itemType)}" data-q-id="${escapeHtml(it.id)}" title="Xoá khỏi danh sách">🗑</button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+async function handlePortalQueueAction(itemType, id, op, btnEl) {
+  if (op === 'delete' && !confirm('Bạn chắc chắn muốn xoá bài/chiến dịch này khỏi luồng đăng?')) return;
+  if (btnEl) btnEl.disabled = true;
+  try {
+    const res = await api('/api/admin/v1/facebook/publish', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer fourland-preview-cms' },
+      body: JSON.stringify({ action: 'queue-action', itemType, id, op })
+    });
+    const ov = res?.data || {};
+    if (Array.isArray(ov.items)) portalQueueState.items = ov.items;
+    if (ov.summary) portalQueueState.summary = ov.summary;
+    updatePortalQueueBadges(portalQueueState.summary);
+    renderPortalQueueTable();
+    if (res?.message) showToast(res.message, 3500);
+  } catch (err) {
+    alert(`Không thực hiện được thao tác: ${err.message}`);
+  } finally {
+    if (btnEl) btnEl.disabled = false;
+  }
+}
+
+function openPortalQueueDialog() {
+  const dlg = $('fbQueueManagerDialog');
+  if (!dlg) return;
+  if (!dlg.open) dlg.showModal();
+  renderPortalQueueTable();
+  refreshPortalQueueBadge();
+  clearInterval(portalQueueState.timer);
+  portalQueueState.timer = setInterval(() => {
+    if (!dlg.open) {
+      clearInterval(portalQueueState.timer);
+      return;
+    }
+    refreshPortalQueueBadge();
+  }, 6000);
+}
+
+function closePortalQueueDialog() {
+  const dlg = $('fbQueueManagerDialog');
+  clearInterval(portalQueueState.timer);
+  if (dlg && dlg.open) dlg.close();
+}
+
+document.querySelectorAll('[data-open-fb-queue]').forEach(btn => {
+  btn.onclick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    openPortalQueueDialog();
+  };
+});
+if ($('btnFbQueueClose')) $('btnFbQueueClose').onclick = closePortalQueueDialog;
+if ($('btnFbQueueRefresh')) $('btnFbQueueRefresh').onclick = () => refreshPortalQueueBadge();
+document.querySelectorAll('[data-fb-q-filter]').forEach(tab => {
+  tab.onclick = () => {
+    portalQueueState.filter = tab.dataset.fbQFilter || 'active';
+    document.querySelectorAll('[data-fb-q-filter]').forEach(t => t.classList.toggle('active', t === tab));
+    renderPortalQueueTable();
+  };
+});
+if ($('fbQueueTableBody')) {
+  $('fbQueueTableBody').onclick = (e) => {
+    const btn = e.target.closest('[data-q-op]');
+    if (!btn) return;
+    handlePortalQueueAction(btn.dataset.qType, btn.dataset.qId, btn.dataset.qOp, btn);
+  };
+}
+if ($('fbQueueManagerDialog')) {
+  $('fbQueueManagerDialog').onclick = (e) => {
+    if (e.target === $('fbQueueManagerDialog')) closePortalQueueDialog();
   };
 }
 
