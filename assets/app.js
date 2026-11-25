@@ -2588,6 +2588,8 @@ function renderFacebookPortalChannels() {
     : [
         { pageId: '104363431784609', name: 'FourLand', isDefault: true },
         { pageId: '106656702112510', name: 'Ngọc Nhà Tốt', isDefault: false },
+        { pageId: 'profile:acc_7d96c28078d8a956', name: 'FB · Nguyễn Ngọc', avatarUrl: 'https://graph.facebook.com/100023413875667/picture?type=large', isDefault: false },
+        { pageId: 'profile:acc_4285d32cedffb51f', name: 'FB · Nguyễn Bích Ngọc', avatarUrl: 'https://graph.facebook.com/100004410069738/picture?type=large', isDefault: false },
         { pageId: '100063820399874', name: 'Vinhomes Green Paradise', isDefault: false },
         { pageId: '61560150341552', name: 'Alpha - Giải Pháp Không Gian Sáng Tạo', isDefault: false },
         { pageId: '61566534021649', name: 'AI Business Hub', isDefault: false },
@@ -2693,8 +2695,8 @@ function updatePortalPublishButtonState() {
     const pageObj = (fbPortalState.pages || []).find(p => String(p.pageId) === selectedPid);
     const rawName = pageObj?.name || fbPortalState.pageName || 'FourLand';
     const pName = /^fanpage\b/i.test(rawName) ? 'FourLand' : rawName;
-    const isThreads = String(selectedPid).startsWith('threads:') || /^threads\b/i.test(pName);
-    if (span) span.textContent = pageSched.iso ? `Hẹn lịch ${pName}${shortTime}` : (isThreads ? `Đăng lên ${pName}` : `Đăng lên Fanpage ${pName}`);
+    const isNonPage = String(selectedPid).startsWith('threads:') || String(selectedPid).startsWith('profile:') || /^(threads|fb\s*·)/i.test(pName);
+    if (span) span.textContent = pageSched.iso ? `Hẹn lịch ${pName}${shortTime}` : (isNonPage ? `Đăng lên ${pName}` : `Đăng lên Fanpage ${pName}`);
   } else {
     submitBtn.disabled = false;
     if (span) span.textContent = pageSched.iso ? `Hẹn lịch ${count} kênh${shortTime}` : `Đăng đồng thời lên ${count} kênh`;

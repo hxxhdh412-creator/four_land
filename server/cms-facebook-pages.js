@@ -33,6 +33,34 @@ const INITIAL_PAGES = [
     updatedAt: "2026-11-25T00:00:00.000Z"
   },
   {
+    id: "profile:acc_7d96c28078d8a956",
+    pageId: "profile:acc_7d96c28078d8a956",
+    server50PageId: "profile:acc_7d96c28078d8a956",
+    platform: "fb_profile",
+    name: "FB · Nguyễn Ngọc",
+    token: "",
+    isDefault: false,
+    source: "server50-8889",
+    category: "Trang cá nhân Facebook",
+    avatarUrl: "https://graph.facebook.com/100023413875667/picture?type=large",
+    createdAt: "2026-11-25T00:00:00.000Z",
+    updatedAt: "2026-11-25T00:00:00.000Z"
+  },
+  {
+    id: "profile:acc_4285d32cedffb51f",
+    pageId: "profile:acc_4285d32cedffb51f",
+    server50PageId: "profile:acc_4285d32cedffb51f",
+    platform: "fb_profile",
+    name: "FB · Nguyễn Bích Ngọc",
+    token: "",
+    isDefault: false,
+    source: "server50-8889",
+    category: "Trang cá nhân Facebook",
+    avatarUrl: "https://graph.facebook.com/100004410069738/picture?type=large",
+    createdAt: "2026-11-25T00:00:00.000Z",
+    updatedAt: "2026-11-25T00:00:00.000Z"
+  },
+  {
     id: "100063820399874",
     pageId: "100063820399874",
     server50PageId: "100063820399874",
@@ -335,7 +363,14 @@ async function fetchServer50Pages({ fetchImpl = fetch } = {}) {
       if (!Array.isArray(accounts) || !accounts.length) continue;
       const allPages = [];
       for (const acc of accounts) {
-        if (acc.platform === "facebook") {
+        if (acc.platform === "facebook" && acc.id) {
+          const pName = String(acc.profileName || acc.label || "Cá nhân").trim();
+          allPages.push({
+            id: `profile:${acc.id}`,
+            name: `FB · ${pName}`,
+            picture: acc.picture || "/assets/brand/fourland-icon-192.png",
+            platform: "fb_profile"
+          });
           for (const pg of acc.pages || []) {
             if (pg?.id && pg?.name) allPages.push({ ...pg, platform: "facebook" });
           }
