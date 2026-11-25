@@ -2591,7 +2591,7 @@ function renderFacebookPortalChannels() {
         { pageId: '100063820399874', name: 'Vinhomes Green Paradise', isDefault: false },
         { pageId: '61560150341552', name: 'Alpha - Giải Pháp Không Gian Sáng Tạo', isDefault: false },
         { pageId: '61566534021649', name: 'AI Business Hub', isDefault: false },
-        { pageId: 'threads:acc_bad950fd100190ff', name: 'Threads · @rosemary.beautyhouse', avatarUrl: '/assets/brand/threads-icon.svg', isDefault: false }
+        { pageId: 'threads:acc_f36e9f891e8afc27', name: 'Threads · @peter.digital_art', avatarUrl: '/assets/brand/threads-icon.svg', isDefault: false }
       ];
   const pages = dedupePortalPages(rawPages);
   fbPortalState.pages = pages;

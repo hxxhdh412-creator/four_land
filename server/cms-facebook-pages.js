@@ -72,11 +72,11 @@ const INITIAL_PAGES = [
     updatedAt: "2026-11-25T00:00:00.000Z"
   },
   {
-    id: "threads:acc_bad950fd100190ff",
-    pageId: "threads:acc_bad950fd100190ff",
-    server50PageId: "threads:acc_bad950fd100190ff",
+    id: "threads:acc_f36e9f891e8afc27",
+    pageId: "threads:acc_f36e9f891e8afc27",
+    server50PageId: "threads:acc_f36e9f891e8afc27",
     platform: "threads",
-    name: "Threads · @rosemary.beautyhouse",
+    name: "Threads · @peter.digital_art",
     token: "",
     isDefault: false,
     source: "server50-8889",
@@ -113,7 +113,8 @@ function dedupePages(rawPages = []) {
     const nameKey = normalizePageNameKey(item.name);
     if (!pid || !nameKey) continue;
 
-    // Map known Server 50 aliases back to canonical INITIAL_PAGES entry
+    // Skip stale removed threads account if replaced
+    if (pid === "threads:acc_bad950fd100190ff") continue;
     const builtin = INITIAL_PAGES.find(
       (ip) =>
         ip.pageId === pid ||
