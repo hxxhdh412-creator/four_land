@@ -2829,17 +2829,27 @@ function updateCmsGroupRotationEta() {
   const hintEl = byId('cmsFbGroupStartAtHint');
   const sched = resolveCmsScheduleTimeInput(byId('cmsFbGroupStartAt')?.value);
   if (hintEl) hintEl.textContent = sched.label;
+
+  const gapMinEl = byId('cmsFbGroupGapMin');
+  const gapMaxEl = byId('cmsFbGroupGapMax');
+  if (gapMinEl && gapMaxEl && gapMinEl.dataset.userEdited !== '1' && gapMaxEl.dataset.userEdited !== '1') {
+    gapMinEl.value = sched.iso ? '75' : '15';
+    gapMaxEl.value = sched.iso ? '150' : '25';
+  }
+
+  updatePublishButtonState();
   if (!etaEl) return;
   const n = fbState.selectedGroups.size;
-  const a = Number(byId('cmsFbGroupGapMin')?.value) || 60;
-  const b = Math.max(a, Number(byId('cmsFbGroupGapMax')?.value) || 120);
+  const a = Number(gapMinEl?.value) || (sched.iso ? 75 : 15);
+  const b = Math.max(a, Number(gapMaxEl?.value) || (sched.iso ? 150 : 25));
   const filledVars = (fbState.variants || []).filter(v => String(v || '').trim()).length || 1;
   if (!n) {
     etaEl.textContent = 'Chọn ít nhất 1 nhóm để rải xoay vòng';
     return;
   }
-  const mins = Math.max(1, Math.round((n * 45 + (n - 1) * (a + b) / 2) / 60));
-  etaEl.textContent = `Đã chọn ${n} nhóm · ${filledVars} bản xoay vòng · ~${mins} phút${sched.iso ? ` · ${sched.label}` : ''}`;
+  const perGroupExec = sched.iso ? 40 : 22;
+  const mins = Math.max(1, Math.round((n * perGroupExec + (n - 1) * (a + b) / 2) / 60));
+  etaEl.textContent = `Đã chọn ${n} nhóm · ${filledVars} bản · ${sched.iso ? `~${mins}p · ${sched.label}` : `Tăng tốc ~${mins}p`}`;
 }
 
 function setCmsFacebookMode(mode) {
@@ -2886,10 +2896,29 @@ function setCmsFacebookMode(mode) {
   updatePublishButtonState();
 }
 
+function dedupeCmsPages(rawPages = []) {
+  const seenNames = new Set();
+  const seenIds = new Set();
+  const out = [];
+  for (const p of rawPages) {
+    if (!p) continue;
+    const pid = String(p.pageId || p.id || '').trim();
+    const s50 = String(p.server50PageId || '').trim();
+    const nameKey = String(p.name || '').trim().toLowerCase().replace(/\s+/g, ' ');
+    if (!pid || !nameKey) continue;
+    if (seenIds.has(pid) || (s50 && seenIds.has(s50)) || seenNames.has(nameKey)) continue;
+    seenIds.add(pid);
+    if (s50) seenIds.add(s50);
+    seenNames.add(nameKey);
+    out.push(p);
+  }
+  return out;
+}
+
 function renderFacebookChannels() {
   const container = byId('fbChannelList');
   if (!container) return;
-  const pages = Array.isArray(fbState.pages) && fbState.pages.length > 0
+  const rawPages = Array.isArray(fbState.pages) && fbState.pages.length > 0
     ? fbState.pages
     : (Array.isArray(fbPagesCache) && fbPagesCache.length > 0 ? fbPagesCache : [
         { pageId: '104363431784609', name: 'FourLand', isDefault: true },
@@ -2898,6 +2927,8 @@ function renderFacebookChannels() {
         { pageId: '61560150341552', name: 'Alpha - Giải Pháp Không Gian Sáng Tạo', isDefault: false },
         { pageId: '61566534021649', name: 'AI Business Hub', isDefault: false }
       ]);
+  const pages = dedupeCmsPages(rawPages);
+  fbState.pages = pages;
 
   if (fbState.selectedPageIds.size === 0 && pages.length > 0) {
     const defaultPage = pages.find(p => p.isDefault) || pages[0];
@@ -2965,6 +2996,7 @@ function updatePublishButtonState() {
   }
   if (fbState.mode === 'group') {
     const gCount = fbState.selectedGroups.size;
+    const grpSched = resolveCmsScheduleTimeInput(byId('cmsFbGroupStartAt')?.value);
     if (!fbState.engineOnline) {
       submitBtn.disabled = true;
       if (span) span.textContent = 'Chưa kết nối dịch vụ đăng bài';
@@ -2973,7 +3005,7 @@ function updatePublishButtonState() {
       if (span) span.textContent = 'Chọn nhóm để đăng';
     } else {
       submitBtn.disabled = false;
-      if (span) span.textContent = `Đăng vào ${gCount} nhóm`;
+      if (span) span.textContent = grpSched.iso ? `Hẹn lịch đăng vào ${gCount} nhóm` : `Đăng ngay vào ${gCount} nhóm`;
     }
     return;
   }
@@ -3220,61 +3252,57 @@ async function handlePublishFacebook() {
       return;
     }
     const accountId = byId('cmsFbGroupAccountSelect')?.value || fbState.selectedAccountId;
+    const startAtIso = resolveCmsScheduleTimeInput(byId('cmsFbGroupStartAt')?.value).iso;
     submitBtn.disabled = true;
-    statusNote.textContent = `Đang chuyển ảnh & kích hoạt rải ${groups.length} nhóm…`;
+    statusNote.textContent = startAtIso
+      ? `Đang đặt lịch hẹn ${groups.length} nhóm trên Máy 50…`
+      : `Đang kích hoạt đăng tăng tốc ${groups.length} nhóm…`;
     try {
-      const selectedImgs = Array.from(fbState.selectedImages);
-      const uploadedLocalUrls = [];
-      for (let i = 0; i < Math.min(selectedImgs.length, 10); i++) {
-        try {
-          const proxyUrl = `/api/download-image?url=${encodeURIComponent(selectedImgs[i])}&filename=bds_${i + 1}.jpg`;
-          const imgRes = await fetch(proxyUrl);
-          if (imgRes.ok) {
-            const blob = await imgRes.blob();
-            const dataUrl = await new Promise((resolve, reject) => {
-              const fr = new FileReader();
-              fr.onload = () => resolve(fr.result);
-              fr.onerror = reject;
-              fr.readAsDataURL(blob);
-            });
-            const up = await cmsRevidApi('POST', '/api/media/upload', { dataUrl });
-            if (up?.url) uploadedLocalUrls.push(up.url);
-          }
-        } catch (_) {}
-      }
+      const selectedImgs = Array.from(fbState.selectedImages).slice(0, 10);
       const variants = (fbState.variants || []).map(v => String(v || '').trim()).filter(Boolean);
       variants[0] = content;
-      const gapMin = Math.max(30, Number(byId('cmsFbGroupGapMin')?.value) || 60);
-      const gapMax = Math.max(gapMin, Number(byId('cmsFbGroupGapMax')?.value) || 120);
-      const startAtIso = resolveCmsScheduleTimeInput(byId('cmsFbGroupStartAt')?.value).iso;
-      const rotBody = {
+      const defaultMin = startAtIso ? 75 : 15;
+      const defaultMax = startAtIso ? 150 : 25;
+      const gapMin = Math.max(10, Number(byId('cmsFbGroupGapMin')?.value) || defaultMin);
+      const gapMax = Math.max(gapMin, Number(byId('cmsFbGroupGapMax')?.value) || defaultMax);
+      const rotPayload = {
+        action: 'publish-group',
         name: (byId('cmsFbGroupRotName')?.value || '').trim() || `BĐS Fourland · ${fbState.propertyId || Date.now()}`,
         accountId,
         actAs: byId('cmsFbGroupActAsSelect')?.value || fbState.selectedActAs || '',
         groups,
         variants,
-        images: uploadedLocalUrls,
+        imageUrls: selectedImgs,
         link: (byId('fbIncludeLink')?.checked !== false) ? 'https://www.fourland.vn' : '',
-        format: uploadedLocalUrls.length ? 'photo' : 'status',
-        background: 1,
         gapMin,
         gapMax,
         skipApproval: byId('cmsFbGroupSkipApproval')?.checked !== false,
         autoLike: byId('cmsFbGroupAutoLike')?.checked !== false,
         firstComment: (byId('cmsFbGroupFirstComment')?.value || '').trim(),
-        startAt: startAtIso,
-        dryRun: false
+        startAt: startAtIso
       };
-      const saved = await cmsRevidApi('POST', '/api/mk/rotations', rotBody);
-      await cmsRevidApi('POST', `/api/mk/rotations/${encodeURIComponent(saved.id)}/start`);
+      const rawRes = await fetch('/api/admin/v1/facebook/publish', {
+        method: 'POST',
+        keepalive: true,
+        headers: {
+          'Content-Type': 'application/json',
+          ...(cmsState.token ? { Authorization: `Bearer ${cmsState.token}` } : {})
+        },
+        body: JSON.stringify(rotPayload)
+      });
+      const jsonRes = await rawRes.json().catch(() => ({}));
+      if (!rawRes.ok || jsonRes.ok === false) {
+        throw new Error(jsonRes?.error?.message || jsonRes?.message || 'Không thể kích hoạt đăng nhóm');
+      }
+      const saved = jsonRes.data || {};
 
-      if (!startAtIso && groups.length <= 2) {
-        statusNote.textContent = `⏳ Đang đăng trực tiếp vào ${groups.length} nhóm (khoảng 15–25s)…`;
+      if (!startAtIso && groups.length <= 2 && saved.id) {
+        statusNote.textContent = `⏳ Đang đăng tăng tốc vào ${groups.length} nhóm (vẫn chạy ngầm nếu thoát trang)…`;
         submitBtn.innerHTML = `<span>⏳ Đang đăng vào ${groups.length} nhóm…</span>`;
-        const deadline = Date.now() + 55000;
+        const deadline = Date.now() + 45000;
         let finalRot = null;
         while (Date.now() < deadline) {
-          await new Promise(r => setTimeout(r, 2500));
+          await new Promise(r => setTimeout(r, 2000));
           const rots = await cmsRevidApi('GET', '/api/mk/rotations').catch(() => []);
           const cur = (Array.isArray(rots) ? rots : []).find(x => x.id === saved.id);
           if (cur && (!cur.running || cur.status === 'done')) {
@@ -3299,11 +3327,13 @@ async function handlePublishFacebook() {
         }
       }
 
-      statusNote.textContent = `Đã kích hoạt rải ${groups.length} nhóm xoay vòng!`;
-      if (confirm(`Đã kích hoạt chiến dịch rải xoay vòng vào ${groups.length} nhóm Facebook trên ${fbState.activeEngineLabel}!\n\nBạn có muốn mở Bảng điều khiển để xem tiến độ không?`)) {
-        window.open(fbState.activeEngineUrl, '_blank');
-      }
-      setTimeout(closeFacebookStudio, 1200);
+      const doneMsg = saved.message || (startAtIso
+        ? `⏰ Đã hẹn lịch đăng tự động 24/7 vào ${groups.length} nhóm Facebook trên Máy 50!`
+        : `🚀 Đã kích hoạt đăng tăng tốc vào ${groups.length} nhóm Facebook trên Máy 50!`);
+      statusNote.textContent = doneMsg;
+      showToast(doneMsg);
+      alert(doneMsg);
+      setTimeout(closeFacebookStudio, 1000);
     } catch (err) {
       submitBtn.disabled = false;
       updatePublishButtonState();
@@ -3325,16 +3355,25 @@ async function handlePublishFacebook() {
   statusNote.textContent = pageSched.iso ? `Đang lưu lịch hẹn tự động 24/7…` : `Đang xuất bản bài viết lên ${pageIds.length} Fanpage…`;
 
   try {
-    const result = await cmsApi('/api/admin/v1/facebook/publish', {
+    const rawPubRes = await fetch('/api/admin/v1/facebook/publish', {
       method: 'POST',
-      body: {
+      keepalive: true,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(cmsState.token ? { Authorization: `Bearer ${cmsState.token}` } : {})
+      },
+      body: JSON.stringify({
         propertyId: fbState.propertyId,
         content,
         images: Array.from(fbState.selectedImages),
         pageIds: pageIds,
         scheduledAt: pageSched.iso || undefined
-      }
+      })
     });
+    const result = await rawPubRes.json().catch(() => ({}));
+    if (!rawPubRes.ok || result.ok === false) {
+      throw new Error(result?.error?.message || result?.message || 'Đăng bài thất bại');
+    }
 
     statusNote.textContent = result.message || 'Đã xử lý thành công!';
     submitBtn.innerHTML = `<svg class="cms-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span>${result.data?.scheduled ? 'Đã đặt lịch hẹn 24/7 thành công' : 'Đã xuất bản & Lưu thành công'}</span>`;
@@ -3449,8 +3488,18 @@ document.querySelectorAll('[data-cms-fb-page-time]').forEach(btn => {
     updatePublishButtonState();
   });
 });
-if (byId('cmsFbGroupGapMin')) byId('cmsFbGroupGapMin').addEventListener('input', updateCmsGroupRotationEta);
-if (byId('cmsFbGroupGapMax')) byId('cmsFbGroupGapMax').addEventListener('input', updateCmsGroupRotationEta);
+if (byId('cmsFbGroupGapMin')) {
+  byId('cmsFbGroupGapMin').addEventListener('input', () => {
+    byId('cmsFbGroupGapMin').dataset.userEdited = '1';
+    updateCmsGroupRotationEta();
+  });
+}
+if (byId('cmsFbGroupGapMax')) {
+  byId('cmsFbGroupGapMax').addEventListener('input', () => {
+    byId('cmsFbGroupGapMax').dataset.userEdited = '1';
+    updateCmsGroupRotationEta();
+  });
+}
 if (byId('cmsFbGroupStartAt')) {
   byId('cmsFbGroupStartAt').addEventListener('input', () => {
     const curVal = (byId('cmsFbGroupStartAt')?.value || '').trim();
@@ -3513,10 +3562,8 @@ if (byId('btnCmsFbGroupPickNone')) {
     fbState.selectedGroups.clear();
     renderCmsRevidGroupsList();
     updatePublishButtonState();
+    updateCmsGroupRotationEta();
   });
-}
-if (byId('btnCmsFbGroupReload')) {
-  byId('btnCmsFbGroupReload').addEventListener('click', () => loadCmsRevidGroups(fbState.selectedAccountId, true));
 }
 
 if (byId('fbPageSelect')) {

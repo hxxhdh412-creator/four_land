@@ -59,8 +59,8 @@
     window.FOURLAND_ONESIGNAL_APP_ID = "524d4fcf-2075-4aaf-8862-a306e670f31d";
   </script>
 
-  <link rel="stylesheet" href="/assets/app.css?v=20261125-schedule-v21">
-  <link rel="stylesheet" href="/assets/facebook-studio.css?v=20261125-schedule-v21">
+  <link rel="stylesheet" href="/assets/app.css?v=20261125-clean-v22">
+  <link rel="stylesheet" href="/assets/facebook-studio.css?v=20261125-clean-v22">
 
   <!-- Schema.org JSON-LD Structured Data -->
   <script type="application/ld+json">
@@ -486,10 +486,6 @@
                   <button type="button" id="btnFbGroupPickAll" class="fb-portal-action-link">Chọn tất cả</button>
                   <button type="button" id="btnFbGroupPickInstant" class="fb-portal-action-link primary-pill" title="Chỉ chọn các nhóm cho phép đăng ngay không cần chờ duyệt">Chọn nhóm đăng ngay</button>
                   <button type="button" id="btnFbGroupPickNone" class="fb-portal-action-link">Bỏ chọn</button>
-                  <button type="button" id="btnFbGroupReload" class="fb-portal-action-link" title="Quét lại danh sách nhóm">
-                    <svg aria-hidden="true" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-                    <span>Tải lại</span>
-                  </button>
                 </div>
               </div>
               <div class="fb-group-search-wrap">
@@ -511,11 +507,11 @@
                   <div class="fb-group-schedule-grid">
                     <label class="fb-portal-field">
                       <span class="fb-portal-label">Nghỉ min (s)</span>
-                      <input type="number" id="fbGroupGapMin" class="fb-group-input" min="30" value="60">
+                      <input type="number" id="fbGroupGapMin" class="fb-group-input" min="10" value="15">
                     </label>
                     <label class="fb-portal-field">
                       <span class="fb-portal-label">Nghỉ max (s)</span>
-                      <input type="number" id="fbGroupGapMax" class="fb-group-input" min="30" value="120">
+                      <input type="number" id="fbGroupGapMax" class="fb-group-input" min="10" value="25">
                     </label>
                     <div class="fb-portal-field social-schedule-field">
                       <div class="fb-field-head">
@@ -725,7 +721,7 @@
     </div>
   </aside>
 
-  <script src="/assets/app.js?v=20261125-schedule-v21" defer></script>
+  <script src="/assets/app.js?v=20261125-clean-v22" defer></script>
 </body>
 
 </html>

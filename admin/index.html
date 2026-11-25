@@ -7,8 +7,8 @@
   <meta name="theme-color" content="#283d34">
   <title>FOURLAND · Trung tâm quản trị</title>
   <link rel="icon" type="image/png" href="/assets/brand/fourland-icon-192.png">
-  <link rel="stylesheet" href="/admin/admin.css?v=20261125-schedule-v21">
-  <link rel="stylesheet" href="/assets/facebook-studio.css?v=20261125-schedule-v21">
+  <link rel="stylesheet" href="/admin/admin.css?v=20261125-clean-v22">
+  <link rel="stylesheet" href="/assets/facebook-studio.css?v=20261125-clean-v22">
 </head>
 <body>
   <div id="cmsApp" class="cms-app" aria-busy="true">
@@ -1436,10 +1436,6 @@
                     <button type="button" id="btnCmsFbGroupPickAll" class="cms-fb-action-link">Chọn tất cả</button>
                     <button type="button" id="btnCmsFbGroupPickInstant" class="cms-fb-action-link primary-pill" title="Chỉ chọn các nhóm cho phép đăng ngay không cần chờ duyệt">Chọn nhóm đăng ngay</button>
                     <button type="button" id="btnCmsFbGroupPickNone" class="cms-fb-action-link">Bỏ chọn</button>
-                    <button type="button" id="btnCmsFbGroupReload" class="cms-fb-action-link">
-                      <svg aria-hidden="true" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-                      <span>Tải lại</span>
-                    </button>
                   </div>
                 </div>
                 <div class="cms-fb-search-wrap">
@@ -1460,11 +1456,11 @@
                     <div class="cms-fb-schedule-grid">
                       <label class="cms-fb-field">
                         <span class="cms-fb-label">Nghỉ min (s)</span>
-                        <input type="number" id="cmsFbGroupGapMin" class="cms-fb-compact-input" min="30" value="60">
+                        <input type="number" id="cmsFbGroupGapMin" class="cms-fb-compact-input" min="10" value="15">
                       </label>
                       <label class="cms-fb-field">
                         <span class="cms-fb-label">Nghỉ max (s)</span>
-                        <input type="number" id="cmsFbGroupGapMax" class="cms-fb-compact-input" min="30" value="120">
+                        <input type="number" id="cmsFbGroupGapMax" class="cms-fb-compact-input" min="10" value="25">
                       </label>
                       <div class="cms-fb-field social-schedule-field">
                         <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;">
@@ -1901,6 +1897,6 @@
 
     <div id="toastContainer" class="cms-toast-container" aria-live="polite"></div>
   </div>
-  <script src="/admin/admin.js?v=20261125-schedule-v21" defer></script>
+  <script src="/admin/admin.js?v=20261125-clean-v22" defer></script>
 </body>
 </html>

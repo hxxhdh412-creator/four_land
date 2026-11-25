@@ -1,11 +1,9 @@
 // ============================================================================
-// FOURLAND CMS — FACEBOOK PAGES STORE & COMPOSIO DYNAMIC CONFIGURATION
+// FOURLAND CMS — FACEBOOK PAGES STORE (SERVER 50 · 8889 NATIVE SYNC)
 // ============================================================================
 
 const DEFAULT_PAGE_ID = process.env.FACEBOOK_PAGE_ID || "104363431784609";
 const DEFAULT_PAGE_NAME = process.env.FACEBOOK_PAGE_NAME || "FourLand";
-const DEFAULT_PAGE_TOKEN = process.env.FACEBOOK_PAGE_ACCESS_TOKEN || "EAAM4uULUpAUBSxoPVlNEUioVZBXoZAsp7EYmfe42aWpZBSgtmkmrx4UgJFyhbvrHlfvwU43Pk78XZBYBFcZAwCrFiyKhCcm1AGjyZCONYy93O84QgOM9BJPYQg7FFHF48GYw2GItvZBrQkWS6NyO5AhN66yyBUTMGESFOb7NMOZC14rJHZAr8NPZChXd85nc4hcMyr1R3jtKa16BddWZCENZCLhKl7sZD";
-const COMPOSIO_API_KEY = process.env.COMPOSIO_API_KEY || "ck_kIfQa8ju8kMOPHOyvZC7";
 
 const INITIAL_PAGES = [
   {
@@ -13,26 +11,26 @@ const INITIAL_PAGES = [
     pageId: DEFAULT_PAGE_ID,
     server50PageId: "100066639715025",
     name: DEFAULT_PAGE_NAME,
-    token: DEFAULT_PAGE_TOKEN,
+    token: "",
     isDefault: true,
     source: "server50-8889",
     category: "Công ty phát triển bất động sản",
     avatarUrl: `https://graph.facebook.com/${DEFAULT_PAGE_ID}/picture?type=large`,
     createdAt: "2026-08-01T00:00:00.000Z",
-    updatedAt: "2026-10-21T00:00:00.000Z"
+    updatedAt: "2026-11-25T00:00:00.000Z"
   },
   {
     id: "106656702112510",
     pageId: "106656702112510",
     server50PageId: "100083339924743",
     name: "Ngọc Nhà Tốt",
-    token: "EAAM4uULUpAUBSxBxR0AZAcXvm3vAIOKvBaCDry12Dcita5TUacoFoZB8qNZB0LcONi4PnqHtFrR2yceWI9ngri2sHhHQJxqQVY6unpM2SWI5qixDocJhnIx8mSdVJhcnaZCaRtE31vyxbOuENdKqhZCK7g0j3rFhCzUKBt01OAytBbZC8FdfCb8mHURVBJJJEO2qTf0YFOnXKeo3eFA0GttjgZD",
+    token: "",
     isDefault: false,
     source: "server50-8889",
     category: "Người môi giới bất động sản",
     avatarUrl: "https://graph.facebook.com/106656702112510/picture?type=large",
     createdAt: "2026-08-01T00:00:00.000Z",
-    updatedAt: "2026-10-21T00:00:00.000Z"
+    updatedAt: "2026-11-25T00:00:00.000Z"
   },
   {
     id: "100063820399874",
@@ -75,12 +73,101 @@ const INITIAL_PAGES = [
   }
 ];
 
-let dynamicPagesStore = [...INITIAL_PAGES];
+function normalizePageNameKey(name) {
+  return String(name || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+}
+
+function dedupePages(rawPages = []) {
+  const list = Array.isArray(rawPages) ? rawPages.filter(Boolean) : [];
+  const byName = new Map();
+  const byId = new Set();
+
+  // Sort so server50-8889 and custom pages win over any legacy composio entries
+  const prioritized = [...list].sort((a, b) => {
+    const score = (p) => (p.source === "composio" ? 0 : p.source === "custom" ? 2 : 3);
+    return score(b) - score(a);
+  });
+
+  const result = [];
+  for (const item of prioritized) {
+    // Skip legacy composio-synced duplicates when we already have canonical pages
+    const pid = String(item.pageId || item.id || "").trim();
+    const s50Id = String(item.server50PageId || "").trim();
+    const nameKey = normalizePageNameKey(item.name);
+    if (!pid || !nameKey) continue;
+
+    // Map known Server 50 aliases back to canonical INITIAL_PAGES entry
+    const builtin = INITIAL_PAGES.find(
+      (ip) =>
+        ip.pageId === pid ||
+        ip.server50PageId === pid ||
+        (s50Id && ip.server50PageId === s50Id) ||
+        normalizePageNameKey(ip.name) === nameKey
+    );
+
+    const canonicalId = builtin ? builtin.pageId : pid;
+    const canonicalS50 = builtin ? builtin.server50PageId : (s50Id || pid);
+
+    if (byId.has(canonicalId) || (canonicalS50 && byId.has(canonicalS50)) || byName.has(nameKey)) {
+      // Preserve isDefault or fresh avatarUrl if merging
+      const existing = byName.get(nameKey);
+      if (existing) {
+        if (item.isDefault) existing.isDefault = true;
+        if (item.avatarUrl && item.source === "server50-8889" && (!existing.avatarUrl || existing.avatarUrl.startsWith("/assets/"))) {
+          existing.avatarUrl = item.avatarUrl;
+        }
+      }
+      continue;
+    }
+
+    if (item.source === "composio" && !builtin) {
+      continue;
+    }
+
+    const merged = {
+      ...(builtin || {}),
+      ...item,
+      id: canonicalId,
+      pageId: canonicalId,
+      server50PageId: canonicalS50,
+      name: String(item.name || builtin?.name || "Fanpage").trim(),
+      source: item.source === "composio" ? "server50-8889" : (item.source || "server50-8889"),
+      avatarUrl: item.avatarUrl || builtin?.avatarUrl || `https://graph.facebook.com/${canonicalId}/picture?type=large`
+    };
+
+    byId.add(canonicalId);
+    if (canonicalS50) byId.add(canonicalS50);
+    byName.set(nameKey, merged);
+    result.push(merged);
+  }
+
+  // Keep stable order: INITIAL_PAGES order first, then any custom pages
+  const ordered = [];
+  for (const initPg of INITIAL_PAGES) {
+    const found = result.find((p) => p.pageId === initPg.pageId);
+    if (found) ordered.push(found);
+  }
+  for (const p of result) {
+    if (!ordered.includes(p)) ordered.push(p);
+  }
+
+  if (ordered.length > 0 && !ordered.some((p) => p.isDefault)) {
+    const fl = ordered.find((p) => normalizePageNameKey(p.name) === "fourland") || ordered[0];
+    fl.isDefault = true;
+  }
+
+  return ordered;
+}
+
+let dynamicPagesStore = dedupePages(INITIAL_PAGES);
 let lastSyncTime = 0;
 const SYNC_TTL_MS = 60000; // 1 minute cache
 let memoryCachedPages = null;
 let lastPersistentLoadTime = 0;
-const PERSISTENT_CACHE_TTL_MS = 15000; // 15 seconds in-memory cache
+const PERSISTENT_CACHE_TTL_MS = 15000;
 
 async function loadPersistentPages() {
   const now = Date.now();
@@ -90,7 +177,6 @@ async function loadPersistentPages() {
 
   try {
     const { supabaseRequest } = require("../api/_supabase");
-    // 1. Thử đọc từ bảng app_settings nếu có
     const appRes = await supabaseRequest("app_settings?select=key,value,updated_at&key=eq.facebook_pages_config").catch(() => null);
     if (appRes && Array.isArray(appRes.data) && appRes.data.length > 0 && appRes.data[0].value) {
       let pages = null;
@@ -98,30 +184,35 @@ async function loadPersistentPages() {
         pages = typeof appRes.data[0].value === "string" ? JSON.parse(appRes.data[0].value) : appRes.data[0].value;
       } catch (_) {}
       if (Array.isArray(pages) && pages.length > 0) {
-        memoryCachedPages = pages;
-        dynamicPagesStore = [...pages];
+        const cleaned = dedupePages(pages);
+        memoryCachedPages = cleaned;
+        dynamicPagesStore = [...cleaned];
         lastPersistentLoadTime = now;
+        if (cleaned.length !== pages.length) {
+          savePersistentPages(cleaned).catch(() => {});
+        }
         return memoryCachedPages;
       }
     }
 
-    // 2. Fallback an toàn: Thử đọc từ properties row SYSTEM_APP_SETTINGS
     const sysRowRes = await supabaseRequest("properties?select=property_id,data_json,updated_at&property_id=eq.SYSTEM_APP_SETTINGS&limit=1").catch(() => null);
     if (sysRowRes && Array.isArray(sysRowRes.data) && sysRowRes.data.length > 0) {
       const data = sysRowRes.data[0].data_json || {};
       if (Array.isArray(data.facebook_pages_config) && data.facebook_pages_config.length > 0) {
-        memoryCachedPages = data.facebook_pages_config;
-        dynamicPagesStore = [...data.facebook_pages_config];
+        const cleaned = dedupePages(data.facebook_pages_config);
+        memoryCachedPages = cleaned;
+        dynamicPagesStore = [...cleaned];
         lastPersistentLoadTime = now;
+        if (cleaned.length !== data.facebook_pages_config.length) {
+          savePersistentPages(cleaned).catch(() => {});
+        }
         return memoryCachedPages;
       }
     }
-  } catch (_) {
-    // Môi trường test hoặc không có Supabase credentials -> dùng dynamicPagesStore
-  }
+  } catch (_) {}
 
   if (!memoryCachedPages) {
-    memoryCachedPages = dynamicPagesStore.length > 0 ? dynamicPagesStore : [...INITIAL_PAGES];
+    memoryCachedPages = dedupePages(dynamicPagesStore.length > 0 ? dynamicPagesStore : INITIAL_PAGES);
   }
   lastPersistentLoadTime = now;
   return memoryCachedPages;
@@ -129,8 +220,9 @@ async function loadPersistentPages() {
 
 async function savePersistentPages(pages) {
   if (!Array.isArray(pages)) return;
-  memoryCachedPages = [...pages];
-  dynamicPagesStore = [...pages];
+  const cleaned = dedupePages(pages);
+  memoryCachedPages = [...cleaned];
+  dynamicPagesStore = [...cleaned];
   lastPersistentLoadTime = Date.now();
 
   try {
@@ -138,12 +230,11 @@ async function savePersistentPages(pages) {
     const now = new Date().toISOString();
     let saved = false;
 
-    // 1. Thử lưu vào app_settings
     const appSettingsRes = await supabaseRequest("app_settings", {
       method: "POST",
       body: [{
         key: "facebook_pages_config",
-        value: JSON.stringify(pages),
+        value: JSON.stringify(cleaned),
         updated_at: now
       }],
       prefer: "resolution=merge-duplicates"
@@ -152,12 +243,11 @@ async function savePersistentPages(pages) {
     if (appSettingsRes) saved = true;
 
     if (!saved) {
-      // 2. Fallback: Lưu vào properties SYSTEM_APP_SETTINGS
       const sysRow = await supabaseRequest("properties?select=property_id,data_json&property_id=eq.SYSTEM_APP_SETTINGS&limit=1").catch(() => null);
       const existingData = (sysRow?.data?.[0]?.data_json) || {};
       const nextDataJson = {
         ...existingData,
-        facebook_pages_config: pages,
+        facebook_pages_config: cleaned,
         updated_at: now
       };
 
@@ -184,9 +274,7 @@ async function savePersistentPages(pages) {
         });
       });
     }
-  } catch (_) {
-    // Môi trường test hoặc không có Supabase credentials
-  }
+  } catch (_) {}
 }
 
 function sanitizePage(page) {
@@ -198,97 +286,12 @@ function sanitizePage(page) {
     name: String(page.name || "Fanpage").trim(),
     isDefault: Boolean(page.isDefault),
     hasToken: Boolean(page.token && page.token.trim()),
-    source: page.source || "custom",
+    source: page.source || "server50-8889",
     category: page.category || "Trang Facebook",
     avatarUrl: page.avatarUrl || `https://graph.facebook.com/${page.pageId || page.id}/picture?type=large`,
     createdAt: page.createdAt || new Date().toISOString(),
     updatedAt: page.updatedAt || new Date().toISOString()
   };
-}
-
-async function fetchComposioPages({ apiKey = COMPOSIO_API_KEY, fetchImpl = fetch } = {}) {
-  const candidateKeys = Array.from(new Set([apiKey, process.env.COMPOSIO_API_KEY])).filter(k => k && k !== "pending");
-  if (!candidateKeys.length) return dynamicPagesStore.map(sanitizePage);
-
-  for (const candidateKey of candidateKeys) {
-    try {
-      const res = await fetchImpl("https://connect.composio.dev/mcp", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Accept": "application/json, text/event-stream",
-          "x-consumer-api-key": candidateKey,
-          "Mcp-Session-Id": "fourland_sync_" + Date.now()
-        },
-        body: JSON.stringify({
-          jsonrpc: "2.0",
-          id: 1,
-          method: "tools/call",
-          params: {
-            name: "COMPOSIO_MULTI_EXECUTE_TOOL",
-            arguments: {
-              tools: [{ tool_slug: "FACEBOOK_LIST_MANAGED_PAGES", arguments: { fields: "id,name,access_token,category" } }]
-            }
-          }
-        }),
-        signal: AbortSignal.timeout(15000)
-      });
-
-      if (res.ok) {
-        const text = await res.text();
-      for (const line of text.split(/\r?\n/)) {
-        if (line.startsWith("data: ")) {
-          try {
-            const j = JSON.parse(line.slice(6));
-            const txt = j.result?.content?.[0]?.text;
-            if (txt) {
-              const parsed = JSON.parse(txt);
-              const composioPages = parsed.data?.results?.[0]?.response?.data?.data || [];
-              if (Array.isArray(composioPages) && composioPages.length > 0) {
-                composioPages.forEach(cp => {
-                  const pid = String(cp.id);
-                  const existingIndex = dynamicPagesStore.findIndex(p => String(p.pageId) === pid || String(p.id) === pid);
-                  const pageObj = {
-                    id: pid,
-                    pageId: pid,
-                    name: cp.name,
-                    token: cp.access_token || DEFAULT_PAGE_TOKEN,
-                    source: "composio",
-                    category: cp.category || "Trang Facebook",
-                    avatarUrl: `https://graph.facebook.com/${pid}/picture?type=large`,
-                    isDefault: existingIndex >= 0 ? dynamicPagesStore[existingIndex].isDefault : (pid === DEFAULT_PAGE_ID),
-                    createdAt: existingIndex >= 0 ? dynamicPagesStore[existingIndex].createdAt : new Date().toISOString(),
-                    updatedAt: new Date().toISOString()
-                  };
-
-                  if (existingIndex >= 0) {
-                    dynamicPagesStore[existingIndex] = { ...dynamicPagesStore[existingIndex], ...pageObj };
-                  } else {
-                    dynamicPagesStore.push(pageObj);
-                  }
-                });
-
-                // Ensure default page
-                if (!dynamicPagesStore.some(p => p.isDefault)) {
-                  const fourLand = dynamicPagesStore.find(p => p.pageId === DEFAULT_PAGE_ID);
-                  if (fourLand) fourLand.isDefault = true;
-                  else if (dynamicPagesStore.length > 0) dynamicPagesStore[0].isDefault = true;
-                }
-
-                lastSyncTime = Date.now();
-                return dynamicPagesStore.map(sanitizePage);
-              }
-            }
-          } catch {}
-        }
-      }
-    }
-  } catch (err) {
-      console.warn("Composio pages fetch notice for key:", err.message);
-    }
-  }
-
-  return dynamicPagesStore.map(sanitizePage);
 }
 
 async function fetchServer50Pages({ fetchImpl = fetch } = {}) {
@@ -325,20 +328,21 @@ async function fetchServer50Pages({ fetchImpl = fetch } = {}) {
 
       allPages.forEach((sp) => {
         const pid = String(sp.id);
-        const normName = String(sp.name || "").trim().toLowerCase();
+        const normName = normalizePageNameKey(sp.name);
         const existingIndex = dynamicPagesStore.findIndex(
           (p) =>
             String(p.pageId) === pid ||
             String(p.id) === pid ||
-            String(p.name || "").trim().toLowerCase() === normName
+            String(p.server50PageId || "") === pid ||
+            normalizePageNameKey(p.name) === normName
         );
         const keepId = existingIndex >= 0 ? dynamicPagesStore[existingIndex].pageId : pid;
         const pageObj = {
           id: keepId,
           pageId: keepId,
           server50PageId: pid,
-          name: sp.name,
-          token: existingIndex >= 0 ? dynamicPagesStore[existingIndex].token : DEFAULT_PAGE_TOKEN,
+          name: String(sp.name || "").trim(),
+          token: existingIndex >= 0 ? dynamicPagesStore[existingIndex].token : "",
           source: "server50-8889",
           category: "Fanpage kết nối Máy 50 (8889)",
           avatarUrl: sp.picture || `https://graph.facebook.com/${keepId}/picture?type=large`,
@@ -353,10 +357,7 @@ async function fetchServer50Pages({ fetchImpl = fetch } = {}) {
         }
       });
 
-      if (!dynamicPagesStore.some((p) => p.isDefault) && dynamicPagesStore.length > 0) {
-        const fl = dynamicPagesStore.find((p) => String(p.name).toLowerCase().includes("fourland")) || dynamicPagesStore[0];
-        fl.isDefault = true;
-      }
+      dynamicPagesStore = dedupePages(dynamicPagesStore);
       lastSyncTime = Date.now();
       return { syncedFrom: "server50-8889", pages: dynamicPagesStore.map(sanitizePage) };
     } catch (_) {}
@@ -369,51 +370,49 @@ async function getFacebookPages({ forceRefresh = false, fetchImpl = fetch } = {}
   const isNodeTest = Array.isArray(process.execArgv) && process.execArgv.includes("--test");
   const shouldSync = forceRefresh || (!isNodeTest && (Date.now() - lastSyncTime > SYNC_TTL_MS));
   if (shouldSync) {
-    // 1. Ưu tiên đồng bộ từ Nhánh riêng Máy 50 (Cổng 8889) trước (lấy đủ avatar thật & page mới)
-    const s50 = await fetchServer50Pages({ fetchImpl });
-    if (!s50.syncedFrom) {
-      // 2. Dự phòng (Fallback): Đồng bộ qua Composio nếu Máy 50 không phản hồi
-      await fetchComposioPages({ fetchImpl });
-    }
-    await savePersistentPages(dynamicPagesStore);
+    await fetchServer50Pages({ fetchImpl });
   }
-  // Ensure all built-in Server 50 pages are merged into dynamicPagesStore if missing
   for (const initPg of INITIAL_PAGES) {
     const pid = String(initPg.pageId);
-    const norm = String(initPg.name).trim().toLowerCase();
+    const norm = normalizePageNameKey(initPg.name);
     const exists = dynamicPagesStore.some(
-      p => String(p.pageId) === pid || String(p.id) === pid || String(p.name || "").trim().toLowerCase() === norm
+      (p) =>
+        String(p.pageId) === pid ||
+        String(p.id) === pid ||
+        String(p.server50PageId || "") === String(initPg.server50PageId || "") ||
+        normalizePageNameKey(p.name) === norm
     );
     if (!exists) {
       dynamicPagesStore.push({ ...initPg, isDefault: false });
     }
   }
+  dynamicPagesStore = dedupePages(dynamicPagesStore);
+  if (shouldSync) {
+    await savePersistentPages(dynamicPagesStore);
+  }
   return dynamicPagesStore.map(sanitizePage);
 }
 
-async function getFacebookPageById(pageId, { forceRefresh = false } = {}) {
+async function getFacebookPageById(pageId) {
   if (!pageId) return null;
   await loadPersistentPages();
-  if (forceRefresh) {
-    await fetchComposioPages();
-    await savePersistentPages(dynamicPagesStore);
-  }
-  let page = dynamicPagesStore.find(p => String(p.pageId) === String(pageId) || String(p.id) === String(pageId));
-  if (!page || !page.token) {
-    await fetchComposioPages();
-    await savePersistentPages(dynamicPagesStore);
-    page = dynamicPagesStore.find(p => String(p.pageId) === String(pageId) || String(p.id) === String(pageId));
-  }
-  return page || null;
+  const target = String(pageId).trim();
+  const found = dynamicPagesStore.find(
+    (p) =>
+      String(p.pageId) === target ||
+      String(p.id) === target ||
+      String(p.server50PageId || "") === target
+  );
+  if (found) return found;
+  const initMatch = INITIAL_PAGES.find(
+    (p) => String(p.pageId) === target || String(p.server50PageId || "") === target
+  );
+  return initMatch || null;
 }
 
 async function getDefaultFacebookPage() {
   await loadPersistentPages();
-  if (dynamicPagesStore.length <= 1) {
-    await fetchComposioPages();
-    await savePersistentPages(dynamicPagesStore);
-  }
-  const defaultPage = dynamicPagesStore.find(p => p.isDefault) || dynamicPagesStore[0] || INITIAL_PAGES[0];
+  const defaultPage = dynamicPagesStore.find((p) => p.isDefault) || dynamicPagesStore[0] || INITIAL_PAGES[0];
   return defaultPage;
 }
 
@@ -426,16 +425,20 @@ async function addFacebookPage({ name, pageId, token = "", isDefault = false }) 
   if (!cleanId) throw new Error("Mã Page ID không được để trống");
   if (!cleanName) throw new Error("Tên Fanpage không được để trống");
 
-  const existingIndex = dynamicPagesStore.findIndex(p => String(p.pageId) === cleanId);
+  const normName = normalizePageNameKey(cleanName);
+  const existingIndex = dynamicPagesStore.findIndex(
+    (p) => String(p.pageId) === cleanId || normalizePageNameKey(p.name) === normName
+  );
   const now = new Date().toISOString();
 
   if (isDefault) {
-    dynamicPagesStore.forEach(p => { p.isDefault = false; });
+    dynamicPagesStore.forEach((p) => { p.isDefault = false; });
   }
 
   const newPage = {
     id: cleanId,
     pageId: cleanId,
+    server50PageId: cleanId,
     name: cleanName,
     token: cleanToken || (existingIndex >= 0 ? dynamicPagesStore[existingIndex].token : ""),
     source: "custom",
@@ -448,7 +451,7 @@ async function addFacebookPage({ name, pageId, token = "", isDefault = false }) 
   if (existingIndex >= 0) {
     dynamicPagesStore[existingIndex] = { ...dynamicPagesStore[existingIndex], ...newPage, updatedAt: now };
     await savePersistentPages(dynamicPagesStore);
-    return sanitizePage(dynamicPagesStore[existingIndex]);
+    return sanitizePage(dynamicPagesStore.find((p) => String(p.pageId) === cleanId) || newPage);
   }
 
   dynamicPagesStore.push(newPage);
@@ -459,13 +462,13 @@ async function addFacebookPage({ name, pageId, token = "", isDefault = false }) 
 async function updateFacebookPage(pageId, updates = {}) {
   await loadPersistentPages();
   const cleanId = String(pageId || "").trim();
-  const page = dynamicPagesStore.find(p => String(p.pageId) === cleanId || String(p.id) === cleanId);
+  const page = dynamicPagesStore.find((p) => String(p.pageId) === cleanId || String(p.id) === cleanId);
   if (!page) throw new Error("Không tìm thấy Fanpage");
 
   const now = new Date().toISOString();
 
   if (updates.isDefault) {
-    dynamicPagesStore.forEach(p => { p.isDefault = false; });
+    dynamicPagesStore.forEach((p) => { p.isDefault = false; });
     page.isDefault = true;
   }
 
@@ -490,13 +493,12 @@ async function deleteFacebookPage(pageId) {
   }
 
   const initialLength = dynamicPagesStore.length;
-  dynamicPagesStore = dynamicPagesStore.filter(p => String(p.pageId) !== cleanId && String(p.id) !== cleanId);
+  dynamicPagesStore = dynamicPagesStore.filter((p) => String(p.pageId) !== cleanId && String(p.id) !== cleanId);
   if (dynamicPagesStore.length === initialLength) {
     throw new Error("Không tìm thấy Fanpage để xóa");
   }
 
-  // Ensure there is always a default page
-  if (!dynamicPagesStore.some(p => p.isDefault) && dynamicPagesStore.length > 0) {
+  if (!dynamicPagesStore.some((p) => p.isDefault) && dynamicPagesStore.length > 0) {
     dynamicPagesStore[0].isDefault = true;
   }
 
@@ -508,7 +510,7 @@ module.exports = {
   getFacebookPages,
   getFacebookPageById,
   getDefaultFacebookPage,
-  fetchComposioPages,
+  dedupePages,
   addFacebookPage,
   updateFacebookPage,
   deleteFacebookPage,

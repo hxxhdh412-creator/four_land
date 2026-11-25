@@ -2451,17 +2451,27 @@ function updateGroupRotationEta() {
   const hintEl = $('fbGroupStartAtHint');
   const sched = resolveScheduleTimeInput($('fbGroupStartAt')?.value);
   if (hintEl) hintEl.textContent = sched.label;
+
+  const gapMinEl = $('fbGroupGapMin');
+  const gapMaxEl = $('fbGroupGapMax');
+  if (gapMinEl && gapMaxEl && gapMinEl.dataset.userEdited !== '1' && gapMaxEl.dataset.userEdited !== '1') {
+    gapMinEl.value = sched.iso ? '75' : '15';
+    gapMaxEl.value = sched.iso ? '150' : '25';
+  }
+
+  updatePortalPublishButtonState();
   if (!etaEl) return;
   const n = fbPortalState.selectedGroups.size;
-  const a = Number($('fbGroupGapMin')?.value) || 60;
-  const b = Math.max(a, Number($('fbGroupGapMax')?.value) || 120);
+  const a = Number(gapMinEl?.value) || (sched.iso ? 75 : 15);
+  const b = Math.max(a, Number(gapMaxEl?.value) || (sched.iso ? 150 : 25));
   const filledVars = (fbPortalState.variants || []).filter(v => String(v || '').trim()).length || 1;
   if (!n) {
     etaEl.textContent = 'Chọn ít nhất 1 nhóm để rải xoay vòng';
     return;
   }
-  const mins = Math.max(1, Math.round((n * 45 + (n - 1) * (a + b) / 2) / 60));
-  etaEl.textContent = `Đã chọn ${n} nhóm · ${filledVars} bản xoay vòng · ~${mins} phút${sched.iso ? ` · ${sched.label}` : ''}`;
+  const perGroupExec = sched.iso ? 40 : 22;
+  const mins = Math.max(1, Math.round((n * perGroupExec + (n - 1) * (a + b) / 2) / 60));
+  etaEl.textContent = `Đã chọn ${n} nhóm · ${filledVars} bản · ${sched.iso ? `~${mins}p · ${sched.label}` : `Tăng tốc ~${mins}p`}`;
 }
 
 function syncPortalFbUrl(propertyId, fbMode) {
@@ -2530,10 +2540,29 @@ function setFacebookPortalMode(mode) {
   updatePortalPreviewFromChannels();
 }
 
+function dedupePortalPages(rawPages = []) {
+  const seenNames = new Set();
+  const seenIds = new Set();
+  const out = [];
+  for (const p of rawPages) {
+    if (!p) continue;
+    const pid = String(p.pageId || p.id || '').trim();
+    const s50 = String(p.server50PageId || '').trim();
+    const nameKey = String(p.name || '').trim().toLowerCase().replace(/\s+/g, ' ');
+    if (!pid || !nameKey) continue;
+    if (seenIds.has(pid) || (s50 && seenIds.has(s50)) || seenNames.has(nameKey)) continue;
+    seenIds.add(pid);
+    if (s50) seenIds.add(s50);
+    seenNames.add(nameKey);
+    out.push(p);
+  }
+  return out;
+}
+
 function renderFacebookPortalChannels() {
   const container = $('fbPortalChannelList');
   if (!container) return;
-  const pages = Array.isArray(fbPortalState.pages) && fbPortalState.pages.length > 0
+  const rawPages = Array.isArray(fbPortalState.pages) && fbPortalState.pages.length > 0
     ? fbPortalState.pages
     : [
         { pageId: '104363431784609', name: 'FourLand', isDefault: true },
@@ -2542,6 +2571,8 @@ function renderFacebookPortalChannels() {
         { pageId: '61560150341552', name: 'Alpha - Giải Pháp Không Gian Sáng Tạo', isDefault: false },
         { pageId: '61566534021649', name: 'AI Business Hub', isDefault: false }
       ];
+  const pages = dedupePortalPages(rawPages);
+  fbPortalState.pages = pages;
 
   if (fbPortalState.selectedPageIds.size === 0 && pages.length > 0) {
     const defaultPage = pages.find(p => p.isDefault) || pages[0];
@@ -2612,6 +2643,7 @@ function updatePortalPublishButtonState() {
 
   if (fbPortalState.mode === 'group') {
     const gCount = fbPortalState.selectedGroups.size;
+    const grpSched = resolveScheduleTimeInput($('fbGroupStartAt')?.value);
     if (!fbPortalState.engineOnline) {
       submitBtn.disabled = true;
       if (span) span.textContent = 'Chưa kết nối dịch vụ đăng bài';
@@ -2620,7 +2652,7 @@ function updatePortalPublishButtonState() {
       if (span) span.textContent = 'Chọn nhóm để đăng';
     } else {
       submitBtn.disabled = false;
-      if (span) span.textContent = `Đăng vào ${gCount} nhóm`;
+      if (span) span.textContent = grpSched.iso ? `Hẹn lịch đăng vào ${gCount} nhóm` : `Đăng ngay vào ${gCount} nhóm`;
     }
     return;
   }
@@ -2840,16 +2872,16 @@ function renderFacebookPhotoGrid() {
     grid.appendChild(item);
   });
 
-  // Nút tải thêm ảnh (+ Thêm ảnh)
+  // Nút tải thêm ảnh (+)
   const addBtn = document.createElement('label');
   addBtn.className = 'fb-portal-photo-add';
   addBtn.title = 'Tải thêm ảnh từ thiết bị';
+  addBtn.setAttribute('aria-label', 'Tải thêm ảnh từ thiết bị');
   addBtn.innerHTML = `
-    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
       <line x1="12" y1="5" x2="12" y2="19"></line>
       <line x1="5" y1="12" x2="19" y2="12"></line>
     </svg>
-    <span>Thêm ảnh</span>
     <input type="file" accept="image/jpeg,image/png,image/webp" multiple style="display:none!important">
   `;
 
@@ -2953,71 +2985,57 @@ async function handlePublishGroupRotation() {
     variants.push(currentVal);
   }
 
+  const startAtIso = resolveScheduleTimeInput($('fbGroupStartAt')?.value).iso;
   const submitBtn = $('fbSubmitBtn');
   if (submitBtn) {
     submitBtn.disabled = true;
-    submitBtn.innerHTML = `<span>Đang chuyển ảnh & kích hoạt rải ${groups.length} nhóm…</span>`;
+    submitBtn.innerHTML = `<span>${startAtIso ? `Đang đặt lịch hẹn ${groups.length} nhóm trên Máy 50…` : `Đang kích hoạt đăng tăng tốc ${groups.length} nhóm…`}</span>`;
   }
 
   try {
     const selectedImgs = Array.from(fbPortalState.selectedImages);
-    const uploadedLocalUrls = [];
-    for (let i = 0; i < Math.min(selectedImgs.length, 10); i++) {
-      const rawUrl = selectedImgs[i];
-      try {
-        // Tải ảnh qua proxy /api/download-image của Fourland rồi đẩy sang /api/media/upload của 8788
-        const savedToken = deviceAuthStore.getToken();
-        const tokenParam = savedToken ? `&access_token=${encodeURIComponent(savedToken)}` : '';
-        const proxyUrl = `/api/download-image?url=${encodeURIComponent(rawUrl)}&filename=bds_${i + 1}.jpg${tokenParam}`;
-        const imgRes = await fetch(proxyUrl);
-        if (imgRes.ok) {
-          const blob = await imgRes.blob();
-          const dataUrl = await new Promise((resolve, reject) => {
-            const fr = new FileReader();
-            fr.onload = () => resolve(fr.result);
-            fr.onerror = reject;
-            fr.readAsDataURL(blob);
-          });
-          const up = await revidEngineApi('POST', '/api/media/upload', { dataUrl });
-          if (up?.url) uploadedLocalUrls.push(up.url);
-        }
-      } catch (_) {}
-    }
-
-    const gapMin = Math.max(30, Number($('fbGroupGapMin')?.value) || 60);
-    const gapMax = Math.max(gapMin, Number($('fbGroupGapMax')?.value) || 120);
-    const startAtIso = resolveScheduleTimeInput($('fbGroupStartAt')?.value).iso;
-    const rotBody = {
+    const defaultMin = startAtIso ? 75 : 15;
+    const defaultMax = startAtIso ? 150 : 25;
+    const gapMin = Math.max(10, Number($('fbGroupGapMin')?.value) || defaultMin);
+    const gapMax = Math.max(gapMin, Number($('fbGroupGapMax')?.value) || defaultMax);
+    const rotPayload = {
+      action: 'publish-group',
       name: ($('fbGroupRotName')?.value || '').trim() || `BĐS Fourland · ${fbPortalState.propertyId || Date.now()}`,
       accountId,
       actAs: $('fbGroupActAsSelect')?.value || fbPortalState.selectedActAs || '',
       groups,
       variants,
-      images: uploadedLocalUrls,
+      imageUrls: selectedImgs.slice(0, 10),
       link: ($('fbIncludeLink')?.checked ?? true) ? 'https://www.fourland.vn' : '',
-      format: uploadedLocalUrls.length ? 'photo' : 'status',
-      background: 1,
       gapMin,
       gapMax,
       skipApproval: $('fbGroupSkipApproval')?.checked !== false,
       autoLike: $('fbGroupAutoLike')?.checked !== false,
       firstComment: ($('fbGroupFirstComment')?.value || '').trim(),
-      startAt: startAtIso,
-      dryRun: false
+      startAt: startAtIso
     };
 
-    const saved = await revidEngineApi('POST', '/api/mk/rotations', rotBody);
-    if (!saved?.id) throw new Error('Không tạo được chiến dịch đăng nhóm trên 8889');
-    await revidEngineApi('POST', `/api/mk/rotations/${encodeURIComponent(saved.id)}/start`);
+    // Gửi 1 gói JSON gọn nhẹ với keepalive:true để dù lỡ đóng/thoát trang ngay sau khi bấm thì Máy 50 vẫn nhận lệnh và tự tải ảnh + chạy 24/7 không bị ngắt!
+    const apiRes = await api('/api/admin/v1/facebook/publish', {
+      method: 'POST',
+      keepalive: true,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer fourland-preview-cms'
+      },
+      body: JSON.stringify(rotPayload)
+    });
+    const saved = apiRes?.data || {};
+    if (!saved?.id) throw new Error('Không tạo được chiến dịch đăng nhóm trên Máy 50 (8889)');
 
     if (!startAtIso && groups.length <= 2) {
       if (submitBtn) {
-        submitBtn.innerHTML = `<span>⏳ Đang đăng trực tiếp vào ${groups.length} nhóm (khoảng 15–25s)…</span>`;
+        submitBtn.innerHTML = `<span>⏳ Đang đăng tăng tốc vào ${groups.length} nhóm (vẫn chạy ngầm nếu thoát trang)…</span>`;
       }
-      const deadline = Date.now() + 55000;
+      const deadline = Date.now() + 45000;
       let finalRot = null;
       while (Date.now() < deadline) {
-        await new Promise(r => setTimeout(r, 2500));
+        await new Promise(r => setTimeout(r, 2000));
         const rots = await revidEngineApi('GET', '/api/mk/rotations').catch(() => []);
         const cur = (Array.isArray(rots) ? rots : []).find(x => x.id === saved.id);
         if (cur && (!cur.running || cur.status === 'done')) {
@@ -3043,14 +3061,15 @@ async function handlePublishGroupRotation() {
       }
     }
 
+    const doneMsg = saved.message || (startAtIso
+      ? `⏰ Đã hẹn lịch đăng tự động 24/7 vào ${groups.length} nhóm Facebook trên Máy 50!`
+      : `🚀 Đã kích hoạt đăng tăng tốc vào ${groups.length} nhóm Facebook trên Máy 50!`);
     if (submitBtn) {
-      submitBtn.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span>Đã kích hoạt rải ${groups.length} nhóm xoay vòng!</span>`;
+      submitBtn.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span>${startAtIso ? `Đã hẹn lịch ${groups.length} nhóm!` : `Đang rải tăng tốc ${groups.length} nhóm!`}</span>`;
     }
-    showToast(`🚀 Đã bắt đầu rải bài xoay vòng vào ${groups.length} nhóm Facebook!`, 4000);
-    if (confirm(`Đã kích hoạt chiến dịch "${rotBody.name}" rải xoay vòng ${variants.length} phiên bản vào ${groups.length} nhóm Facebook (kèm ${uploadedLocalUrls.length} ảnh) trên ${fbPortalState.activeEngineLabel}!\n\nBạn có muốn mở Bảng điều khiển để theo dõi tiến độ từng nhóm không?`)) {
-      window.open(`${fbPortalState.activeEngineUrl}`, '_blank');
-    }
-    setTimeout(closeFacebookStudio, 1200);
+    showToast(doneMsg, 4500);
+    alert(doneMsg);
+    setTimeout(closeFacebookStudio, 1000);
   } catch (error) {
     if (submitBtn) {
       submitBtn.disabled = false;
@@ -3090,6 +3109,7 @@ async function handlePublishFacebook() {
     const imagesToPublish = selectedList.length > 0 ? selectedList : (fbPortalState.allImages || []);
     const result = await api('/api/admin/v1/facebook/publish', {
       method: 'POST',
+      keepalive: true,
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer fourland-preview-cms'
@@ -3257,9 +3277,6 @@ if ($('btnFbGroupPickNone')) {
     updatePortalPreviewFromChannels();
   };
 }
-if ($('btnFbGroupReload')) {
-  $('btnFbGroupReload').onclick = () => loadRevidAccountGroups(fbPortalState.selectedAccountId, true);
-}
 if ($('fbPageStartAt')) {
   $('fbPageStartAt').oninput = () => {
     const curVal = ($('fbPageStartAt')?.value || '').trim();
@@ -3287,8 +3304,18 @@ document.querySelectorAll('[data-fb-page-time]').forEach(btn => {
     updatePortalPublishButtonState();
   };
 });
-if ($('fbGroupGapMin')) $('fbGroupGapMin').oninput = updateGroupRotationEta;
-if ($('fbGroupGapMax')) $('fbGroupGapMax').oninput = updateGroupRotationEta;
+if ($('fbGroupGapMin')) {
+  $('fbGroupGapMin').oninput = () => {
+    $('fbGroupGapMin').dataset.userEdited = '1';
+    updateGroupRotationEta();
+  };
+}
+if ($('fbGroupGapMax')) {
+  $('fbGroupGapMax').oninput = () => {
+    $('fbGroupGapMax').dataset.userEdited = '1';
+    updateGroupRotationEta();
+  };
+}
 if ($('fbGroupStartAt')) {
   $('fbGroupStartAt').oninput = () => {
     const curVal = ($('fbGroupStartAt')?.value || '').trim();

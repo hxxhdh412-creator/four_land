@@ -611,6 +611,24 @@
 .social-studio :is(.fb-portal-photo-item.selected, .cms-fb-photo-item.selected) {
   border-color: var(--forest, #283d34) !important;
 }
+.social-studio .fb-portal-photo-add {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0 !important;
+  padding: 0 !important;
+  border-radius: 6px !important;
+  border: 1.5px dashed #b4c3ba !important;
+  color: var(--forest, #283d34) !important;
+  background: #f8faf8 !important;
+}
+.social-studio .fb-portal-photo-add:hover {
+  border-color: var(--forest, #283d34) !important;
+  background: var(--sage, #eaf1ed) !important;
+}
+.social-studio .fb-portal-photo-add span {
+  display: none !important;
+}
 .social-studio :is(.fb-portal-photo-check, .cms-fb-photo-item.selected .check-badge, .cms-fb-photo-check) {
   background: var(--forest, #283d34) !important;
 }

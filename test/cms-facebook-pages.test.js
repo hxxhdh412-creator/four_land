@@ -127,3 +127,22 @@ test("loadPersistentPages and savePersistentPages preserve custom default page",
   assert.equal(defPage.pageId, "9999999999");
   assert.equal(defPage.name, "BĐS TP.HCM Mới");
 });
+
+test("dedupePages removes duplicate Fanpages and legacy Composio duplicates", () => {
+  const { dedupePages } = require("../server/cms-facebook-pages");
+  const messy = [
+    { pageId: "104363431784609", name: "FourLand", source: "server50-8889", isDefault: true },
+    { pageId: "61573790609775", name: "Vinhomes Green Paradise", source: "composio" },
+    { pageId: "100063820399874", name: "Vinhomes Green Paradise", source: "server50-8889" },
+    { pageId: "61560150341552", name: "Alpha - Giải Pháp Không Gian Sáng Tạo ", source: "server50-8889" },
+    { pageId: "999111222", name: "Alpha - Giải Pháp Không Gian Sáng Tạo", source: "composio" },
+    { pageId: "61566534021649", name: "AI Business Hub", source: "server50-8889" },
+    { pageId: "888777666", name: "AI Business Hub", source: "composio" }
+  ];
+  const cleaned = dedupePages(messy);
+  const names = cleaned.map((p) => p.name);
+  assert.equal(names.filter((n) => n === "Vinhomes Green Paradise").length, 1);
+  assert.equal(names.filter((n) => n.startsWith("Alpha")).length, 1);
+  assert.equal(names.filter((n) => n === "AI Business Hub").length, 1);
+  assert.equal(cleaned.some((p) => p.source === "composio"), false);
+});
