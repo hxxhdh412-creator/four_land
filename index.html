@@ -59,7 +59,8 @@
     window.FOURLAND_ONESIGNAL_APP_ID = "524d4fcf-2075-4aaf-8862-a306e670f31d";
   </script>
 
-  <link rel="stylesheet" href="/assets/app.css?v=20261125-group-rotation-v2">
+  <link rel="stylesheet" href="/assets/app.css?v=20261125-compact-studio-v1">
+  <link rel="stylesheet" href="/assets/facebook-studio.css?v=20261125-unified-v3">
 
   <!-- Schema.org JSON-LD Structured Data -->
   <script type="application/ld+json">
@@ -371,7 +372,7 @@
       <div id="adminAccessStatus" class="access-status" role="status" aria-live="polite"></div>
     </form>
   </dialog>
-  <dialog id="facebookPostDialog" class="fb-portal-dialog" aria-labelledby="fbDialogTitle">
+  <dialog id="facebookPostDialog" class="fb-portal-dialog social-studio" aria-labelledby="fbDialogTitle">
     <div class="fb-portal-shell">
       <header class="fb-portal-header">
         <div class="fb-portal-head-brand">
@@ -385,17 +386,7 @@
             <h2 id="fbDialogTitle" class="fb-portal-title">Đăng bài lên Facebook</h2>
           </div>
         </div>
-        <div class="fb-portal-mode-tabs" id="fbPortalModeTabs" role="tablist">
-          <button type="button" class="fb-mode-tab active" data-fb-mode="page">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/></svg>
-            <span>Đăng Fanpage</span>
-          </button>
-          <button type="button" class="fb-mode-tab" data-fb-mode="group">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-            <span>Đăng nhóm xoay vòng</span>
-            <span class="fb-mode-dot" id="fbGroupEngineDot" title="Trạng thái kết nối Máy chủ đăng nhóm"></span>
-          </button>
-        </div>
+        <label class="social-destination"><span>Nơi đăng</span><select id="fbDestinationSelect" aria-label="Nơi đăng"><option value="page">Fanpage</option><option value="group">Nhóm Facebook</option></select></label>
         <button id="fbDialogClose" class="fb-portal-close" type="button" aria-label="Đóng Facebook Studio">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
@@ -427,13 +418,13 @@
             <div class="fb-group-engine-bar">
               <div class="fb-group-engine-left">
                 <span class="fb-status-indicator" id="fbGroupStatusBadge"></span>
-                <span class="fb-group-engine-status" id="fbGroupEngineStatus">Đang kết nối Máy chủ 50 (24/7)…</span>
+                <span class="fb-group-engine-status" id="fbGroupEngineStatus">Đang kết nối dịch vụ đăng bài…</span>
               </div>
               <div class="fb-group-engine-right">
-                <select id="fbGroupNodeSelect" class="fb-group-node-select" title="Chọn máy chủ thực thi rải nhóm">
-                  <option value="auto">Tự động (Máy 50 · 24/7)</option>
-                  <option value="server50">Máy chủ 50 (Cổng 8889)</option>
-                  <option value="local">Máy cá nhân (Local 8788)</option>
+                <select id="fbGroupNodeSelect" aria-label="Dịch vụ đăng bài" class="fb-group-node-select" title="Chọn máy chủ thực thi rải nhóm">
+                  <option value="auto">Tự động · Máy chủ 24/7</option>
+                  <option value="server50">Máy chủ 24/7</option>
+                  <option value="local">Máy cá nhân</option>
                 </select>
                 <a href="https://drink-owners-prayer-partnerships.trycloudflare.com" id="fbGroupDashboardLink" target="_blank" rel="noopener noreferrer" class="fb-portal-action-link" title="Mở bảng điều khiển tiến trình">
                   <span>Bảng điều khiển</span>
@@ -445,29 +436,26 @@
             <div class="fb-group-account-grid">
               <label class="fb-portal-field">
                 <div class="fb-field-head">
-                  <span class="fb-portal-label">Tài khoản Facebook</span>
-                  <button type="button" id="btnFbGroupAddAccount" class="fb-portal-action-link" title="Thêm hoặc đổi tài khoản Facebook">
+                  <span class="fb-portal-label">Tài khoản</span>
+                  <button type="button" id="btnFbGroupAddAccount" aria-label="Thêm tài khoản Facebook" class="fb-portal-action-link" title="Thêm hoặc đổi tài khoản Facebook">
                     <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                    <span>Thêm TK</span>
+                    <span>Thêm</span>
                   </button>
                 </div>
-                <select id="fbGroupAccountSelect" class="fb-group-input"><option value="">Chưa có tài khoản</option></select>
+                <select id="fbGroupAccountSelect" aria-label="Tài khoản Facebook" class="fb-group-input"><option value="">Chưa có tài khoản</option></select>
               </label>
               <label class="fb-portal-field">
-                <span class="fb-portal-label">Tư cách đăng bài</span>
+                <span class="fb-portal-label">Đăng bằng</span>
                 <select id="fbGroupActAsSelect" class="fb-group-input"><option value="">Nick Facebook cá nhân</option></select>
               </label>
-              <label class="fb-portal-field">
-                <span class="fb-portal-label">Tên chiến dịch</span>
-                <input type="text" id="fbGroupRotName" class="fb-group-input" placeholder="VD: BĐS Fourland">
-              </label>
+
             </div>
 
             <div class="fb-group-picker-wrap">
-              <div class="fb-portal-channel-header">
+              <div class="fb-portal-channel-header social-group-heading">
                 <span class="fb-portal-label">
                   <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                  <span>Hội nhóm mục tiêu (<b id="fbGroupPickedCount">0</b> đã chọn)</span>
+                  <span>Nhóm đăng bài (<b id="fbGroupPickedCount">0</b> đã chọn)</span>
                 </span>
                 <div class="fb-portal-channel-actions">
                   <button type="button" id="btnFbGroupPickInstant" class="fb-portal-action-link">Chọn nhóm đăng ngay</button>
@@ -482,37 +470,43 @@
               </div>
               <div class="fb-group-search-wrap">
                 <svg class="fb-group-search-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                <input type="text" id="fbGroupSearchInput" class="fb-group-input fb-group-search" placeholder="Tìm nhanh nhóm BĐS theo tên…">
+                <input type="text" id="fbGroupSearchInput" aria-label="Tìm tên nhóm" class="fb-group-input fb-group-search" placeholder="Tìm tên nhóm…">
               </div>
-              <div id="fbGroupListBox" class="fb-group-list-box"><div class="fb-group-empty">Đang tải danh sách nhóm đã tham gia…</div></div>
+              <div id="fbGroupListBox" role="group" aria-label="Danh sách nhóm đăng bài" class="fb-group-list-box"><div class="fb-group-empty">Đang tải danh sách nhóm đã tham gia…</div></div>
             </div>
 
-            <div class="fb-group-schedule-grid">
-              <label class="fb-portal-field">
-                <span class="fb-portal-label">Nghỉ tối thiểu (s)</span>
-                <input type="number" id="fbGroupGapMin" class="fb-group-input" min="30" value="60">
-              </label>
-              <label class="fb-portal-field">
-                <span class="fb-portal-label">Tối đa (s)</span>
-                <input type="number" id="fbGroupGapMax" class="fb-group-input" min="30" value="120">
-              </label>
-              <label class="fb-portal-field">
-                <span class="fb-portal-label">Hẹn lịch chạy (Trống = Ngay)</span>
-                <input type="datetime-local" id="fbGroupStartAt" class="fb-group-input">
-              </label>
-              <label class="fb-portal-field">
-                <span class="fb-portal-label">Bình luận đầu (Seeding)</span>
-                <input type="text" id="fbGroupFirstComment" class="fb-group-input" value="{Inbox|Nhắn tin} hoặc gọi trực tiếp 037.6789.808 để xem nhà thực tế nhé!">
-              </label>
-            </div>
-
-            <div class="fb-group-bottom-bar">
-              <div class="fb-group-checks">
-                <label class="fb-portal-checkbox"><input type="checkbox" id="fbGroupSkipApproval" checked><span>Bỏ qua nhóm chờ duyệt</span></label>
-                <label class="fb-portal-checkbox"><input type="checkbox" id="fbGroupAutoLike" checked><span>Tự động Like bài</span></label>
+            <details class="social-advanced">
+              <summary>Lịch đăng & tuỳ chọn</summary>
+              <div class="social-advanced-fields">
+                <label class="fb-portal-field">
+                  <span class="fb-portal-label">Tên chiến dịch</span>
+                  <input type="text" id="fbGroupRotName" class="fb-group-input" placeholder="VD: BĐS Fourland">
+                </label>
+                <div class="fb-group-schedule-grid">
+                  <label class="fb-portal-field">
+                    <span class="fb-portal-label">Nghỉ tối thiểu (giây)</span>
+                    <input type="number" id="fbGroupGapMin" class="fb-group-input" min="30" value="60">
+                  </label>
+                  <label class="fb-portal-field">
+                    <span class="fb-portal-label">Tối đa (giây)</span>
+                    <input type="number" id="fbGroupGapMax" class="fb-group-input" min="30" value="120">
+                  </label>
+                  <label class="fb-portal-field">
+                    <span class="fb-portal-label">Hẹn giờ · để trống để đăng ngay</span>
+                    <input type="datetime-local" id="fbGroupStartAt" class="fb-group-input">
+                  </label>
+                  <label class="fb-portal-field">
+                    <span class="fb-portal-label">Bình luận đầu tiên</span>
+                    <input type="text" id="fbGroupFirstComment" class="fb-group-input" value="{Inbox|Nhắn tin} hoặc gọi trực tiếp 037.6789.808 để xem nhà thực tế nhé!">
+                  </label>
+                </div>
+                <div class="social-group-checks">
+                  <label class="fb-portal-checkbox"><input type="checkbox" id="fbGroupSkipApproval" checked><span>Bỏ qua nhóm chờ duyệt</span></label>
+                  <label class="fb-portal-checkbox"><input type="checkbox" id="fbGroupAutoLike" checked><span>Tự thích bài đăng</span></label>
+                </div>
               </div>
-              <div class="fb-group-eta" id="fbGroupEtaText"></div>
-            </div>
+            </details>
+            <div class="fb-group-eta" id="fbGroupEtaText" role="status" aria-live="polite">Chọn nhóm để bắt đầu</div>
           </div>
 
           <div class="fb-portal-tone-section">
@@ -545,7 +539,7 @@
           </div>
 
           <label class="fb-portal-field">
-            <textarea id="fbPostContent" rows="6" placeholder="Đang tạo nội dung bài viết..."></textarea>
+            <textarea id="fbPostContent" aria-label="Nội dung bài đăng" rows="6" placeholder="Đang tạo nội dung bài viết..."></textarea>
           </label>
 
           <div class="fb-portal-photo-section">
@@ -692,7 +686,7 @@
     </div>
   </aside>
 
-  <script src="/assets/app.js?v=20261125-server50-poster-v7" defer></script>
+  <script src="/assets/app.js?v=20261125-unified-v3" defer></script>
 </body>
 
 </html>

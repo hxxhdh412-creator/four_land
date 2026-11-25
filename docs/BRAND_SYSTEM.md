@@ -85,6 +85,17 @@ Chỉ viết hoa toàn bộ cho eyebrow/label ngắn. Không viết hoa đoạn 
 
 ## 9. Accessibility
 
+### Popup đăng bài Facebook (kho và CMS)
+
+- Dùng chung `assets/facebook-studio.css`; xanh rừng, nền trắng, font Be Vietnam Pro.
+- Desktop tối đa 1120 px, cột biên tập và xem trước dùng `minmax(0, ...)`.
+- Mobile ≤760 px toàn màn hình: header hai hàng, chuyển chế độ ở hàng riêng; body cuộn, footer giữ nút đăng 48 px và safe-area.
+- Tài khoản và danh sách nhóm hiển thị trước. Tên chiến dịch, thời gian nghỉ, hẹn giờ, bình luận và tuỳ chọn nằm trong `details` “Lịch đăng & tuỳ chọn”, mặc định thu gọn; giữ nguyên giá trị đã nhập khi đóng/mở.
+- Nhóm có hàng chọn tối thiểu 44 px, trạng thái bằng chữ, tên đầy đủ qua tooltip; ô nhập mobile 16 px. Nút chuyển chế độ có `aria-pressed`, tổng nhóm có `aria-live`.
+- Popup trong `admin.html` phải đồng bộ với `admin/index.html` vì Vercel và preview dùng hai entry khác nhau.
+- Popup ẩn thanh tên/chọn máy chủ và liên kết quản trị máy chủ. Các control nội bộ vẫn giữ trong DOM để bảo toàn cấu hình và cơ chế kết nối hiện tại.
+- Fanpage và Nhóm dùng một popup, chọn chế độ bằng dropdown “Nơi đăng”; dùng chung khung soạn nội dung, ảnh, xem trước và nút đăng. Mỗi lượt gửi theo chế độ đã chọn, không gửi đồng thời sang hai loại đích.
+
 - Tương phản chữ thường tối thiểu 4.5:1.
 - Mọi icon button phải có `aria-label` và focus visible.
 - Không dùng màu làm tín hiệu duy nhất; luôn có text/icon bổ trợ.

@@ -2341,7 +2341,7 @@ function renderRevidGroupsList() {
 
   const groups = (fbPortalState.groups || []).filter(g => !q || String(g.name || '').toLowerCase().includes(q));
   if (!groups.length) {
-    box.innerHTML = `<div class="fb-group-empty">${q ? 'Không có nhóm nào khớp từ khóa tìm kiếm.' : 'Tài khoản này chưa có nhóm nào. Bấm ↻ Tải lại hoặc đồng bộ nhóm trong bảng điều khiển 8788.'}</div>`;
+    box.innerHTML = `<div class="fb-group-empty social-group-empty">${q ? 'Không có nhóm nào khớp từ khóa tìm kiếm.' : 'Tài khoản này chưa có nhóm nào. Bấm Tải lại để đồng bộ danh sách.'}</div>`;
     updateGroupRotationEta();
     updatePortalPublishButtonState();
     return;
@@ -2352,15 +2352,15 @@ function renderRevidGroupsList() {
     const isChecked = fbPortalState.selectedGroups.has(gid);
     const appr = fbPortalState.groupApprovals?.[gid]?.approval;
     const badgeHtml = appr === 'required'
-      ? `<span class="fb-grp-tag warn" title="Nhóm cần Quản trị viên duyệt bài">cần duyệt</span>`
+      ? `<span class="fb-grp-tag social-group-tag warn" title="Nhóm cần Quản trị viên duyệt bài">cần duyệt</span>`
       : appr === 'instant'
-        ? `<span class="fb-grp-tag ok">đăng ngay</span>`
+        ? `<span class="fb-grp-tag social-group-tag ok">đăng ngay</span>`
         : '';
     return `
-      <label class="fb-group-item ${isChecked ? 'checked' : ''}" data-gid="${escapeHtml(gid)}">
+      <label class="fb-group-item social-group-item ${isChecked ? 'checked' : ''}" data-gid="${escapeHtml(gid)}" title="${escapeHtml(g.name)}">
         <input type="checkbox" value="${escapeHtml(gid)}" ${isChecked ? 'checked' : ''}>
         ${g.picture ? `<img src="${escapeHtml(g.picture)}" alt="" referrerpolicy="no-referrer" onerror="this.style.display='none'">` : `<span class="fb-grp-ph">G</span>`}
-        <span class="fb-grp-name">${escapeHtml(g.name)}</span>
+        <span class="fb-grp-name social-group-name">${escapeHtml(g.name)}</span>
         ${badgeHtml}
       </label>
     `;
@@ -2405,9 +2405,11 @@ function updateGroupRotationEta() {
 
 function setFacebookPortalMode(mode) {
   fbPortalState.mode = mode === 'group' ? 'group' : 'page';
+  if ($('fbDestinationSelect')) $('fbDestinationSelect').value = fbPortalState.mode;
   const isGroup = fbPortalState.mode === 'group';
   document.querySelectorAll('[data-fb-mode]').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.fbMode === fbPortalState.mode);
+    btn.setAttribute('aria-pressed', String(btn.dataset.fbMode === fbPortalState.mode));
   });
   const pageSec = $('fbPortalPageSection');
   const groupSec = $('fbPortalGroupSection');
@@ -2520,13 +2522,13 @@ function updatePortalPublishButtonState() {
     const gCount = fbPortalState.selectedGroups.size;
     if (!fbPortalState.engineOnline) {
       submitBtn.disabled = true;
-      if (span) span.textContent = 'Chưa bật RevidAPI Social (127.0.0.1:8788)';
+      if (span) span.textContent = 'Chưa kết nối dịch vụ đăng bài';
     } else if (gCount === 0) {
       submitBtn.disabled = true;
-      if (span) span.textContent = 'Vui lòng chọn ít nhất 1 Nhóm Facebook';
+      if (span) span.textContent = 'Chọn nhóm để đăng';
     } else {
       submitBtn.disabled = false;
-      if (span) span.textContent = `Rải bài xoay vòng vào ${gCount} Nhóm đã chọn`;
+      if (span) span.textContent = `Đăng vào ${gCount} nhóm`;
     }
     return;
   }
@@ -2561,18 +2563,21 @@ function updatePortalPreviewFromChannels() {
 
   if (fbPortalState.mode === 'group') {
     const acc = (fbPortalState.fbAccounts || []).find(a => a.id === fbPortalState.selectedAccountId) || fbPortalState.fbAccounts?.[0];
+    const actAsId = $('fbGroupActAsSelect')?.value || fbPortalState.selectedActAs || '';
+    const actAsPage = actAsId && acc?.pages ? acc.pages.find(p => String(p.id) === String(actAsId)) : null;
     const firstGrp = Array.from(fbPortalState.selectedGroups.values())[0];
-    const accLabel = acc ? (acc.profileName || acc.label) : 'Tài khoản Facebook';
+    const accLabel = actAsPage ? actAsPage.name : (acc ? (acc.profileName || acc.label) : 'Tài khoản Facebook');
+    const actorPic = actAsPage?.picture || acc?.picture || '';
     if (nameEl) nameEl.textContent = firstGrp ? `${accLabel} ▸ ${firstGrp.name}` : accLabel;
-    if (avatarImg && acc?.picture) {
-      avatarImg.src = acc.picture;
+    if (avatarImg && actorPic) {
+      avatarImg.src = actorPic;
       avatarImg.style.display = 'block';
     }
     if (titleEl) {
       const gCount = fbPortalState.selectedGroups.size;
       titleEl.textContent = gCount > 0
-        ? `Đăng nhóm xoay vòng (${gCount} Nhóm Facebook)`
-        : 'Đăng nhóm Facebook xoay vòng';
+        ? `Đăng vào ${gCount} nhóm Facebook`
+        : 'Đăng nhóm Facebook';
     }
     return;
   }
@@ -2613,6 +2618,7 @@ async function openFacebookStudio(propertyId) {
   }
 
   dialog.showModal();
+  setFacebookPortalMode(fbPortalState.mode);
   await loadFacebookDraft(propertyId, fbPortalState.tone);
 }
 
@@ -2997,6 +3003,7 @@ async function handlePublishFacebook() {
 }
 
 // Facebook Studio Event Listeners
+if ($('fbDestinationSelect')) $('fbDestinationSelect').onchange = event => setFacebookPortalMode(event.target.value);
 if ($('fbDialogClose')) $('fbDialogClose').onclick = closeFacebookStudio;
 if ($('fbCancelBtn')) $('fbCancelBtn').onclick = closeFacebookStudio;
 if ($('fbSubmitBtn')) $('fbSubmitBtn').onclick = handlePublishFacebook;

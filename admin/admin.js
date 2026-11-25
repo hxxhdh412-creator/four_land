@@ -2537,6 +2537,7 @@ const fbState = {
   tone: 'hot',
   content: '',
   variants: ['', '', '', ''],
+  activeVariantIdx: 0,
   allImages: [],
   selectedImages: new Set(),
   selectedPageIds: new Set(['104363431784609']),
@@ -2697,16 +2698,22 @@ function renderCmsRevidGroupsList() {
   if (countEl) countEl.textContent = String(fbState.selectedGroups.size);
   const groups = (fbState.groups || []).filter(g => !q || String(g.name || '').toLowerCase().includes(q));
   if (!groups.length) {
-    box.innerHTML = `<div style="grid-column:1/-1;padding:12px;text-align:center;font-size:12px;color:#64748b;">Không có nhóm phù hợp.</div>`;
+    box.innerHTML = `<div class="social-group-empty">${q ? 'Không có nhóm khớp tên tìm kiếm.' : 'Chưa có nhóm. Bấm Tải lại để đồng bộ danh sách.'}</div>`;
+    const etaEl = byId('cmsFbGroupEtaText');
+    if (etaEl) etaEl.textContent = `Đã chọn ${fbState.selectedGroups.size} nhóm`;
     updatePublishButtonState();
     return;
   }
   box.innerHTML = groups.map(g => {
     const gid = String(g.id);
     const isChecked = fbState.selectedGroups.has(gid);
-    return `<label style="display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:6px;border:1px solid ${isChecked ? '#34d399' : '#e2e8f0'};background:${isChecked ? '#ecfdf5' : '#f8fafc'};font-size:12px;cursor:pointer;" data-gid="${escapeHtml(gid)}">
-      <input type="checkbox" value="${escapeHtml(gid)}" ${isChecked ? 'checked' : ''} style="width:14px;height:14px;margin:0;">
-      <span style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(g.name)}</span>
+    const approval = fbState.groupApprovals?.[gid]?.approval;
+    const badge = approval === 'required'
+      ? '<span class="social-group-tag warn">cần duyệt</span>'
+      : approval === 'instant' ? '<span class="social-group-tag">đăng ngay</span>' : '';
+    return `<label class="social-group-item ${isChecked ? 'checked' : ''}" data-gid="${escapeHtml(gid)}" title="${escapeHtml(g.name)}">
+      <input type="checkbox" value="${escapeHtml(gid)}" ${isChecked ? 'checked' : ''}>
+      <span class="social-group-name">${escapeHtml(g.name)}</span>${badge}
     </label>`;
   }).join('');
   box.querySelectorAll('label[data-gid]').forEach(row => {
@@ -2727,16 +2734,62 @@ function renderCmsRevidGroupsList() {
   }
 }
 
+function resolveCmsSpintaxPreview(text) {
+  return String(text || '').replace(/\{([^{}]+)\}/g, (_, choices) => {
+    const parts = choices.split('|').map(s => s.trim()).filter(Boolean);
+    return parts[0] || '';
+  });
+}
+
+function updateCmsGroupRotationEta() {
+  const etaEl = byId('cmsFbGroupEtaText');
+  if (!etaEl) return;
+  const n = fbState.selectedGroups.size;
+  const a = Number(byId('cmsFbGroupGapMin')?.value) || 60;
+  const b = Math.max(a, Number(byId('cmsFbGroupGapMax')?.value) || 120);
+  const filledVars = (fbState.variants || []).filter(v => String(v || '').trim()).length || 1;
+  if (!n) {
+    etaEl.textContent = 'Chọn ít nhất 1 nhóm để rải xoay vòng';
+    return;
+  }
+  const mins = Math.max(1, Math.round((n * 45 + (n - 1) * (a + b) / 2) / 60));
+  etaEl.textContent = `Đã chọn ${n} nhóm · ${filledVars} bản xoay vòng · ~${mins} phút`;
+}
+
 function setCmsFacebookMode(mode) {
   fbState.mode = mode === 'group' ? 'group' : 'page';
+  if (byId('fbDestinationSelect')) byId('fbDestinationSelect').value = fbState.mode;
   const isGroup = fbState.mode === 'group';
   document.querySelectorAll('[data-cms-fb-mode]').forEach(btn => {
     const active = btn.dataset.cmsFbMode === fbState.mode;
     btn.classList.toggle('active', active);
+    btn.setAttribute('aria-pressed', String(active));
   });
   if (byId('cmsFbPageSection')) byId('cmsFbPageSection').hidden = isGroup;
   if (byId('cmsFbGroupSection')) byId('cmsFbGroupSection').hidden = !isGroup;
-  if (isGroup) initCmsRevidGroupEngine(false);
+  if (byId('cmsFbVariantTabs')) byId('cmsFbVariantTabs').hidden = !isGroup;
+  if (byId('cmsFbToneChipsRow')) byId('cmsFbToneChipsRow').hidden = isGroup;
+  const toneLabel = byId('cmsFbToneSectionLabel');
+  if (toneLabel) {
+    const labelSpan = toneLabel.querySelector('span');
+    if (labelSpan) {
+      labelSpan.textContent = isGroup
+        ? 'Nội dung xoay vòng (4 bản · Hỗ trợ {a|b})'
+        : 'Phong cách bài viết';
+    }
+  }
+  const contentInput = byId('fbPostContent');
+  const previewText = byId('fbPreviewText');
+  if (isGroup) {
+    const activeText = fbState.variants[fbState.activeVariantIdx] || fbState.content || '';
+    if (contentInput) contentInput.value = activeText;
+    if (previewText) previewText.textContent = resolveCmsSpintaxPreview(activeText);
+    initCmsRevidGroupEngine(false);
+  } else {
+    if (contentInput) contentInput.value = fbState.content || '';
+    if (previewText) previewText.textContent = fbState.content || '';
+  }
+  updatePreviewFromChannels();
   updatePublishButtonState();
 }
 
@@ -2807,13 +2860,13 @@ function updatePublishButtonState() {
     const gCount = fbState.selectedGroups.size;
     if (!fbState.engineOnline) {
       submitBtn.disabled = true;
-      if (span) span.textContent = 'Chưa bật RevidAPI Social (8788)';
+      if (span) span.textContent = 'Chưa kết nối dịch vụ đăng bài';
     } else if (gCount === 0) {
       submitBtn.disabled = true;
-      if (span) span.textContent = 'Chọn ít nhất 1 Nhóm Facebook';
+      if (span) span.textContent = 'Chọn nhóm để đăng';
     } else {
       submitBtn.disabled = false;
-      if (span) span.textContent = `Rải bài xoay vòng vào ${gCount} Nhóm`;
+      if (span) span.textContent = `Đăng vào ${gCount} nhóm`;
     }
     return;
   }
@@ -2841,21 +2894,41 @@ function updatePublishButtonState() {
 }
 
 function updatePreviewFromChannels() {
+  const avatarImg = document.querySelector('#facebookPostDialog .fb-mock-avatar img');
+  const nameEl = document.querySelector('#facebookPostDialog .fb-mock-name strong');
+  const titleEl = byId('fbDialogTitle');
+
+  if (fbState.mode === 'group') {
+    const acc = (fbState.fbAccounts || []).find(a => a.id === fbState.selectedAccountId) || fbState.fbAccounts?.[0];
+    const actAsId = byId('cmsFbGroupActAsSelect')?.value || fbState.selectedActAs || '';
+    const actAsPage = actAsId && acc?.pages ? acc.pages.find(p => String(p.id) === String(actAsId)) : null;
+    const actorName = actAsPage ? actAsPage.name : (acc ? (acc.profileName || acc.label) : 'Tài khoản Facebook');
+    const actorPic = actAsPage?.picture || acc?.picture || '';
+    const firstGrp = Array.from(fbState.selectedGroups.values())[0];
+    if (nameEl) nameEl.textContent = firstGrp ? `${actorName} ▸ ${firstGrp.name}` : actorName;
+    if (avatarImg && actorPic) {
+      avatarImg.src = actorPic;
+      avatarImg.style.display = 'block';
+    }
+    if (titleEl) {
+      const gCount = fbState.selectedGroups.size;
+      titleEl.textContent = gCount > 0 ? `Đăng vào ${gCount} nhóm Facebook` : 'Đăng nhóm Facebook';
+    }
+    return;
+  }
+
   const selectedPid = Array.from(fbState.selectedPageIds)[0];
   if (!selectedPid) return;
   const pageObj = (fbState.pages || []).find(p => String(p.pageId) === selectedPid);
   const pName = pageObj?.name || 'FourLand';
 
-  const avatarImg = document.querySelector('.fb-mock-avatar img');
   if (avatarImg) {
     avatarImg.src = `https://graph.facebook.com/${selectedPid}/picture?type=large`;
     avatarImg.alt = `Avatar ${pName}`;
     avatarImg.style.display = 'block';
   }
-  const nameEl = document.querySelector('.fb-mock-name strong');
   if (nameEl) nameEl.textContent = pName;
 
-  const titleEl = byId('fbDialogTitle');
   if (titleEl) {
     const count = fbState.selectedPageIds.size;
     titleEl.textContent = count > 1 
@@ -2872,6 +2945,7 @@ async function openFacebookStudio(propertyId) {
   renderFacebookChannels();
   byId('fbPublishStatus').textContent = 'Đang chuẩn bị bài viết…';
   dialog.showModal();
+  setCmsFacebookMode(fbState.mode);
   await loadFacebookDraft(propertyId, fbState.tone);
 }
 
@@ -2915,6 +2989,7 @@ async function loadFacebookDraft(propertyId, tone = 'hot', _pageId = null, regen
     fbState.variants = Array.isArray(data.variants) && data.variants.length >= 4
       ? data.variants.slice(0, 4)
       : [data.content || '', data.content || '', data.content || '', data.content || ''];
+    fbState.activeVariantIdx = 0;
     fbState.allImages = data.images || [];
     fbState.pageName = data.pageName || 'FourLand';
     fbState.pages = data.pages || fbState.pages;
@@ -2924,8 +2999,16 @@ async function loadFacebookDraft(propertyId, tone = 'hot', _pageId = null, regen
 
     renderFacebookChannels();
 
-    contentInput.value = data.content;
-    previewText.textContent = data.content;
+    const activeText = fbState.mode === 'group'
+      ? (fbState.variants[fbState.activeVariantIdx] || data.content)
+      : data.content;
+    contentInput.value = activeText;
+    previewText.textContent = fbState.mode === 'group'
+      ? resolveCmsSpintaxPreview(activeText)
+      : activeText;
+    document.querySelectorAll('[data-cms-fb-var]').forEach(tab => {
+      tab.classList.toggle('active', Number(tab.dataset.cmsFbVar) === fbState.activeVariantIdx);
+    });
 
     // Default: select ALL images
     fbState.selectedImages = new Set(fbState.allImages);
@@ -3156,6 +3239,9 @@ if (byId('fbSubmitBtn')) byId('fbSubmitBtn').addEventListener('click', handlePub
 document.querySelectorAll('[data-cms-fb-mode]').forEach(tab => {
   tab.addEventListener('click', () => setCmsFacebookMode(tab.dataset.cmsFbMode));
 });
+if (byId('fbDestinationSelect')) {
+  byId('fbDestinationSelect').addEventListener('change', event => setCmsFacebookMode(event.target.value));
+}
 if (byId('btnCmsFbGroupAddAccount')) {
   byId('btnCmsFbGroupAddAccount').addEventListener('click', async () => {
     if (!fbState.engineOnline) {
@@ -3215,8 +3301,23 @@ if (byId('cmsFbGroupActAsSelect')) {
     if (fbState.selectedAccountId) {
       loadCmsRevidGroups(fbState.selectedAccountId, false);
     }
+    updatePreviewFromChannels();
   });
 }
+document.querySelectorAll('[data-cms-fb-var]').forEach(tab => {
+  tab.addEventListener('click', () => {
+    const idx = Number(tab.dataset.cmsFbVar) || 0;
+    fbState.activeVariantIdx = idx;
+    document.querySelectorAll('[data-cms-fb-var]').forEach(t => {
+      t.classList.toggle('active', Number(t.dataset.cmsFbVar) === idx);
+    });
+    const txt = fbState.variants[idx] || fbState.content || '';
+    if (byId('fbPostContent')) byId('fbPostContent').value = txt;
+    if (byId('fbPreviewText')) byId('fbPreviewText').textContent = resolveCmsSpintaxPreview(txt);
+  });
+});
+if (byId('cmsFbGroupGapMin')) byId('cmsFbGroupGapMin').addEventListener('input', updateCmsGroupRotationEta);
+if (byId('cmsFbGroupGapMax')) byId('cmsFbGroupGapMax').addEventListener('input', updateCmsGroupRotationEta);
 if (byId('cmsFbGroupSearchInput')) {
   byId('cmsFbGroupSearchInput').addEventListener('input', renderCmsRevidGroupsList);
 }
@@ -3273,8 +3374,14 @@ document.querySelectorAll('[data-fb-tone]').forEach(chip => {
 
 if (byId('fbPostContent')) {
   byId('fbPostContent').addEventListener('input', function() {
-    fbState.content = this.value;
-    if (byId('fbPreviewText')) byId('fbPreviewText').textContent = this.value;
+    if (fbState.mode === 'group') {
+      fbState.variants[fbState.activeVariantIdx] = this.value;
+      if (byId('fbPreviewText')) byId('fbPreviewText').textContent = resolveCmsSpintaxPreview(this.value);
+      updateCmsGroupRotationEta();
+    } else {
+      fbState.content = this.value;
+      if (byId('fbPreviewText')) byId('fbPreviewText').textContent = this.value;
+    }
   });
 }
 
