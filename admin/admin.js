@@ -3582,11 +3582,14 @@ async function handlePublishFacebook() {
       showToast(result.message || '⏰ Đã đặt lịch hẹn đăng Fanpage 24/7!');
       alert(result.message || '⏰ Đã đặt lịch hẹn đăng Fanpage tự động 24/7 trên Máy 50!');
     } else if (successfulPages.length > 0) {
-      let reportMsg = result.message || `Đã xuất bản thành công lên ${successfulPages.length} Fanpage!\n`;
-      if (successfulPages.length === 1 && successfulPages[0].postUrl) {
-        if (confirm(`${reportMsg}\n\nBạn có muốn mở xem bài viết trên Facebook không?`)) {
+      let reportMsg = result.message || `Đã xuất bản thành công lên ${successfulPages.length} kênh!\n`;
+      if (successfulPages.length === 1 && successfulPages[0].postUrl && !successfulPages[0].queued && isDirectCmsPermalink(successfulPages[0].postUrl)) {
+        if (confirm(`${reportMsg}\n\nBạn có muốn mở xem trực tiếp bài viết vừa đăng không?`)) {
           window.open(successfulPages[0].postUrl, '_blank');
         }
+      } else if (successfulPages.length === 1 && successfulPages[0].queued) {
+        showToast(reportMsg);
+        alert(`${reportMsg}\n\nBài đang được xuất bản ngầm trên Máy 50 — mở Hàng đợi để xem tiến trình và bấm Mở bài ngay khi xong.`);
       } else {
         const links = successfulPages.map(p => `• ${p.pageName}: ${p.postUrl || 'Thành công'}`).join('\n');
         alert(`${reportMsg}\n\nChi tiết bài đăng:\n${links}`);
@@ -3861,6 +3864,10 @@ const CMS_Q_ICONS = {
   ext: '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><path d="M7 7h10v10"/></svg>'
 };
 
+function isDirectCmsPermalink(url = '') {
+  return /(?:facebook\.com\/(?:groups\/[^/?#]+\/(?:posts|permalink)\/[\w-]+|(?!groups\/|profile\.php)[^/?#]+\/posts\/[\w-]+|(?:permalink|story)\.php\?story_fbid=[\w-]+|(?!groups\/)[^/?#]+\/videos\/\d+|photo(?:\.php)?\/?\?fbid=[\w-]+))|(?:threads\.(?:com|net)\/(?:@[\w.]+\/post\/|t\/)[A-Za-z0-9_-]+)/i.test(String(url || ''));
+}
+
 function cleanCmsQueueTitle(str = '') {
   return String(str || '')
     .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\uFE0F]/gu, '')
@@ -4050,11 +4057,17 @@ function renderCmsQueueTable() {
 
     const recentLinks = Array.isArray(it.recentLinks) ? it.recentLinks : [];
     const isExpanded = cmsQueueState.expandedIds.has(String(it.id));
+    const hasSingleLink = Boolean(it.postUrl && !['scheduled', 'queued', 'running'].includes(it.status));
+    const singleIsDirect = Boolean(it.isDirectPost || isDirectCmsPermalink(it.postUrl));
     const linkBtnHtml = recentLinks.length > 1
       ? `<button type="button" class="social-q-ext" data-q-toggle-links="${escapeHtml(it.id)}" title="Xem danh sách link từng bài đã đăng trong các nhóm"><span>${recentLinks.length} bài</span>${CMS_Q_ICONS.ext}</button>`
-      : (it.postUrl ? `<a class="social-q-ext" href="${escapeHtml(it.postUrl)}" target="_blank" rel="noopener noreferrer" title="Mở trực tiếp bài đã đăng"><span>Mở bài</span>${CMS_Q_ICONS.ext}</a>` : '');
+      : (hasSingleLink ? `<a class="social-q-ext" href="${escapeHtml(it.postUrl)}" target="_blank" rel="noopener noreferrer" title="${singleIsDirect ? 'Mở trực tiếp bài viết đã đăng' : 'Mở trang kênh xuất bản'}"><span>${singleIsDirect ? 'Mở bài' : 'Mở kênh'}</span>${CMS_Q_ICONS.ext}</a>` : '');
     const linksDrawerHtml = recentLinks.length > 1
-      ? `<div class="social-q-links-drawer" data-q-drawer="${escapeHtml(it.id)}" ${isExpanded ? '' : 'hidden'}>${recentLinks.map(lk => `<a class="social-q-link-item" href="${escapeHtml(lk.url)}" target="_blank" rel="noopener noreferrer"><span>${escapeHtml(cleanCmsQueueTitle(lk.groupName) || 'Nhóm Facebook')}</span>${CMS_Q_ICONS.ext}</a>`).join('')}</div>`
+      ? `<div class="social-q-links-drawer" data-q-drawer="${escapeHtml(it.id)}" ${isExpanded ? '' : 'hidden'}>${recentLinks.map(lk => {
+          const lkDirect = Boolean(lk.isDirectPost || isDirectCmsPermalink(lk.url));
+          const grpLbl = cleanCmsQueueTitle(lk.groupName) || 'Nhóm Facebook';
+          return `<a class="social-q-link-item" href="${escapeHtml(lk.url)}" target="_blank" rel="noopener noreferrer" title="${lkDirect ? 'Mở trực tiếp bài đã đăng trong nhóm' : 'Bài cũ trước cập nhật — mở nhóm theo thứ tự bài mới nhất'}"><span>${escapeHtml(grpLbl)}${lkDirect ? '' : ' (Nhóm)'}</span>${CMS_Q_ICONS.ext}</a>`;
+        }).join('')}</div>`
       : '';
 
     return `

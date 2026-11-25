@@ -382,3 +382,46 @@ test("Facebook Studio API handler lists queue overview and prioritizes queued it
   assert.deepEqual(actionsReceived[0], { itemType: "post", id: "post_2", op: "prioritize" });
   assert.match(prioCall.out.body.message, /ưu tiên/i);
 });
+
+test("Facebook Studio API handler waits 45s for single-channel publish and flags exact post permalinks", async () => {
+  const captured = [];
+  const handler = createHandler({
+    requireCmsImpl: async () => ({ id: "usr-admin-01", role: "super_admin" }),
+    request: async () => ({ data: [] }),
+    posterPublisher: async (payload) => {
+      captured.push(payload);
+      return {
+        ok: true,
+        engine: "server50-8889",
+        queued: false,
+        postId: "post_exact_001",
+        postUrl: "https://www.facebook.com/permalink.php?story_fbid=pfbid02AbCdEf123456&id=100066639715025",
+        pageName: payload.pageName
+      };
+    }
+  });
+
+  let statusCode = 0;
+  let jsonBody = null;
+  const res = {
+    status(code) { statusCode = code; return this; },
+    json(body) { jsonBody = body; return this; }
+  };
+
+  await handler({
+    method: "POST",
+    body: {
+      action: "publish",
+      content: "Test exact pfbid permalink",
+      images: ["https://cdn.fourland.vn/house1.jpg"],
+      pageIds: ["104363431784609"]
+    },
+    headers: {}
+  }, res);
+
+  assert.equal(statusCode, 200);
+  assert.equal(captured.length, 1);
+  assert.equal(captured[0].waitMs, 45000);
+  assert.equal(jsonBody.data.isDirectPost, true);
+  assert.match(jsonBody.data.postUrl, /story_fbid=pfbid02AbCdEf123456/);
+});

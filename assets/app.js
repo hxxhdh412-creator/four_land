@@ -3307,13 +3307,17 @@ async function handlePublishFacebook() {
     if (result.data?.scheduled) {
       showToast(result.message || '⏰ Đã đặt lịch hẹn đăng Fanpage tự động 24/7!', 4500);
       alert(result.message || '⏰ Đã đặt lịch hẹn đăng Fanpage tự động 24/7 trên Máy 50!');
-    } else if (result.data?.postUrl) {
-      const reportMsg = result.message || 'Đã xuất bản bài viết thành công lên Facebook!';
-      if (confirm(`${reportMsg}\n\nBạn có muốn mở xem bài viết trên Facebook không?`)) {
+    } else if (result.data?.postUrl && !result.data?.queued && isDirectPortalPermalink(result.data.postUrl)) {
+      const reportMsg = result.message || 'Đã xuất bản bài viết thành công!';
+      if (confirm(`${reportMsg}\n\nBạn có muốn mở xem trực tiếp bài viết vừa đăng không?`)) {
         window.open(result.data.postUrl, '_blank');
       }
+    } else if (result.data?.queued) {
+      const qMsg = result.message || 'Bài viết đã được đưa vào Hàng đợi xuất bản ngầm trên Máy 50!';
+      showToast(qMsg, 4500);
+      alert(`${qMsg}\n\nBạn có thể bấm biểu tượng Hàng đợi ở góc trên để theo dõi tiến trình và mở link bài ngay khi hoàn tất.`);
     } else {
-      alert(result.message || 'Đã đăng bài thành công lên Facebook!');
+      alert(result.message || 'Đã đăng bài thành công!');
     }
 
     setTimeout(closeFacebookStudio, 1500);
@@ -3420,6 +3424,10 @@ const PORTAL_Q_ICONS = {
   close: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
   ext: '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><path d="M7 7h10v10"/></svg>'
 };
+
+function isDirectPortalPermalink(url = '') {
+  return /(?:facebook\.com\/(?:groups\/[^/?#]+\/(?:posts|permalink)\/[\w-]+|(?!groups\/|profile\.php)[^/?#]+\/posts\/[\w-]+|(?:permalink|story)\.php\?story_fbid=[\w-]+|(?!groups\/)[^/?#]+\/videos\/\d+|photo(?:\.php)?\/?\?fbid=[\w-]+))|(?:threads\.(?:com|net)\/(?:@[\w.]+\/post\/|t\/)[A-Za-z0-9_-]+)/i.test(String(url || ''));
+}
 
 function cleanPortalQueueTitle(str = '') {
   return String(str || '')
@@ -3606,11 +3614,17 @@ function renderPortalQueueTable() {
 
     const recentLinks = Array.isArray(it.recentLinks) ? it.recentLinks : [];
     const isExpanded = portalQueueState.expandedIds.has(String(it.id));
+    const hasSingleLink = Boolean(it.postUrl && !['scheduled', 'queued', 'running'].includes(it.status));
+    const singleIsDirect = Boolean(it.isDirectPost || isDirectPortalPermalink(it.postUrl));
     const linkBtnHtml = recentLinks.length > 1
       ? `<button type="button" class="social-q-ext" data-q-toggle-links="${escapeHtml(it.id)}" title="Xem danh sách link từng bài đã đăng trong các nhóm"><span>${recentLinks.length} bài</span>${PORTAL_Q_ICONS.ext}</button>`
-      : (it.postUrl ? `<a class="social-q-ext" href="${escapeHtml(it.postUrl)}" target="_blank" rel="noopener noreferrer" title="Mở trực tiếp bài đã đăng"><span>Mở bài</span>${PORTAL_Q_ICONS.ext}</a>` : '');
+      : (hasSingleLink ? `<a class="social-q-ext" href="${escapeHtml(it.postUrl)}" target="_blank" rel="noopener noreferrer" title="${singleIsDirect ? 'Mở trực tiếp bài viết đã đăng' : 'Mở trang kênh xuất bản'}"><span>${singleIsDirect ? 'Mở bài' : 'Mở kênh'}</span>${PORTAL_Q_ICONS.ext}</a>` : '');
     const linksDrawerHtml = recentLinks.length > 1
-      ? `<div class="social-q-links-drawer" data-q-drawer="${escapeHtml(it.id)}" ${isExpanded ? '' : 'hidden'}>${recentLinks.map(lk => `<a class="social-q-link-item" href="${escapeHtml(lk.url)}" target="_blank" rel="noopener noreferrer"><span>${escapeHtml(cleanPortalQueueTitle(lk.groupName) || 'Nhóm Facebook')}</span>${PORTAL_Q_ICONS.ext}</a>`).join('')}</div>`
+      ? `<div class="social-q-links-drawer" data-q-drawer="${escapeHtml(it.id)}" ${isExpanded ? '' : 'hidden'}>${recentLinks.map(lk => {
+          const lkDirect = Boolean(lk.isDirectPost || isDirectPortalPermalink(lk.url));
+          const grpLbl = cleanPortalQueueTitle(lk.groupName) || 'Nhóm Facebook';
+          return `<a class="social-q-link-item" href="${escapeHtml(lk.url)}" target="_blank" rel="noopener noreferrer" title="${lkDirect ? 'Mở trực tiếp bài đã đăng trong nhóm' : 'Bài cũ trước cập nhật — mở nhóm theo thứ tự bài mới nhất'}"><span>${escapeHtml(grpLbl)}${lkDirect ? '' : ' (Nhóm)'}</span>${PORTAL_Q_ICONS.ext}</a>`;
+        }).join('')}</div>`
       : '';
 
     return `

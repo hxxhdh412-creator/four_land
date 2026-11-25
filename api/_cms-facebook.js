@@ -22,7 +22,7 @@ const DEFAULT_POSTER_NODE = {
   label: "Máy chủ 50 · Nhánh Fourland 24/7 (8889)"
 };
 
-async function publishViaServer50Poster({ content, imageUrls = [], pageId, pageName, scheduledAt = "", posterNode, waitMs = 35000 }) {
+async function publishViaServer50Poster({ content, imageUrls = [], pageId, pageName, scheduledAt = "", posterNode, waitMs = 45000 }) {
   const isMockFixture = (Array.isArray(imageUrls) ? imageUrls : []).some((u) => {
     try { return new URL(String(u)).hostname === "example.com"; } catch { return false; }
   });
@@ -371,8 +371,10 @@ function createHandler({
         const posterNode = await getPosterNodeConfig(request);
         const requestedSchedule = String(body.scheduledAt || "").trim();
         const isFutureSchedule = Boolean(requestedSchedule && !Number.isNaN(Date.parse(requestedSchedule)) && Date.parse(requestedSchedule) > Date.now() + 15000);
-        // Đăng ngay thủ công: phản hồi nhanh (8s cho multi-page, 20s cho 1 page, quá thời gian đó Máy 50 vẫn tiếp tục chạy ngầm 24/7!)
-        const perPageWaitMs = isFutureSchedule ? 8000 : (targetPages.length > 1 ? 8000 : 20000);
+        // Đăng ngay thủ công: chờ đủ thời gian tải ảnh + lấy đúng permalink bài viết (45s cho 1 kênh, 15s cho multi-page; quá thời gian đó Máy 50 vẫn tiếp tục chạy ngầm 24/7!)
+        const perPageWaitMs = isFutureSchedule ? 8000 : (targetPages.length > 1 ? 15000 : 45000);
+        const isDirectSocialUrl = (u) =>
+          /(?:facebook\.com\/(?:groups\/[^/?#]+\/(?:posts|permalink)\/[\w-]+|(?!groups\/|profile\.php)[^/?#]+\/posts\/[\w-]+|(?:permalink|story)\.php\?story_fbid=[\w-]+|(?!groups\/)[^/?#]+\/videos\/\d+|photo(?:\.php)?\/?\?fbid=[\w-]+))|(?:threads\.(?:com|net)\/(?:@[\w.]+\/post\/|t\/)[A-Za-z0-9_-]+)/i.test(String(u || ""));
 
         const publishResults = [];
         for (const page of targetPages) {
@@ -400,6 +402,7 @@ function createHandler({
               scheduledAt: resPublish.scheduledAt || null,
               success: true,
               postUrl: resPublish.postUrl,
+              isDirectPost: isDirectSocialUrl(resPublish.postUrl),
               message: resPublish.message
             });
           } catch (err) {
@@ -414,7 +417,9 @@ function createHandler({
 
         const successCount = publishResults.filter((r) => r.success).length;
         const failedCount = publishResults.length - successCount;
-        const primaryPostUrl = publishResults.find((r) => r.success && r.postUrl)?.postUrl || null;
+        const bestPublishedResult = publishResults.find((r) => r.success && r.isDirectPost) || publishResults.find((r) => r.success && r.postUrl) || null;
+        const primaryPostUrl = bestPublishedResult?.postUrl || null;
+        const primaryIsDirectPost = Boolean(bestPublishedResult?.isDirectPost);
         const firstError = publishResults.find((r) => !r.success)?.error;
         const summaryMsg = publishResults.length === 1
           ? (publishResults[0].success
@@ -435,6 +440,7 @@ function createHandler({
             successCount,
             failedCount,
             postUrl: primaryPostUrl,
+            isDirectPost: primaryIsDirectPost,
             results: publishResults
           },
           message: summaryMsg
