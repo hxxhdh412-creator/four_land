@@ -2891,12 +2891,13 @@ function renderFacebookChannels() {
   if (!container) return;
   const pages = Array.isArray(fbState.pages) && fbState.pages.length > 0
     ? fbState.pages
-    : (Array.isArray(fbPagesCache) && fbPagesCache.length > 0 ? fbPagesCache : [{
-        pageId: '104363431784609',
-        name: 'FourLand',
-        isDefault: true,
-        category: 'Trang BĐS Fourland'
-      }]);
+    : (Array.isArray(fbPagesCache) && fbPagesCache.length > 0 ? fbPagesCache : [
+        { pageId: '104363431784609', name: 'FourLand', isDefault: true },
+        { pageId: '106656702112510', name: 'Ngọc Nhà Tốt', isDefault: false },
+        { pageId: '100063820399874', name: 'Vinhomes Green Paradise', isDefault: false },
+        { pageId: '61560150341552', name: 'Alpha - Giải Pháp Không Gian Sáng Tạo', isDefault: false },
+        { pageId: '61566534021649', name: 'AI Business Hub', isDefault: false }
+      ]);
 
   if (fbState.selectedPageIds.size === 0 && pages.length > 0) {
     const defaultPage = pages.find(p => p.isDefault) || pages[0];
@@ -2906,16 +2907,15 @@ function renderFacebookChannels() {
   container.innerHTML = pages.map(p => {
     const pid = String(p.pageId);
     const isChecked = fbState.selectedPageIds.has(pid);
+    const avatarSrc = p.avatarUrl || `https://graph.facebook.com/${pid}/picture?type=large`;
     return `
-      <label class="cms-fb-channel-card ${isChecked ? 'checked' : ''}" data-fb-channel-id="${escapeHtml(pid)}">
+      <label class="cms-fb-channel-card ${isChecked ? 'checked' : ''}" data-fb-channel-id="${escapeHtml(pid)}" title="${escapeHtml(p.name)}">
         <input type="checkbox" name="fbChannel" value="${escapeHtml(pid)}" ${isChecked ? 'checked' : ''}>
-        <img class="cms-fb-card-avatar" src="https://graph.facebook.com/${escapeHtml(pid)}/picture?type=large" alt="${escapeHtml(p.name)}" onerror="this.src='https://graph.facebook.com/104363431784609/picture?type=large'">
+        <img class="cms-fb-card-avatar" src="${escapeHtml(avatarSrc)}" alt="${escapeHtml(p.name)}" referrerpolicy="no-referrer" onerror="this.src='/assets/brand/fourland-icon-192.png'">
         <div class="cms-fb-card-info">
           <div class="cms-fb-card-name">
             <strong>${escapeHtml(p.name)}</strong>
-            ${p.isDefault ? '<span class="cms-fb-badge default" style="font-size:10px; padding:1px 5px; background:var(--sage); color:var(--forest); border-radius:4px; font-weight:700;">Mặc định</span>' : ''}
           </div>
-          <span class="cms-fb-card-id">${escapeHtml(p.category || 'Fanpage Facebook')} · ID: ${escapeHtml(pid)}</span>
         </div>
         <span class="cms-fb-check-indicator">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>

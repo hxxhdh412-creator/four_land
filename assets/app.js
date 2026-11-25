@@ -2536,18 +2536,11 @@ function renderFacebookPortalChannels() {
   const pages = Array.isArray(fbPortalState.pages) && fbPortalState.pages.length > 0
     ? fbPortalState.pages
     : [
-        {
-          pageId: '104363431784609',
-          name: 'FourLand',
-          isDefault: true,
-          category: 'Công ty phát triển bất động sản'
-        },
-        {
-          pageId: '106656702112510',
-          name: 'Ngọc Nhà Tốt',
-          isDefault: false,
-          category: 'Người môi giới bất động sản'
-        }
+        { pageId: '104363431784609', name: 'FourLand', isDefault: true },
+        { pageId: '106656702112510', name: 'Ngọc Nhà Tốt', isDefault: false },
+        { pageId: '100063820399874', name: 'Vinhomes Green Paradise', isDefault: false },
+        { pageId: '61560150341552', name: 'Alpha - Giải Pháp Không Gian Sáng Tạo', isDefault: false },
+        { pageId: '61566534021649', name: 'AI Business Hub', isDefault: false }
       ];
 
   if (fbPortalState.selectedPageIds.size === 0 && pages.length > 0) {
@@ -2560,16 +2553,15 @@ function renderFacebookPortalChannels() {
   container.innerHTML = pages.map(p => {
     const pid = String(p.pageId);
     const isChecked = fbPortalState.selectedPageIds.has(pid);
+    const avatarSrc = p.avatarUrl || `https://graph.facebook.com/${pid}/picture?type=large`;
     return `
-      <label class="fb-portal-channel-card ${isChecked ? 'checked' : ''}" data-fb-channel-id="${escapeHtml(pid)}">
+      <label class="fb-portal-channel-card ${isChecked ? 'checked' : ''}" data-fb-channel-id="${escapeHtml(pid)}" title="${escapeHtml(p.name)}">
         <input type="checkbox" name="fbPortalChannel" value="${escapeHtml(pid)}" ${isChecked ? 'checked' : ''}>
-        <img class="fb-portal-card-avatar" src="https://graph.facebook.com/${escapeHtml(pid)}/picture?type=large" alt="${escapeHtml(p.name)}" onerror="this.src='https://graph.facebook.com/106656702112510/picture?type=large'">
+        <img class="fb-portal-card-avatar" src="${escapeHtml(avatarSrc)}" alt="${escapeHtml(p.name)}" referrerpolicy="no-referrer" onerror="this.src='/assets/brand/fourland-icon-192.png'">
         <div class="fb-portal-card-info">
           <div class="fb-portal-card-name">
             <strong>${escapeHtml(p.name)}</strong>
-            ${p.isDefault ? '<span class="fb-portal-badge default">Mặc định</span>' : ''}
           </div>
-          <span class="fb-portal-card-id">${escapeHtml(p.category || 'Fanpage Facebook')} · ID: ${escapeHtml(pid)}</span>
         </div>
         <span class="fb-portal-check-indicator">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>

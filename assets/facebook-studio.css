@@ -520,6 +520,50 @@
   border-color: var(--forest);
   color: var(--forest);
 }
+.social-studio :is(.fb-portal-channel-list, .cms-fb-channel-list) {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(175px, 1fr)) !important;
+  gap: 6px !important;
+  max-height: 120px !important;
+  overflow-y: auto;
+  padding: 2px;
+}
+.social-studio :is(.fb-portal-channel-card, .cms-fb-channel-card) {
+  display: flex;
+  align-items: center;
+  gap: 8px !important;
+  min-height: 40px;
+  padding: 5px 9px !important;
+  border-radius: 8px !important;
+}
+.social-studio :is(.fb-portal-card-avatar, .cms-fb-card-avatar) {
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 50% !important;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+.social-studio :is(.fb-portal-card-info, .cms-fb-card-info) {
+  flex: 1;
+  min-width: 0;
+}
+.social-studio :is(.fb-portal-card-name, .cms-fb-card-name) {
+  display: flex;
+  align-items: center;
+  margin: 0 !important;
+}
+.social-studio :is(.fb-portal-card-name strong, .cms-fb-card-name strong) {
+  font-size: 12.5px !important;
+  font-weight: 700 !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.social-studio :is(.fb-portal-card-id, .cms-fb-card-id, .fb-portal-badge, .cms-fb-badge) {
+  display: none !important;
+}
 .social-studio :is(.fb-portal-channel-card.checked, .cms-fb-channel-card.checked) {
   background: var(--sage, #edf0e8) !important;
   border-color: var(--forest, #283d34) !important;

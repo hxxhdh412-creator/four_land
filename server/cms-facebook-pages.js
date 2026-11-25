@@ -31,6 +31,42 @@ const INITIAL_PAGES = [
     avatarUrl: "https://graph.facebook.com/106656702112510/picture?type=large",
     createdAt: "2026-08-01T00:00:00.000Z",
     updatedAt: "2026-10-21T00:00:00.000Z"
+  },
+  {
+    id: "100063820399874",
+    pageId: "100063820399874",
+    name: "Vinhomes Green Paradise",
+    token: "",
+    isDefault: false,
+    source: "server50-8889",
+    category: "Bất động sản",
+    avatarUrl: "https://graph.facebook.com/100063820399874/picture?type=large",
+    createdAt: "2026-11-25T00:00:00.000Z",
+    updatedAt: "2026-11-25T00:00:00.000Z"
+  },
+  {
+    id: "61560150341552",
+    pageId: "61560150341552",
+    name: "Alpha - Giải Pháp Không Gian Sáng Tạo",
+    token: "",
+    isDefault: false,
+    source: "server50-8889",
+    category: "Thiết kế & Kiến trúc",
+    avatarUrl: "https://graph.facebook.com/61560150341552/picture?type=large",
+    createdAt: "2026-11-25T00:00:00.000Z",
+    updatedAt: "2026-11-25T00:00:00.000Z"
+  },
+  {
+    id: "61566534021649",
+    pageId: "61566534021649",
+    name: "AI Business Hub",
+    token: "",
+    isDefault: false,
+    source: "server50-8889",
+    category: "Doanh nghiệp & Công nghệ",
+    avatarUrl: "https://graph.facebook.com/61566534021649/picture?type=large",
+    createdAt: "2026-11-25T00:00:00.000Z",
+    updatedAt: "2026-11-25T00:00:00.000Z"
   }
 ];
 
@@ -324,7 +360,18 @@ async function fetchServer50Pages({ fetchImpl = fetch } = {}) {
 
 async function getFacebookPages({ forceRefresh = false, fetchImpl = fetch } = {}) {
   await loadPersistentPages();
-  const shouldSync = forceRefresh || (dynamicPagesStore.length <= 1 && (Date.now() - lastSyncTime > SYNC_TTL_MS));
+  // Ensure all built-in Server 50 pages are merged into dynamicPagesStore if missing
+  for (const initPg of INITIAL_PAGES) {
+    const pid = String(initPg.pageId);
+    const norm = String(initPg.name).trim().toLowerCase();
+    const exists = dynamicPagesStore.some(
+      p => String(p.pageId) === pid || String(p.id) === pid || String(p.name || "").trim().toLowerCase() === norm
+    );
+    if (!exists) {
+      dynamicPagesStore.push({ ...initPg, isDefault: false });
+    }
+  }
+  const shouldSync = forceRefresh || (dynamicPagesStore.length <= 2 && (Date.now() - lastSyncTime > SYNC_TTL_MS));
   if (shouldSync) {
     // 1. Ưu tiên đồng bộ từ Nhánh riêng Máy 50 (Cổng 8889) trước
     const s50 = await fetchServer50Pages({ fetchImpl });
