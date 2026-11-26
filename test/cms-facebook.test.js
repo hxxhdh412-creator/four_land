@@ -425,3 +425,95 @@ test("Facebook Studio API handler waits 45s for single-channel publish and flags
   assert.equal(jsonBody.data.isDirectPost, true);
   assert.match(jsonBody.data.postUrl, /story_fbid=pfbid02AbCdEf123456/);
 });
+
+test("Facebook Studio API handler supports multi-channel group-pool and random multi-actor publish-group", async () => {
+  let poolPayload = null;
+  let rotPayload = null;
+  const handler = createHandler({
+    requireCmsImpl: async () => ({ id: "usr-admin-01", role: "super_admin" }),
+    request: async () => ({
+      data: [{
+        property_id: "BDS-RENT-99",
+        address: "100 Lê Đại Hành, Quận 11",
+        district: "Quận 11",
+        street: "Lê Đại Hành",
+        property_type: "Nhà thuê",
+        price_text: "35 triệu/tháng",
+        property_images: []
+      }]
+    }),
+    groupPoolFetcher: async ({ payload }) => {
+      poolPayload = payload;
+      return {
+        ok: true,
+        actors: [
+          { key: "acc_1::", name: "Nguyễn Ngọc", type: "profile", groupCount: 500 },
+          { key: "acc_2::", name: "Nguyễn Bích Ngọc", type: "profile", groupCount: 320 },
+          { key: "acc_1::100083339924743", name: "Ngọc Nhà Tốt", type: "page", groupCount: 318 }
+        ],
+        groups: [
+          { id: "g1", name: "Cho Thuê Nhà Nguyên Căn TP.HCM", intent: "rent", memberCount: 2 },
+          { id: "g2", name: "Mua Bán Nhà Phố Chính Chủ", intent: "sale", memberCount: 1 }
+        ],
+        counts: { all: 2, rent: 1, sale: 1 }
+      };
+    },
+    groupRotationStarter: async ({ payload }) => {
+      rotPayload = payload;
+      return {
+        ok: true,
+        id: "rot_multi_1",
+        rotationIds: ["rot_multi_1", "rot_multi_2", "rot_multi_3"],
+        channelCount: 3,
+        groupCount: 30,
+        distribution: [
+          { label: "Nguyễn Ngọc", count: 10 },
+          { label: "Nguyễn Bích Ngọc", count: 10 },
+          { label: "Ngọc Nhà Tốt", count: 10 }
+        ],
+        message: "Đã kích hoạt rải random 30 nhóm chia tải an toàn qua 3 kênh!"
+      };
+    }
+  });
+
+  const makeRes = () => {
+    const out = { code: 0, body: null };
+    return {
+      out,
+      res: {
+        status(c) { out.code = c; return this; },
+        json(b) { out.body = b; return this; }
+      }
+    };
+  };
+
+  const draftCall = makeRes();
+  await handler({ method: "POST", body: { action: "draft", propertyId: "BDS-RENT-99" }, headers: {} }, draftCall.res);
+  assert.equal(draftCall.out.code, 200);
+  assert.equal(draftCall.out.body.data.listingType, "rent");
+
+  const poolCall = makeRes();
+  await handler({
+    method: "POST",
+    body: { action: "group-pool", actorKeys: ["acc_1::", "acc_2::", "acc_1::100083339924743"] },
+    headers: {}
+  }, poolCall.res);
+  assert.equal(poolCall.out.code, 200);
+  assert.deepEqual(poolPayload.actorKeys, ["acc_1::", "acc_2::", "acc_1::100083339924743"]);
+  assert.equal(poolCall.out.body.data.actors.length, 3);
+
+  const pubCall = makeRes();
+  await handler({
+    method: "POST",
+    body: {
+      action: "publish-group",
+      actorKeys: ["acc_1::", "acc_2::", "acc_1::100083339924743"],
+      groups: [{ id: "g1", name: "Nhóm 1" }, { id: "g2", name: "Nhóm 2" }],
+      variants: ["Nội dung test"]
+    },
+    headers: {}
+  }, pubCall.res);
+  assert.equal(pubCall.out.code, 200);
+  assert.equal(rotPayload.actorKeys.length, 3);
+  assert.equal(pubCall.out.body.data.channelCount, 3);
+});

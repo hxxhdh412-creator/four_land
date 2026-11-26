@@ -5,6 +5,7 @@
 const { requireCms } = require("./_cms-auth");
 const { ACTIONS } = require("../server/cms-authorization");
 const { writeFacebookCopy, buildRuleBasedVariants, buildThreadsCopy, optimizeContentForThreads } = require("../server/ai-copywriter");
+const { isRentalProperty } = require("../server/cms-facebook");
 const {
   getFacebookPages,
   getFacebookPageById,
@@ -123,6 +124,28 @@ async function controlQueueViaServer50({ payload, posterNode }) {
   throw lastErr || new Error("Không gửi được lệnh điều khiển hàng đợi tới Máy 50 (8889)");
 }
 
+async function fetchGroupPoolViaServer50({ payload, posterNode }) {
+  const node = posterNode || DEFAULT_POSTER_NODE;
+  const endpoints = [node.tunnelUrl, node.lanUrl].filter(Boolean).map((u) => String(u).replace(/\/+$/, ""));
+  let lastErr = null;
+  for (const baseUrl of endpoints) {
+    try {
+      const res = await fetch(`${baseUrl}/api/fourland/group-pool`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload || {}),
+        signal: AbortSignal.timeout(20000)
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || data.error) throw new Error(data.error || `Máy 50 (8889) trả về HTTP ${res.status}`);
+      return data;
+    } catch (err) {
+      lastErr = err;
+    }
+  }
+  throw lastErr || new Error("Không tải được kho nhóm đa kênh từ Máy 50 (8889)");
+}
+
 async function startGroupRotationViaServer50({ payload, posterNode }) {
   const node = posterNode || DEFAULT_POSTER_NODE;
   const endpoints = [node.tunnelUrl, node.lanUrl].filter(Boolean).map((u) => String(u).replace(/\/+$/, ""));
@@ -204,6 +227,7 @@ function createHandler({
   writer = writeFacebookCopy,
   posterPublisher = publishViaServer50Poster,
   groupRotationStarter = startGroupRotationViaServer50,
+  groupPoolFetcher = fetchGroupPoolViaServer50,
   queueOverviewFetcher = fetchQueueOverviewViaServer50,
   queueController = controlQueueViaServer50
 } = {}) {
@@ -273,11 +297,13 @@ function createHandler({
         });
 
         const posterNode = await getPosterNodeConfig(request);
+        const listingType = isRentalProperty(property) ? "rent" : "sale";
 
         return res.status(200).json({
           ok: true,
           data: {
             propertyId,
+            listingType,
             tone,
             content: copy.content,
             threadsContent,
@@ -315,6 +341,18 @@ function createHandler({
           data: updated,
           message: updated.message || "Đã cập nhật thứ tự ưu tiên luồng đăng bài!"
         });
+      }
+
+      if (action === "group-pool") {
+        const posterNode = await getPosterNodeConfig(request);
+        const pool = await groupPoolFetcher({
+          payload: {
+            actorKeys: Array.isArray(body.actorKeys) ? body.actorKeys : [],
+            fresh: Boolean(body.fresh)
+          },
+          posterNode
+        });
+        return res.status(200).json({ ok: true, data: pool });
       }
 
       if (action === "publish-group") {

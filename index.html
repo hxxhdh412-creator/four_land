@@ -59,8 +59,8 @@
     window.FOURLAND_ONESIGNAL_APP_ID = "524d4fcf-2075-4aaf-8862-a306e670f31d";
   </script>
 
-  <link rel="stylesheet" href="/assets/app.css?v=20261126-exactlink-v39">
-  <link rel="stylesheet" href="/assets/facebook-studio.css?v=20261126-exactlink-v39">
+  <link rel="stylesheet" href="/assets/app.css?v=20261126-multichan-v40">
+  <link rel="stylesheet" href="/assets/facebook-studio.css?v=20261126-multichan-v40">
 
   <!-- Schema.org JSON-LD Structured Data -->
   <script type="application/ld+json">
@@ -472,14 +472,22 @@
                 <select id="fbGroupAccountSelect" aria-label="Tài khoản Facebook" class="fb-group-input"><option value="">Chưa có tài khoản</option></select>
               </label>
               <div class="fb-portal-field">
-                <span class="fb-portal-label">
-                  <span>Kênh đăng vào nhóm</span>
-                  <button type="button" class="social-queue-icon-btn" data-open-fb-queue title="Xem danh sách bài đang chạy & Chọn ưu tiên lên trước" aria-label="Danh sách bài đang chạy trong luồng">
-                    <svg aria-hidden="true" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><polyline points="3 6 4 7 6 5"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg>
-                    <span class="social-queue-count-dot" data-fb-queue-badge hidden>0</span>
-                  </button>
-                </span>
-                <select id="fbGroupActAsSelect" aria-label="Kênh đăng vào nhóm" class="fb-group-input"><option value="">Nick Facebook cá nhân</option></select>
+                <div class="social-actor-head">
+                  <span class="fb-portal-label">
+                    <svg aria-hidden="true" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    <span>Kênh đăng nhóm</span>
+                    <button type="button" class="social-queue-icon-btn" data-open-fb-queue title="Xem danh sách bài đang chạy & Chọn ưu tiên lên trước" aria-label="Danh sách bài đang chạy trong luồng">
+                      <svg aria-hidden="true" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><polyline points="3 6 4 7 6 5"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg>
+                      <span class="social-queue-count-dot" data-fb-queue-badge hidden>0</span>
+                    </button>
+                  </span>
+                  <label class="social-select-all-check" title="Chọn tất cả kênh có nhóm để hệ thống tự random chia tải">
+                    <input type="checkbox" id="btnFbGroupActorSelectAll">
+                    <span>Chọn tất cả</span>
+                  </label>
+                </div>
+                <div id="fbGroupActorGrid" class="social-actor-grid" role="group" aria-label="Chọn 1 hoặc nhiều kênh Facebook để random chia tải đăng nhóm"></div>
+                <select id="fbGroupActAsSelect" aria-label="Kênh đăng vào nhóm" class="fb-group-input" hidden><option value="">Nick Facebook cá nhân</option></select>
               </div>
             </div>
 
@@ -489,10 +497,15 @@
                     <svg aria-hidden="true" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                     <span>Chọn nhóm <span class="social-picker-count"><b id="fbGroupPickedCount">0</b> đã chọn</span></span>
                   </span></summary>
-                <div class="fb-portal-channel-header social-group-heading">
+                <div class="social-group-filter-bar">
+                  <div class="social-intent-tabs" role="tablist" aria-label="Lọc theo loại nhóm">
+                    <button type="button" class="social-intent-tab active" data-fb-grp-intent="all">Tất cả</button>
+                    <button type="button" class="social-intent-tab" data-fb-grp-intent="rent">Nhà thuê</button>
+                    <button type="button" class="social-intent-tab" data-fb-grp-intent="sale">Nhà bán</button>
+                  </div>
                   <div class="fb-portal-channel-actions">
                     <button type="button" id="btnFbGroupPickAll" class="fb-portal-action-link">Chọn tất cả</button>
-                    <button type="button" id="btnFbGroupPickInstant" class="fb-portal-action-link primary-pill" title="Chỉ chọn các nhóm cho phép đăng ngay không cần chờ duyệt">Chọn nhóm đăng ngay</button>
+                    <button type="button" id="btnFbGroupPickInstant" class="fb-portal-action-link primary-pill" title="Chỉ chọn các nhóm cho phép đăng ngay không cần chờ duyệt">Đăng ngay</button>
                     <button type="button" id="btnFbGroupPickNone" class="fb-portal-action-link">Bỏ chọn</button>
                   </div>
                 </div>
@@ -774,7 +787,7 @@
     </div>
   </dialog>
 
-  <script src="/assets/app.js?v=20261126-exactlink-v39" defer></script>
+  <script src="/assets/app.js?v=20261126-multichan-v40" defer></script>
 </body>
 
 </html>

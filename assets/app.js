@@ -2191,6 +2191,13 @@ const fbPortalState = {
   fbAccounts: [],
   selectedAccountId: '',
   selectedActAs: '',
+  listingType: 'rent',
+  groupActors: [],
+  selectedActorKeys: new Set(),
+  groupIntentFilter: 'all',
+  intentSyncedPropId: '',
+  userManuallyPickedGroups: false,
+  poolCounts: { all: 0, rent: 0, sale: 0 },
   groups: [],
   groupApprovals: {},
   selectedGroups: new Map()
@@ -2366,48 +2373,139 @@ async function resolveRevidEngineCandidates() {
   return [...server50Candidates, ...localCandidates];
 }
 
+function classifyClientGroupIntent(name = '') {
+  const s = String(name || '').toLowerCase();
+  const isRent = /(cho thuê|thuê nhà|thue nha|nhà thuê|nha thue|mặt bằng|mat bang|sang nhượng|sang nhuong|phòng trọ|phong tro|chdv|căn hộ dịch vụ|nhà nguyên căn.*thuê|thuê.*nguyên căn)/i.test(s);
+  const isSale = /(mua bán|mua ban|bán nhà|ban nha|nhà bán|nha ban|chính chủ bán|cần bán|đầu tư bất động sản|đầu tư bđs)/i.test(s);
+  const isGeneralBds = /(bất động sản|bds|bđs|nhà đất|nha dat|nhà phố|nha pho|căn hộ|can ho|chung cư|chung cu|ký gửi|ky gui|môi giới|moi gioi|nhà đẹp|biệt thự|tòa nhà|building)/i.test(s);
+  if (isRent && isSale) return 'both';
+  if (isRent) return 'rent';
+  if (isSale) return 'sale';
+  if (isGeneralBds) return 'both';
+  return 'other';
+}
+
+function matchesPortalGroupIntent(g, filter = 'all') {
+  const intent = g.intent || classifyClientGroupIntent(g.name);
+  if (filter === 'rent') return intent === 'rent' || intent === 'both';
+  if (filter === 'sale') return intent === 'sale' || intent === 'both';
+  return true;
+}
+
+function getVisiblePortalGroups() {
+  const q = ($('fbGroupSearchInput')?.value || '').trim().toLowerCase();
+  const filter = fbPortalState.groupIntentFilter || 'all';
+  return (fbPortalState.groups || [])
+    .filter(g => matchesPortalGroupIntent(g, filter) && (!q || String(g.name || '').toLowerCase().includes(q)))
+    .sort((a, b) => {
+      if (filter === 'rent' || filter === 'sale') {
+        const aExact = (a.intent || classifyClientGroupIntent(a.name)) === filter ? 0 : 1;
+        const bExact = (b.intent || classifyClientGroupIntent(b.name)) === filter ? 0 : 1;
+        if (aExact !== bExact) return aExact - bExact;
+      }
+      return 0;
+    });
+}
+
+function autoPickPortalGroupsByIntent() {
+  const filter = fbPortalState.groupIntentFilter || 'all';
+  const pool = (fbPortalState.groups || []).filter(g => matchesPortalGroupIntent(g, filter));
+  const nonReq = pool.filter(g => (g.approval || fbPortalState.groupApprovals?.[String(g.id)]?.approval) !== 'required');
+  const strict = filter === 'rent' || filter === 'sale'
+    ? nonReq.filter(g => (g.intent || classifyClientGroupIntent(g.name)) === filter)
+    : nonReq.filter(g => (g.intent || classifyClientGroupIntent(g.name)) !== 'other');
+  const targetCount = Math.min(30, Math.max(15, fbPortalState.selectedActorKeys.size * 12));
+  const chosen = (strict.length >= 5 ? [...strict, ...nonReq.filter(x => !strict.includes(x))] : nonReq).slice(0, targetCount);
+  fbPortalState.selectedGroups.clear();
+  chosen.forEach(g => fbPortalState.selectedGroups.set(String(g.id), { id: g.id, name: g.name }));
+}
+
+function updatePortalIntentTabsUI() {
+  const allGroups = fbPortalState.groups || [];
+  const rentCnt = allGroups.filter(g => matchesPortalGroupIntent(g, 'rent')).length;
+  const saleCnt = allGroups.filter(g => matchesPortalGroupIntent(g, 'sale')).length;
+  document.querySelectorAll('[data-fb-grp-intent]').forEach(btn => {
+    const k = btn.dataset.fbGrpIntent;
+    btn.classList.toggle('active', k === fbPortalState.groupIntentFilter);
+    if (k === 'all') btn.textContent = allGroups.length ? `Tất cả (${allGroups.length})` : 'Tất cả';
+    if (k === 'rent') btn.textContent = rentCnt ? `Nhà thuê (${rentCnt})` : 'Nhà thuê';
+    if (k === 'sale') btn.textContent = saleCnt ? `Nhà bán (${saleCnt})` : 'Nhà bán';
+  });
+}
+
+function renderPortalGroupActors() {
+  const grid = $('fbGroupActorGrid');
+  const selAll = $('btnFbGroupActorSelectAll');
+  const actors = fbPortalState.groupActors || [];
+  if (!grid) return;
+
+  if (!actors.length) {
+    grid.innerHTML = `<div class="fb-group-empty" style="grid-column:1/-1;padding:8px;">Đang tải danh sách kênh Facebook…</div>`;
+    return;
+  }
+
+  const withGroups = actors.filter(a => (a.groupCount || 0) > 0);
+  if (selAll) {
+    const targetSet = withGroups.length ? withGroups : actors;
+    const checkedInTarget = targetSet.filter(a => fbPortalState.selectedActorKeys.has(a.key)).length;
+    selAll.checked = checkedInTarget === targetSet.length && targetSet.length > 0;
+    selAll.indeterminate = checkedInTarget > 0 && checkedInTarget < targetSet.length;
+  }
+
+  grid.innerHTML = actors.map(a => {
+    const checked = fbPortalState.selectedActorKeys.has(a.key);
+    const gCnt = Number(a.groupCount || 0);
+    const tagTxt = a.type === 'page' ? 'Page' : 'Cá nhân';
+    const avatar = a.avatarUrl || '/assets/brand/fourland-icon-192.png';
+    return `
+      <label class="social-actor-card ${checked ? 'checked' : ''} ${gCnt === 0 ? 'is-empty-groups' : ''}" data-actor-key="${escapeHtml(a.key)}" title="${escapeHtml(`${tagTxt}: ${a.name} (${gCnt} nhóm đã tham gia)`)}">
+        <input type="checkbox" value="${escapeHtml(a.key)}" ${checked ? 'checked' : ''}>
+        <img class="social-actor-avatar" src="${escapeHtml(avatar)}" alt="" referrerpolicy="no-referrer" onerror="this.src='/assets/brand/fourland-icon-192.png'">
+        <div class="social-actor-info">
+          <span class="social-actor-name">${escapeHtml(a.name)}</span>
+          <span class="social-actor-sub">${escapeHtml(tagTxt)} · ${gCnt} nhóm</span>
+        </div>
+        <span class="social-actor-check">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+        </span>
+      </label>
+    `;
+  }).join('');
+
+  grid.querySelectorAll('.social-actor-card').forEach(card => {
+    card.onclick = (e) => {
+      e.preventDefault();
+      const key = card.dataset.actorKey;
+      if (fbPortalState.selectedActorKeys.has(key)) {
+        if (fbPortalState.selectedActorKeys.size <= 1) {
+          showToast('Cần giữ ít nhất 1 kênh để đăng nhóm', 2200);
+          return;
+        }
+        fbPortalState.selectedActorKeys.delete(key);
+      } else {
+        fbPortalState.selectedActorKeys.add(key);
+      }
+      const firstKey = Array.from(fbPortalState.selectedActorKeys)[0] || '';
+      const [accId, actAs = ''] = firstKey.split('::');
+      fbPortalState.selectedAccountId = accId || fbPortalState.selectedAccountId;
+      fbPortalState.selectedActAs = actAs;
+      renderPortalGroupActors();
+      loadRevidAccountGroups(fbPortalState.selectedAccountId, false);
+    };
+  });
+}
+
 function populatePortalActAsOptions(account) {
   const actSel = $('fbGroupActAsSelect');
-  if (!actSel) return;
   const allAccounts = Array.isArray(fbPortalState.fbAccounts) && fbPortalState.fbAccounts.length
     ? fbPortalState.fbAccounts
     : (account ? [account] : []);
+  if (!actSel) return;
   if (!allAccounts.length) {
     actSel.innerHTML = '<option value="">Nick Facebook cá nhân</option>';
-    fbPortalState.selectedActAs = '';
     return;
   }
-  const activeAccId = fbPortalState.selectedAccountId || allAccounts[0].id;
-  const opts = [];
-  const seenPages = new Set();
-
-  // 1. Liệt kê tất cả Nick Facebook cá nhân đã kết nối (Nguyễn Ngọc, Nguyễn Bích Ngọc...)
-  for (const acc of allAccounts) {
-    const isSelected = acc.id === activeAccId && !fbPortalState.selectedActAs;
-    const gCount = acc.groupCount || (acc.groupsCache?.groups?.length) || 500;
-    opts.push(
-      `<option value="${escapeHtml(acc.id)}::" data-account-id="${escapeHtml(acc.id)}" data-act-as="" ${isSelected ? 'selected' : ''}>Cá nhân: ${escapeHtml(acc.profileName || acc.label)} (${gCount} nhóm)</option>`
-    );
-  }
-
-  // 2. Liệt kê toàn bộ Fanpage (chống trùng theo ID/tên) gắn với tài khoản sở hữu
-  for (const acc of allAccounts) {
-    const pages = Array.isArray(acc.pages) && acc.pages.length ? acc.pages : [];
-    for (const p of pages) {
-      const pid = String(p.id || p.pageId || '').trim();
-      const pName = String(p.name || '').trim();
-      const nameKey = pName.toLowerCase();
-      if (!pid || !pName || seenPages.has(pid) || seenPages.has(nameKey)) continue;
-      seenPages.add(pid);
-      seenPages.add(nameKey);
-      const isSelected = String(fbPortalState.selectedActAs) === pid;
-      opts.push(
-        `<option value="${escapeHtml(acc.id)}::${escapeHtml(pid)}" data-account-id="${escapeHtml(acc.id)}" data-act-as="${escapeHtml(pid)}" ${isSelected ? 'selected' : ''}>Fanpage: ${escapeHtml(pName)}</option>`
-      );
-    }
-  }
-
-  actSel.innerHTML = opts.join('');
+  actSel.innerHTML = allAccounts.map(acc => `<option value="${escapeHtml(acc.id)}::">${escapeHtml(acc.profileName || acc.label)}</option>`).join('');
 }
 
 async function initRevidGroupEngine(forceGroups = false) {
@@ -2442,69 +2540,109 @@ async function initRevidGroupEngine(forceGroups = false) {
         ? `<b>${escapeHtml(fbPortalState.activeEngineLabel)}</b> · ${fbs.length} tài khoản sẵn sàng`
         : `<b>${escapeHtml(fbPortalState.activeEngineLabel)}</b> · Chưa có tài khoản Facebook`;
     }
-    if (accSel) {
-      if (!fbs.length) {
-        accSel.innerHTML = '<option value="">Chưa có tài khoản Facebook</option>';
-        populatePortalActAsOptions(null);
-        const box = $('fbGroupListBox');
-        if (box) box.innerHTML = `<div class="fb-group-empty">Chưa có tài khoản Facebook trong hệ thống.</div>`;
-      } else {
-        if (!fbPortalState.selectedAccountId || !fbs.some(a => a.id === fbPortalState.selectedAccountId)) {
-          fbPortalState.selectedAccountId = fbs[0].id;
-        }
-        accSel.innerHTML = fbs.map(a => `<option value="${escapeHtml(a.id)}" ${a.id === fbPortalState.selectedAccountId ? 'selected' : ''}>${escapeHtml(a.profileName || a.label)}</option>`).join('');
-        const currentAcc = fbs.find(a => a.id === fbPortalState.selectedAccountId) || fbs[0];
-        if (!Array.isArray(currentAcc.pages) || !currentAcc.pages.length) {
-          try {
-            const dest = await revidEngineApi('GET', `/api/accounts/${encodeURIComponent(currentAcc.id)}/destinations?cached=1`);
-            if (Array.isArray(dest?.pages) && dest.pages.length) currentAcc.pages = dest.pages;
-          } catch (_) {}
-        }
-        populatePortalActAsOptions(currentAcc);
-        await loadRevidAccountGroups(fbPortalState.selectedAccountId, forceGroups);
+    if (accSel && fbs.length) {
+      if (!fbPortalState.selectedAccountId || !fbs.some(a => a.id === fbPortalState.selectedAccountId)) {
+        fbPortalState.selectedAccountId = fbs[0].id;
       }
+      accSel.innerHTML = fbs.map(a => `<option value="${escapeHtml(a.id)}" ${a.id === fbPortalState.selectedAccountId ? 'selected' : ''}>${escapeHtml(a.profileName || a.label)}</option>`).join('');
+      populatePortalActAsOptions(fbs[0]);
     }
+    await loadRevidAccountGroups(fbPortalState.selectedAccountId, forceGroups);
   } else {
-    fbPortalState.engineOnline = false;
-    if (dot) dot.className = 'fb-mode-dot offline';
-    if (statusBadge) statusBadge.className = 'fb-status-indicator offline';
-    if (statusEl) {
-      statusEl.innerHTML = `Chưa kết nối được Máy chủ 50 (8889) hoặc Local (8788)`;
+    // Fallback via Fourland serverless proxy even if direct CORS/LAN failed
+    try {
+      await loadRevidAccountGroups('', forceGroups);
+      if (fbPortalState.groupActors.length > 0) {
+        fbPortalState.engineOnline = true;
+        if (dot) dot.className = 'fb-mode-dot online';
+        if (statusBadge) statusBadge.className = 'fb-status-indicator online';
+        if (statusEl) statusEl.innerHTML = `<b>Máy chủ 50 · 24/7</b> · Đã kết nối kho nhóm đa kênh`;
+      } else {
+        throw new Error('offline');
+      }
+    } catch (_) {
+      fbPortalState.engineOnline = false;
+      if (dot) dot.className = 'fb-mode-dot offline';
+      if (statusBadge) statusBadge.className = 'fb-status-indicator offline';
+      if (statusEl) statusEl.innerHTML = `Chưa kết nối được Máy chủ 50 (8889) hoặc Local (8788)`;
+      const box = $('fbGroupListBox');
+      if (box) box.innerHTML = `<div class="fb-group-empty">Không kết nối được dịch vụ đăng nhóm trên <b>Máy chủ 50 (8889)</b>.</div>`;
     }
-    if (accSel) accSel.innerHTML = '<option value="">Mất kết nối máy chủ</option>';
-    const box = $('fbGroupListBox');
-    if (box) box.innerHTML = `<div class="fb-group-empty">Không kết nối được dịch vụ đăng nhóm trên <b>Máy chủ 50 (8889)</b> hoặc <b>Máy cá nhân (8788)</b>.</div>`;
   }
   updatePortalPublishButtonState();
 }
 
-async function loadRevidAccountGroups(accountId, fresh = false) {
+async function loadRevidAccountGroups(_accountId, fresh = false) {
   const box = $('fbGroupListBox');
-  if (!accountId || !box) return;
-  box.innerHTML = `<div class="fb-group-empty">Đang tải danh sách nhóm Facebook đã tham gia…</div>`;
+  if (!box) return;
+  box.innerHTML = `<div class="fb-group-empty">Đang gộp kho nhóm từ các kênh đã chọn…</div>`;
   try {
-    const actAs = fbPortalState.selectedActAs || '';
-    const actParam = actAs ? `&actAs=${encodeURIComponent(actAs)}` : '';
-    const base = `/api/accounts/${encodeURIComponent(accountId)}/groups`;
-    let d = await revidEngineApi('GET', `${base}?cached=${fresh ? '0' : '1'}${actParam}`);
-    if (fresh || !(d.groups || []).length) {
-      d = await revidEngineApi('GET', `${base}?cached=0${actParam}`);
-    }
-    fbPortalState.groups = d.groups || [];
-    fbPortalState.groupApprovals = await revidEngineApi('GET', `/api/mk/approvals/${encodeURIComponent(accountId)}`).catch(() => ({}));
-    if (fbPortalState.selectedGroups.size === 0 && fbPortalState.groups.length > 0) {
-      const bdsRe = /bất động sản|bds|nhà đất|nhà phố|cho thuê|mua bán nhà|căn hộ|mặt bằng|phòng trọ/i;
-      const autoCandidates = fbPortalState.groups.filter(g => {
-        const gid = String(g.id);
-        return fbPortalState.groupApprovals?.[gid]?.approval !== 'required' && bdsRe.test(String(g.name || ''));
+    let reqKeys = Array.from(fbPortalState.selectedActorKeys);
+    let pool = null;
+    try {
+      pool = await revidEngineApi('POST', '/api/fourland/group-pool', { actorKeys: reqKeys, fresh });
+    } catch (_) {
+      const proxyRes = await api('/api/admin/v1/facebook/publish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer fourland-preview-cms' },
+        body: JSON.stringify({ action: 'group-pool', actorKeys: reqKeys, fresh })
       });
-      const pickPool = autoCandidates.length >= 3
-        ? autoCandidates.slice(0, 15)
-        : fbPortalState.groups.filter(g => fbPortalState.groupApprovals?.[String(g.id)]?.approval !== 'required').slice(0, 10);
-      pickPool.forEach(g => fbPortalState.selectedGroups.set(String(g.id), { id: g.id, name: g.name }));
+      pool = proxyRes?.data || null;
     }
-    renderRevidGroupsList();
-    updatePortalPreviewFromChannels();
+
+    if (pool && Array.isArray(pool.actors)) {
+      fbPortalState.groupActors = pool.actors;
+      // Default selection on first load: select all personal profiles that have groups so load is balanced out of the box!
+      if (fbPortalState.selectedActorKeys.size === 0 && pool.actors.length > 0) {
+        const profileActors = pool.actors.filter(a => a.type === 'profile' && (a.groupCount || 0) > 0);
+        const initKeys = profileActors.length > 0 ? profileActors.map(a => a.key) : [pool.actors[0].key];
+        initKeys.forEach(k => fbPortalState.selectedActorKeys.add(k));
+        if (initKeys.length > 1 || initKeys[0] !== (pool.selectedActorKeys || [])[0]) {
+          try {
+            pool = await revidEngineApi('POST', '/api/fourland/group-pool', { actorKeys: initKeys, fresh: false });
+          } catch (_) {
+            const p2 = await api('/api/admin/v1/facebook/publish', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer fourland-preview-cms' },
+              body: JSON.stringify({ action: 'group-pool', actorKeys: initKeys, fresh: false })
+            });
+            pool = p2?.data || pool;
+          }
+        }
+      }
+      const firstKey = Array.from(fbPortalState.selectedActorKeys)[0] || '';
+      const [firstAccId, firstActAs = ''] = firstKey.split('::');
+      if (firstAccId) fbPortalState.selectedAccountId = firstAccId;
+      fbPortalState.selectedActAs = firstActAs;
+      renderPortalGroupActors();
+
+      fbPortalState.groups = Array.isArray(pool.groups) ? pool.groups : [];
+      fbPortalState.poolCounts = pool.counts || { all: fbPortalState.groups.length, rent: 0, sale: 0 };
+
+      // Auto-set filter to Rent or Sale matching the current property once per property
+      if (fbPortalState.propertyId && fbPortalState.intentSyncedPropId !== fbPortalState.propertyId) {
+        fbPortalState.intentSyncedPropId = fbPortalState.propertyId;
+        fbPortalState.groupIntentFilter = fbPortalState.listingType === 'sale' ? 'sale' : 'rent';
+        fbPortalState.userManuallyPickedGroups = false;
+      }
+
+      // Prune any selected groups no longer in the merged pool
+      const validIds = new Set(fbPortalState.groups.map(g => String(g.id)));
+      for (const gid of Array.from(fbPortalState.selectedGroups.keys())) {
+        if (!validIds.has(gid)) fbPortalState.selectedGroups.delete(gid);
+      }
+
+      if ((fbPortalState.selectedGroups.size === 0 || !fbPortalState.userManuallyPickedGroups) && fbPortalState.groups.length > 0) {
+        autoPickPortalGroupsByIntent();
+      }
+
+      updatePortalIntentTabsUI();
+      renderRevidGroupsList();
+      updatePortalPreviewFromChannels();
+      return;
+    }
+
+    throw new Error('Không đọc được dữ liệu nhóm từ Máy 50');
   } catch (err) {
     box.innerHTML = `<div class="fb-group-empty">Không tải được danh sách nhóm: ${escapeHtml(err.message)}</div>`;
   }
@@ -2513,33 +2651,40 @@ async function loadRevidAccountGroups(accountId, fresh = false) {
 function renderRevidGroupsList() {
   const box = $('fbGroupListBox');
   const countEl = $('fbGroupPickedCount');
-  const q = ($('fbGroupSearchInput')?.value || '').trim().toLowerCase();
+  const q = ($('fbGroupSearchInput')?.value || '').trim();
   if (!box) return;
   if (countEl) countEl.textContent = String(fbPortalState.selectedGroups.size);
+  updatePortalIntentTabsUI();
 
-  const groups = (fbPortalState.groups || []).filter(g => !q || String(g.name || '').toLowerCase().includes(q));
+  const groups = getVisiblePortalGroups();
   if (!groups.length) {
-    box.innerHTML = `<div class="fb-group-empty social-group-empty">${q ? 'Không có nhóm nào khớp từ khóa tìm kiếm.' : 'Tài khoản này chưa có nhóm nào. Bấm Tải lại để đồng bộ danh sách.'}</div>`;
+    box.innerHTML = `<div class="fb-group-empty social-group-empty">${q ? 'Không có nhóm nào khớp từ khóa tìm kiếm.' : 'Chưa có nhóm phù hợp trong bộ lọc này (chọn tab Tất cả hoặc tick thêm kênh).'}</div>`;
     updateGroupRotationEta();
     updatePortalPublishButtonState();
     return;
   }
 
+  const multiChannelActive = fbPortalState.selectedActorKeys.size > 1;
   box.innerHTML = groups.map(g => {
     const gid = String(g.id);
     const isChecked = fbPortalState.selectedGroups.has(gid);
-    const appr = fbPortalState.groupApprovals?.[gid]?.approval;
+    const appr = g.approval || fbPortalState.groupApprovals?.[gid]?.approval;
+    const memberCount = Number(g.memberCount || (g.actorKeys ? g.actorKeys.length : 1));
+    const actorHint = Array.isArray(g.actorNames) && g.actorNames.length ? `Kênh thành viên: ${g.actorNames.join(', ')}` : '';
+    const sharedBadge = multiChannelActive && memberCount > 1
+      ? `<span class="fb-grp-tag social-group-tag shared" title="${escapeHtml(actorHint)}">${memberCount} kênh</span>`
+      : '';
     const badgeHtml = appr === 'required'
       ? `<span class="fb-grp-tag social-group-tag warn" title="Nhóm cần Quản trị viên duyệt bài">cần duyệt</span>`
       : appr === 'instant'
         ? `<span class="fb-grp-tag social-group-tag ok">đăng ngay</span>`
         : '';
     return `
-      <label class="fb-group-item social-group-item ${isChecked ? 'checked' : ''}" data-gid="${escapeHtml(gid)}" title="${escapeHtml(g.name)}">
+      <label class="fb-group-item social-group-item ${isChecked ? 'checked' : ''}" data-gid="${escapeHtml(gid)}" title="${escapeHtml(actorHint ? `${g.name} · ${actorHint}` : g.name)}">
         <input type="checkbox" value="${escapeHtml(gid)}" ${isChecked ? 'checked' : ''}>
         ${g.picture ? `<img src="${escapeHtml(g.picture)}" alt="" referrerpolicy="no-referrer" onerror="this.style.display='none'">` : `<span class="fb-grp-ph">G</span>`}
         <span class="fb-grp-name social-group-name">${escapeHtml(g.name)}</span>
-        ${badgeHtml}
+        ${sharedBadge}${badgeHtml}
       </label>
     `;
   }).join('');
@@ -2547,6 +2692,7 @@ function renderRevidGroupsList() {
   box.querySelectorAll('.fb-group-item').forEach(row => {
     const cb = row.querySelector('input[type="checkbox"]');
     cb.onchange = () => {
+      fbPortalState.userManuallyPickedGroups = true;
       const gid = row.dataset.gid;
       const gObj = (fbPortalState.groups || []).find(x => String(x.id) === gid);
       if (cb.checked && gObj) {
@@ -2618,14 +2764,20 @@ function updateGroupRotationEta() {
   const n = fbPortalState.selectedGroups.size;
   const a = Number(gapMinEl?.value) || (sched.iso ? 75 : 15);
   const b = Math.max(a, Number(gapMaxEl?.value) || (sched.iso ? 150 : 25));
-  const filledVars = (fbPortalState.variants || []).filter(v => String(v || '').trim()).length || 1;
+  const chCount = Math.max(1, fbPortalState.selectedActorKeys.size);
+  const uniqueAccCount = Math.max(1, new Set(Array.from(fbPortalState.selectedActorKeys).map(k => k.split('::')[0]).filter(Boolean)).size);
   if (!n) {
     etaEl.textContent = 'Chọn ít nhất 1 nhóm để rải xoay vòng';
     return;
   }
   const perGroupExec = sched.iso ? 40 : 22;
-  const mins = Math.max(1, Math.round((n * perGroupExec + (n - 1) * (a + b) / 2) / 60));
-  etaEl.textContent = `Đã chọn ${n} nhóm · Xáo ảnh & Spin ${filledVars} góc · ${sched.iso ? `~${mins}p · ${sched.label}` : `Tăng tốc ~${mins}p`}`;
+  const rawTotalSec = n * perGroupExec + Math.max(0, n - chCount) * (a + b) / 2;
+  const mins = Math.max(1, Math.round((rawTotalSec / uniqueAccCount) / 60));
+  const intentLabel = fbPortalState.groupIntentFilter === 'rent' ? ' · Nhóm thuê' : (fbPortalState.groupIntentFilter === 'sale' ? ' · Nhóm bán' : '');
+  const perChAvg = Math.ceil(n / chCount);
+  etaEl.textContent = chCount > 1
+    ? `Random ${chCount} kênh (~${perChAvg} nhóm/kênh) · Tổng ${n} nhóm${intentLabel} · ${sched.iso ? `${sched.label}` : `Tăng tốc ~${mins}p`}`
+    : `Đã chọn ${n} nhóm${intentLabel} · Xáo ảnh & Spin · ${sched.iso ? `~${mins}p · ${sched.label}` : `Tăng tốc ~${mins}p`}`;
 }
 
 function syncPortalFbUrl(propertyId, fbMode) {
@@ -2809,7 +2961,12 @@ function updatePortalPublishButtonState() {
       if (span) span.textContent = 'Chọn nhóm để đăng';
     } else {
       submitBtn.disabled = false;
-      if (span) span.textContent = grpSched.iso ? `Hẹn lịch đăng vào ${gCount} nhóm` : `Đăng ngay vào ${gCount} nhóm`;
+      const chCount = fbPortalState.selectedActorKeys.size;
+      if (span) {
+        span.textContent = chCount > 1
+          ? (grpSched.iso ? `Hẹn lịch ${chCount} kênh · ${gCount} nhóm` : `Random ${chCount} kênh · Đăng ${gCount} nhóm`)
+          : (grpSched.iso ? `Hẹn lịch đăng vào ${gCount} nhóm` : `Đăng ngay vào ${gCount} nhóm`);
+      }
     }
     return;
   }
@@ -2853,12 +3010,13 @@ function updatePortalPreviewFromChannels() {
   const avatarImg = $('fbMockAvatar') || document.querySelector('.fb-mock-avatar img');
 
   if (fbPortalState.mode === 'group') {
-    const acc = (fbPortalState.fbAccounts || []).find(a => a.id === fbPortalState.selectedAccountId) || fbPortalState.fbAccounts?.[0];
-    const actAsId = fbPortalState.selectedActAs || '';
-    const actAsPage = actAsId && acc?.pages ? acc.pages.find(p => String(p.id) === String(actAsId)) : null;
+    const pickedActors = (fbPortalState.groupActors || []).filter(a => fbPortalState.selectedActorKeys.has(a.key));
+    const firstActor = pickedActors[0];
     const firstGrp = Array.from(fbPortalState.selectedGroups.values())[0];
-    const accLabel = actAsPage ? actAsPage.name : (acc ? (acc.profileName || acc.label) : 'Tài khoản Facebook');
-    const actorPic = actAsPage?.picture || acc?.picture || '';
+    const accLabel = pickedActors.length > 1
+      ? `Random ${pickedActors.length} kênh (${pickedActors.map(a => a.name).slice(0, 2).join(', ')}${pickedActors.length > 2 ? '…' : ''})`
+      : (firstActor ? firstActor.name : 'Tài khoản Facebook');
+    const actorPic = firstActor?.avatarUrl || '';
     if (nameEl) nameEl.textContent = firstGrp ? `${accLabel} ▸ ${firstGrp.name}` : accLabel;
     if (avatarImg && actorPic) {
       avatarImg.src = actorPic;
@@ -2867,7 +3025,7 @@ function updatePortalPreviewFromChannels() {
     if (titleEl) {
       const gCount = fbPortalState.selectedGroups.size;
       titleEl.textContent = gCount > 0
-        ? `Đăng vào ${gCount} nhóm Facebook`
+        ? (pickedActors.length > 1 ? `Random ${pickedActors.length} kênh · ${gCount} nhóm` : `Đăng vào ${gCount} nhóm Facebook`)
         : 'Đăng nhóm Facebook';
     }
     return;
@@ -2958,6 +3116,14 @@ async function loadFacebookDraft(propertyId, tone = 'hot', targetPageId = null, 
     }
     fbPortalState.content = data.content || '';
     fbPortalState.fullContent = data.content || '';
+    fbPortalState.listingType = data.listingType || (/thuê|triệu\/tháng/i.test(data.content || '') ? 'rent' : 'sale');
+    if (fbPortalState.mode === 'group' && fbPortalState.groups.length > 0 && fbPortalState.intentSyncedPropId !== propertyId) {
+      fbPortalState.intentSyncedPropId = propertyId;
+      fbPortalState.groupIntentFilter = fbPortalState.listingType === 'sale' ? 'sale' : 'rent';
+      fbPortalState.userManuallyPickedGroups = false;
+      autoPickPortalGroupsByIntent();
+      renderRevidGroupsList();
+    }
     fbPortalState.threadsContent = data.threadsContent || condensePortalThreadsText(data.content || '', 465);
     fbPortalState.isThreadsEditorActive = false;
     fbPortalState.variants = Array.isArray(data.variants) && data.variants.length >= 4
@@ -3140,9 +3306,11 @@ async function handlePublishGroupRotation() {
     alert('Vui lòng chọn ít nhất 1 Nhóm Facebook để rải bài!');
     return;
   }
-  const accountId = $('fbGroupAccountSelect')?.value || fbPortalState.selectedAccountId;
-  if (!accountId) {
-    alert('Vui lòng chọn tài khoản Facebook đăng nhóm!');
+  const actorKeys = Array.from(fbPortalState.selectedActorKeys);
+  const firstKey = actorKeys[0] || '';
+  const accountId = $('fbGroupAccountSelect')?.value || fbPortalState.selectedAccountId || firstKey.split('::')[0];
+  if (!accountId && !actorKeys.length) {
+    alert('Vui lòng chọn ít nhất 1 kênh Facebook đăng nhóm!');
     return;
   }
   const variants = (fbPortalState.variants || []).map(v => String(v || '').trim()).filter(Boolean);
@@ -3173,6 +3341,7 @@ async function handlePublishGroupRotation() {
       name: ($('fbGroupRotName')?.value || '').trim() || `BĐS Fourland · ${fbPortalState.propertyId || Date.now()}`,
       accountId,
       actAs: fbPortalState.selectedActAs || '',
+      actorKeys,
       groups,
       variants,
       imageUrls: selectedImgs.slice(0, 10),
@@ -3810,13 +3979,39 @@ if ($('fbGroupAccountSelect')) {
     updatePortalPreviewFromChannels();
   };
 }
+if ($('btnFbGroupActorSelectAll')) {
+  $('btnFbGroupActorSelectAll').onchange = (e) => {
+    const actors = fbPortalState.groupActors || [];
+    const withGroups = actors.filter(a => (a.groupCount || 0) > 0);
+    const pool = withGroups.length ? withGroups : actors;
+    if (!pool.length) return;
+    if (e.target.checked) {
+      pool.forEach(a => fbPortalState.selectedActorKeys.add(a.key));
+    } else {
+      fbPortalState.selectedActorKeys.clear();
+      fbPortalState.selectedActorKeys.add(pool[0].key);
+    }
+    renderPortalGroupActors();
+    loadRevidAccountGroups(fbPortalState.selectedAccountId, false);
+  };
+}
+document.querySelectorAll('[data-fb-grp-intent]').forEach(btn => {
+  btn.onclick = () => {
+    fbPortalState.groupIntentFilter = btn.dataset.fbGrpIntent || 'all';
+    if (!fbPortalState.userManuallyPickedGroups) {
+      autoPickPortalGroupsByIntent();
+    }
+    renderRevidGroupsList();
+    updatePortalPreviewFromChannels();
+  };
+});
 if ($('fbGroupSearchInput')) {
   $('fbGroupSearchInput').oninput = () => renderRevidGroupsList();
 }
 if ($('btnFbGroupPickAll')) {
   $('btnFbGroupPickAll').onclick = () => {
-    const q = ($('fbGroupSearchInput')?.value || '').trim().toLowerCase();
-    const visible = (fbPortalState.groups || []).filter(g => !q || String(g.name || '').toLowerCase().includes(q));
+    fbPortalState.userManuallyPickedGroups = true;
+    const visible = getVisiblePortalGroups();
     visible.forEach(g => {
       fbPortalState.selectedGroups.set(String(g.id), { id: g.id, name: g.name });
     });
@@ -3826,11 +4021,11 @@ if ($('btnFbGroupPickAll')) {
 }
 if ($('btnFbGroupPickInstant')) {
   $('btnFbGroupPickInstant').onclick = () => {
-    const q = ($('fbGroupSearchInput')?.value || '').trim().toLowerCase();
-    const visible = (fbPortalState.groups || []).filter(g => !q || String(g.name || '').toLowerCase().includes(q));
+    fbPortalState.userManuallyPickedGroups = true;
+    const visible = getVisiblePortalGroups();
     visible.forEach(g => {
       const gid = String(g.id);
-      if (fbPortalState.groupApprovals?.[gid]?.approval !== 'required') {
+      if ((g.approval || fbPortalState.groupApprovals?.[gid]?.approval) !== 'required') {
         fbPortalState.selectedGroups.set(gid, { id: g.id, name: g.name });
       }
     });
@@ -3840,6 +4035,7 @@ if ($('btnFbGroupPickInstant')) {
 }
 if ($('btnFbGroupPickNone')) {
   $('btnFbGroupPickNone').onclick = () => {
+    fbPortalState.userManuallyPickedGroups = true;
     fbPortalState.selectedGroups.clear();
     renderRevidGroupsList();
     updatePortalPreviewFromChannels();
