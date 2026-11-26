@@ -7,8 +7,8 @@
   <meta name="theme-color" content="#283d34">
   <title>FOURLAND · Trung tâm quản trị</title>
   <link rel="icon" type="image/png" href="/assets/brand/fourland-icon-192.png">
-  <link rel="stylesheet" href="/admin/admin.css?v=20261126-multichan-v40">
-  <link rel="stylesheet" href="/assets/facebook-studio.css?v=20261126-multichan-v40">
+  <link rel="stylesheet" href="/admin/admin.css?v=20261126-luxui-v41">
+  <link rel="stylesheet" href="/assets/facebook-studio.css?v=20261126-luxui-v41">
 </head>
 <body>
   <div id="cmsApp" class="cms-app" aria-busy="true">
@@ -1449,23 +1449,25 @@
                       <svg aria-hidden="true" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                       <span>Chọn nhóm <span class="social-picker-count"><b id="cmsFbGroupPickedCount">0</b> đã chọn</span></span>
                     </span></summary>
-                  <div class="social-group-filter-bar">
-                    <div class="social-intent-tabs" role="tablist" aria-label="Lọc theo loại nhóm">
-                      <button type="button" class="social-intent-tab active" data-cms-fb-grp-intent="all">Tất cả</button>
-                      <button type="button" class="social-intent-tab" data-cms-fb-grp-intent="rent">Nhà thuê</button>
-                      <button type="button" class="social-intent-tab" data-cms-fb-grp-intent="sale">Nhà bán</button>
+                  <div class="social-group-palette">
+                    <div class="social-group-filter-bar">
+                      <div class="social-intent-tabs" role="tablist" aria-label="Lọc theo loại nhóm">
+                        <button type="button" class="social-intent-tab active" data-cms-fb-grp-intent="all">Tất cả</button>
+                        <button type="button" class="social-intent-tab" data-cms-fb-grp-intent="rent">Thuê</button>
+                        <button type="button" class="social-intent-tab" data-cms-fb-grp-intent="sale">Bán</button>
+                      </div>
+                      <div class="social-quick-picks">
+                        <button type="button" id="btnCmsFbGroupPickInstant" class="social-mini-pick is-accent" title="Chỉ chọn các nhóm cho phép đăng ngay không cần chờ duyệt">Đăng ngay</button>
+                        <button type="button" id="btnCmsFbGroupPickAll" class="social-mini-pick">Tất cả</button>
+                        <button type="button" id="btnCmsFbGroupPickNone" class="social-mini-pick">Bỏ</button>
+                      </div>
                     </div>
-                    <div class="cms-fb-channel-quick-actions">
-                      <button type="button" id="btnCmsFbGroupPickAll" class="cms-fb-action-link">Chọn tất cả</button>
-                      <button type="button" id="btnCmsFbGroupPickInstant" class="cms-fb-action-link primary-pill" title="Chỉ chọn các nhóm cho phép đăng ngay không cần chờ duyệt">Đăng ngay</button>
-                      <button type="button" id="btnCmsFbGroupPickNone" class="cms-fb-action-link">Bỏ chọn</button>
+                    <div class="cms-fb-search-wrap social-palette-search">
+                      <svg aria-hidden="true" class="cms-fb-search-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                      <input type="text" id="cmsFbGroupSearchInput" aria-label="Tìm tên nhóm" class="cms-fb-compact-input cms-fb-search-input" placeholder="Tìm nhanh theo tên nhóm, quận, khu vực…">
                     </div>
+                    <div id="cmsFbGroupListBox" role="group" aria-label="Danh sách nhóm đăng bài" class="cms-fb-group-list-box"></div>
                   </div>
-                  <div class="cms-fb-search-wrap">
-                    <svg aria-hidden="true" class="cms-fb-search-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                    <input type="text" id="cmsFbGroupSearchInput" aria-label="Tìm tên nhóm" class="cms-fb-compact-input cms-fb-search-input" placeholder="Tìm nhóm…">
-                  </div>
-                  <div id="cmsFbGroupListBox" role="group" aria-label="Danh sách nhóm đăng bài" class="cms-fb-group-list-box"></div>
                 </details>
                 <button type="button" id="btnCmsFbGroupSchedToggle" class="social-sched-icon-btn" title="Lịch hẹn & tuỳ chọn rải nhóm" aria-label="Lịch & tuỳ chọn" aria-expanded="false">
                   <svg aria-hidden="true" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 9h18"/><path d="M12 12.5v3l2 1.2"/></svg>
@@ -1965,6 +1967,6 @@
 
     <div id="toastContainer" class="cms-toast-container" aria-live="polite"></div>
   </div>
-  <script src="/admin/admin.js?v=20261126-multichan-v40" defer></script>
+  <script src="/admin/admin.js?v=20261126-luxui-v41" defer></script>
 </body>
 </html>

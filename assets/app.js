@@ -2427,44 +2427,43 @@ function updatePortalIntentTabsUI() {
   document.querySelectorAll('[data-fb-grp-intent]').forEach(btn => {
     const k = btn.dataset.fbGrpIntent;
     btn.classList.toggle('active', k === fbPortalState.groupIntentFilter);
-    if (k === 'all') btn.textContent = allGroups.length ? `Tất cả (${allGroups.length})` : 'Tất cả';
-    if (k === 'rent') btn.textContent = rentCnt ? `Nhà thuê (${rentCnt})` : 'Nhà thuê';
-    if (k === 'sale') btn.textContent = saleCnt ? `Nhà bán (${saleCnt})` : 'Nhà bán';
+    if (k === 'all') btn.textContent = allGroups.length ? `Tất cả · ${allGroups.length}` : 'Tất cả';
+    if (k === 'rent') btn.textContent = rentCnt ? `Thuê · ${rentCnt}` : 'Thuê';
+    if (k === 'sale') btn.textContent = saleCnt ? `Bán · ${saleCnt}` : 'Bán';
   });
 }
 
 function renderPortalGroupActors() {
   const grid = $('fbGroupActorGrid');
   const selAll = $('btnFbGroupActorSelectAll');
-  const actors = fbPortalState.groupActors || [];
+  const rawActors = fbPortalState.groupActors || [];
   if (!grid) return;
 
-  if (!actors.length) {
+  if (!rawActors.length) {
     grid.innerHTML = `<div class="fb-group-empty" style="grid-column:1/-1;padding:8px;">Đang tải danh sách kênh Facebook…</div>`;
     return;
   }
 
-  const withGroups = actors.filter(a => (a.groupCount || 0) > 0);
+  const withGroups = rawActors.filter(a => (a.groupCount || 0) > 0);
+  const actors = withGroups.length ? withGroups : rawActors;
   if (selAll) {
-    const targetSet = withGroups.length ? withGroups : actors;
-    const checkedInTarget = targetSet.filter(a => fbPortalState.selectedActorKeys.has(a.key)).length;
-    selAll.checked = checkedInTarget === targetSet.length && targetSet.length > 0;
-    selAll.indeterminate = checkedInTarget > 0 && checkedInTarget < targetSet.length;
+    const checkedInTarget = actors.filter(a => fbPortalState.selectedActorKeys.has(a.key)).length;
+    selAll.checked = checkedInTarget === actors.length && actors.length > 0;
+    selAll.indeterminate = checkedInTarget > 0 && checkedInTarget < actors.length;
   }
 
   grid.innerHTML = actors.map(a => {
     const checked = fbPortalState.selectedActorKeys.has(a.key);
     const gCnt = Number(a.groupCount || 0);
-    const tagTxt = a.type === 'page' ? 'Page' : 'Cá nhân';
+    const tagTxt = a.type === 'page' ? 'Page' : 'FB';
+    const displayLabel = a.type === 'page' ? a.name : `FB · ${a.name}`;
     const avatar = a.avatarUrl || '/assets/brand/fourland-icon-192.png';
     return `
-      <label class="social-actor-card ${checked ? 'checked' : ''} ${gCnt === 0 ? 'is-empty-groups' : ''}" data-actor-key="${escapeHtml(a.key)}" title="${escapeHtml(`${tagTxt}: ${a.name} (${gCnt} nhóm đã tham gia)`)}">
+      <label class="social-actor-card ${checked ? 'checked' : ''}" data-actor-key="${escapeHtml(a.key)}" title="${escapeHtml(`${tagTxt}: ${a.name} (${gCnt} nhóm đã tham gia)`)}">
         <input type="checkbox" value="${escapeHtml(a.key)}" ${checked ? 'checked' : ''}>
         <img class="social-actor-avatar" src="${escapeHtml(avatar)}" alt="" referrerpolicy="no-referrer" onerror="this.src='/assets/brand/fourland-icon-192.png'">
-        <div class="social-actor-info">
-          <span class="social-actor-name">${escapeHtml(a.name)}</span>
-          <span class="social-actor-sub">${escapeHtml(tagTxt)} · ${gCnt} nhóm</span>
-        </div>
+        <span class="social-actor-name">${escapeHtml(displayLabel)}</span>
+        <span class="social-actor-count">${gCnt}</span>
         <span class="social-actor-check">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
         </span>
