@@ -2775,8 +2775,8 @@ function updateGroupRotationEta() {
   const intentLabel = fbPortalState.groupIntentFilter === 'rent' ? ' · Nhóm thuê' : (fbPortalState.groupIntentFilter === 'sale' ? ' · Nhóm bán' : '');
   const perChAvg = Math.ceil(n / chCount);
   etaEl.textContent = chCount > 1
-    ? `Random ${chCount} kênh (~${perChAvg} nhóm/kênh) · Tổng ${n} nhóm${intentLabel} · ${sched.iso ? `${sched.label}` : `Tăng tốc ~${mins}p`}`
-    : `Đã chọn ${n} nhóm${intentLabel} · Xáo ảnh & Spin · ${sched.iso ? `~${mins}p · ${sched.label}` : `Tăng tốc ~${mins}p`}`;
+    ? `Chia tải ${chCount} kênh (~${perChAvg}/kênh) · ${n} nhóm${intentLabel} · ${sched.iso ? `${sched.label}` : `~${mins}p`}`
+    : `Đã chọn ${n} nhóm${intentLabel} · ${sched.iso ? `${sched.label}` : `Tăng tốc ~${mins}p`}`;
 }
 
 function syncPortalFbUrl(propertyId, fbMode) {
